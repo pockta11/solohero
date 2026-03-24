@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     name: Build Android AAB
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,15 +22,9 @@ jobs:
           restore-keys: Library-
 
       - name: Build
-        uses: game-ci/unity-builder@v4
-        env:
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-        with:
-          unityVersion: 2022.3.62f3
-          targetPlatform: Android
-          androidAppBundle: true
+        run: |
+          & "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Unity.exe" -quit -batchmode -projectPath "$env:GITHUB_WORKSPACE" -executeMethod BuildAutomator.Build -logFile Builds/build.log
+        shell: pwsh
 
       - name: Upload Build
         uses: actions/upload-artifact@v4
