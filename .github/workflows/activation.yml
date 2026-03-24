@@ -13,11 +13,13 @@ jobs:
       - name: Generate activation file
         run: |
           unity-editor -batchmode -createManualActivationFile -logfile /tmp/unity.log || true
-          cat /tmp/unity.log || true
+          echo "=== LOG ===" && cat /tmp/unity.log || true
+          echo "=== FIND ALF ===" && find / -name "*.alf" 2>/dev/null || true
+          cp $(find / -name "*.alf" 2>/dev/null | head -1) /tmp/Unity.alf || true
 
-      - name: Find and upload alf file
+      - name: Upload alf file
         uses: actions/upload-artifact@v4
         with:
           name: activation-file
-          path: /root/*.alf
+          path: /tmp/Unity.alf
           if-no-files-found: warn
