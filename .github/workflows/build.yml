@@ -3,31 +3,43 @@ name: Unity Android Build
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:  # 수동 실행 버튼
 
 jobs:
   build:
     name: Build Android AAB
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # 1. 코드 체크아웃
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          lfs: true
 
+      # 2. Library 캐시 (빌드 속도 향상)
       - name: Cache Library
         uses: actions/cache@v3
         with:
           path: Library
-          key: Library-Android
-          restore-keys: Library-
+          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-Android-
 
-      - name: Build
-        run: |
-          & "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Unity.exe" -quit -batchmode -projectPath "$env:GITHUB_WORKSPACE" -executeMethod BuildAutomator.Build -logFile Builds/build.log
-        shell: pwsh
+      # 3. Unity 빌드 실행 (GameCI - Personal 라이선스)
+      - name: Build Android AAB
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: Android
+          buildMethod: BuildAutomator.Build
+          androidExportType: androidAppBundle
 
-      - name: Upload Build
+      # 4. AAB 파일 저장 (7일 보관)
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: game-aab
-          path: build/Android
+          name: android-aab
+          path: build/Android/*.aab
+          retention-days: 7
