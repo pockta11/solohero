@@ -1,0 +1,32 @@
+[
+  {
+    "hp": 200,
+    "atk": 20,
+    "def": 10,
+    "pursutied_distance": 1.5,
+    "near_distance": 5.0,
+    "far_distance": 10.0,
+    "slow_speed": 2.0,
+    "fast_speed": 4.0
+  },
+  {
+    "hp": 350,
+    "atk": 30,
+    "def": 25,
+    "pursutied_distance": 1.8,
+    "near_distance": 6.0,
+    "far_distance": 12.0,
+    "slow_speed": 1.5,
+    "fast_speed": 3.5
+  },
+  {
+    "hp": 150,
+    "atk": 40,
+    "def": 5,
+    "pursutied_distance": 4.0,
+    "near_distance": 8.0,
+    "far_distance": 15.0,
+    "slow_speed": 2.5,
+    "fast_speed": 2.5
+  }
+]

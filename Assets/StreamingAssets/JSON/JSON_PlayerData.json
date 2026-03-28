@@ -1,0 +1,9 @@
+{
+  "hp": 500,
+  "sp": 250,
+  "atk": 50,
+  "def": 50,
+  "speed": 5.0,
+  "skill_cooltime": 10.0,
+  "combo": 0
+}
