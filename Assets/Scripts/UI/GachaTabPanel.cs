@@ -38,9 +38,9 @@ public class GachaTabPanel : MonoBehaviour
     {
         if (GachaSystem.Instance == null) return;
         if (_pityText != null)
-            _pityText.text = $"천장 {GachaSystem.Instance.PullCount} / {GachaSystem.Instance.PityCeiling}";
+            _pityText.text = $"Pity {GachaSystem.Instance.PullCount} / {GachaSystem.Instance.PityCeiling}";
         if (_costText != null)
-            _costText.text = $"1회 {GachaSystem.Instance.PullCost}G  /  10회 {GachaSystem.Instance.PullCost * 10}G";
+            _costText.text = $"x1 {GachaSystem.Instance.PullCost}G  /  x10 {GachaSystem.Instance.PullCost * 10}G";
     }
 
     void OnPull()

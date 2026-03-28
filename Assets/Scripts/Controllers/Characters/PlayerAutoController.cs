@@ -52,7 +52,7 @@ public class PlayerAutoController : MonoBehaviour
         else
         {
             _nma.ResetPath();
-            _player.OnAttack();
+            _player.TryAttack();
         }
     }
 }

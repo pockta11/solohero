@@ -44,6 +44,19 @@ public class JsonWeaponData
     public int atk = 15;
 }
 
+[Serializable]
+public class JsonStageData
+{
+    public int   stages_per_chapter         = 5;
+    public int   base_kill_count            = 5;
+    public int   kill_increment_per_stage   = 2;
+    public int   kill_increment_per_chapter = 10;
+    public int   base_gold_reward           = 50;
+    public int   gold_increment_per_stage   = 20;
+    public int   gold_increment_per_chapter = 100;
+    public float spawn_interval             = 1.5f;
+}
+
 // ── JsonDataManager ───────────────────────────────────────────────────────
 
 /// <summary>
@@ -56,11 +69,13 @@ public class JsonDataManager : SingletonMB<JsonDataManager>
     public string FILEPATH_ENEMYDATA  { get; private set; }
     public string FILEPATH_SPAWNDATA  { get; private set; }
     public string FILEPATH_WEAPONDATA { get; private set; }
+    public string FILEPATH_STAGEDATA  { get; private set; }
 
     public JsonPlayerData  playerData  { get; private set; }
     public JsonEnemyData[] enemyData   { get; private set; }
     public JsonSpawnData   spawnData   { get; private set; }
     public JsonWeaponData  weaponData  { get; private set; }
+    public JsonStageData   stageData   { get; private set; }
 
     protected override void Awake()
     {
@@ -70,6 +85,7 @@ public class JsonDataManager : SingletonMB<JsonDataManager>
         FILEPATH_ENEMYDATA  = dir + "JSON_EnemyData.json";
         FILEPATH_SPAWNDATA  = dir + "JSON_SpawnData.json";
         FILEPATH_WEAPONDATA = dir + "JSON_WeaponData.json";
+        FILEPATH_STAGEDATA  = dir + "JSON_StageData.json";
         LoadAll();
     }
 
@@ -80,6 +96,7 @@ public class JsonDataManager : SingletonMB<JsonDataManager>
                          () => new[] { new JsonEnemyData() });
         spawnData  = Load<JsonSpawnData>(FILEPATH_SPAWNDATA);
         weaponData = Load<JsonWeaponData>(FILEPATH_WEAPONDATA);
+        stageData  = Load<JsonStageData>(FILEPATH_STAGEDATA);
     }
 
     T Load<T>(string path) where T : new()

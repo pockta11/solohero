@@ -1,66 +1,62 @@
-using System;
 using System.Collections;
-using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum PlayerState { IDLE, WALK, RUN, ATTACK, SKILL, HIT }
+public enum PlayerState { IDLE, WALK, RUN, ATTACK, SKILL, HIT, DEAD }
 
 /// <summary>
-/// 플레이어 이동/공격/상태. VirtualJoystick 입력 + 자동 모드 지원.
-/// NavMeshAgent는 PlayerAutoController에서 제어.
+/// 플레이어 이동/공격/스킬/피격/사망.
+/// 공격: Space(기본) / J(스킬) — OverlapSphere 범위 판정.
 /// </summary>
 [RequireComponent(typeof(PlayerAutoController))]
 public class PlayerController : MonoBehaviour
 {
-    // ── 스탯 ─────────────────────────────────────────────────────
+    // ── 스탯 ──────────────────────────────────────────────────────
     private JsonPlayerData _data;
     public  JsonPlayerData Data => _data;
 
-    private int   _curHp;
-    private int   _curSp;
-    private int   _combo;
+    private int _curHp;
+    private int _curSp;
+    private int _combo;
+    public  int CurHp => _curHp;
 
     // ── 이동 파라미터 ─────────────────────────────────────────────
     public readonly float MOVE_SPEED_RUN_PARAM  = 0.3f;
     public readonly float MOVE_SPEED_WALK_PARAM = 0.05f;
 
-    // ── UI ───────────────────────────────────────────────────────
+    // ── 공격 설정 ─────────────────────────────────────────────────
+    [Header("공격")]
+    [SerializeField] float _atkRange      = 1.8f;   // 기본 공격 범위
+    [SerializeField] float _atkCooldown   = 0.6f;   // 기본 공격 쿨타임
+    [SerializeField] float _skillRange    = 3.5f;   // 스킬 범위
+    [SerializeField] int   _skillDmgMult  = 3;      // 스킬 배율
+
+    private float _atkCoolRemain   = 0f;
+    private float _skillCoolRemain = 0f;
+    private bool  _isDead          = false;
+
+    // ── UI ────────────────────────────────────────────────────────
+    [Header("UI")]
     [SerializeField] VirtualJoystick _joystick;
-    [SerializeField] ObjectUI        _objectUI;
     [SerializeField] Button          _btnAuto;
-    [SerializeField] Image           _imgAutoOn;     // 자동 모드 표시 이미지
+    [SerializeField] Image           _imgAutoOn;
 
     // ── 애니메이션 ────────────────────────────────────────────────
-    private Animator     _animator;
-    private PlayerState  _state = PlayerState.IDLE;
-
-    private const string PARAM_MOVESPEED = "MoveSpeed";
-    private const string PARAM_ATTACK    = "Attack";
-
-    // ── 무기 ─────────────────────────────────────────────────────
-    [SerializeField] private Weapon _weapon;
+    private Animator    _animator;
+    private PlayerState _state = PlayerState.IDLE;
 
     // ── 자동 모드 ─────────────────────────────────────────────────
     private bool _isAuto = false;
     public  bool IsAuto  => _isAuto;
-
-    private float _skillCoolRemain = 0f;
 
     // ──────────────────────────────────────────────────────────────
 
     void Awake()
     {
         _animator = GetComponent<Animator>();
-        _data = JsonDataManager.Instance.playerData ?? new JsonPlayerData();
+        _data  = JsonDataManager.Instance.playerData ?? new JsonPlayerData();
         _curHp = _data.hp;
         _curSp = _data.sp;
-
-        if (_objectUI != null)
-        {
-            _objectUI.InitHp(_curHp);
-            _objectUI.InitSp(_curSp);
-        }
     }
 
     void Start()
@@ -68,39 +64,38 @@ public class PlayerController : MonoBehaviour
         if (_btnAuto != null)
             _btnAuto.onClick.AddListener(ToggleAuto);
 
-        if (_weapon != null)
-        {
-            _weapon.AddAtk(_data.atk);
-            _weapon.SetComboAddCallback(OnCombo);
-        }
+        HUDManager.Instance?.UpdateHP(_curHp, _data.hp);
     }
 
     void Update()
     {
-        if (_skillCoolRemain > 0f)
-            _skillCoolRemain -= Time.deltaTime;
+        if (_isDead) return;
+
+        _atkCoolRemain   -= Time.deltaTime;
+        _skillCoolRemain -= Time.deltaTime;
 
         if (!_isAuto)
-            HandleJoystickInput();
+        {
+            HandleMovement();
+            HandleAttackInput();
+        }
     }
 
     void FixedUpdate()
     {
-        // 자연 회복
-        AddHp(1);
+        if (_isDead) return;
+        AddHp(1);   // 자연 회복
         AddSp(2);
     }
 
-    // ── 조이스틱 입력 ─────────────────────────────────────────────
+    // ── 이동 ──────────────────────────────────────────────────────
 
-    void HandleJoystickInput()
+    void HandleMovement()
     {
-        // 조이스틱 입력
         float h = _joystick != null ? _joystick.Horizontal : 0f;
         float v = _joystick != null ? _joystick.Vertical   : 0f;
 
 #if UNITY_EDITOR
-        // 에디터 키보드 폴백 (WASD / 방향키)
         float kh = 0f, kv = 0f;
         if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))  kh = -1f;
         if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) kh =  1f;
@@ -110,140 +105,176 @@ public class PlayerController : MonoBehaviour
 #endif
 
         Vector3 moveVec = new Vector3(h, 0f, v);
-        float dist = moveVec.sqrMagnitude;
-        float speed = _data.speed * dist;
+        float   dist    = moveVec.sqrMagnitude;
 
         if (moveVec != Vector3.zero)
             transform.rotation = Quaternion.LookRotation(moveVec.normalized);
 
-        transform.position += moveVec.normalized * speed * Time.deltaTime;
-        SetAnimMoveSpeed(dist);
+        transform.position += moveVec.normalized * (_data.speed * dist) * Time.deltaTime;
+        UpdateMoveAnim(dist);
     }
 
-    // ── 애니메이션 ────────────────────────────────────────────────
+    // ── 공격 입력 (키보드) ────────────────────────────────────────
 
-    public void SetAnimMoveSpeed(float dist)
+    void HandleAttackInput()
     {
-        PlayerState next;
-        if      (dist > MOVE_SPEED_RUN_PARAM)  next = PlayerState.RUN;
-        else if (dist > MOVE_SPEED_WALK_PARAM) next = PlayerState.WALK;
-        else next = _isAuto ? PlayerState.ATTACK : PlayerState.IDLE;
-
-        SetAnimState(next, dist);
-    }
-
-    public void SetAnimState(PlayerState next, float speed = 0f)
-    {
-        if (next == _state) return;
-
-        switch (next)
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.J))
         {
-            case PlayerState.IDLE:
-            case PlayerState.WALK:
-            case PlayerState.RUN:
-                if (_animator != null)
-                    _animator.SetFloat(PARAM_MOVESPEED, speed);
-                break;
+            bool isSkill = Input.GetKeyDown(KeyCode.J);
+            if (isSkill) TrySkill();
+            else         TryAttack();
+        }
+#endif
+    }
 
-            case PlayerState.ATTACK:
-                if (_skillCoolRemain <= 0f)
-                    SetAnimState(PlayerState.SKILL);
-                else if (_animator != null)
-                    _animator.SetTrigger(PARAM_ATTACK);
-                break;
+    // ── 기본 공격 ─────────────────────────────────────────────────
 
-            case PlayerState.SKILL:
-                _skillCoolRemain = _data.skill_cooltime;
-                StartCoroutine(DoSkill());
-                break;
+    public void TryAttack()
+    {
+        if (_atkCoolRemain > 0f || _isDead) return;
+        _atkCoolRemain = _atkCooldown;
+        StartCoroutine(DoAttack());
+    }
 
-            case PlayerState.HIT:
-                if (_animator != null)
-                    _animator.SetTrigger("Hit");
-                break;
+    IEnumerator DoAttack()
+    {
+        _state = PlayerState.ATTACK;
+        if (_animator != null) _animator.SetTrigger("Attack");
+
+        yield return new WaitForSeconds(0.15f);  // 예비 딜레이
+
+        // 정면 범위 내 적 타격
+        var hits = Physics.OverlapSphere(
+            transform.position + transform.forward * (_atkRange * 0.5f),
+            _atkRange,
+            ~LayerMask.GetMask("Ignore Raycast"));
+
+        int dmg = Mathf.Max(1, _data.atk + UnityEngine.Random.Range(-3, 6));
+
+        foreach (var hit in hits)
+        {
+            var enemy = hit.GetComponentInParent<EnemyController>();
+            if (enemy != null)
+            {
+                enemy.ReceiveDamage(dmg);
+                _combo++;
+                HUDManager.Instance?.ShowCombo(_combo);
+                Camera.main?.GetComponent<CameraShake>()?.ShakeCam();
+            }
         }
 
-        _state = next;
+        yield return new WaitForSeconds(0.2f);
+        if (_state == PlayerState.ATTACK) _state = PlayerState.IDLE;
     }
 
-    // ── 공격 ──────────────────────────────────────────────────────
+    // ── 스킬 ──────────────────────────────────────────────────────
 
-    public void OnAttack()
+    public void TrySkill()
     {
-        SetAnimState(PlayerState.ATTACK);
-        if (_weapon != null) _weapon.UseWeapon();
+        if (_skillCoolRemain > 0f || _curSp < 50 || _isDead) return;
+        _skillCoolRemain = _data.skill_cooltime;
+        AddSp(-50);
+        StartCoroutine(DoSkill());
     }
 
     IEnumerator DoSkill()
     {
-        if (_animator != null)
+        _state = PlayerState.SKILL;
+        if (_animator != null) _animator.SetTrigger("Skill1");
+
+        yield return new WaitForSeconds(0.2f);
+
+        // 넓은 범위 전체 타격
+        var hits = Physics.OverlapSphere(transform.position, _skillRange,
+            ~LayerMask.GetMask("Ignore Raycast"));
+
+        int dmg = Mathf.Max(1, _data.atk * _skillDmgMult + UnityEngine.Random.Range(-5, 10));
+
+        foreach (var hit in hits)
         {
-            int randSkill = UnityEngine.Random.Range(1, 3);
-            _animator.SetTrigger("Skill" + randSkill);
-            if (_weapon != null) _weapon.UseWeapon(randSkill - 1);
+            var enemy = hit.GetComponentInParent<EnemyController>();
+            if (enemy != null)
+                enemy.ReceiveDamage(dmg);
         }
-        yield return new WaitForSeconds(_data.skill_cooltime);
-        _skillCoolRemain = 0f;
+
+        Camera.main?.GetComponent<CameraShake>()?.ShakeCam();
+
+        yield return new WaitForSeconds(0.3f);
+        if (_state == PlayerState.SKILL) _state = PlayerState.IDLE;
     }
 
     // ── 피격 ──────────────────────────────────────────────────────
 
+    public void TakeDamage(int rawDmg)
+    {
+        if (_isDead) return;
+
+        int dmg = Mathf.Max(1, rawDmg - Mathf.RoundToInt(_data.def * 0.2f)
+                               + UnityEngine.Random.Range(-3, 3));
+        AddHp(-dmg);
+
+        HUDManager.Instance?.ShowDamageFlash();
+        Camera.main?.GetComponent<CameraShake>()?.ShakeCam();
+
+        if (_animator != null) _animator.SetTrigger("Hit");
+    }
+
     void OnCollisionEnter(Collision col)
     {
         if (!col.transform.CompareTag("Enemy")) return;
-
         var enemy = col.transform.GetComponentInParent<EnemyController>();
-        if (enemy != null)
-            TakeDamage(enemy.Data.atk);
+        if (enemy != null) TakeDamage(enemy.Data.atk);
     }
 
-    public void TakeDamage(int rawDmg)
-    {
-        SetAnimState(PlayerState.HIT);
-
-        if (Camera.main != null)
-            Camera.main.GetComponent<CameraShake>()?.ShakeCam();
-
-        int dmg = rawDmg - Mathf.RoundToInt(_data.def * 0.2f);
-        dmg += UnityEngine.Random.Range(-5, 5);
-        dmg = Mathf.Max(1, dmg);
-
-        AddHp(-dmg);
-        if (_objectUI != null) _objectUI.SetDamageText(dmg);
-    }
-
-    // ── 회복 / 콤보 ───────────────────────────────────────────────
+    // ── HP / SP ───────────────────────────────────────────────────
 
     void AddHp(int value)
     {
+        if (_isDead) return;
         _curHp = Mathf.Clamp(_curHp + value, 0, _data.hp);
-        if (_objectUI != null) _objectUI.SetCurHp(_curHp);
+        HUDManager.Instance?.UpdateHP(_curHp, _data.hp);
+
+        if (_curHp <= 0) Die();
     }
 
     void AddSp(int value)
     {
         _curSp = Mathf.Clamp(_curSp + value, 0, _data.sp);
-        if (_objectUI != null) _objectUI.SetCurSp(_curSp);
+        HUDManager.Instance?.UpdateSP(_curSp, _data.sp);
     }
 
-    void OnCombo()
+    // ── 사망 ──────────────────────────────────────────────────────
+
+    void Die()
     {
-        _combo++;
-        if (_objectUI != null) _objectUI.SetComboText(_combo);
+        _isDead = true;
+        _state  = PlayerState.DEAD;
+        if (_animator != null) _animator.SetTrigger("Die");
+        HUDManager.Instance?.ShowDeadUI();
+        StartCoroutine(Revive(3f));
     }
 
-    // ── 장비 보너스 ───────────────────────────────────────────────
-
-    /// <summary>PlayerEquipmentApplier에서 호출. 장비 보너스를 현재 스탯에 추가.</summary>
-    public void ApplyEquipmentBonuses(int hpBonus, int atkBonus, int defBonus)
+    IEnumerator Revive(float delay)
     {
-        _data.hp  += hpBonus;
-        _data.atk += atkBonus;
-        _data.def += defBonus;
-        _curHp = _data.hp;
-        if (_objectUI != null) _objectUI.InitHp(_curHp);
-        if (_weapon   != null) _weapon.AddAtk(atkBonus);
+        yield return new WaitForSeconds(delay);
+        _isDead = false;
+        _curHp  = _data.hp / 2;
+        _state  = PlayerState.IDLE;
+        HUDManager.Instance?.UpdateHP(_curHp, _data.hp);
+        HUDManager.Instance?.HideDeadUI();
+        Debug.Log("[Player] 부활");
     }
+
+    // ── 애니메이션 ────────────────────────────────────────────────
+
+    void UpdateMoveAnim(float dist)
+    {
+        if (_animator == null) return;
+        _animator.SetFloat("MoveSpeed", dist);
+    }
+
+    public void SetAnimState(PlayerState next, float speed = 0f) { }  // AutoController용
 
     // ── 자동 모드 ─────────────────────────────────────────────────
 
@@ -252,4 +283,26 @@ public class PlayerController : MonoBehaviour
         _isAuto = !_isAuto;
         if (_imgAutoOn != null) _imgAutoOn.gameObject.SetActive(_isAuto);
     }
+
+    // ── 장비 보너스 ───────────────────────────────────────────────
+
+    public void ApplyEquipmentBonuses(int hpBonus, int atkBonus, int defBonus)
+    {
+        _data.hp  += hpBonus;
+        _data.atk += atkBonus;
+        _data.def += defBonus;
+        _curHp = _data.hp;
+        HUDManager.Instance?.UpdateHP(_curHp, _data.hp);
+    }
+
+    // ── 디버그 기즈모 ─────────────────────────────────────────────
+#if UNITY_EDITOR
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position + transform.forward * (_atkRange * 0.5f), _atkRange);
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, _skillRange > 0 ? _skillRange : 3.5f);
+    }
+#endif
 }

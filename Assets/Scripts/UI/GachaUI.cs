@@ -102,8 +102,8 @@ public class GachaUI : MonoBehaviour
     private void RefreshUI()
     {
         if (GachaSystem.Instance == null) return;
-        _pityText.text = $"천장 {GachaSystem.Instance.PullCount} / {GachaSystem.Instance.PityCeiling}";
+        _pityText.text = $"Pity {GachaSystem.Instance.PullCount} / {GachaSystem.Instance.PityCeiling}";
         if (_costText != null)
-            _costText.text = $"{GachaSystem.Instance.PullCost} 골드 / 1회";
+            _costText.text = $"{GachaSystem.Instance.PullCost}G / x1";
     }
 }

@@ -170,13 +170,21 @@ public class EnemyController : MonoBehaviour
         Camera.main?.GetComponent<CameraShake>()?.ShakeCam();
     }
 
+    /// <summary>PlayerController의 OverlapSphere 공격에서 호출.</summary>
+    public void ReceiveDamage(int rawDmg)
+    {
+        if (_curHp <= 0) return;
+        SetState(EnemyState.HIT);
+        TakeDamage(rawDmg);
+        StartCoroutine(HitFlash());
+    }
+
     void TakeDamage(int rawDmg)
     {
-        int dmg = rawDmg - Mathf.RoundToInt(_data.def * 0.2f);
-        dmg += UnityEngine.Random.Range(-5, 5);
-        dmg = Mathf.Max(1, dmg);
-
+        int dmg = Mathf.Max(1, rawDmg - Mathf.RoundToInt(_data.def * 0.2f)
+                               + UnityEngine.Random.Range(-3, 3));
         _curHp -= dmg;
+
         if (_objectUI != null)
         {
             _objectUI.SetCurHp(_curHp);
@@ -184,9 +192,27 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    IEnumerator HitFlash()
+    {
+        var renderer = GetComponentInChildren<Renderer>();
+        if (renderer == null) yield break;
+
+        var mat = renderer.material;
+        Color orig = mat.color;
+        mat.color = Color.white;
+        yield return new WaitForSeconds(0.1f);
+        if (mat != null) mat.color = orig;
+
+        // HIT 상태 해제
+        yield return new WaitForSeconds(0.2f);
+        if (_state == EnemyState.HIT) _state = EnemyState.IDLE;
+    }
+
     void CheckDeath()
     {
         if (_curHp > 0) return;
+
+        StageManager.Instance?.OnEnemyKilled();
 
         if (_objectUI != null) _objectUI.DestroyUI();
 
