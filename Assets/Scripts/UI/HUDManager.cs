@@ -20,8 +20,12 @@ public class HUDManager : MonoBehaviour
     [SerializeField] TextMeshProUGUI   _goldTMP;
     [SerializeField] TextMeshProUGUI   _stageTMP;
 
-    [Header("킬 카운터")]
+    [Header("플레이어 정보 카드")]
+    [SerializeField] PlayerInfoPanelUI _playerInfoPanel;
+
+    [Header("킬 카운터 / 진행 슬라이더")]
     [SerializeField] TextMeshProUGUI   _killTMP;
+    [SerializeField] Slider            _killSlider;
 
     [Header("콤보")]
     [SerializeField] TextMeshProUGUI   _comboTMP;
@@ -73,9 +77,11 @@ public class HUDManager : MonoBehaviour
 
     public void RefreshGold()
     {
-        if (_goldTMP == null) return;
         var pd = GameManager.Instance?.PlayerData;
-        _goldTMP.text = pd != null ? $"{pd.gold:N0} G" : "0 G";
+        long gold = pd?.gold ?? 0;
+        if (_goldTMP != null)
+            _goldTMP.text = $"{gold:N0} G";
+        _playerInfoPanel?.RefreshGold();
     }
 
     public void SetStage(int chapter, int stage)
@@ -87,7 +93,8 @@ public class HUDManager : MonoBehaviour
 
     public void SetKillCount(int cur, int max)
     {
-        if (_killTMP != null) _killTMP.text = $"{cur} / {max}";
+        if (_killTMP    != null) _killTMP.text   = $"{cur} / {max}";
+        if (_killSlider != null) _killSlider.value = max > 0 ? (float)cur / max : 0f;
     }
 
     // ── 콤보 ──────────────────────────────────────────────────────

@@ -17,7 +17,6 @@ public class SpawnManager : SingletonMB<SpawnManager>
 
     private GameObject _pool;
     private float      _spawnInterval;
-    private bool       _spawning;
 
     // ──────────────────────────────────────────────────────────────
 
@@ -44,7 +43,6 @@ public class SpawnManager : SingletonMB<SpawnManager>
 
     IEnumerator SpawnSequence(int totalCount)
     {
-        _spawning = true;
         int spawned = 0;
 
         while (spawned < totalCount)
@@ -53,7 +51,6 @@ public class SpawnManager : SingletonMB<SpawnManager>
             if (TrySpawnOne()) spawned++;
         }
 
-        _spawning = false;
     }
 
     bool TrySpawnOne()

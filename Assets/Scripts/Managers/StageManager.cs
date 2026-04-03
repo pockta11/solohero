@@ -23,7 +23,8 @@ public class StageManager : SingletonMB<StageManager>
             GameManager.Instance.InitDev();
 #endif
         int startChapter = GameManager.Instance?.PlayerData?.chapter ?? 1;
-        LoadStage(startChapter, 1);
+        int startStage   = GameManager.Instance?.PlayerData?.stageNumber ?? 1;
+        LoadStage(startChapter, startStage);
     }
 
     // ── 스테이지 로드 ─────────────────────────────────────────────
@@ -39,6 +40,15 @@ public class StageManager : SingletonMB<StageManager>
                      + (stage   - 1) * cfg.kill_increment_per_stage;
         _killsCurrent = 0;
         _stageActive  = true;
+
+        // 진행 상황 즉시 PlayerData에 반영 (OnApplicationPause 저장 시 유실 방지)
+        var pd = GameManager.Instance?.PlayerData;
+        if (pd != null)
+        {
+            pd.chapter     = chapter;
+            pd.stageNumber = stage;
+            pd.stageKillsCurrent = 0;
+        }
 
         HUDManager.Instance?.SetStage(chapter, stage);
         HUDManager.Instance?.SetKillCount(0, _killsNeeded);
@@ -57,6 +67,10 @@ public class StageManager : SingletonMB<StageManager>
         _killsCurrent++;
         HUDManager.Instance?.SetKillCount(_killsCurrent, _killsNeeded);
 
+        // 중간 진행 복원용 (저장은 종료/클리어 시점에 디바운스로 처리)
+        var pd = GameManager.Instance?.PlayerData;
+        if (pd != null) pd.stageKillsCurrent = _killsCurrent;
+
         if (_killsCurrent >= _killsNeeded)
             StartCoroutine(StageClear());
     }
@@ -73,13 +87,11 @@ public class StageManager : SingletonMB<StageManager>
                   + (Stage   - 1) * cfg.gold_increment_per_stage;
 
         GameManager.Instance?.AddGold(gold);
-        HUDManager.Instance?.RefreshGold();
-
-        if (GameManager.Instance?.PlayerData != null)
-            GameManager.Instance.PlayerData.chapter = Chapter;
-
         HUDManager.Instance?.ShowStageClear(gold);
         Debug.Log($"[StageManager] Ch.{Chapter}-{Stage} 클리어! +{gold}G");
+
+        // 보상 반영 직후 저장 요청 (중복 호출되어도 SaveManager가 마지막 상태로 정리)
+        SaveManager.Instance?.RequestSave(GameManager.Instance?.PlayerData);
 
         yield return new WaitForSeconds(3f);
 
@@ -95,5 +107,8 @@ public class StageManager : SingletonMB<StageManager>
         }
 
         LoadStage(nextChapter, nextStage);
+
+        // 다음 스테이지 반영 후에도 저장
+        SaveManager.Instance?.RequestSave(GameManager.Instance?.PlayerData);
     }
 }

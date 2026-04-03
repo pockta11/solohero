@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.UI;
 
 public enum PlayerState { IDLE, WALK, RUN, ATTACK, SKILL, HIT, DEAD }
@@ -9,11 +10,18 @@ public enum PlayerState { IDLE, WALK, RUN, ATTACK, SKILL, HIT, DEAD }
 /// 공격: Space(기본) / J(스킬) — OverlapSphere 범위 판정.
 /// </summary>
 [RequireComponent(typeof(PlayerAutoController))]
+[RequireComponent(typeof(NavMeshAgent))]
 public class PlayerController : MonoBehaviour
 {
     // ── 스탯 ──────────────────────────────────────────────────────
     private JsonPlayerData _data;
     public  JsonPlayerData Data => _data;
+
+    // JSON에서 읽은 기본값 (불변) — 장비/업그레이드 보너스 계산 기준
+    private int   _baseHp;
+    private int   _baseAtk;
+    private int   _baseDef;
+    private float _baseSpd;
 
     private int _curHp;
     private int _curSp;
@@ -35,6 +43,10 @@ public class PlayerController : MonoBehaviour
     private float _skillCoolRemain = 0f;
     private bool  _isDead          = false;
 
+    // ── 기본 스탯 소스 ────────────────────────────────────────────
+    [Header("기본 스탯 (비워두면 JSON 사용)")]
+    [SerializeField] PlayerStatsSO _statsSO;
+
     // ── UI ────────────────────────────────────────────────────────
     [Header("UI")]
     [SerializeField] VirtualJoystick _joystick;
@@ -49,14 +61,35 @@ public class PlayerController : MonoBehaviour
     private bool _isAuto = false;
     public  bool IsAuto  => _isAuto;
 
+    private NavMeshAgent _nma;
+
     // ──────────────────────────────────────────────────────────────
 
     void Awake()
     {
         _animator = GetComponent<Animator>();
-        _data  = JsonDataManager.Instance.playerData ?? new JsonPlayerData();
-        _curHp = _data.hp;
-        _curSp = _data.sp;
+        _data    = _statsSO != null
+                   ? _statsSO.ToJsonPlayerData()
+                   : JsonDataManager.Instance?.playerData ?? new JsonPlayerData();
+        _baseHp  = _data.hp;
+        _baseAtk = _data.atk;
+        _baseDef = _data.def;
+        _baseSpd = _data.speed;
+        _curHp   = _baseHp;
+        _curSp   = _data.sp;
+
+        _nma                = GetComponent<NavMeshAgent>();
+        _nma.updateRotation = false;  // 회전은 PlayerController가 직접 제어
+        _nma.updateUpAxis   = false;
+        _nma.enabled        = false;  // 수동 모드 기본값 — 자동 모드 ON 시에만 활성화
+
+        // 적 NavMeshAgent가 플레이어 콜라이더와 겹칠 때 물리 분리력으로 밀리는 현상 방지.
+        // transform.position으로 이동하므로 X/Z 물리 이동을 완전 차단.
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null)
+            rb.constraints = RigidbodyConstraints.FreezePositionX |
+                             RigidbodyConstraints.FreezePositionZ |
+                             RigidbodyConstraints.FreezeRotation;
     }
 
     void Start()
@@ -110,7 +143,9 @@ public class PlayerController : MonoBehaviour
         if (moveVec != Vector3.zero)
             transform.rotation = Quaternion.LookRotation(moveVec.normalized);
 
-        transform.position += moveVec.normalized * (_data.speed * dist) * Time.deltaTime;
+        if (dist > 0.01f)
+            transform.position += moveVec.normalized * (_data.speed * dist) * Time.deltaTime;
+
         UpdateMoveAnim(dist);
     }
 
@@ -278,20 +313,29 @@ public class PlayerController : MonoBehaviour
 
     // ── 자동 모드 ─────────────────────────────────────────────────
 
-    void ToggleAuto()
+    void ToggleAuto() => SetAuto(!_isAuto);
+
+    public void SetAuto(bool on)
     {
-        _isAuto = !_isAuto;
-        if (_imgAutoOn != null) _imgAutoOn.gameObject.SetActive(_isAuto);
+        _isAuto      = on;
+        _nma.enabled = on;
+        if (_imgAutoOn != null) _imgAutoOn.gameObject.SetActive(on);
     }
 
     // ── 장비 보너스 ───────────────────────────────────────────────
 
-    public void ApplyEquipmentBonuses(int hpBonus, int atkBonus, int defBonus)
+    /// <summary>
+    /// 장비+업그레이드 보너스를 한꺼번에 적용. 기본 스탯 기준으로 절대값 재계산.
+    /// 중복 호출해도 동일 결과 보장.
+    /// </summary>
+    public void ApplyEquipmentBonuses(int hpBonus, int atkBonus, int defBonus,
+                                      float spdBonus = 0f)
     {
-        _data.hp  += hpBonus;
-        _data.atk += atkBonus;
-        _data.def += defBonus;
-        _curHp = _data.hp;
+        _data.hp    = _baseHp  + hpBonus;
+        _data.atk   = _baseAtk + atkBonus;
+        _data.def   = _baseDef + defBonus;
+        _data.speed = _baseSpd + spdBonus;
+        _curHp = Mathf.Min(_curHp, _data.hp);
         HUDManager.Instance?.UpdateHP(_curHp, _data.hp);
     }
 

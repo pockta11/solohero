@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 장비 변경 시 PlayerController의 스탯에 보너스 합산.
+/// 장비·업그레이드 변경 시 PlayerController 스탯 재계산.
 /// </summary>
 public class PlayerEquipmentApplier : MonoBehaviour
 {
@@ -10,11 +10,15 @@ public class PlayerEquipmentApplier : MonoBehaviour
     public static void ApplyNow()
     {
         if (GameManager.Instance?.PlayerData == null) return;
+        var pd = GameManager.Instance.PlayerData;
 
-        var (hp, atk, def) = PlayerEquipmentService.SumEquippedBonuses(GameManager.Instance.PlayerData);
+        // 장비 보너스
+        var (eqHp, eqAtk, eqDef) = PlayerEquipmentService.SumEquippedBonuses(pd);
+
+        // 업그레이드 보너스
+        var (upHp, upAtk, upDef, upSpd) = UpgradeService.SumUpgradeBonuses(pd);
 
         var player = FindObjectOfType<PlayerController>();
-        if (player != null)
-            player.ApplyEquipmentBonuses(hp, atk, def);
+        player?.ApplyEquipmentBonuses(eqHp + upHp, eqAtk + upAtk, eqDef + upDef, upSpd);
     }
 }

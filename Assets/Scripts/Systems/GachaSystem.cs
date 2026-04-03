@@ -59,41 +59,47 @@ public class GachaSystem : MonoBehaviour
             return null;
         }
 
-        // 골드 체크 (PlayerData 없으면 건너뜀)
-        var pd = GameManager.Instance?.PlayerData;
-        if (pd != null)
-        {
-            if (pd.gold < _costPerPull)
-            {
-                Debug.Log("[Gacha] 골드 부족");
-                return null;
-            }
-            pd.gold -= _costPerPull;
-            HUDManager.Instance?.RefreshGold();
-        }
-
-        _pullCount++;
-        SyncPityToSave();
-
         // 천장 도달 시 최고등급 보장
         EquipmentData result;
-        if (_pullCount >= _pityCeiling)
+        if (_pullCount + 1 >= _pityCeiling)
         {
             result = GetHighestGrade();
-            _pullCount = 0;
-            SyncPityToSave();
         }
         else
         {
             result = DrawWithGaussian();
         }
 
-        if (result == null) return null;
+        if (result == null)
+        {
+            Debug.LogWarning("[Gacha] 뽑기 결과가 null 입니다.");
+            return null;
+        }
+
+        // 골드 체크
+        var pd = GameManager.Instance?.PlayerData;
+        if (pd != null && pd.gold < _costPerPull)
+        {
+            Debug.Log("[Gacha] 골드 부족");
+            return null;
+        }
+
+        // 결제/카운트 확정
+        if (pd != null)
+        {
+            pd.gold -= _costPerPull;
+            HUDManager.Instance?.RefreshGold();
+        }
+
+        _pullCount++;
+        if (_pullCount >= _pityCeiling) _pullCount = 0;
+        SyncPityToSave();
 
         Debug.Log($"[Gacha] {result.equipmentName} ({result.grade}) — pity: {_pullCount}/{_pityCeiling}");
 
         PlayerEquipmentService.OnGachaResult(result);
         PlayerEquipmentApplier.ApplyNow();
+        SaveManager.Instance?.RequestSave(pd);
 
         return result;
     }

@@ -1,50 +1,141 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 버섭커 스타일 하단 탭: 장비 / 업그레이드 / 뽑기.
-/// 활성 탭은 밝은 보라, 비활성은 어두운 보라로 강조 표시.
+/// Bottom 5-tab navigation bar (SoulStrike style, 1920x1080).
+/// Tabs: Equipment | Growth | [Auto Center] | Summon | Inventory
 /// </summary>
 public class MainBottomNav : MonoBehaviour
 {
-    [SerializeField] GameObject _equipmentPanel;
-    [SerializeField] GameObject _upgradePanel;
-    [SerializeField] GameObject _gachaPanel;
+    [Header("Bottom Tab Buttons")]
+    [SerializeField] Button _tabEquip;
+    [SerializeField] Button _tabGrowth;
+    [SerializeField] Button _tabAuto;       // center — auto-battle toggle, no panel
+    [SerializeField] Button _tabSummon;
+    [SerializeField] Button _tabInven;
 
-    [SerializeField] Button _tabEquipment;
-    [SerializeField] Button _tabUpgrade;
-    [SerializeField] Button _tabGacha;
+    [Header("Panel Close Buttons")]
+    [SerializeField] Button _closeEquipBtn;
+    [SerializeField] Button _closeGrowthBtn;
+    [SerializeField] Button _closeSummonBtn;
+    [SerializeField] Button _closeInvenBtn;
 
-    static readonly Color TabActive   = new(0.50f, 0.32f, 0.80f, 1f);
-    static readonly Color TabInactive = new(0.22f, 0.18f, 0.35f, 1f);
+    [Header("Slide Panels (RectTransform)")]
+    [SerializeField] RectTransform _equipPanel;
+    [SerializeField] RectTransform _growthPanel;
+    [SerializeField] RectTransform _summonPanel;
+    [SerializeField] RectTransform _invenPanel;
+
+    [Header("Animation")]
+    [SerializeField] float _panelH   = 540f;
+    [SerializeField] float _animTime = 0.22f;
+
+    [Header("Tab Colors")]
+    [SerializeField] Color _activeColor   = new Color(0.60f, 0.38f, 1.00f);
+    [SerializeField] Color _inactiveColor = new Color(0.14f, 0.13f, 0.22f);
+    [SerializeField] Color _autoOnColor   = new Color(0.20f, 0.75f, 0.40f);
+
+    private RectTransform _openPanel;
+    private Button        _activeTab;
+    private bool          _autoOn;
 
     void Start()
     {
-        _tabEquipment?.onClick.AddListener(() => Show(0));
-        _tabUpgrade?.onClick.AddListener(() => Show(1));
-        _tabGacha?.onClick.AddListener(() => Show(2));
-        Show(0);
+        _tabEquip?.onClick.AddListener(  () => Toggle(_equipPanel,  _tabEquip));
+        _tabGrowth?.onClick.AddListener( () => Toggle(_growthPanel, _tabGrowth));
+        _tabAuto?.onClick.AddListener(   OnAutoToggle);
+        _tabSummon?.onClick.AddListener( () => Toggle(_summonPanel, _tabSummon));
+        _tabInven?.onClick.AddListener(  () => Toggle(_invenPanel,  _tabInven));
+
+        _closeEquipBtn?.onClick.AddListener( CloseAll);
+        _closeGrowthBtn?.onClick.AddListener(CloseAll);
+        _closeSummonBtn?.onClick.AddListener(CloseAll);
+        _closeInvenBtn?.onClick.AddListener( CloseAll);
+
+        HideNow(_equipPanel);
+        HideNow(_growthPanel);
+        HideNow(_summonPanel);
+        HideNow(_invenPanel);
     }
 
-    void Show(int index)
+    // ── Public shortcuts (called by TopRightMenuUI etc.) ──────────
+
+    public void OpenEquip()  => Toggle(_equipPanel,  _tabEquip);
+    public void OpenGrowth() => Toggle(_growthPanel, _tabGrowth);
+    public void OpenSummon() => Toggle(_summonPanel, _tabSummon);
+    public void OpenInven()  => Toggle(_invenPanel,  _tabInven);
+
+    // Legacy alias (TopRightMenuUI may call this)
+    public void OpenGacha()  => OpenSummon();
+
+    // ── Panel toggle ──────────────────────────────────────────────
+
+    public void Toggle(RectTransform panel, Button tab = null)
     {
-        if (_equipmentPanel != null) _equipmentPanel.SetActive(index == 0);
-        if (_upgradePanel   != null) _upgradePanel.SetActive(index == 1);
-        if (_gachaPanel     != null) _gachaPanel.SetActive(index == 2);
+        if (_openPanel == panel) { CloseAll(); return; }
 
-        SetTabColor(_tabEquipment, index == 0);
-        SetTabColor(_tabUpgrade,   index == 1);
-        SetTabColor(_tabGacha,     index == 2);
+        if (_openPanel != null) ClosePanel(_openPanel);
+        SetTabActive(_activeTab, false);
 
-        if (index == 0 && _equipmentPanel != null &&
-            _equipmentPanel.TryGetComponent<EquipmentPanelUI>(out var ep))
-            ep.Refresh();
+        _openPanel = panel;
+        _activeTab = tab;
+        SetTabActive(tab, true);
+        OpenPanel(panel);
     }
 
-    static void SetTabColor(Button btn, bool active)
+    public void CloseAll()
     {
-        if (btn == null) return;
-        var img = btn.GetComponent<Image>();
-        if (img != null) img.color = active ? TabActive : TabInactive;
+        if (_openPanel == null) return;
+        ClosePanel(_openPanel);
+        SetTabActive(_activeTab, false);
+        _openPanel = null;
+        _activeTab = null;
+    }
+
+    // ── Auto-battle toggle ────────────────────────────────────────
+
+    void OnAutoToggle()
+    {
+        _autoOn = !_autoOn;
+        var autoCtrl = FindObjectOfType<PlayerAutoController>();
+        if (autoCtrl != null) autoCtrl.SetAuto(_autoOn);
+
+        var img = _tabAuto?.GetComponent<Image>();
+        if (img != null) img.color = _autoOn ? _autoOnColor : _inactiveColor;
+    }
+
+    // ── Animation ────────────────────────────────────────────────
+
+    void OpenPanel(RectTransform p)
+    {
+        p.gameObject.SetActive(true);
+        p.DOKill();
+        p.DOAnchorPosY(0f, _animTime).SetEase(Ease.OutCubic);
+
+        if (p.TryGetComponent<EquipmentPanelUI>(out var ep)) ep.Refresh();
+        if (p.TryGetComponent<UpgradePanelUI> (out var up)) up.Refresh();
+    }
+
+    void ClosePanel(RectTransform p)
+    {
+        p.DOKill();
+        p.DOAnchorPosY(-_panelH, _animTime)
+         .SetEase(Ease.InCubic)
+         .OnComplete(() => p.gameObject.SetActive(false));
+    }
+
+    void HideNow(RectTransform p)
+    {
+        if (p == null) return;
+        p.anchoredPosition = new Vector2(0f, -_panelH);
+        p.gameObject.SetActive(false);
+    }
+
+    void SetTabActive(Button tab, bool active)
+    {
+        if (tab == null || tab == _tabAuto) return;
+        var img = tab.GetComponent<Image>();
+        if (img != null) img.color = active ? _activeColor : _inactiveColor;
     }
 }

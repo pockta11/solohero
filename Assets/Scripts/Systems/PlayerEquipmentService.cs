@@ -7,6 +7,7 @@ using UnityEngine;
 public static class PlayerEquipmentService
 {
     public static event Action EquipmentChanged;
+    public static void NotifyEquipmentChanged() => EquipmentChanged?.Invoke();
 
     public static string GetEquippedId(PlayerData pd, EquipmentSlot slot)
     {

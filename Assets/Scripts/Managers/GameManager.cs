@@ -2,6 +2,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using Firebase;
 using Firebase.Auth;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -13,10 +14,18 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    [Header("플레이어 기본 스탯")]
+    [SerializeField] PlayerStatsSO _playerStatsSO;
+    public PlayerStatsSO PlayerStatsSO => _playerStatsSO;
+
     public PlayerData PlayerData { get; private set; }
 
     /// <summary>오프라인 보상 결과. UI 팝업에서 읽고 표시 후 null로 초기화.</summary>
     public long PendingOfflineGold { get; private set; }
+
+    [Header("자동 저장")]
+    [SerializeField] private float _autoSaveIntervalSeconds = 60f;
+    private bool _autoSaveLoopStarted;
 
     void Awake()
     {
@@ -64,13 +73,20 @@ public class GameManager : MonoBehaviour
         PlayerData = await SaveManager.Instance.LoadAsync();
         if (PlayerData.chapter < 1) PlayerData.chapter = 1;
 
-        // 4. 오프라인 보상 계산 (UI 팝업은 GameScene에서 PendingOfflineGold 확인 후 표시)
-        PendingOfflineGold = OfflineRewardSystem.Calculate(PlayerData.lastQuitTimeUtc);
+        // 4. 오프라인 보상 계산 (UI 팝업에서 수령 시 골드 반영 + 저장)
+        float goldPerSec = _playerStatsSO != null
+                           ? _playerStatsSO.goldPerSecond
+                           : OfflineRewardSystem.BaseGoldPerSecond;
+        PendingOfflineGold = OfflineRewardSystem.Calculate(PlayerData.lastQuitTimeUtc, goldPerSec);
         if (PendingOfflineGold > 0)
-        {
-            PlayerData.gold += PendingOfflineGold;
-            Debug.Log($"[GameManager] 오프라인 보상 +{PendingOfflineGold} 골드 " +
+            Debug.Log($"[GameManager] 오프라인 보상 준비 +{PendingOfflineGold} 골드 " +
                       $"({OfflineRewardSystem.GetElapsedSeconds(PlayerData.lastQuitTimeUtc)}초)");
+
+        // 장시간 플레이/방치 대비 주기 자동 저장
+        if (!_autoSaveLoopStarted)
+        {
+            _autoSaveLoopStarted = true;
+            AutoSaveLoop(this.GetCancellationTokenOnDestroy()).Forget();
         }
 
         // 5. GameScene으로 전환
@@ -101,11 +117,11 @@ public class GameManager : MonoBehaviour
     }
 #endif
 
-    /// <summary>인게임 골드 변경 시 이 메서드를 통해 수정 (추후 이벤트 추가).</summary>
+    /// <summary>인게임 골드 변경. HUD 자동 갱신.</summary>
     public void AddGold(long amount)
     {
         PlayerData.gold += amount;
-        // TODO: onGoldChanged 이벤트 → HUD 업데이트
+        HUDManager.Instance?.RefreshGold();
     }
 
     // ── 저장 타이밍 ──────────────────────────────────────────
@@ -122,6 +138,19 @@ public class GameManager : MonoBehaviour
         if (PlayerData == null) return;
         if (SaveManager.Instance == null) return;
         PlayerData.lastQuitTimeUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        await SaveManager.Instance.SaveAsync(PlayerData);
+        await SaveManager.Instance.FlushAsync(PlayerData);
+    }
+
+    private async UniTaskVoid AutoSaveLoop(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            int delayMs = Mathf.Max(5, Mathf.RoundToInt(_autoSaveIntervalSeconds * 1000f));
+            await UniTask.Delay(delayMs, cancellationToken: ct);
+
+            if (ct.IsCancellationRequested) break;
+            if (PlayerData == null) continue;
+            SaveManager.Instance?.RequestSave(PlayerData);
+        }
     }
 }

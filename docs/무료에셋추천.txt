@@ -1,0 +1,72 @@
+SoloHero 프로토타입 화면 기준 — 무료 에셋 추천 목록
+(Unity Asset Store 위주 + 일부 외부 CC0 등)
+생성일: 2026-04-03
+
+================================================================================
+스프라이트 추천 (UI, 아이콘)
+================================================================================
+- Kenney UI Pack (CC0, 버튼/패널/슬라이더/폰트 포함)
+  https://kenney.nl/assets/ui-pack
+
+- Modern RPG - Free icons pack (에셋스토어 무료, 메뉴 아이콘용)
+  https://assetstore.unity.com/packages/2d/gui/icons/modern-rpg-free-icons-pack-264706
+
+- FREE - RPG Fantasy Spell Icons (스킬/매직 아이콘)
+  https://assetstore.unity.com/packages/2d/gui/icons/free-rpg-fantasy-spell-icons-200511
+
+- Free RPG Icons Pack (추가 아이콘; 용량 큼, 제작사 설명 확인 권장)
+  https://assetstore.unity.com/packages/2d/gui/icons/free-rpg-icons-pack-267155
+
+================================================================================
+3D 캐릭터 / 몬스터 (캡슐 대체)
+================================================================================
+- FREE Low Poly Human - RPG Character (플레이어 베이스, URP 호환)
+  https://assetstore.unity.com/packages/slug/free-low-poly-human-rpg-character-219979
+
+- Monster Low Poly (몬스터, 로우폴리)
+  https://assetstore.unity.com/packages/3d/characters/humanoids/monster-low-poly-280220
+
+- 애니메이션: Mixamo (무료 리깅/모션, FBX)
+  https://www.mixamo.com/
+
+================================================================================
+환경 / 던전 / 소품
+================================================================================
+- Lite Dungeon Pack - Low Poly 3D Art by Gridness (던전 구성)
+  https://assetstore.unity.com/packages/3d/environments/dungeons/lite-dungeon-pack-low-poly-3d-art-by-gridness-242692
+
+- Low Poly Atmospheric Locations Pack (야외/배경 범용)
+  https://assetstore.unity.com/packages/3d/environments/landscapes/low-poly-atmospheric-locations-pack-278928
+
+- FREE Low Poly RPG Weapons Demo (무기 모델 소스)
+  https://assetstore.unity.com/packages/3d/props/weapons/free-low-poly-rpg-weapons-demo-170217
+
+================================================================================
+VFX (타격감)
+================================================================================
+- Slash Effects FREE (베기/히트 파티클, URP)
+  https://assetstore.unity.com/packages/vfx/particles/spells/slash-effects-free-295209
+
+- Free Slash VFX (대안, URP)
+  https://assetstore.unity.com/packages/vfx/shaders/free-slash-vfx-309498
+
+================================================================================
+모바일 조이스틱 / 입력 UI
+================================================================================
+- Joystick Pack (Fenerax Studios)
+  https://assetstore.unity.com/packages/tools/input-management/joystick-pack-107631
+
+- Virtual Joystick Pack (TTerresquall)
+  https://assetstore.unity.com/packages/tools/utilities/virtual-joystick-pack-261317
+
+================================================================================
+빠른 조합 제안
+================================================================================
+- 로우폴리 일관: FREE Low Poly Human + Lite Dungeon Pack + Slash Effects FREE + Kenney UI Pack
+- UI만 우선: Kenney UI Pack + Modern RPG Free icons
+
+================================================================================
+참고
+================================================================================
+- Unity 프로젝트는 URP 사용(CLAUDE.md 기준). 에셋 페이지에서 Built-in 전용인지 URP 지원 여부 확인 후 임포트할 것.
+- Asset Store EULA / Kenney CC0 등 라이선스는 배포 전 각 패키지 설명에서 재확인.

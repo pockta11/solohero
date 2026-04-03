@@ -41,16 +41,54 @@ public class OfflineRewardPopup : MonoBehaviour
 
     private void Claim()
     {
+        var gm = GameManager.Instance;
+        if (gm?.PlayerData != null && gm.PendingOfflineGold > 0)
+        {
+            gm.PlayerData.gold += gm.PendingOfflineGold;
+            HUDManager.Instance?.RefreshGold();
+            SaveManager.Instance?.RequestSave(gm.PlayerData);
+        }
         GameManager.Instance.ConsumeOfflineGold();
         Hide();
     }
 
     private void ClaimDouble()
     {
-        // TODO: AdMob 광고 시청 후 2배 지급
-        GameManager.Instance.PlayerData.gold += GameManager.Instance.PendingOfflineGold;
-        GameManager.Instance.ConsumeOfflineGold();
-        Debug.Log("[OfflineReward] 2배 지급 (광고 연결 예정)");
+        // Disable buttons immediately to prevent double-tap while ad loads.
+        _claimButton.interactable  = false;
+        _doubleButton.interactable = false;
+
+        if (AdMobService.Instance != null)
+            AdMobService.Instance.ShowRewardedAd(OnRewardEarned);
+        else
+            FallbackDouble();
+    }
+
+    private void OnRewardEarned()
+    {
+        var gm = GameManager.Instance;
+        if (gm?.PlayerData != null && gm.PendingOfflineGold > 0)
+        {
+            gm.PlayerData.gold += gm.PendingOfflineGold * 2;
+            HUDManager.Instance?.RefreshGold();
+            SaveManager.Instance?.RequestSave(gm.PlayerData);
+        }
+        gm?.ConsumeOfflineGold();
+        Debug.Log("[OfflineReward] 2x reward granted after ad.");
+        Hide();
+    }
+
+    // Called when AdMobService is absent (shouldn't happen in production).
+    private void FallbackDouble()
+    {
+        var gm = GameManager.Instance;
+        if (gm?.PlayerData != null && gm.PendingOfflineGold > 0)
+        {
+            gm.PlayerData.gold += gm.PendingOfflineGold * 2;
+            HUDManager.Instance?.RefreshGold();
+            SaveManager.Instance?.RequestSave(gm.PlayerData);
+        }
+        gm?.ConsumeOfflineGold();
         Hide();
     }
 
@@ -64,8 +102,8 @@ public class OfflineRewardPopup : MonoBehaviour
     private static string FormatTime(long seconds)
     {
         var ts = System.TimeSpan.FromSeconds(seconds);
-        if (ts.TotalHours >= 1) return $"{(int)ts.TotalHours}시간 {ts.Minutes}분";
-        return $"{ts.Minutes}분 {ts.Seconds}초";
+        if (ts.TotalHours >= 1) return $"{(int)ts.TotalHours}h {ts.Minutes}m";
+        return $"{ts.Minutes}m {ts.Seconds}s";
     }
 
     private static string FormatGold(long gold)

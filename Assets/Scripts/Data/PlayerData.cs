@@ -27,4 +27,16 @@ public class PlayerData
     /// <summary>인벤토리: equipment id를 | 로 이어붙임.</summary>
     public string ownedEquipmentCsv = "";
 
+    // ── 스테이지 진행 저장 ──────────────────────────────────────
+    /// <summary>마지막으로 진행 중이던 스테이지 번호 (1~stages_per_chapter).</summary>
+    public int stageNumber = 1;
+
+    // ── 능력치 업그레이드 레벨 ──────────────────────────────────
+    public int upgradeHpLevel;
+    public int upgradeAtkLevel;
+    public int upgradeDefLevel;
+    public int upgradeSpdLevel;
+
+    // ── 스키마 버전 (마이그레이션 대비) ──────────────────────────
+    public int dataVersion = 1;
 }

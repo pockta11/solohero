@@ -19,8 +19,16 @@ public class PlayerAutoController : MonoBehaviour
 
     void Update()
     {
-        if (!_player.IsAuto) return;
+        if (!_player.IsAuto || !_nma.enabled) return;
         TrackNearest();
+    }
+
+    public void SetAuto(bool on)
+    {
+        if (_player == null) return;
+        _player.SetAuto(on);
+        if (!on && _nma != null && _nma.enabled)
+            _nma.ResetPath();
     }
 
     void TrackNearest()
