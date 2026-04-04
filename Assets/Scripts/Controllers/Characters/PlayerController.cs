@@ -67,7 +67,14 @@ public class PlayerController : MonoBehaviour
 
     void Awake()
     {
-        _animator = GetComponent<Animator>();
+        // Prefer child animator that has an avatar (the actual character rig).
+        // Root animator has no avatar so animations would not play visually.
+        _animator = null;
+        foreach (var anim in GetComponentsInChildren<Animator>())
+        {
+            if (anim.avatar != null) { _animator = anim; break; }
+        }
+        if (_animator == null) _animator = GetComponent<Animator>();
         _data    = _statsSO != null
                    ? _statsSO.ToJsonPlayerData()
                    : JsonDataManager.Instance?.playerData ?? new JsonPlayerData();
@@ -309,7 +316,22 @@ public class PlayerController : MonoBehaviour
         _animator.SetFloat("MoveSpeed", dist);
     }
 
-    public void SetAnimState(PlayerState next, float speed = 0f) { }  // AutoController용
+    public void SetAnimState(PlayerState next, float speed = 0f)
+    {
+        if (_animator == null) return;
+        switch (next)
+        {
+            case PlayerState.IDLE:
+                _animator.SetFloat("MoveSpeed", 0f);
+                break;
+            case PlayerState.WALK:
+                _animator.SetFloat("MoveSpeed", 0.1f);
+                break;
+            case PlayerState.RUN:
+                _animator.SetFloat("MoveSpeed", 0.5f);
+                break;
+        }
+    }
 
     // ── 자동 모드 ─────────────────────────────────────────────────
 
