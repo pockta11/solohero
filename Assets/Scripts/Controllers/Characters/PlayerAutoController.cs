@@ -42,23 +42,29 @@ public class PlayerAutoController : MonoBehaviour
             return;
         }
 
-        transform.LookAt(new Vector3(target.position.x, transform.position.y, target.position.z));
-        float dist = Vector3.Distance(transform.position, target.position);
+        float dist    = Vector3.Distance(transform.position, target.position);
+        float atkRange = _player.AtkRange;
 
-        if (dist > _player.MOVE_SPEED_RUN_PARAM * 10f)
+        // 항상 타겟 방향으로 회전
+        transform.LookAt(new Vector3(target.position.x, transform.position.y, target.position.z));
+
+        if (dist > atkRange * 2.5f)
         {
-            _player.SetAnimState(PlayerState.RUN,  _player.MOVE_SPEED_RUN_PARAM);
-            _nma.speed = _player.Data.speed * _player.MOVE_SPEED_RUN_PARAM;
+            // 멀리 있으면 전력질주
+            _nma.speed = _player.Data.speed;
             _nma.SetDestination(target.position);
+            _player.SetAnimState(PlayerState.RUN);
         }
-        else if (dist > _player.MOVE_SPEED_WALK_PARAM * 5f)
+        else if (dist > atkRange)
         {
-            _player.SetAnimState(PlayerState.WALK, _player.MOVE_SPEED_WALK_PARAM);
-            _nma.speed = _player.Data.speed * _player.MOVE_SPEED_WALK_PARAM;
+            // 가까이 있으면 걸어서 접근
+            _nma.speed = _player.Data.speed * 0.5f;
             _nma.SetDestination(target.position);
+            _player.SetAnimState(PlayerState.WALK);
         }
         else
         {
+            // 공격 범위 내 — 멈추고 공격
             _nma.ResetPath();
             _player.TryAttack();
         }

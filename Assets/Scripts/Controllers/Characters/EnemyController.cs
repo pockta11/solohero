@@ -39,6 +39,18 @@ public class EnemyController : MonoBehaviour
     private EnemyState _state = EnemyState.IDLE;
     public  EnemyState State  => _state;
 
+    private float _dmgTimer   = 0f;
+    private const float DMG_INTERVAL = 1f;   // 플레이어에게 데미지 주는 간격(초)
+
+    // ── 끼임 방지 ─────────────────────────────────────────────────
+    private float   _pathRefreshTimer = 0f;
+    private const float PATH_REFRESH  = 0.35f;  // SetDestination 호출 간격(초)
+
+    private Vector3 _lastPos;
+    private float   _stuckTimer       = 0f;
+    private const float STUCK_TIMEOUT = 2.0f;   // 이 시간 동안 못 움직이면 끼임으로 판단
+    private const float STUCK_THRESHOLD = 0.05f; // 이동 최소 거리
+
     // ──────────────────────────────────────────────────────────────
 
     void Awake()
@@ -62,7 +74,13 @@ public class EnemyController : MonoBehaviour
 
     void Start()
     {
-        _target = FindObjectOfType<PlayerController>();
+        _target  = FindObjectOfType<PlayerController>();
+        _lastPos = transform.position;
+
+        // 몹끼리 밀림 우선순위 랜덤화 — 같은 값이면 서로 밀며 끼임
+        _nma.avoidancePriority  = UnityEngine.Random.Range(30, 70);
+        _nma.autoBraking        = false;
+
         if (_uiFollower != null)
             _uiFollower.SetTarget(transform);
     }
@@ -71,6 +89,7 @@ public class EnemyController : MonoBehaviour
     {
         if (_target == null) return;
         TrackPlayer();
+        CheckStuck();
         CheckDeath();
     }
 
@@ -87,26 +106,93 @@ public class EnemyController : MonoBehaviour
     {
         float dist = Vector3.Distance(transform.position, _target.transform.position);
 
+        _pathRefreshTimer -= Time.deltaTime;
+
         if (dist < _data.pursutied_distance)
         {
             SetState(EnemyState.ATTACK);
+
+            // 1초 간격으로 플레이어에게 데미지
+            _dmgTimer -= Time.deltaTime;
+            if (_dmgTimer <= 0f)
+            {
+                _dmgTimer = DMG_INTERVAL;
+                _target?.TakeDamage(_data.atk);
+            }
         }
         else if (dist < _data.near_distance)
         {
-            _nma.speed = _data.fast_speed;
-            _nma.SetDestination(_target.transform.position);
+            _dmgTimer = 0f;
+            _nma.speed = _data.fast_speed * 0.8f;
+            TrySetDestination(_target.transform.position);
             SetState(EnemyState.RUN);
-        }
-        else if (dist < _data.far_distance)
-        {
-            _nma.speed = _data.slow_speed;
-            _nma.SetDestination(_target.transform.position);
-            SetState(EnemyState.WALK);
         }
         else
         {
-            _nma.ResetPath();
-            SetState(EnemyState.IDLE);
+            _dmgTimer = 0f;
+            _nma.speed = _data.slow_speed * 0.8f;
+            TrySetDestination(_target.transform.position);
+            SetState(EnemyState.WALK);
+        }
+    }
+
+    /// <summary>
+    /// 0.35초 간격으로만 SetDestination 호출.
+    /// NavMesh 위의 가장 가까운 점을 샘플링해서 유효한 목적지만 설정.
+    /// </summary>
+    void TrySetDestination(Vector3 target)
+    {
+        if (_pathRefreshTimer > 0f) return;
+        _pathRefreshTimer = PATH_REFRESH;
+
+        // 목적지가 NavMesh 위에 있는지 확인 (반경 2m 이내)
+        if (NavMesh.SamplePosition(target, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            _nma.SetDestination(hit.position);
+    }
+
+    /// <summary>
+    /// 일정 시간 이상 거의 안 움직이면 끼인 것으로 판단하고 NavMesh 위로 순간이동.
+    /// </summary>
+    void CheckStuck()
+    {
+        // 공격 중이거나 NavMeshAgent가 비활성이면 검사 생략
+        if (_state == EnemyState.ATTACK || !_nma.enabled || !_nma.isOnNavMesh) return;
+
+        float moved = Vector3.Distance(transform.position, _lastPos);
+
+        if (moved < STUCK_THRESHOLD)
+        {
+            _stuckTimer += Time.deltaTime;
+            if (_stuckTimer >= STUCK_TIMEOUT)
+            {
+                _stuckTimer = 0f;
+                UnstuckSelf();
+            }
+        }
+        else
+        {
+            _stuckTimer = 0f;
+            _lastPos    = transform.position;
+        }
+    }
+
+    /// <summary>
+    /// 플레이어 방향으로 조금 벗어난 NavMesh 위 위치로 워프.
+    /// </summary>
+    void UnstuckSelf()
+    {
+        if (_target == null) return;
+
+        // 플레이어 → 나 방향으로 조금 떨어진 NavMesh 위 점 탐색
+        Vector3 dir      = (transform.position - _target.transform.position).normalized;
+        Vector3 tryPos   = transform.position + dir * 1.5f
+                         + new Vector3(UnityEngine.Random.Range(-1f, 1f), 0,
+                                       UnityEngine.Random.Range(-1f, 1f));
+
+        if (NavMesh.SamplePosition(tryPos, out NavMeshHit hit, 3f, NavMesh.AllAreas))
+        {
+            _nma.Warp(hit.position);
+            _pathRefreshTimer = 0f;  // 즉시 경로 재계산
         }
     }
 

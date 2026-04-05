@@ -35,12 +35,17 @@ public class PlayerController : MonoBehaviour
     // ── 공격 설정 ─────────────────────────────────────────────────
     [Header("공격")]
     [SerializeField] float _atkRange      = 1.8f;   // 기본 공격 범위
+    [SerializeField] float _atkAngle      = 60f;    // 기본 공격 좌우 허용 각도 (전방 ±60°)
     [SerializeField] float _atkCooldown   = 0.6f;   // 기본 공격 쿨타임
     [SerializeField] float _skillRange    = 3.5f;   // 스킬 범위
     [SerializeField] int   _skillDmgMult  = 3;      // 스킬 배율
 
+    public float AtkRange => _atkRange;
+
     private float _atkCoolRemain   = 0f;
     private float _skillCoolRemain = 0f;
+    private float _dmgCoolRemain   = 0f;   // 전역 피격 쿨타임 (몹 수에 상관없이 초당 1회)
+    private const float DMG_COOLDOWN = 1f;
     private bool  _isDead          = false;
 
     // ── 기본 스탯 소스 ────────────────────────────────────────────
@@ -95,6 +100,7 @@ public class PlayerController : MonoBehaviour
         var rb = GetComponent<Rigidbody>();
         if (rb != null)
             rb.constraints = RigidbodyConstraints.FreezePositionX |
+                             RigidbodyConstraints.FreezePositionY |
                              RigidbodyConstraints.FreezePositionZ |
                              RigidbodyConstraints.FreezeRotation;
     }
@@ -113,6 +119,7 @@ public class PlayerController : MonoBehaviour
 
         _atkCoolRemain   -= Time.deltaTime;
         _skillCoolRemain -= Time.deltaTime;
+        _dmgCoolRemain   -= Time.deltaTime;
 
         if (!_isAuto)
         {
@@ -144,16 +151,16 @@ public class PlayerController : MonoBehaviour
         if (kh != 0f || kv != 0f) { h = kh; v = kv; }
 #endif
 
-        Vector3 moveVec = new Vector3(h, 0f, v);
-        float   dist    = moveVec.sqrMagnitude;
+        Vector3 moveVec  = new Vector3(h, 0f, v);
+        float   magnitude = moveVec.magnitude;  // sqrMagnitude 대신 magnitude 사용
 
         if (moveVec != Vector3.zero)
             transform.rotation = Quaternion.LookRotation(moveVec.normalized);
 
-        if (dist > 0.01f)
-            transform.position += moveVec.normalized * (_data.speed * dist) * Time.deltaTime;
+        if (magnitude > 0.01f)
+            transform.position += moveVec.normalized * _data.speed * Time.deltaTime;
 
-        UpdateMoveAnim(dist);
+        UpdateMoveAnim(magnitude);
     }
 
     // ── 공격 입력 (키보드) ────────────────────────────────────────
@@ -199,6 +206,12 @@ public class PlayerController : MonoBehaviour
             var enemy = hit.GetComponentInParent<EnemyController>();
             if (enemy != null)
             {
+                // 전방 ±_atkAngle 범위 밖이면 타격 제외
+                Vector3 toEnemy = hit.transform.position - transform.position;
+                toEnemy.y = 0f;
+                if (toEnemy != Vector3.zero &&
+                    Vector3.Angle(transform.forward, toEnemy.normalized) > _atkAngle)
+                    continue;
                 enemy.ReceiveDamage(dmg);
                 _combo++;
                 HUDManager.Instance?.ShowCombo(_combo);
@@ -251,6 +264,8 @@ public class PlayerController : MonoBehaviour
     public void TakeDamage(int rawDmg)
     {
         if (_isDead) return;
+        if (_dmgCoolRemain > 0f) return;   // 전역 피격 쿨타임 — 몹 수와 무관하게 초당 1회
+        _dmgCoolRemain = DMG_COOLDOWN;
 
         int dmg = Mathf.Max(1, rawDmg - Mathf.RoundToInt(_data.def * 0.2f)
                                + UnityEngine.Random.Range(-3, 3));
@@ -259,15 +274,13 @@ public class PlayerController : MonoBehaviour
         HUDManager.Instance?.ShowDamageFlash();
         Camera.main?.GetComponent<CameraShake>()?.ShakeCam();
 
-        if (_animator != null) _animator.SetTrigger("Hit");
+        // 공격/스킬 모션 중에는 피격 모션 생략 — 공격 우선
+        if (_state != PlayerState.ATTACK && _state != PlayerState.SKILL)
+            if (_animator != null) _animator.SetTrigger("Hit");
     }
 
-    void OnCollisionEnter(Collision col)
-    {
-        if (!col.transform.CompareTag("Enemy")) return;
-        var enemy = col.transform.GetComponentInParent<EnemyController>();
-        if (enemy != null) TakeDamage(enemy.Data.atk);
-    }
+    // 데미지는 EnemyController의 1초 타이머에서 TakeDamage()를 직접 호출하므로
+    // OnCollisionEnter 충돌 이벤트 기반 데미지는 사용하지 않음
 
     // ── HP / SP ───────────────────────────────────────────────────
 
@@ -365,8 +378,18 @@ public class PlayerController : MonoBehaviour
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()
     {
+        // 공격 범위 구
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position + transform.forward * (_atkRange * 0.5f), _atkRange);
+
+        // 공격 각도 부채꼴 (좌우 ±_atkAngle)
+        float angle = _atkAngle > 0 ? _atkAngle : 60f;
+        Gizmos.color = new Color(1f, 0.5f, 0f, 0.5f);
+        Vector3 leftDir  = Quaternion.Euler(0, -angle, 0) * transform.forward;
+        Vector3 rightDir = Quaternion.Euler(0,  angle, 0) * transform.forward;
+        Gizmos.DrawRay(transform.position, leftDir  * _atkRange * 1.5f);
+        Gizmos.DrawRay(transform.position, rightDir * _atkRange * 1.5f);
+
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, _skillRange > 0 ? _skillRange : 3.5f);
     }

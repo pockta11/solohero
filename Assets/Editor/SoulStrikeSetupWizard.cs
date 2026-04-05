@@ -156,17 +156,15 @@ public static class SoulStrikeSetupWizard
     }
 
     // ── HUD Canvas ────────────────────────────────────────────────
-    // 생성 구조:
+    // Layout (1920×1080 Landscape):
     //  Canvas_HUD
-    //  ├─ HpBar           (Slider)
-    //  │   └─ HpText      (TextMeshProUGUI)
-    //  ├─ SpBar           (Slider)
-    //  ├─ GoldText        (TextMeshProUGUI)
-    //  ├─ StageText       (TextMeshProUGUI)
-    //  ├─ ComboText       (TextMeshProUGUI)
-    //  ├─ DamageFlash     (Image, 전체화면)
-    //  ├─ DeadPanel       (GameObject > Text "DEAD")
-    //  └─ ControlHint     (TextMeshProUGUI)
+    //  ├─ TopBar (全폭×88px, 반투명 검정)
+    //  │   ├─ PlayerCard  (좌 320px — 아바타, 이름, 골드, HP/SP)
+    //  │   ├─ StagePanel  (중앙 760px — 스테이지명, 킬바)
+    //  │   └─ RightPanel  (우 230px — AUTO, 상점, 설정)
+    //  ├─ BottomNav (全폭×76px, 반투명 검정 — 5탭)
+    //  ├─ DamageFlash / DeadPanel / StageClearPanel (fullscreen)
+    //  └─ ComboText (center float)
 
     static void SetupHUD()
     {
@@ -175,143 +173,216 @@ public static class SoulStrikeSetupWizard
         // ── Canvas root
         var root   = new GameObject("Canvas_HUD");
         var canvas = root.AddComponent<Canvas>();
-        canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
+        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 10;
-
         var scaler = root.AddComponent<CanvasScaler>();
         scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);  // Landscape
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.matchWidthOrHeight  = 0.5f;
-
         root.AddComponent<GraphicRaycaster>();
+        var hud   = root.AddComponent<HUDManager>();
+        var hudSO = new SerializedObject(hud);
 
-        // ── HUDManager
-        var hud    = root.AddComponent<HUDManager>();
-        var hudSO  = new SerializedObject(hud);
+        // ══════════════════════════════════════════
+        //  TOP BAR  (全폭 × 88px)
+        // ══════════════════════════════════════════
+        var topBar = NewPanel(root.transform, "TopBar",
+            new Vector2(0,1), new Vector2(1,1),
+            new Vector2(0.5f,1), Vector2.zero, new Vector2(0,88),
+            new Color(0f,0f,0f,0.65f));
 
-        // ── HP Bar (top-left)
-        var hpBar  = CreateSlider(root.transform, "HpBar",
-            new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(220f, -45f), new Vector2(380f, 32f),
-            new Color(0.2f, 0.8f, 0.2f, 1f));
+        // ── PlayerCard (좌 320px)
+        var playerCard = NewPanel(topBar.transform, "PlayerCard",
+            new Vector2(0,0), new Vector2(0,1),
+            new Vector2(0,0.5f), Vector2.zero, new Vector2(320,0),
+            Color.clear);
 
-        // HP Text (on top of slider)
-        var hpText = CreateTMP(hpBar.gameObject.transform, "HpText",
-            Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, 13, Color.white);
+        var avatarRect = NewRect(playerCard.transform, "Avatar",
+            new Vector2(0,0.5f), new Vector2(0,0.5f),
+            new Vector2(0,0.5f), new Vector2(8,0), new Vector2(68,68));
+        avatarRect.gameObject.AddComponent<Image>().color = new Color(0.22f,0.22f,0.32f,1f);
 
-        // ── SP Bar
-        var spBar  = CreateSlider(root.transform, "SpBar",
-            new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(220f, -86f), new Vector2(380f, 26f),
-            new Color(0.2f, 0.4f, 0.9f, 1f));
+        var nameText = CreateTMP(playerCard.transform, "NameText",
+            new Vector2(0,0.5f), new Vector2(0,0.5f), new Vector2(0,0.5f),
+            new Vector2(84,16), 15, Color.white, new Vector2(224,22));
+        nameText.alignment = TextAlignmentOptions.Left;
+        nameText.text = "Hero";
 
-        // ── Gold Text (top-right)
-        var goldTMP = CreateTMP(root.transform, "GoldText",
-            new Vector2(1f, 1f), new Vector2(1f, 1f),
-            new Vector2(1f, 0.5f),
-            new Vector2(-160f, -40f), 22, new Color(1f, 0.85f, 0.2f, 1f),
-            new Vector2(280f, 44f));
+        var goldTMP = CreateTMP(playerCard.transform, "GoldText",
+            new Vector2(0,0.5f), new Vector2(0,0.5f), new Vector2(0,0.5f),
+            new Vector2(84,-4), 13, new Color(1f,0.85f,0.2f,1f), new Vector2(224,18));
+        goldTMP.alignment = TextAlignmentOptions.Left;
+        goldTMP.text = "0 G";
 
-        // ── Stage Text (top-center)
-        var stageTMP = CreateTMP(root.transform, "StageText",
-            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0.5f, 0.5f),
-            new Vector2(0f, -40f), 22, Color.white,
-            new Vector2(280f, 44f));
+        var hpBar = CreateSlider(playerCard.transform, "HpBar",
+            new Vector2(0,0.5f), new Vector2(0,0.5f),
+            new Vector2(84,-24), new Vector2(224,18),
+            new Color(0.2f,0.78f,0.2f,1f));
+        var hpText = CreateTMP(hpBar.transform, "HpText",
+            Vector2.zero, Vector2.one, new Vector2(0.5f,0.5f), Vector2.zero, 10, Color.white);
 
-        // ── Kill Counter (top-right, below gold)
-        var killTMP = CreateTMP(root.transform, "KillText",
-            new Vector2(1f, 1f), new Vector2(1f, 1f),
-            new Vector2(1f, 1f),
-            new Vector2(-160f, -88f), 18, Color.white,
-            new Vector2(280f, 36f));
+        var spBar = CreateSlider(playerCard.transform, "SpBar",
+            new Vector2(0,0.5f), new Vector2(0,0.5f),
+            new Vector2(84,-44), new Vector2(224,12),
+            new Color(0.2f,0.45f,0.9f,1f));
+
+        // PlayerInfoPanelUI
+        var playerInfoUI = playerCard.AddComponent<PlayerInfoPanelUI>();
+        var playerInfoSO = new SerializedObject(playerInfoUI);
+        playerInfoSO.FindProperty("_nameText").objectReferenceValue = nameText;
+        playerInfoSO.FindProperty("_goldText").objectReferenceValue = goldTMP;
+        playerInfoSO.ApplyModifiedProperties();
+        hudSO.FindProperty("_playerInfoPanel").objectReferenceValue = playerInfoUI;
+
+        // ── StagePanel (중앙 760px)
+        var stagePanel = NewPanel(topBar.transform, "StagePanel",
+            new Vector2(0.5f,0), new Vector2(0.5f,1),
+            new Vector2(0.5f,0.5f), Vector2.zero, new Vector2(760,0),
+            Color.clear);
+
+        var stageTMP = CreateTMP(stagePanel.transform, "StageText",
+            new Vector2(0.5f,1), new Vector2(0.5f,1), new Vector2(0.5f,1),
+            new Vector2(0,-6), 20, Color.white, new Vector2(740,28));
+        stageTMP.text = "Stage 1-1";
+
+        var subtitleTMP = CreateTMP(stagePanel.transform, "SubtitleText",
+            new Vector2(0.5f,1), new Vector2(0.5f,1), new Vector2(0.5f,1),
+            new Vector2(0,-33), 13, new Color(1f,1f,1f,0.60f), new Vector2(740,18));
+        subtitleTMP.text = "Dungeon Entrance";
+
+        // 킬 진행 바 (주황/금색, 두드러지게)
+        var killSlider = CreateSlider(stagePanel.transform, "KillSlider",
+            new Vector2(0.5f,1), new Vector2(0.5f,1),
+            new Vector2(0,-57), new Vector2(700,26),
+            new Color(1f,0.68f,0.06f,1f));
+        var ksRect = killSlider.GetComponent<RectTransform>();
+        ksRect.pivot = new Vector2(0.5f,0.5f);
+        var ksBg = killSlider.transform.Find("Background")?.GetComponent<Image>();
+        if (ksBg != null) ksBg.color = new Color(0.20f,0.14f,0.02f,0.85f);
+
+        var killTMP = CreateTMP(killSlider.transform, "KillText",
+            Vector2.zero, Vector2.one, new Vector2(0.5f,0.5f), Vector2.zero, 13, Color.white);
         killTMP.text = "0 / 0";
 
-        // ── Combo Text (center-upper)
-        var comboTMP = CreateTMP(root.transform, "ComboText",
-            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0.5f, 0.5f),
-            new Vector2(0f, 80f), 42, new Color(1f, 0.6f, 0f, 1f),
-            new Vector2(400f, 60f));
-        comboTMP.gameObject.SetActive(false);
+        // ── RightPanel (우 230px)
+        var rightPanel = NewPanel(topBar.transform, "RightPanel",
+            new Vector2(1,0), new Vector2(1,1),
+            new Vector2(1,0.5f), new Vector2(-6,0), new Vector2(230,0),
+            Color.clear);
 
-        // ── Damage Flash (fullscreen red overlay)
-        var flashGo   = new GameObject("DamageFlash");
-        flashGo.transform.SetParent(root.transform, false);
-        var flashRect = flashGo.AddComponent<RectTransform>();
-        flashRect.anchorMin      = Vector2.zero;
-        flashRect.anchorMax      = Vector2.one;
-        flashRect.offsetMin      = Vector2.zero;
-        flashRect.offsetMax      = Vector2.zero;
-        var flashImg  = flashGo.AddComponent<Image>();
-        flashImg.color = new Color(1f, 0f, 0f, 0f);
+        var autoBtn     = MakeTextBtn(rightPanel.transform, "AutoBtn",    "AUTO",
+            new Vector2(1,0.5f), new Vector2(1,0.5f), new Vector2(1,0.5f),
+            new Vector2(-8,   0), new Vector2(80,36), new Color(0.10f,0.10f,0.20f,0.95f), 15);
+        var shopBtn     = MakeTextBtn(rightPanel.transform, "ShopBtn",    "상점",
+            new Vector2(1,0.5f), new Vector2(1,0.5f), new Vector2(1,0.5f),
+            new Vector2(-96,  0), new Vector2(80,36), new Color(0.10f,0.10f,0.20f,0.95f), 14);
+        var settingsBtn = MakeTextBtn(rightPanel.transform, "SettingsBtn","설정",
+            new Vector2(1,0.5f), new Vector2(1,0.5f), new Vector2(1,0.5f),
+            new Vector2(-184, 0), new Vector2(80,36), new Color(0.10f,0.10f,0.20f,0.95f), 14);
+
+        var topMenuUI = root.AddComponent<TopRightMenuUI>();
+        var topMenuSO = new SerializedObject(topMenuUI);
+        topMenuSO.FindProperty("_shopBtn").objectReferenceValue     = shopBtn;
+        topMenuSO.FindProperty("_settingsBtn").objectReferenceValue = settingsBtn;
+        topMenuSO.ApplyModifiedProperties();
+
+        // ══════════════════════════════════════════
+        //  BOTTOM NAV BAR  (全폭 × 76px)
+        // ══════════════════════════════════════════
+        var botBar = NewPanel(root.transform, "BottomNav",
+            new Vector2(0,0), new Vector2(1,0),
+            new Vector2(0.5f,0), Vector2.zero, new Vector2(0,76),
+            new Color(0.06f,0.06f,0.10f,0.92f));
+
+        // 상단 구분선
+        var sep = NewRect(botBar.transform, "Separator",
+            new Vector2(0,1), new Vector2(1,1),
+            new Vector2(0.5f,1), Vector2.zero, new Vector2(0,2));
+        sep.gameObject.AddComponent<Image>().color = new Color(1f,1f,1f,0.12f);
+
+        Color tabNormal = new Color(0.10f,0.10f,0.16f,0f);
+        Color tabAutoC  = new Color(0.15f,0.65f,0.35f,1f);
+
+        var tabEquip  = MakeNavTab(botBar.transform,"TabEquip", "캐릭터", 0,5,tabNormal,14);
+        var tabGrowth = MakeNavTab(botBar.transform,"TabGrowth","성장",   1,5,tabNormal,14);
+        var tabAuto   = MakeNavTab(botBar.transform,"TabAuto",  "● AUTO", 2,5,tabAutoC, 13);
+        var tabSummon = MakeNavTab(botBar.transform,"TabSummon","소환",   3,5,tabNormal,14);
+        var tabInven  = MakeNavTab(botBar.transform,"TabInven", "인벤",   4,5,tabNormal,14);
+
+        var nav   = root.AddComponent<MainBottomNav>();
+        var navSO = new SerializedObject(nav);
+        navSO.FindProperty("_tabEquip") .objectReferenceValue = tabEquip;
+        navSO.FindProperty("_tabGrowth").objectReferenceValue = tabGrowth;
+        navSO.FindProperty("_tabAuto")  .objectReferenceValue = tabAuto;
+        navSO.FindProperty("_tabSummon").objectReferenceValue = tabSummon;
+        navSO.FindProperty("_tabInven") .objectReferenceValue = tabInven;
+        navSO.ApplyModifiedProperties();
+
+        // ══════════════════════════════════════════
+        //  OVERLAYS
+        // ══════════════════════════════════════════
+        // DamageFlash
+        var flashRect = NewRect(root.transform, "DamageFlash",
+            Vector2.zero, Vector2.one,
+            new Vector2(0.5f,0.5f), Vector2.zero, Vector2.zero);
+        var flashImg = flashRect.gameObject.AddComponent<Image>();
+        flashImg.color = new Color(1f,0f,0f,0f);
         flashImg.raycastTarget = false;
 
-        // ── Dead Panel (center overlay)
-        var deadGo   = new GameObject("DeadPanel");
-        deadGo.transform.SetParent(root.transform, false);
-        var deadRect = deadGo.AddComponent<RectTransform>();
-        deadRect.anchorMin      = Vector2.zero;
-        deadRect.anchorMax      = Vector2.one;
-        deadRect.offsetMin      = Vector2.zero;
-        deadRect.offsetMax      = Vector2.zero;
-        var deadBg   = deadGo.AddComponent<Image>();
-        deadBg.color = new Color(0f, 0f, 0f, 0.6f);
+        // DeadPanel
+        var deadGo = NewPanel(root.transform, "DeadPanel",
+            Vector2.zero, Vector2.one,
+            new Vector2(0.5f,0.5f), Vector2.zero, Vector2.zero,
+            new Color(0f,0f,0f,0.6f));
         deadGo.SetActive(false);
-
         var deadText = CreateTMP(deadGo.transform, "DeadText",
-            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0.5f, 0.5f),
+            new Vector2(0.5f,0.5f), new Vector2(0.5f,0.5f), new Vector2(0.5f,0.5f),
             Vector2.zero, 60, Color.red);
         deadText.text = "YOU DIED";
 
-        // ── Stage Clear Panel (center overlay)
-        var clearGo   = new GameObject("StageClearPanel");
-        clearGo.transform.SetParent(root.transform, false);
-        var clearRect = clearGo.AddComponent<RectTransform>();
-        clearRect.anchorMin      = Vector2.zero;
-        clearRect.anchorMax      = Vector2.one;
-        clearRect.offsetMin      = Vector2.zero;
-        clearRect.offsetMax      = Vector2.zero;
-        var clearBg   = clearGo.AddComponent<Image>();
-        clearBg.color = new Color(0f, 0f, 0f, 0.5f);
+        // StageClearPanel
+        var clearGo = NewPanel(root.transform, "StageClearPanel",
+            Vector2.zero, Vector2.one,
+            new Vector2(0.5f,0.5f), Vector2.zero, Vector2.zero,
+            new Color(0f,0f,0f,0.5f));
         clearGo.SetActive(false);
-
         var clearTitle = CreateTMP(clearGo.transform, "ClearTitle",
-            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0.5f, 0.5f),
-            new Vector2(0f, 60f), 56, new Color(1f, 0.9f, 0.2f, 1f));
+            new Vector2(0.5f,0.5f), new Vector2(0.5f,0.5f), new Vector2(0.5f,0.5f),
+            new Vector2(0,60), 56, new Color(1f,0.9f,0.2f,1f));
         clearTitle.text = "STAGE CLEAR!";
-
         var clearGold = CreateTMP(clearGo.transform, "ClearGoldText",
-            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0.5f, 0.5f),
-            new Vector2(0f, -20f), 36, new Color(1f, 0.85f, 0.2f, 1f));
+            new Vector2(0.5f,0.5f), new Vector2(0.5f,0.5f), new Vector2(0.5f,0.5f),
+            new Vector2(0,-20), 36, new Color(1f,0.85f,0.2f,1f));
         clearGold.text = "+ 0 G";
 
-        // ── Control Hint (bottom-right)
-        var hintTMP = CreateTMP(root.transform, "ControlHint",
-            new Vector2(1f, 0f), new Vector2(1f, 0f),
-            new Vector2(1f, 0f),
-            new Vector2(-20f, 30f), 13, new Color(1f, 1f, 1f, 0.55f),
-            new Vector2(550f, 30f));
+        // ComboText
+        var comboTMP = CreateTMP(root.transform, "ComboText",
+            new Vector2(0.5f,0.5f), new Vector2(0.5f,0.5f), new Vector2(0.5f,0.5f),
+            new Vector2(0,80), 42, new Color(1f,0.6f,0f,1f), new Vector2(400,60));
+        comboTMP.gameObject.SetActive(false);
 
-        // ── Wire up HUDManager serialized fields
-        hudSO.FindProperty("_hpSlider").objectReferenceValue        = hpBar;
-        hudSO.FindProperty("_spSlider").objectReferenceValue        = spBar;
-        hudSO.FindProperty("_hpText").objectReferenceValue          = hpText;
-        hudSO.FindProperty("_goldTMP").objectReferenceValue         = goldTMP;
-        hudSO.FindProperty("_stageTMP").objectReferenceValue        = stageTMP;
-        hudSO.FindProperty("_killTMP").objectReferenceValue         = killTMP;
-        hudSO.FindProperty("_comboTMP").objectReferenceValue        = comboTMP;
-        hudSO.FindProperty("_damageFlash").objectReferenceValue     = flashImg;
-        hudSO.FindProperty("_deadPanel").objectReferenceValue       = deadGo;
-        hudSO.FindProperty("_stageClearPanel").objectReferenceValue = clearGo;
+        // ControlHint (에디터 전용 안내)
+        var hintTMP = CreateTMP(root.transform, "ControlHint",
+            new Vector2(0.5f,0), new Vector2(0.5f,0), new Vector2(0.5f,0),
+            new Vector2(0,82), 12, new Color(1f,1f,1f,0.40f), new Vector2(600,20));
+
+        // ── HUDManager 연결
+        hudSO.FindProperty("_hpSlider").objectReferenceValue          = hpBar;
+        hudSO.FindProperty("_spSlider").objectReferenceValue          = spBar;
+        hudSO.FindProperty("_hpText").objectReferenceValue            = hpText;
+        hudSO.FindProperty("_goldTMP").objectReferenceValue           = goldTMP;
+        hudSO.FindProperty("_stageTMP").objectReferenceValue          = stageTMP;
+        hudSO.FindProperty("_killTMP").objectReferenceValue           = killTMP;
+        hudSO.FindProperty("_killSlider").objectReferenceValue        = killSlider;
+        hudSO.FindProperty("_comboTMP").objectReferenceValue          = comboTMP;
+        hudSO.FindProperty("_damageFlash").objectReferenceValue       = flashImg;
+        hudSO.FindProperty("_deadPanel").objectReferenceValue         = deadGo;
+        hudSO.FindProperty("_stageClearPanel").objectReferenceValue   = clearGo;
         hudSO.FindProperty("_stageClearGoldTMP").objectReferenceValue = clearGold;
-        hudSO.FindProperty("_controlHint").objectReferenceValue     = hintTMP;
+        hudSO.FindProperty("_controlHint").objectReferenceValue       = hintTMP;
         hudSO.ApplyModifiedProperties();
 
-        Debug.Log("[SoulStrikeSetup] HUD Canvas 생성 및 HUDManager 연결 완료");
+        Debug.Log("[SoulStrikeSetup] HUD 재생성 완료 (참고 레이아웃 적용)");
     }
 
     // ── Joystick Canvas ───────────────────────────────────────────
@@ -457,5 +528,71 @@ public static class SoulStrikeSetupWizard
         if (Object.FindObjectOfType<T>() != null) return;
         var go = new GameObject(name);
         go.AddComponent<T>();
+    }
+
+    // ── UI Layout helpers ─────────────────────────────────────────
+
+    /// <summary>RectTransform GameObject 생성</summary>
+    static RectTransform NewRect(Transform parent, string name,
+        Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
+        Vector2 anchoredPos, Vector2 sizeDelta)
+    {
+        var go   = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rect = go.AddComponent<RectTransform>();
+        rect.anchorMin        = anchorMin;
+        rect.anchorMax        = anchorMax;
+        rect.pivot            = pivot;
+        rect.anchoredPosition = anchoredPos;
+        rect.sizeDelta        = sizeDelta;
+        return rect;
+    }
+
+    /// <summary>배경 Image가 있는 패널 생성</summary>
+    static GameObject NewPanel(Transform parent, string name,
+        Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
+        Vector2 anchoredPos, Vector2 sizeDelta, Color bgColor)
+    {
+        var rect = NewRect(parent, name, anchorMin, anchorMax, pivot, anchoredPos, sizeDelta);
+        var img  = rect.gameObject.AddComponent<Image>();
+        img.color        = bgColor;
+        img.raycastTarget = false;
+        return rect.gameObject;
+    }
+
+    /// <summary>텍스트 라벨을 가진 Button 생성</summary>
+    static Button MakeTextBtn(Transform parent, string name, string label,
+        Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
+        Vector2 anchoredPos, Vector2 sizeDelta, Color bgColor, float fontSize)
+    {
+        var rect = NewRect(parent, name, anchorMin, anchorMax, pivot, anchoredPos, sizeDelta);
+        var img  = rect.gameObject.AddComponent<Image>();
+        img.color = bgColor;
+        var btn  = rect.gameObject.AddComponent<Button>();
+        var tmp  = CreateTMP(rect, name + "Label",
+            Vector2.zero, Vector2.one, new Vector2(0.5f,0.5f), Vector2.zero,
+            fontSize, Color.white);
+        tmp.text = label;
+        return btn;
+    }
+
+    /// <summary>하단 네비게이션 탭 버튼 (index/total 비율로 위치 결정)</summary>
+    static Button MakeNavTab(Transform parent, string name, string label,
+        int index, int total, Color bgColor, float fontSize)
+    {
+        float w = 1f / total;
+        var rect = NewRect(parent, name,
+            new Vector2(w * index,      0),
+            new Vector2(w * (index+1),  1),
+            new Vector2(0.5f, 0.5f),
+            Vector2.zero, Vector2.zero);
+        var img = rect.gameObject.AddComponent<Image>();
+        img.color = bgColor;
+        var btn = rect.gameObject.AddComponent<Button>();
+        var tmp = CreateTMP(rect, name + "Label",
+            Vector2.zero, Vector2.one, new Vector2(0.5f,0.5f), Vector2.zero,
+            fontSize, Color.white);
+        tmp.text = label;
+        return btn;
     }
 }
