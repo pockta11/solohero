@@ -14,10 +14,10 @@ public static class PlayerEquipmentService
         if (pd == null) return "";
         return slot switch
         {
-            EquipmentSlot.Weapon => pd.equippedWeapon ?? "",
-            EquipmentSlot.Helmet => pd.equippedHelmet ?? "",
-            EquipmentSlot.Armor  => pd.equippedArmor ?? "",
-            EquipmentSlot.Boots  => pd.equippedBoots ?? "",
+            EquipmentSlot.Sword => pd.equippedWeapon ?? "",
+            EquipmentSlot.Helm  => pd.equippedHelmet ?? "",
+            EquipmentSlot.Armor => pd.equippedArmor ?? "",
+            EquipmentSlot.Boots => pd.equippedBoots ?? "",
             _                      => ""
         };
     }
@@ -28,10 +28,10 @@ public static class PlayerEquipmentService
         id ??= "";
         switch (slot)
         {
-            case EquipmentSlot.Weapon: pd.equippedWeapon = id; break;
-            case EquipmentSlot.Helmet: pd.equippedHelmet = id; break;
-            case EquipmentSlot.Armor:  pd.equippedArmor  = id; break;
-            case EquipmentSlot.Boots:  pd.equippedBoots  = id; break;
+            case EquipmentSlot.Sword: pd.equippedWeapon = id; break;
+            case EquipmentSlot.Helm:  pd.equippedHelmet = id; break;
+            case EquipmentSlot.Armor: pd.equippedArmor  = id; break;
+            case EquipmentSlot.Boots: pd.equippedBoots  = id; break;
         }
     }
 

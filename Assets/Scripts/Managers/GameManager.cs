@@ -14,10 +14,6 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [Header("플레이어 기본 스탯")]
-    [SerializeField] PlayerStatsSO _playerStatsSO;
-    public PlayerStatsSO PlayerStatsSO => _playerStatsSO;
-
     public PlayerData PlayerData { get; private set; }
 
     /// <summary>오프라인 보상 결과. UI 팝업에서 읽고 표시 후 null로 초기화.</summary>
@@ -117,11 +113,13 @@ public class GameManager : MonoBehaviour
     }
 #endif
 
-    /// <summary>인게임 골드 변경. HUD 자동 갱신.</summary>
+    /// <summary>인게임 골드 변경. 구독자(UI)에게 변경을 알린다.</summary>
+    public static event Action<long> GoldChanged;
+
     public void AddGold(long amount)
     {
         PlayerData.gold += amount;
-        HUDManager.Instance?.RefreshGold();
+        GoldChanged?.Invoke(PlayerData.gold);
     }
 
     // ── 저장 타이밍 ──────────────────────────────────────────

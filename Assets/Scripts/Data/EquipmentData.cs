@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public enum EquipmentSlot { Weapon, Helmet, Armor, Boots }
+public enum EquipmentSlot { Sword, Helm, Armor, Boots }
 public enum EquipmentGrade { Common, Rare, Epic, Legendary }
 
 /// <summary>

@@ -5,5 +5,5 @@
 public interface IDamageable
 {
     bool IsAlive { get; }
-    void TakeDamage(int amount, ElementType attackerElement);
+    void TakeDamage(int amount);
 }

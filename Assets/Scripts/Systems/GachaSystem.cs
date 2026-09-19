@@ -86,10 +86,7 @@ public class GachaSystem : MonoBehaviour
 
         // 결제/카운트 확정
         if (pd != null)
-        {
-            pd.gold -= _costPerPull;
-            HUDManager.Instance?.RefreshGold();
-        }
+            GameManager.Instance.AddGold(-_costPerPull);
 
         _pullCount++;
         if (_pullCount >= _pityCeiling) _pullCount = 0;
@@ -98,7 +95,6 @@ public class GachaSystem : MonoBehaviour
         Debug.Log($"[Gacha] {result.equipmentName} ({result.grade}) — pity: {_pullCount}/{_pityCeiling}");
 
         PlayerEquipmentService.OnGachaResult(result);
-        PlayerEquipmentApplier.ApplyNow();
         SaveManager.Instance?.RequestSave(pd);
 
         return result;
