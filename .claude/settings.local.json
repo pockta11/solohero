@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp -r D:/SoloHero/Assets D:/git/solohero/)",
+      "Bash(cp -r D:/SoloHero/Packages D:/git/solohero/)",
+      "Bash(cp -r D:/SoloHero/ProjectSettings D:/git/solohero/)",
+      "Bash(cp D:/SoloHero/SoloHero.sln D:/git/solohero/)",
+      "Bash(ipconfig)",
+      "Bash(netsh advfirewall:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(unity-license-activate:*)",
+      "Read(//c/Windows/System32/**)",
+      "Bash(find /d/git/solohero/Assets/Scripts -type f -name *.cs)",
+      "Bash(find /d/git/solohero/Assets -name *.cs)",
+      "Bash(find /d/git/solohero -maxdepth 1 -type f -name *.json -o -type f -name *.yml -o -type f -name *.yaml)",
+      "Bash(grep -E \"\\\\.\\(md|yml|yaml|json\\)$\")",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:namu.wiki)",
+      "WebFetch(domain:www.bluestacks.com)",
+      "WebFetch(domain:soo-bak.github.io)",
+      "Bash(wc:*)",
+      "Bash(grep -r \"AtlasPopulationMode\\\\|GlyphRenderMode\" 'D:/git/solohero/Assets/TextMesh Pro' --include=*.cs -l)",
+      "Bash(grep -r CreateFontAsset D:/git/solohero/Library/PackageCache --include=*.cs -l)",
+      "Bash(ls \"D:/git/solohero/Assets/TextMesh Pro/Resources/Fonts & Materials/\")",
+      "Bash(sort echo:*)",
+      "Bash(xargs grep:*)"
+    ]
+  }
+}
