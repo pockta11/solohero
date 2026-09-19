@@ -27,7 +27,7 @@ brief: null
 - **순수 C# `SoloHero.Core`** (asmdef `noEngineReferences`)가 전투 상태 머신·성장·가챠·경제·저장 DTO·이관·공식을 소유한다. MonoBehaviour는 씬에 존재해야 하는 뷰·UI·인프라에만 쓴다. 단위 테스트 5영역과 밸런스 시뮬레이터가 이 어셈블리만으로 돈다.
 - **저장은 `users/{uid}/v2` 새 노드 + Newtonsoft + 로컬 백업 + 250 ms 디바운스.** v1 강화 레벨은 의미가 바뀌었으므로(가산 → 승산) 누적 지출 골드로 환급한다. 수치는 `double`(RTDB가 double로 저장하므로).
 - **데이터는 ScriptableObject 단일 출처.** `BalanceConfig` 필드명 = GDD 상수명. Addressables·StreamingAssets JSON·Input System 패키지·Resources 폴더는 제거한다.
-- **가챠는 등급별 확률표 + 100회 천장** (정규분포 방식 폐기 — GDD 역반영 필요, R9).
+- **가챠는 등급별 확률표(55/33/10/2 %) + 100회 천장 + Legendary 획득 시 리셋** (정규분포 방식 폐기. GDD 역반영 완료 — decision-log D-049~D-052).
 - **런타임 생성 0** — 적·데미지 텍스트·VFX·SFX는 `UnityEngine.Pool` 풀에서만 공급.
 - **Android 타깃 API 36 + 16 KB 정렬**은 E1-09 실빌드 스파이크로 먼저 확인하고, 필요하면 JDK 17 전환을 허용한다.
 
@@ -35,7 +35,7 @@ brief: null
 
 **구현 패턴:** 표준 패턴 12개(통신·엔티티·상태·데이터·스탯/수식·변경-저장·시간/난수 주입·가챠·UI·비동기·에러·로깅) 전부 코드 예시 포함, 일관성 규칙 11항목. 고유 패턴 0개.
 
-**준비 상태:** 에픽·스토리 정제 및 E1 착수 가능. 단 **E5(가챠)는 GDD 역반영(O1) 전 착수 금지.**
+**준비 상태:** 에픽·스토리 정제 및 E1 착수 가능. E5(가챠)의 GDD 역반영(O1·O2)은 2026-09-20 완료되어 착수 제한이 없다.
 
 ## Document Status
 
@@ -50,7 +50,7 @@ GDD가 아키텍처로 이월한 4건은 모두 닫혔다.
 | — | 큰 수 표현 타입 | **D3** — `double` + 접미어 포맷터 |
 | — | 저장 노드 전환 및 v1→v2 이관 | **D4 / ADR-4** — `users/{uid}/v2` 노드, 값 변환 규칙, 강화 골드 환급 |
 
-이 문서가 GDD에 되돌려야 하는 것: **R9**(가챠 방식), **ADR-4**(E1-06 문구). → Validation 절 Open Items O1·O2.
+이 문서가 GDD에 되돌린 것: **R9**(가챠 방식 → D-049~D-051), **ADR-4**(E1-06 문구 → D-052). 2026-09-20 완료.
 
 ---
 
@@ -182,7 +182,7 @@ GDD가 아키텍처로 이월한 4건은 모두 닫혔다.
 | R6 | 이월 결정 4건 미해결 (C-004 Addressables, C-007 JSON vs SO, 큰 수 타입, 이관) | decision-log | Step 4에서 결정. 복잡도 동인 1·2와 직접 연결 |
 | R7 | 상수 단일 출처가 `gdd.md` Number Balancing 절 (`05_balance_data.md` 아님) | decision-log 구조 편차 | 코드가 읽는 상수 파일과 GDD 상수표의 동기화 방식을 아키텍처가 정의 |
 | R8 | 생존 스크립트 15개의 에디터 컴파일 미검증 | As-Is 표 | E1-03 착수 시 최초 확인. 아키텍처 결정에 영향 없음 |
-| R9 | **가챠 방식 변경이 GDD와 불일치** — 정규분포 → 확률표 + 천장. USP 1 · 필러 P3 · G-4 · P-B · E5-01/02/03/12/14 · D-017 · Number Balancing(GACHA_SIGMA, GACHA_MU_MIN/MAX, GRADE_WEIGHT) · V-5가 영향. As-Is `GachaSystem.cs`(Box-Muller)는 계승 대상에서 폐기로 전환 | 본 세션 사용자 결정 | 아키텍처 완료 후 `gds-gdd` 업데이트 모드로 GDD·epics·decision-log 역반영. 확률값 4개·리셋 규칙은 그때 확정. 그 전까지 E5 착수 금지 |
+| R9 | **가챠 방식 변경이 GDD와 불일치** — 정규분포 → 확률표 + 천장. As-Is `GachaSystem.cs`(Box-Muller)는 계승 대상에서 폐기로 전환 | 본 세션 사용자 결정 | **해소 (2026-09-20).** GDD·epics·decision-log 역반영 완료 — D-049~D-052. 확률표 55/33/10/2, Legendary 획득 시 리셋 |
 
 ---
 
@@ -1246,7 +1246,7 @@ public PullResult Pull()
 | E2 전투 코어 | `Core/Combat/`, `Game/Combat/` | 상태 머신, 엔티티 풀, 히트 프레임 | ✅ |
 | E3 스테이지·챕터 | `StageRunner`, `Progression/`, `Data/Chapters`, `StageSelectSheet` | 상태 머신, 데이터 미러 | ✅ |
 | E4 성장 | `Growth/`, `UI/Panels/{Character,Equipment,Skill}` | 스탯 합산, 변경-저장, Presenter | ✅ |
-| E5 가챠 | `Gacha/`, `UI/Panels/GachaPanel`, `Data/Gacha`, `GachaVerifier` | 가챠 패턴, 난수 주입 | ⏸ **GDD 역반영 전 착수 금지 (R9)** |
+| E5 가챠 | `Gacha/`, `UI/Panels/GachaPanel`, `Data/Gacha`, `GachaVerifier` | 가챠 패턴, 난수 주입 | ✅ (GDD 역반영 완료) |
 | E6 경제·메타 | `Economy/`, `Infrastructure/AdService`, `Popups/OfflineRewardPopup` | 시간 주입, 에러 등급(광고 Degraded) | ✅ |
 | E7 UI/UX | `UI/` 전체 | UI 패턴 7종, 연타 방어, 문자열 | ✅ |
 | E8 아트·연출 | `Art/`, `Animation/`, `Audio/`, `SpriteImportPreset`, 풀 VFX | 에셋 계약 | ✅ |
@@ -1287,8 +1287,8 @@ public PullResult Pull()
 
 | # | 항목 | 담당 단계 |
 |---|---|---|
-| O1 | R9 가챠 방식 변경을 GDD·epics·decision-log에 역반영, 확률값 4개·`ResetOnLegendary` 확정 | `gds-gdd` 업데이트 (아키텍처 완료 직후) |
-| O2 | ADR-4에 따라 E1-06 완료 기준 문구 갱신 | 동일 |
+| ~~O1~~ | R9 가챠 방식 변경 GDD 역반영 — **완료.** 확률표 C 55 / R 33 / E 10 / L 2 %, `GACHA_PITY_RESET_ON_LEGENDARY = true` (decision-log D-049~D-051) | 2026-09-20 |
+| ~~O2~~ | E1-06 완료 기준 갱신 — **완료** (D-052) | 2026-09-20 |
 | O3 | CLAUDE.md 갱신 — Addressables/Input System/JSON 삭제, 구조·규약 반영, JDK 제약 조건부화 | Step 9 Next Steps |
 | O4 | D13 실빌드 스파이크 결과에 따라 JDK 11 → 17 전환 여부 | E1-09 |
 | O5 | Higgsfield 생성물 상업 사용권 확인 → Q-7 라이선스 관리표 | E8-01 |
