@@ -52,7 +52,7 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # ── E1. 2D 전환 기반 ──
-  epic-1: backlog
+  epic-1: in-progress
   1-01-portrait-lock: backlog  # E1-01 [M]
   1-02-2d-render-pixel-perfect: backlog  # E1-02 [M]
   1-03-cleanup-3d-assets: backlog  # E1-03 [M]
@@ -61,7 +61,7 @@ development_status:
   1-06-migration-v1-to-v2: backlog  # E1-06 [M]
   1-07-save-pipeline: backlog  # E1-07 [M]
   1-08-load-fail-defense-ui: backlog  # E1-08 [M]
-  1-09-build-pipeline-portrait: backlog  # E1-09 [M] FIRST in epic-1 — API 36 / 16 KB build spike
+  1-09-build-pipeline-portrait: ready-for-dev  # E1-09 [M] FIRST in epic-1 — API 36 / 16 KB build spike
   1-10-cold-start-measure: backlog  # E1-10 [S]
   epic-1-retrospective: optional
 
