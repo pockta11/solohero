@@ -1,0 +1,220 @@
+# generated: 2026-09-20
+# last_updated: 2026-09-20
+# project: SoloHero
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+# epics_source: _bmad-output/planning-artifacts/gdds/gdd-solohero-2026-09-20/epics.md
+# architecture: _bmad-output/planning-artifacts/architecture/arch-solohero-2026-09-20/game-architecture.md
+#
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+#
+# SOLOHERO ORDERING RULES (from architecture D13 / epics.md):
+# ============================================================
+# - 1-09 build-pipeline-portrait is the FIRST story of epic-1 (Android API 36 + 16 KB spike, decides JDK 11/17)
+# - 9-01..9-05 (balance simulator + V-1..V-7) run BEFORE epic-4 starts
+# - epic-3 and epic-4 may run in parallel after epic-2
+# - Story key = "{epic}-{story}-{slug}"; the original ID (E1-01 ...) and priority (M/S) are in the trailing comment
+
+generated: 2026-09-20
+last_updated: 2026-09-20
+project: SoloHero
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # ── E1. 2D 전환 기반 ──
+  epic-1: backlog
+  1-01-portrait-lock: backlog  # E1-01 [M]
+  1-02-2d-render-pixel-perfect: backlog  # E1-02 [M]
+  1-03-cleanup-3d-assets: backlog  # E1-03 [M]
+  1-04-boot-sequence: backlog  # E1-04 [M]
+  1-05-save-schema-v2: backlog  # E1-05 [M]
+  1-06-migration-v1-to-v2: backlog  # E1-06 [M]
+  1-07-save-pipeline: backlog  # E1-07 [M]
+  1-08-load-fail-defense-ui: backlog  # E1-08 [M]
+  1-09-build-pipeline-portrait: backlog  # E1-09 [M] FIRST in epic-1 — API 36 / 16 KB build spike
+  1-10-cold-start-measure: backlog  # E1-10 [S]
+  epic-1-retrospective: optional
+
+  # ── E2. 전투 코어 ──
+  epic-2: backlog
+  2-01-hero-auto-advance: backlog  # E2-01 [M]
+  2-02-parallax-background: backlog  # E2-02 [M]
+  2-03-enemy-spawn-rules: backlog  # E2-03 [M]
+  2-04-nearest-targeting: backlog  # E2-04 [M]
+  2-05-engage-range: backlog  # E2-05 [M]
+  2-06-basic-attack-hit-frame: backlog  # E2-06 [M]
+  2-07-damage-and-crit: backlog  # E2-07 [M]
+  2-08-enemy-attack-hero-hit: backlog  # E2-08 [M]
+  2-09-hero-death-restart: backlog  # E2-09 [M]
+  2-10-object-pools: backlog  # E2-10 [M]
+  2-11-simultaneous-death-edge: backlog  # E2-11 [S]
+  2-12-background-reset: backlog  # E2-12 [M]
+  epic-2-retrospective: optional
+
+  # ── E3. 스테이지·챕터 진행 ──
+  epic-3: backlog
+  3-01-global-stage-scaling: backlog  # E3-01 [M]
+  3-02-kill-target-clear: backlog  # E3-02 [M]
+  3-03-auto-advance-stage: backlog  # E3-03 [M]
+  3-04-boss-stage: backlog  # E3-04 [M]
+  3-05-boss-intro-timer: backlog  # E3-05 [M]
+  3-06-boss-fail-popup: backlog  # E3-06 [M]
+  3-07-retreat-farming: backlog  # E3-07 [M]
+  3-08-highest-farming-split: backlog  # E3-08 [M]
+  3-09-stage-select-sheet: backlog  # E3-09 [M]
+  3-10-chapter-unlock-reward: backlog  # E3-10 [M]
+  3-11-chapter-theme-data: backlog  # E3-11 [M]
+  3-12-chapter-theme-cycle: backlog  # E3-12 [S]
+  3-13-fail-streak-prompt: backlog  # E3-13 [S]
+  epic-3-retrospective: optional
+
+  # ── E4. 성장 시스템 ──
+  epic-4: backlog
+  4-01-hero-level-exp: backlog  # E4-01 [M]
+  4-02-upgrade-lanes: backlog  # E4-02 [M]
+  4-03-upgrade-tap-guard: backlog  # E4-03 [M]
+  4-04-equipment-data: backlog  # E4-04 [M]
+  4-05-equip-swap: backlog  # E4-05 [M]
+  4-06-stat-aggregation: backlog  # E4-06 [M]
+  4-07-skills: backlog  # E4-07 [M]
+  4-08-skill-auto-cast: backlog  # E4-08 [M]
+  4-09-skill-manual-tap: backlog  # E4-09 [M]
+  4-10-skill-unlock-gate: backlog  # E4-10 [M]
+  4-11-skill-level-up: backlog  # E4-11 [M]
+  4-12-battle-cry-refresh: backlog  # E4-12 [M]
+  4-13-growth-save-triggers: backlog  # E4-13 [M]
+  epic-4-retrospective: optional
+
+  # ── E5. 가챠 ──
+  epic-5: backlog
+  5-01-gacha-rate-table-roll: backlog  # E5-01 [M]
+  5-02-pity-reset-rule: backlog  # E5-02 [M]
+  5-03-rate-table-validation: backlog  # E5-03 [M]
+  5-04-pity-ceiling: backlog  # E5-04 [M]
+  5-05-slot-uniform-pick: backlog  # E5-05 [M]
+  5-06-single-pull: backlog  # E5-06 [M]
+  5-07-ten-pull: backlog  # E5-07 [M]
+  5-08-gem-ten-pull: backlog  # E5-08 [S]
+  5-09-auto-equip-rule: backlog  # E5-09 [M]
+  5-10-duplicate-refund: backlog  # E5-10 [M]
+  5-11-gacha-presentation: backlog  # E5-11 [M]
+  5-12-pity-gauge-ui: backlog  # E5-12 [M]
+  5-13-rate-disclosure: backlog  # E5-13 [M]
+  5-14-gacha-verifier-run: backlog  # E5-14 [M]
+  5-15-gacha-unit-tests: backlog  # E5-15 [M]
+  epic-5-retrospective: optional
+
+  # ── E6. 경제·메타 ──
+  epic-6: backlog
+  6-01-gold-sources-sinks: backlog  # E6-01 [M]
+  6-02-gem-sources-sinks: backlog  # E6-02 [M]
+  6-03-offline-elapsed: backlog  # E6-03 [M]
+  6-04-offline-rate-by-stage: backlog  # E6-04 [M]
+  6-05-offline-popup: backlog  # E6-05 [M]
+  6-06-offline-min-seconds: backlog  # E6-06 [M]
+  6-07-time-tamper-defense: backlog  # E6-07 [M]
+  6-08-unclaimed-persist: backlog  # E6-08 [M]
+  6-09-ad-slot-offline-double: backlog  # E6-09 [M]
+  6-10-ad-slot-gem: backlog  # E6-10 [M]
+  6-11-ad-slot-gold-booster: backlog  # E6-11 [S]
+  6-12-ad-daily-reset: backlog  # E6-12 [M]
+  6-13-ad-failure-handling: backlog  # E6-13 [M]
+  6-14-real-ad-unit-ids: backlog  # E6-14 [M]
+  6-15-analytics-events: backlog  # E6-15 [S]
+  epic-6-retrospective: optional
+
+  # ── E7. UI/UX 세로 레이아웃 ──
+  epic-7: backlog
+  7-01-portrait-layout-grid: backlog  # E7-01 [M]
+  7-02-safe-area: backlog  # E7-02 [M]
+  7-03-battle-hud: backlog  # E7-03 [M]
+  7-04-tab-bar-panels: backlog  # E7-04 [M]
+  7-05-character-panel: backlog  # E7-05 [M]
+  7-06-equipment-panel: backlog  # E7-06 [M]
+  7-07-gacha-panel: backlog  # E7-07 [M]
+  7-08-skill-panel: backlog  # E7-08 [M]
+  7-09-settings-panel: backlog  # E7-09 [M]
+  7-10-skill-buttons: backlog  # E7-10 [M]
+  7-11-popups: backlog  # E7-11 [M]
+  7-12-toast-queue: backlog  # E7-12 [M]
+  7-13-tutorial-hints: backlog  # E7-13 [M]
+  7-14-back-key-policy: backlog  # E7-14 [M]
+  7-15-global-tap-guard: backlog  # E7-15 [M]
+  7-16-big-number-format: backlog  # E7-16 [M]
+  7-17-strings-table: backlog  # E7-17 [S]
+  epic-7-retrospective: optional
+
+  # ── E8. 아트·연출 통합 ──
+  epic-8: backlog
+  8-01-asset-license-sheet: backlog  # E8-01 [M]
+  8-02-hero-sprites: backlog  # E8-02 [M]
+  8-03-enemy-sprites: backlog  # E8-03 [M]
+  8-04-boss-sprites: backlog  # E8-04 [M]
+  8-05-chapter-backgrounds: backlog  # E8-05 [M]
+  8-06-hit-frame-events: backlog  # E8-06 [M]
+  8-07-equipment-icons: backlog  # E8-07 [M]
+  8-08-combat-vfx: backlog  # E8-08 [M]
+  8-09-damage-text-gold-countup: backlog  # E8-09 [M]
+  8-10-gacha-particles-flip: backlog  # E8-10 [M]
+  8-11-upgrade-punch-levelup-ring: backlog  # E8-11 [M]
+  8-12-korean-pixel-font: backlog  # E8-12 [M]
+  8-13-bgm-sfx: backlog  # E8-13 [S]
+  8-14-silent-play-check: backlog  # E8-14 [M]
+  8-15-low-effect-30fps: backlog  # E8-15 [M]
+  8-16-sprite-import-preset: backlog  # E8-16 [M]
+  epic-8-retrospective: optional
+
+  # ── E9. 밸런싱·QA·출시 ──
+  epic-9: backlog
+  9-01-balance-simulator: backlog  # E9-01 [M] — run before epic-4
+  9-02-verify-v1-v7: backlog  # E9-02 [M] — run before epic-4
+  9-03-target-curve-checkpoints: backlog  # E9-03 [M] — run before epic-4
+  9-04-wall-and-break-cost: backlog  # E9-04 [M] — run before epic-4
+  9-05-gold-spend-rate: backlog  # E9-05 [M] — run before epic-4
+  9-06-unit-test-suite: backlog  # E9-06 [M]
+  9-07-smoke-scenarios: backlog  # E9-07 [M]
+  9-08-force-kill-scenarios: backlog  # E9-08 [M]
+  9-09-idle-30min: backlog  # E9-09 [M]
+  9-10-idle-2h: backlog  # E9-10 [M]
+  9-11-extra-scenarios: backlog  # E9-11 [M]
+  9-12-device-matrix: backlog  # E9-12 [M]
+  9-13-bug-severity-gate: backlog  # E9-13 [M]
+  9-14-store-assets: backlog  # E9-14 [M]
+  9-15-rate-disclosure-policy: backlog  # E9-15 [M]
+  9-16-ad-policy-check: backlog  # E9-16 [M]
+  9-17-min-android-version: backlog  # E9-17 [S]
+  9-18-release-aab: backlog  # E9-18 [M]
+  9-19-memory-drawcall-measure: backlog  # E9-19 [M]
+  9-20-first-session-5min: backlog  # E9-20 [M]
+  9-21-no-ad-completion: backlog  # E9-21 [M]
+  epic-9-retrospective: optional
