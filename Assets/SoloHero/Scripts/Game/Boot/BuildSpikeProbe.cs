@@ -45,7 +45,6 @@ public sealed class BuildSpikeProbe : MonoBehaviour
     {
         try
         {
-            MobileAds.RaiseAdEventsOnUnityMainThread = true;
             MobileAds.Initialize(status =>
             {
                 var sb = new StringBuilder("AdMob: initialized");

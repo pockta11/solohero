@@ -70,9 +70,8 @@ public class GameManager : MonoBehaviour
         if (PlayerData.chapter < 1) PlayerData.chapter = 1;
 
         // 4. 오프라인 보상 계산 (UI 팝업에서 수령 시 골드 반영 + 저장)
-        float goldPerSec = _playerStatsSO != null
-                           ? _playerStatsSO.goldPerSecond
-                           : OfflineRewardSystem.BaseGoldPerSecond;
+        // PlayerStatsSO was removed with the 3D cleanup; legacy fallback until E1-04 BootSequence replaces this class.
+        float goldPerSec = OfflineRewardSystem.BaseGoldPerSecond;
         PendingOfflineGold = OfflineRewardSystem.Calculate(PlayerData.lastQuitTimeUtc, goldPerSec);
         if (PendingOfflineGold > 0)
             Debug.Log($"[GameManager] 오프라인 보상 준비 +{PendingOfflineGold} 골드 " +
