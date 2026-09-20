@@ -20,6 +20,9 @@
 .DS_Store
 *.apk
 *.aab
+*.apks
+*.keystore
+*.jks
 *.unitypackage
 crashlytics-build.properties
 *.alf

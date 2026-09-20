@@ -61,7 +61,7 @@ development_status:
   1-06-migration-v1-to-v2: backlog  # E1-06 [M]
   1-07-save-pipeline: backlog  # E1-07 [M]
   1-08-load-fail-defense-ui: backlog  # E1-08 [M]
-  1-09-build-pipeline-portrait: ready-for-dev  # E1-09 [M] FIRST in epic-1 — API 36 / 16 KB build spike
+  1-09-build-pipeline-portrait: in-progress  # E1-09 [M] FIRST in epic-1 — API 36 / 16 KB build spike
   1-10-cold-start-measure: backlog  # E1-10 [S]
   epic-1-retrospective: optional
 

@@ -1,6 +1,9 @@
+---
+baseline_commit: d255081eeb78dc3c4f721e2fdbd1e3f73266a97a
+---
 # Story 1.9: 빌드 파이프라인 세로 설정 갱신 + Android API 36 / 16 KB 실빌드 스파이크
 
-Status: ready-for-dev
+Status: in-progress
 
 <!-- Epic E1-09 · Must · epic-1의 첫 스토리 (architecture D13) -->
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
@@ -30,12 +33,12 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
   - [ ] Unity Hub에서 2022.3.76f1 설치 — 모듈: Android Build Support + Android SDK & NDK Tools + OpenJDK. 62f3은 스파이크 완료 후 제거
   - [ ] SDK Manager(Unity 번들 SDK 경로)에서 **Android SDK Platform 36** 설치 확인. 없으면 `sdkmanager "platforms;android-36"`
   - [ ] 프로젝트를 76f1로 열어 업그레이드 → 컴파일 오류 0 확인. `ProjectVersion.txt` 갱신 확인
-  - [ ] `Jenkinsfile` 경로 `2022.3.62f3` → `2022.3.76f1`
-  - [ ] `.github/workflows/activation.yml` 이미지 태그 `ubuntu-2022.3.62f3-base-3` → `ubuntu-2022.3.76f1-base-3` (라이선스 재활성화가 필요할 때만 쓰는 워크플로지만 버전은 맞춘다)
+  - [x] `Jenkinsfile` 경로 `2022.3.62f3` → `2022.3.76f1`
+  - [x] `.github/workflows/activation.yml` 이미지 태그 `ubuntu-2022.3.62f3-base-3` → `ubuntu-2022.3.76f1-base-3` (라이선스 재활성화가 필요할 때만 쓰는 워크플로지만 버전은 맞춘다)
 - [ ] **T2. Player Settings 세로·64-bit·API 36** (AC 2)
-  - [ ] `Edit > Project Settings > Player > Android > Other Settings`: Scripting Backend IL2CPP, Api Compatibility .NET Standard 2.1, Target Architectures ARMv7 + ARM64, Minimum API 24, Target API **36**
-  - [ ] Resolution and Presentation: Default Orientation Portrait, Auto Rotation 끔, Aspect Ratio Mode Custom → **2.5**
-  - [ ] Optimization: Managed Stripping Level Low (Firebase 리플렉션 안전). `Assets/link.xml`은 이 스토리에서 만들지 않는다 (E1-05)
+  - [x] `Edit > Project Settings > Player > Android > Other Settings`: Scripting Backend IL2CPP, Api Compatibility .NET Standard 2.1, Target Architectures ARMv7 + ARM64, Minimum API 24, Target API **36**
+  - [x] Resolution and Presentation: Default Orientation Portrait, Auto Rotation 끔, Aspect Ratio Mode Custom → **2.5**
+  - [x] Optimization: Managed Stripping Level Low (Firebase 리플렉션 안전). `Assets/link.xml`은 이 스토리에서 만들지 않는다 (E1-05)
   - [ ] Publishing Settings: Custom Main Gradle Template / Custom Gradle Properties Template / Custom Gradle Settings Template 체크 상태 유지 확인 (`Assets/Plugins/Android/*` 사용)
 - [ ] **T3. Firebase · AdMob · EDM4U 상향** (AC 3)
   - [ ] Firebase Unity SDK 13.17.0 `.unitypackage` 4종(App은 자동, Auth · Database · Analytics) 임포트. 기존 13.9.0 파일이 남지 않도록 `Assets/Firebase`, `Assets/ExternalDependencyManager` 버전 매니페스트 확인 (`*_version-13.17.0_manifest.txt`만 존재)
@@ -44,14 +47,14 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
   - [ ] `Assets/Plugins/Android/AndroidManifest.xml`의 AdMob App ID(`ca-app-pub-1435934257467286~9895276357`) 유지 확인
 - [ ] **T4. 플레이스홀더 부트 씬 + 프로브** (AC 6)
   - [ ] `Assets/SoloHero/Scenes/Boot.unity` 생성 — Main Camera(Orthographic, 배경 단색) + Canvas(Portrait 1080×1920 CanvasScaler) + TMP Text `StatusLabel`
-  - [ ] `Assets/SoloHero/Scripts/Game/Boot/BuildSpikeProbe.cs` (MonoBehaviour, **임시** — E1-04 `BootSequence`가 대체하며 삭제). `Start`에서 순서대로: Unity 버전·`SystemInfo`(기기·OS·`Application.targetFrameRate`) 표시 → `FirebaseApp.CheckAndFixDependenciesAsync()` 결과 표시 → `MobileAds.Initialize(status => ...)` 결과 표시. 모든 콜백은 `try/catch`로 감싸고 예외 메시지를 라벨에 출력. 코드 텍스트 영문만
+  - [x] `Assets/SoloHero/Scripts/Game/Boot/BuildSpikeProbe.cs` (MonoBehaviour, **임시** — E1-04 `BootSequence`가 대체하며 삭제). `Start`에서 순서대로: Unity 버전·`SystemInfo`(기기·OS·`Application.targetFrameRate`) 표시 → `FirebaseApp.CheckAndFixDependenciesAsync()` 결과 표시 → `MobileAds.Initialize(status => ...)` 결과 표시. 모든 콜백은 `try/catch`로 감싸고 예외 메시지를 라벨에 출력. 코드 텍스트 영문만
   - [ ] `EditorBuildSettings`에 `Boot.unity` 1개 등록
 - [ ] **T5. BuildAutomator 갱신** (AC 4, 7)
-  - [ ] `Assets/Editor/BuildAutomator.cs` → `Assets/SoloHero/Scripts/Editor/BuildAutomator.cs`로 이동 (`.meta` 함께). 폴더명이 `Editor`이므로 asmdef 없이도 에디터 어셈블리로 컴파일됨
-  - [ ] 씬 목록을 하드코딩 대신 `EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path)`로 읽기 (LoginScene·GameScene 참조 제거 — 존재하지 않아 빌드 실패의 원인)
-  - [ ] `EditorUserBuildSettings.buildAppBundle = true` 유지, `BuildOptions`는 환경변수 `SOLOHERO_DEV_BUILD=1`이면 `Development` 추가 (개발 빌드에서 `BuildConfig.useTestAdIds` 강제 규약의 기반)
-  - [ ] `BuildReport.summary.result != Succeeded`이면 `EditorApplication.Exit(1)` — batchmode에서 실패가 CI 실패로 전파되도록
-  - [ ] `Builds/` 디렉터리 없으면 생성
+  - [x] `Assets/Editor/BuildAutomator.cs` → `Assets/SoloHero/Scripts/Editor/BuildAutomator.cs`로 이동 (`.meta` 함께). 폴더명이 `Editor`이므로 asmdef 없이도 에디터 어셈블리로 컴파일됨
+  - [x] 씬 목록을 하드코딩 대신 `EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path)`로 읽기 (LoginScene·GameScene 참조 제거 — 존재하지 않아 빌드 실패의 원인)
+  - [x] `EditorUserBuildSettings.buildAppBundle = true` 유지, `BuildOptions`는 환경변수 `SOLOHERO_DEV_BUILD=1`이면 `Development` 추가 (개발 빌드에서 `BuildConfig.useTestAdIds` 강제 규약의 기반)
+  - [x] `BuildReport.summary.result != Succeeded`이면 `EditorApplication.Exit(1)` — batchmode에서 실패가 CI 실패로 전파되도록
+  - [x] `Builds/` 디렉터리 없으면 생성
 - [ ] **T6. 로컬 빌드 + 16 KB 정렬 검사** (AC 4)
   - [ ] `Tools > Build > Android AAB` → `Builds/game.aab`
   - [ ] bundletool(최신 jar 다운로드)로 APK 추출:
@@ -185,9 +188,34 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
 
 ### Agent Model Used
 
-_(dev-story 실행 시 기록)_
+Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 
 ### Debug Log References
+
+- 에디터 컴파일은 아직 미실행 (76f1 설치 전). API 존재는 DLL 문자열 검색으로 확인: `GoogleMobileAds.dll`에 `RaiseAdEventsOnUnityMainThread`·`getAdapterStatusMap`, `GoogleMobileAds.Core.dll`에 `InitializationState`, `Firebase.App.dll`에 `CheckAndFixDependenciesAsync`.
+
+### Implementation Plan (코드 파트, 완료)
+
+- `ProjectSettings.asset` 직접 편집: `AndroidTargetSdkVersion 0→36`, `AndroidTargetArchitectures 1→3`(ARMv7+ARM64), `scriptingBackend {Android: 1}`(IL2CPP), `managedStrippingLevel {Android: 1}`(Low), `androidMaxAspectRatio 2.1→2.5`. **편차:** Aspect Ratio Mode는 `androidSupportedAspectRatio: 1`(Native Aspect Ratio) 그대로 둠 — Custom보다 강한 옵션(어떤 비율에서도 레터박스 없음)이라 AC 2의 목적을 충족. 2.5는 모드를 Custom으로 바꿀 때를 대비한 값
+- `BuildAutomator` 재작성: `EditorBuildSettings` 기반 씬, `-customBuildPath`(GameCI) 우선, `SOLOHERO_DEV_BUILD`, 키스토어 env 주입, `SOLOHERO_JDK_PATH`/`SOLOHERO_GRADLE_PATH` → `EditorPrefs`(결정 B 대비), 실패 시 batchmode `Exit(1)`. `SpikeSceneSetup.EnsureBootScene()`를 빌드 전에 호출해 CI 새 체크아웃에서도 씬이 보장됨
+- `SpikeSceneSetup`(에디터): 메뉴 `Tools > SoloHero > Spike > Create Boot Scene` — 카메라(ortho 7.5 = 480 px / PPU 32) + `BuildSpikeProbe` GO, `EditorBuildSettings`에 단독 등록. 씬 YAML을 손으로 쓰는 대신 코드로 생성해 GUID·직렬화 오류 위험 제거
+- `BuildSpikeProbe`(런타임, TEMP): `OnGUI` 텍스트로 Unity 버전·기기·64-bit 여부·`CheckAndFixDependenciesAsync` 결과·`MobileAds.Initialize` 콜백(어댑터 상태)을 표시. UI 에셋 의존 0. AdMob 콜백은 lock 큐 → `Update`에서 플러시
+- `build.yml`: `actions/cache@v4`, artifact 경로에 `Builds/*.aab` 추가 + `if-no-files-found: error` (기존엔 `build/Android/*.aab`만 봐서 커스텀 빌드 메서드 산출물을 못 찾는 상태였음)
+- `tools/spike/Check16Kb.ps1`: bundletool universal APK → `.so` 추출 → `llvm-readelf -l` LOAD align 표 → `zipalign -c -P 16` → 결과 A/B-1/B-2/B-3 판정 및 exit code
+- `.gitignore`: `*.apks`, `*.keystore`, `*.jks`
+
+### 사람 손이 필요한 남은 작업 (순서대로)
+
+1. **T1** Unity Hub → 2022.3.76f1 설치(Android Build Support + SDK/NDK + OpenJDK) → 프로젝트 열기(업그레이드 수락) → 콘솔 컴파일 오류 0 확인 → `ProjectVersion.txt`가 76f1인지 확인 → SDK Platform 36 존재 확인(`Preferences > External Tools`의 SDK 경로 `platforms/android-36`)
+2. **T3** Firebase Unity SDK 13.17.0 `.unitypackage` 임포트(App·Auth·Database·Analytics) → GMA Unity 11.5.0 임포트 → `Assets > External Dependency Manager > Android Resolver > Force Resolve` → `Assets/Firebase/Editor/*_version-13.17.0_manifest.txt`, `Assets/GoogleMobileAds/GoogleMobileAds_version-11.5.0_manifest.txt`만 남았는지 확인
+3. **T4** `Tools > SoloHero > Spike > Create Boot Scene` 1회 실행 → `Assets/SoloHero/Scenes/Boot.unity` 생성·등록 확인 → 새로 생긴 `.meta` 파일들과 함께 커밋
+4. **T2 검증** `Project Settings > Player > Android`에서 IL2CPP / ARMv7+ARM64 / Target API 36 / Portrait / Stripping Low가 인스펙터에 그대로 보이는지 확인 (파일 편집이 에디터에 반영됐는지)
+5. **T6** `Tools > Build > Android AAB` → `Builds/game.aab` → bundletool jar 다운로드 후 `pwsh tools/spike/Check16Kb.ps1 -Aab Builds/game.aab -Bundletool <jar> -Ndk <76f1 NDK> -BuildTools <SDK build-tools 35+>` 실행 → 출력 표를 아래 Completion Notes에 붙여넣기
+6. **T7** 스크립트 exit code로 결정: 0=A / 2=B-1·B-2 / 3=B-3 (스토리 태스크의 대응 절차)
+7. **T8** Jenkins 실행, GitHub Actions `workflow_dispatch` 실행 → run URL 기록
+8. **T9** Play Console 내부 테스트 업로드(업로드 키 필요 시 `SOLOHERO_KEYSTORE_*` env로 빌드) → 경고 확인
+9. **T10** 기기/에뮬레이터(16 KB) 설치 → 프로브 3줄 + `adb logcat -s Unity` 30초
+10. **T11** 결과를 Completion Notes에 기록 → D13·CLAUDE.md·project-context 갱신 → 상태 `review`
 
 ### Completion Notes List
 
@@ -212,3 +240,14 @@ _(dev-story 실행 시 기록)_
 - 컴파일 최소 수정 목록 (있다면):
 
 ### File List
+
+- `ProjectSettings/ProjectSettings.asset` (M — Target SDK 36, ARMv7+ARM64, IL2CPP, Stripping Low, maxAspectRatio 2.5)
+- `Jenkinsfile` (M — 76f1)
+- `.github/workflows/activation.yml` (M — 76f1 이미지)
+- `.github/workflows/build.yml` (M — cache v4, artifact 경로)
+- `.gitignore` (M — *.apks, *.keystore, *.jks)
+- `Assets/Editor/BuildAutomator.cs` → `Assets/SoloHero/Scripts/Editor/BuildAutomator.cs` (R + 재작성)
+- `Assets/SoloHero/Scripts/Editor/SpikeSceneSetup.cs` (A)
+- `Assets/SoloHero/Scripts/Game/Boot/BuildSpikeProbe.cs` (A, TEMP)
+- `tools/spike/Check16Kb.ps1` (A)
+- _(에디터 실행 후 생성 예정)_ `Assets/SoloHero/Scenes/Boot.unity`, 신규 폴더·스크립트 `.meta`, `ProjectSettings/ProjectVersion.txt`, `ProjectSettings/EditorBuildSettings.asset`, `Assets/Plugins/Android/mainTemplate.gradle`(Resolver), `Assets/Firebase/**`, `Assets/GoogleMobileAds/**`, `Assets/ExternalDependencyManager/**`
