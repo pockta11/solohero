@@ -21,7 +21,7 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 
 | Item | Version / Value | Notes |
 |---|---|---|
-| Unity | **2022.3 LTS** — project is on 2022.3.62f3, upgrade target 2022.3.76f1 | **Not Unity 6.** No `Awaitable`, no `Unity.Mathematics` assumptions, C# 9 / .NET Standard 2.1 |
+| Unity | **2022.3.62f3 — pinned.** Last 2022.3 patch available to Personal/Pro; 63f1+ is Extended LTS (Industry/Enterprise only). Do not attempt to upgrade within 2022.3 | **Not Unity 6.** No `Awaitable`, no `Unity.Mathematics` assumptions, C# 9 / .NET Standard 2.1 |
 | Render | URP 14.0.12, `Renderer2D` | SRP Batcher on. No 3D renderer |
 | 2D | `com.unity.feature.2d` 2.0.1 (Pixel Perfect, Sprite Atlas, 2D Animation) | PPU 32, reference 270×480 |
 | Async | UniTask **v2.5.11** (git URL pinned) | Coroutines are banned |

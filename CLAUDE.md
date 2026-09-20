@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **설계 기조: 장르 표준 모방.** 버섯커 키우기·세븐나이츠 키우기·Soul Strike의 관습을 따르고 고유 설계는 두지 않는다.
 
-- **Engine**: Unity **2022.3 LTS** (현재 2022.3.62f3, 상향 목표 2022.3.76f1) — Unity 6 아님, `Awaitable` 없음, C# 9
+- **Engine**: Unity **2022.3.62f3** — **Personal/Pro로 받을 수 있는 마지막 2022.3 패치** (63f1+는 Industry/Enterprise 전용 xLTS). Unity 6 아님, `Awaitable` 없음, C# 9
 - **Render**: URP 14.0.12, `Renderer2D`, Pixel Perfect (기준 270×480 정수 4배, PPU 32)
 - **Screen**: **Portrait 1080×1920** 고정
 - **Platform**: Android AAB, 타깃 API 36, minSdk 24
@@ -91,7 +91,7 @@ Assets/SoloHero/            # 프로젝트 소유 전부. 벤더(Firebase·Googl
 
 | Requirement | Note |
 |---|---|
-| Unity 2022.3.x (→ 76f1) | Android Build Support + SDK/NDK + **OpenJDK 11** |
+| Unity 2022.3.62f3 (고정) | Android Build Support + SDK/NDK + **OpenJDK 11**. 63f1+는 xLTS(유료 라이선스)라 상향 불가 |
 | Android SDK Platform 36 | Target API 36 (2026-08-31부터 신규 앱 필수) |
 | JDK | **JDK 11** — E1-09 스파이크에서 16 KB 정렬을 위해 AGP 8.5+/Gradle 8.7+가 필요하면 **JDK 17 전환 허용** (그때 이 표 갱신) |
 | `Assets/google-services.json` | 커밋 금지. 없으면 부트가 `local` 모드로 진입해야 함 |
@@ -105,7 +105,7 @@ Gradle Java 호환성 11. 16 KB 페이지 정렬은 Play Console 검사로만 �
 
 ## Next Steps
 
-1. **E1-09 스파이크** — 76f1 + API 36 + Firebase/AdMob 최신으로 AAB → Play Console 내부 테스트 16 KB 검사
+1. **E1-09 스파이크** — 62f3 + SDK Platform 36 + Firebase/AdMob 최신으로 AAB → Play Console 내부 테스트 16 KB 검사
 2. **E1-03 정리** — 아키텍처 "정리 대상" 표대로 이동·삭제, 패키지 제거
 3. **E1 골격** — asmdef 4개 + Core/Common + `Formulas` + `BalanceConfig` + EditMode 테스트 1개 녹색
 4. 이후 E2 전투 코어 → E3/E4 병렬 → E9-01~05 시뮬레이션 1차(E4 착수 전) → E5 → E6 → E7 → E8 → E9

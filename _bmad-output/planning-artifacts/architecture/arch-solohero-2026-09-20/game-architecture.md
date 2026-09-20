@@ -6,7 +6,7 @@ author: 'Tae-jun'
 version: '1.0'
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 status: 'complete'
-engine: 'Unity 2022.3 LTS (2022.3.76f1)'
+engine: 'Unity 2022.3.62f3 (last Personal/Pro patch of 2022.3)'
 platform: 'Android (Google Play, AAB) — Portrait 1080×1920'
 
 # Source Documents
@@ -20,7 +20,7 @@ brief: null
 
 ## Executive Summary
 
-**SoloHero**는 Unity 2022.3 LTS(2022.3.76f1) 위에서 Android 단독·세로 1080×1920으로 만드는 픽셀아트 2D 횡스크롤 방치형 RPG다. 이 아키텍처의 기조는 **장르 표준 모방**이다 — 버섯커 키우기·세븐나이츠 키우기·Soul Strike가 검증한 관습을 그대로 따르고, 고유 설계는 두지 않는다.
+**SoloHero**는 Unity 2022.3.62f3 위에서 Android 단독·세로 1080×1920으로 만드는 픽셀아트 2D 횡스크롤 방치형 RPG다. 이 아키텍처의 기조는 **장르 표준 모방**이다 — 버섯커 키우기·세븐나이츠 키우기·Soul Strike가 검증한 관습을 그대로 따르고, 고유 설계는 두지 않는다.
 
 **핵심 결정**
 
@@ -190,17 +190,17 @@ GDD가 아키텍처로 이월한 4건은 모두 닫혔다.
 
 ### Selected Engine
 
-**Unity 2022.3 LTS** — 현재 2022.3.62f3, **2022.3.76f1 (2026-09-10)로 패치 상향** (E1-01 착수 시)
+**Unity 2022.3.62f3** — 고정. **2022.3.63f1 이후 패치는 Extended LTS(xLTS)로 Unity Industry/Enterprise 라이선스 전용**이라 Personal/Pro에서는 62f3이 받을 수 있는 마지막 버전이다 (2026-09-20 Unity Hub 설치 시도에서 라이선스 오류로 확인). 초안의 "76f1 상향" 계획은 이 게이트를 놓친 것으로, 철회한다.
 
-**Rationale:** 엔진은 선택이 아니라 제약이다. GDD Dependencies가 Unity 2022.3 고정을 명시하고, Firebase·AdMob·EDM4U·Gradle 템플릿·JDK 11 빌드 파이프라인이 전부 이 버전에서 검증되어 있다. 2022.3 라인은 2026-09 현재 격주 패치가 계속 나오고 있어(76f1) 같은 라인 안에서의 상향은 저위험이며, 16 KB 페이지 크기·API 36 관련 수정을 받는다.
+**Rationale:** 엔진은 선택이 아니라 제약이다. GDD Dependencies가 Unity 2022.3 고정을 명시하고, Firebase·AdMob·EDM4U·Gradle 템플릿·JDK 11 빌드 파이프라인이 전부 이 버전에서 검증되어 있다. 16 KB 페이지 크기 엔진 지원은 2022.3.56f1부터 포함되어 62f3에 이미 있다. 타깃 API 36은 에디터 버전이 아니라 **Android SDK Platform 36 설치**로 충족한다.
 
 **검토 후 기각한 대안**
 
 | 대안 | 기각 이유 |
 |---|---|
-| 2022.3.62f3 그대로 | 16 KB 페이지 정렬·API 36 관련 수정이 이후 패치에 있음. 신규 앱은 2026-08-31부터 API 36 필수 |
+| 2022.3.63f1 ~ 76f1 패치 상향 | **불가.** Extended LTS — Industry/Enterprise 라이선스 전용. Hub 설치 시 "License error: This build of Unity 2022 is part of an Extended LTS release" |
 | Unity 6.0 LTS | 보안 지원 2026-10-16 종료. 상향 직후 EOL |
-| Unity 6.3 LTS | URP 14→17, JDK 11→17, Gradle 7→8 동시 전환. Firebase/AdMob/EDM4U/커스텀 Gradle 템플릿 전부 재검증. 1인 개발에서 v1.0 출시 전 감당할 이유가 없음. **v1.0 출시 후 재검토** |
+| Unity 6.3 LTS | URP 14→17, JDK 11→17, Gradle 7→8 동시 전환. Firebase/AdMob/EDM4U/커스텀 Gradle 템플릿 전부 재검증. 1인 개발에서 v1.0 출시 전 감당할 이유가 없음. **v1.0 출시 후 재검토** — 2022.3에 더 이상 패치가 없으므로 그때는 유일한 상향 경로 |
 
 **외부 제약 (2026-09-20 확인)**
 
@@ -266,7 +266,7 @@ GDD가 아키텍처로 이월한 4건은 모두 닫혔다.
 | D10 | 물리 모듈: `physics2d` 미사용 시 제거 여부 (`physics`는 DOTween 때문에 유지) | 전투는 1D 거리 비교, 충돌 판정 없음 |
 | D11 | 오브젝트 풀 구현: 자체 `ObjectPool<T>` vs `UnityEngine.Pool` (2021.1+) | 복잡도 동인 3 |
 | D12 | 에셋 계약 + 픽셀 퍼펙트 카메라 설정 + 스프라이트 임포트 프리셋 | E8-16, 에셋 출처 무관 단일 임포트 경로 |
-| D13 | Android: 타깃 API 36 + 16 KB 정렬 경로 (AGP/Gradle/JDK 상향 필요 여부) | E1-09, CLAUDE.md JDK 11 제약 |
+| D13 | Android | **타깃 API 36 확정 (SDK Platform 36 설치, 에디터 62f3 고정). E1-09 실빌드 스파이크를 E1 첫 작업으로.** 실패 시 AGP 8.5+/Gradle 8.7+/JDK 17 전환 허용, CLAUDE.md 갱신 | 2022.3.62f3 | 2026-08-31부터 신규 앱 API 36 필수. 16 KB 정렬은 실빌드로만 확인 가능. 63f1+ 패치는 xLTS(유료)라 엔진 측 수정을 더 받을 수 없음 — 그래서 실빌드 검증이 더 중요 |
 
 ---
 
@@ -1305,7 +1305,7 @@ public PullResult Pull()
 
 | 항목 | 요구 | 비고 |
 |---|---|---|
-| Unity Hub + **Unity 2022.3.76f1** | Android Build Support + Android SDK/NDK + **OpenJDK 11** 모듈 | E1-09 스파이크 결과에 따라 JDK 17로 바뀔 수 있음 (D13) |
+| Unity Hub + **Unity 2022.3.62f3** (고정) | Android Build Support + Android SDK/NDK + **OpenJDK 11** 모듈 | 63f1+는 xLTS(유료). E1-09 스파이크 결과에 따라 JDK 17로 바뀔 수 있음 (D13) |
 | Android SDK Platform 36 | `Target API Level = 36` (또는 Highest Installed) | 2026-08-31 이후 신규 앱 필수 |
 | `Assets/google-services.json` | Firebase Console에서 받아 배치. 커밋 금지 | 없으면 부트가 `local` 모드로 진입 |
 | DOTween 설정 | `Tools > Demigiant > DOTween Utility Panel > Setup` + **Create ASMDEF** | asmdef 없으면 `SoloHero.Game`이 참조 못 함 |
@@ -1339,7 +1339,7 @@ claude mcp add --transport http higgsfield https://mcp.higgsfield.ai/mcp
 
 ```bash
 git clone <repo> solohero && cd solohero
-# Unity Hub: 2022.3.76f1 설치(Android + OpenJDK 11) → 프로젝트 열기 → 첫 임포트 대기
+# Unity Hub: 2022.3.62f3 (Android + OpenJDK 11) → 프로젝트 열기 → 첫 임포트 대기
 # Unity: Tools > Demigiant > DOTween Utility Panel > Setup DOTween → Create ASMDEF
 # Unity: Edit > Project Settings > Player > Android > Target API Level 36, Active Input Handling = Input Manager (Old)  (D9 적용 후)
 # 배치: Assets/google-services.json
@@ -1348,7 +1348,7 @@ git clone <repo> solohero && cd solohero
 
 ### First Steps
 
-1. **E1-09 스파이크 (D13)** — 76f1 + 타깃 API 36 + Firebase/AdMob 최신으로 AAB 빌드 → Play Console 내부 테스트 트랙에 올려 16 KB 검사 통과 확인. 실패 시 AGP/Gradle/JDK 상향 결정 후 CLAUDE.md 갱신.
+1. **E1-09 스파이크 (D13)** — 62f3 + SDK Platform 36(타깃 API 36) + Firebase/AdMob 최신으로 AAB 빌드 → Play Console 내부 테스트 트랙에 올려 16 KB 검사 통과 확인. 실패 시 AGP/Gradle/JDK 상향 결정 후 CLAUDE.md 갱신.
 2. **E1-03 정리** — 구조 절 "정리 대상" 표대로 이동·삭제. Addressables·Input System 패키지 제거, `Resources`·`StreamingAssets/JSON` 삭제.
 3. **E1 골격** — asmdef 4개 + `Core/Common`(Result·Log·Services·IClock·IRandom·IsExternalInit) + `Formulas` + `BalanceConfig` SO + EditMode 테스트 프로젝트. 테스트 1개가 녹색이 되는 것이 골격 완료 기준.
 4. **MCP 설정** — 위 AI Tooling 절.

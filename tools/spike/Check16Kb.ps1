@@ -12,8 +12,8 @@
 .EXAMPLE
   pwsh tools/spike/Check16Kb.ps1 -Aab Builds/game.aab `
     -Bundletool C:\tools\bundletool-all.jar `
-    -Ndk "C:\Program Files\Unity\Hub\Editor\2022.3.76f1\Editor\Data\PlaybackEngines\AndroidPlayer\NDK" `
-    -BuildTools "C:\Program Files\Unity\Hub\Editor\2022.3.76f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\build-tools\35.0.0"
+    -Ndk "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\NDK" `
+    -BuildTools "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\build-tools\35.0.0"
 #>
 param(
     [Parameter(Mandatory)] [string] $Aab,

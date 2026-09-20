@@ -11,14 +11,14 @@ Status: in-progress
 ## Story
 
 As a 1인 개발자,
-I want 2022.3.76f1 · 타깃 API 36 · 64-bit IL2CPP · 최신 Firebase/AdMob 조합으로 Jenkins와 GitHub Actions 양쪽에서 AAB가 나오고 Play Console의 16 KB 페이지 크기 검사를 통과하는 것을 **먼저** 확인하고,
+I want 2022.3.62f3(고정) · 타깃 API 36 · 64-bit IL2CPP · 최신 Firebase/AdMob 조합으로 Jenkins와 GitHub Actions 양쪽에서 AAB가 나오고 Play Console의 16 KB 페이지 크기 검사를 통과하는 것을 **먼저** 확인하고,
 so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17 전환이 확정된 안정된 파이프라인 위에서 진행할 수 있다.
 
 **이 스토리는 스파이크다.** 산출물은 (1) 통과하는 빌드 파이프라인, (2) JDK·AGP·Gradle 결정 기록이다. 게임 기능은 넣지 않는다.
 
 ## Acceptance Criteria
 
-1. **에디터 상향:** 프로젝트가 Unity **2022.3.76f1**로 열리고 컴파일 오류 0. `ProjectSettings/ProjectVersion.txt`가 76f1이고 `Jenkinsfile`의 에디터 경로가 76f1을 가리킨다. GitHub Actions는 `ProjectVersion.txt`에서 버전을 자동 감지한다 (`unityci/editor:ubuntu-2022.3.76f1-android-3` 이미지 존재 확인됨).
+1. **에디터 고정 + SDK 36:** 프로젝트는 **2022.3.62f3** 그대로 (63f1+는 Industry/Enterprise 전용 xLTS — 상향 불가). Android **SDK Platform 36**이 Unity 번들 SDK에 설치되어 있고 컴파일 오류 0. `Jenkinsfile`·`activation.yml`은 62f3을 가리킨다.
 2. **Player Settings (Android):** Scripting Backend **IL2CPP**, Target Architectures **ARM64 + ARMv7**, Target API Level **36 (명시값, "Highest Installed" 아님)**, Minimum API 24, Default Orientation **Portrait** 단독(자동 회전 끔), Aspect Ratio Mode **Custom ≥ 2.5** (20:9 세로 기기 레터박스 방지), Managed Stripping **Low** 이상.
 3. **SDK 상향:** Firebase Unity SDK **≥ 13.17.0** (App·Auth·Database·Analytics), Google Mobile Ads Unity **≥ 11.5.0**, EDM4U는 위 패키지에 동봉된 최신. `Assets > External Dependency Manager > Android Resolver > Force Resolve` 재실행으로 `mainTemplate.gradle` 의존성 블록이 재생성된다.
 4. **로컬 AAB:** `Tools > Build > Android AAB`로 `Builds/game.aab` 생성 성공. `bundletool build-apks` → 추출한 **arm64-v8a `.so` 전부**가 16 KB 정렬(ELF LOAD 세그먼트 align ≥ `0x4000`)이다 — Unity 라이브러리(`libunity`, `libil2cpp`, `libmain`)와 서드파티(`libFirebaseCppApp`, `libFirebaseCppAuth`, `libFirebaseCppDatabase`, `libFirebaseCppAnalytics` 등) 모두.
@@ -29,12 +29,11 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
 
 ## Tasks / Subtasks
 
-- [ ] **T1. Unity 2022.3.76f1 상향** (AC 1)
-  - [ ] Unity Hub에서 2022.3.76f1 설치 — 모듈: Android Build Support + Android SDK & NDK Tools + OpenJDK. 62f3은 스파이크 완료 후 제거
-  - [ ] SDK Manager(Unity 번들 SDK 경로)에서 **Android SDK Platform 36** 설치 확인. 없으면 `sdkmanager "platforms;android-36"`
-  - [ ] 프로젝트를 76f1로 열어 업그레이드 → 컴파일 오류 0 확인. `ProjectVersion.txt` 갱신 확인
-  - [x] `Jenkinsfile` 경로 `2022.3.62f3` → `2022.3.76f1`
-  - [x] `.github/workflows/activation.yml` 이미지 태그 `ubuntu-2022.3.62f3-base-3` → `ubuntu-2022.3.76f1-base-3` (라이선스 재활성화가 필요할 때만 쓰는 워크플로지만 버전은 맞춘다)
+- [ ] **T1. Unity 2022.3.62f3 고정 + SDK Platform 36** (AC 1)
+  - [x] ~~2022.3.76f1 설치~~ **불가 확인** — Hub 라이선스 오류 "part of an Extended LTS release, requires Industry or Enterprise". 62f3 유지로 결정 변경, 아키텍처·CLAUDE.md·project-context 갱신
+  - [ ] Unity 번들 SDK(`Edit > Preferences > External Tools > Android > SDK` 경로)에 **`platforms\android-36`** 존재 확인. 없으면 `<SDK>\cmdline-tools\<ver>\bin\sdkmanager.bat "platforms;android-36" "build-tools;35.0.0"`
+  - [ ] 62f3에서 프로젝트 열기 → 컴파일 오류 0 확인
+  - [x] `Jenkinsfile`·`.github/workflows/activation.yml` — 62f3 유지 (76f1로 바꿨다가 되돌림)
 - [ ] **T2. Player Settings 세로·64-bit·API 36** (AC 2)
   - [x] `Edit > Project Settings > Player > Android > Other Settings`: Scripting Backend IL2CPP, Api Compatibility .NET Standard 2.1, Target Architectures ARMv7 + ARM64, Minimum API 24, Target API **36**
   - [x] Resolution and Presentation: Default Orientation Portrait, Auto Rotation 끔, Aspect Ratio Mode Custom → **2.5**
@@ -64,10 +63,10 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
 - [ ] **T7. 결정 트리 실행** (AC 8)
   - [ ] **결과 A — T6 전부 통과:** JDK 11 유지. `mainTemplate.gradle` Java 11 그대로. 결정 A를 기록하고 T8로
   - [ ] **결과 B-1 — 서드파티 `.so`만 실패:** 해당 SDK가 더 최신인지 확인(T3 재확인). 그래도 실패면 Firebase/GMA GitHub 이슈 번호와 함께 기록하고 사용자에게 보고 후 중단
-  - [ ] **결과 B-2 — Unity `.so`(libunity/libil2cpp/libmain) 실패:** 76f1에서 나오면 안 되는 결과. Unity Discussions 검색 후 사용자에게 보고. 진행 중단
+  - [ ] **결과 B-2 — Unity `.so`(libunity/libil2cpp/libmain) 실패:** 62f3(16 KB 지원 56f1+)에서 나오면 안 되는 결과. Unity Discussions 검색 후 사용자에게 보고. 진행 중단
   - [ ] **결과 B-3 — `.so`는 정렬됐으나 `zipalign -P 16` 실패 (패키징 문제, AGP 7.4.2 한계):** AGP·Gradle·JDK 상향 경로 시도 —
         (a) `Edit > Preferences > External Tools > Android`에서 Gradle **8.7+** 설치 경로와 **JDK 17** 경로를 지정(Unity 번들 해제),
-        (b) `Assets/Plugins/Android/baseProjectTemplate.gradle`을 커스텀 활성화하고 `com.android.tools.build:gradle:8.5.1`(또는 76f1이 허용하는 최신)로,
+        (b) `Assets/Plugins/Android/baseProjectTemplate.gradle`을 커스텀 활성화하고 `com.android.tools.build:gradle:8.5.1`(또는 62f3이 허용하는 최신)로,
         (c) `mainTemplate.gradle` `sourceCompatibility/targetCompatibility` → `VERSION_17`, AGP 8 요구사항(`namespace`, `buildFeatures`) 반영,
         (d) `gradleTemplate.properties`에 `android.bundle.enableUncompressedNativeLibs` 관련 설정 검토,
         (e) 재빌드 → T6 재검사. 통과하면 **결정 B**. Jenkins·GameCI에서도 JDK 17이 잡히도록 T8에서 처리
@@ -84,7 +83,7 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
 - [ ] **T11. 마무리** (AC 8)
   - [ ] Dev Agent Record에 결정(A/B), 정렬 검사 표, Play Console 결과, 기기 결과, 변경 파일 목록 기록
   - [ ] `sprint-status.yaml`의 `1-09-build-pipeline-portrait`를 `review`로
-  - [ ] 커밋 메시지 예: `build: Unity 2022.3.76f1 · API 36 · IL2CPP ARM64 · Firebase 13.17 / GMA 11.5 — 16 KB 스파이크 결과 A(JDK 11 유지)`
+  - [ ] 커밋 메시지 예: `build: Unity 2022.3.62f3 · API 36 · IL2CPP ARM64 · Firebase 13.17 / GMA 11.5 — 16 KB 스파이크 결과 A(JDK 11 유지)`
 
 ## Dev Notes
 
@@ -124,7 +123,7 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
 
 | 항목 | 현재 | 목표 | 근거 |
 |---|---|---|---|
-| Unity | 2022.3.62f3 | **2022.3.76f1** (2026-09-10) | 2022.3 라인 최신. 16 KB 엔진 지원은 56f1+. GameCI `ubuntu-2022.3.76f1-android-3` 이미지 존재 확인 |
+| Unity | 2022.3.62f3 | **2022.3.62f3 고정** | 63f1+는 xLTS(Industry/Enterprise 전용) — 상향 불가. 16 KB 엔진 지원은 56f1+라 62f3에 포함. GameCI `ubuntu-2022.3.62f3-android-3` (기존 사용) |
 | Firebase Unity SDK | 13.9.0 | **13.17.0** (2026-09-17) | 16 KB 지원 12.6.0+. 12.6~12.9에서 16 KB 기기 시작 크래시 이슈(#1259, `libFirebaseCppApp.so` `SWIGRegisterExceptionCallbacks`)가 있었으므로 **반드시 13.x 최신** + 실기기 프로브로 확인. 최소 Unity 2021 |
 | Google Mobile Ads Unity | 11.0.0 (Android SDK 25.0.0) | **11.5.0** (2026-09-03) | 최신. 16 KB 정렬된 `.so` 확인 대상 |
 | EDM4U | 1.2.187 | 위 패키지 동봉 최신 | Resolver 재실행 필수 |
@@ -182,7 +181,7 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
 - [External: Firebase Unity SDK 릴리스 노트 — https://firebase.google.com/support/release-notes/unity]
 - [External: Firebase 16 KB 크래시 이슈 #1259 — https://github.com/firebase/firebase-unity-sdk/issues/1259]
 - [External: Unity 2022.3.71f1 16 KB 패키징 실패 스레드 — https://discussions.unity.com/t/unity-2022-3-71f1-android-playstore-16-kb-page-size-not-working/1706445]
-- [External: GameCI 이미지 태그 — https://hub.docker.com/r/unityci/editor/tags?name=2022.3.76f1]
+- [External: GameCI 이미지 태그 — https://hub.docker.com/r/unityci/editor/tags?name=2022.3.62f3]
 
 ## Dev Agent Record
 
@@ -192,9 +191,11 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 
 ### Debug Log References
 
-- 에디터 컴파일은 아직 미실행 (76f1 설치 전). API 존재는 DLL 문자열 검색으로 확인: `GoogleMobileAds.dll`에 `RaiseAdEventsOnUnityMainThread`·`getAdapterStatusMap`, `GoogleMobileAds.Core.dll`에 `InitializationState`, `Firebase.App.dll`에 `CheckAndFixDependenciesAsync`.
+- 에디터 컴파일은 아직 미실행. API 존재는 DLL 문자열 검색으로 확인: `GoogleMobileAds.dll`에 `RaiseAdEventsOnUnityMainThread`·`getAdapterStatusMap`, `GoogleMobileAds.Core.dll`에 `InitializationState`, `Firebase.App.dll`에 `CheckAndFixDependenciesAsync`.
 
 ### Implementation Plan (코드 파트, 완료)
+
+- **2026-09-20 결정 변경:** 76f1 상향은 Unity Hub에서 라이선스 오류로 차단됨 (2022.3.63f1+ = Extended LTS, Industry/Enterprise 전용). **62f3 고정.** 아키텍처 Engine 절·D13·CLAUDE.md·project-context 갱신. 타깃 API 36은 SDK Platform 36 설치로 충족.
 
 - `ProjectSettings.asset` 직접 편집: `AndroidTargetSdkVersion 0→36`, `AndroidTargetArchitectures 1→3`(ARMv7+ARM64), `scriptingBackend {Android: 1}`(IL2CPP), `managedStrippingLevel {Android: 1}`(Low), `androidMaxAspectRatio 2.1→2.5`. **편차:** Aspect Ratio Mode는 `androidSupportedAspectRatio: 1`(Native Aspect Ratio) 그대로 둠 — Custom보다 강한 옵션(어떤 비율에서도 레터박스 없음)이라 AC 2의 목적을 충족. 2.5는 모드를 Custom으로 바꿀 때를 대비한 값
 - `BuildAutomator` 재작성: `EditorBuildSettings` 기반 씬, `-customBuildPath`(GameCI) 우선, `SOLOHERO_DEV_BUILD`, 키스토어 env 주입, `SOLOHERO_JDK_PATH`/`SOLOHERO_GRADLE_PATH` → `EditorPrefs`(결정 B 대비), 실패 시 batchmode `Exit(1)`. `SpikeSceneSetup.EnsureBootScene()`를 빌드 전에 호출해 CI 새 체크아웃에서도 씬이 보장됨
@@ -206,11 +207,11 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 
 ### 사람 손이 필요한 남은 작업 (순서대로)
 
-1. **T1** Unity Hub → 2022.3.76f1 설치(Android Build Support + SDK/NDK + OpenJDK) → 프로젝트 열기(업그레이드 수락) → 콘솔 컴파일 오류 0 확인 → `ProjectVersion.txt`가 76f1인지 확인 → SDK Platform 36 존재 확인(`Preferences > External Tools`의 SDK 경로 `platforms/android-36`)
+1. **T1** 62f3 그대로 프로젝트 열기 → 콘솔 컴파일 오류 0 확인 → SDK Platform 36 존재 확인(`Preferences > External Tools`의 SDK 경로 `platforms\android-36`; 없으면 sdkmanager로 설치)
 2. **T3** Firebase Unity SDK 13.17.0 `.unitypackage` 임포트(App·Auth·Database·Analytics) → GMA Unity 11.5.0 임포트 → `Assets > External Dependency Manager > Android Resolver > Force Resolve` → `Assets/Firebase/Editor/*_version-13.17.0_manifest.txt`, `Assets/GoogleMobileAds/GoogleMobileAds_version-11.5.0_manifest.txt`만 남았는지 확인
 3. **T4** `Tools > SoloHero > Spike > Create Boot Scene` 1회 실행 → `Assets/SoloHero/Scenes/Boot.unity` 생성·등록 확인 → 새로 생긴 `.meta` 파일들과 함께 커밋
 4. **T2 검증** `Project Settings > Player > Android`에서 IL2CPP / ARMv7+ARM64 / Target API 36 / Portrait / Stripping Low가 인스펙터에 그대로 보이는지 확인 (파일 편집이 에디터에 반영됐는지)
-5. **T6** `Tools > Build > Android AAB` → `Builds/game.aab` → bundletool jar 다운로드 후 `pwsh tools/spike/Check16Kb.ps1 -Aab Builds/game.aab -Bundletool <jar> -Ndk <76f1 NDK> -BuildTools <SDK build-tools 35+>` 실행 → 출력 표를 아래 Completion Notes에 붙여넣기
+5. **T6** `Tools > Build > Android AAB` → `Builds/game.aab` → bundletool jar 다운로드 후 `pwsh tools/spike/Check16Kb.ps1 -Aab Builds/game.aab -Bundletool <jar> -Ndk <62f3 NDK> -BuildTools <SDK build-tools 35+>` 실행 → 출력 표를 아래 Completion Notes에 붙여넣기
 6. **T7** 스크립트 exit code로 결정: 0=A / 2=B-1·B-2 / 3=B-3 (스토리 태스크의 대응 절차)
 7. **T8** Jenkins 실행, GitHub Actions `workflow_dispatch` 실행 → run URL 기록
 8. **T9** Play Console 내부 테스트 업로드(업로드 키 필요 시 `SOLOHERO_KEYSTORE_*` env로 빌드) → 경고 확인
@@ -242,8 +243,7 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 ### File List
 
 - `ProjectSettings/ProjectSettings.asset` (M — Target SDK 36, ARMv7+ARM64, IL2CPP, Stripping Low, maxAspectRatio 2.5)
-- `Jenkinsfile` (M — 76f1)
-- `.github/workflows/activation.yml` (M — 76f1 이미지)
+- `Jenkinsfile`, `.github/workflows/activation.yml` (변경 없음 — 76f1로 바꿨다가 62f3으로 복원)
 - `.github/workflows/build.yml` (M — cache v4, artifact 경로)
 - `.gitignore` (M — *.apks, *.keystore, *.jks)
 - `Assets/Editor/BuildAutomator.cs` → `Assets/SoloHero/Scripts/Editor/BuildAutomator.cs` (R + 재작성)
