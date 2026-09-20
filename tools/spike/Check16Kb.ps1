@@ -10,23 +10,22 @@
   Prints a markdown table you can paste into the story's Dev Agent Record.
 
 .EXAMPLE
-  pwsh tools/spike/Check16Kb.ps1 -Aab Builds/game.aab `
-    -Bundletool C:\tools\bundletool-all.jar `
-    -Ndk "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\NDK" `
-    -BuildTools "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\build-tools\35.0.0"
+  pwsh tools/spike/Check16Kb.ps1            # defaults: Builds/game.aab, bundled JDK/NDK, user-local bundletool + build-tools 35
+  pwsh tools/spike/Check16Kb.ps1 -Aab Builds/other.aab
 #>
 param(
-    [Parameter(Mandatory)] [string] $Aab,
-    [Parameter(Mandatory)] [string] $Bundletool,
-    [Parameter(Mandatory)] [string] $Ndk,
-    [Parameter(Mandatory)] [string] $BuildTools,
+    [string] $Aab = "Builds/game.aab",
+    [string] $Bundletool = "C:\Users\user\android-sdk-tools\bundletool-all.jar",
+    [string] $Ndk = "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\NDK",
+    [string] $BuildTools = "C:\Users\user\android-sdk-tools\build-tools\35.0.0",
+    [string] $Java = "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK\bin\java.exe",
     [string] $WorkDir = "Builds/spike16kb"
 )
 
 $ErrorActionPreference = "Stop"
 $readelf = Join-Path $Ndk "toolchains\llvm\prebuilt\windows-x86_64\bin\llvm-readelf.exe"
 $zipalign = Join-Path $BuildTools "zipalign.exe"
-foreach ($tool in @($readelf, $zipalign, $Bundletool, $Aab)) {
+foreach ($tool in @($readelf, $zipalign, $Bundletool, $Aab, $Java)) {
     if (-not (Test-Path $tool)) { throw "not found: $tool" }
 }
 
@@ -35,7 +34,7 @@ New-Item -ItemType Directory -Force $WorkDir | Out-Null
 $apks = Join-Path $WorkDir "universal.apks"
 
 Write-Host "== bundletool build-apks (universal)"
-& java -jar $Bundletool build-apks --bundle=$Aab --output=$apks --mode=universal --overwrite
+& $Java -jar $Bundletool build-apks --bundle=$Aab --output=$apks --mode=universal --overwrite
 if ($LASTEXITCODE -ne 0) { throw "bundletool failed ($LASTEXITCODE)" }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
