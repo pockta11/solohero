@@ -3,7 +3,7 @@ baseline_commit: d255081eeb78dc3c4f721e2fdbd1e3f73266a97a
 ---
 # Story 1.9: 빌드 파이프라인 세로 설정 갱신 + Android API 36 / 16 KB 실빌드 스파이크
 
-Status: in-progress
+Status: review
 
 <!-- Epic E1-09 · Must · epic-1의 첫 스토리 (architecture D13) -->
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
@@ -60,7 +60,7 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
         `java -jar bundletool.jar build-apks --bundle=Builds/game.aab --output=Builds/spike.apks --mode=universal` → `spike.apks`를 zip으로 열어 `universal.apk` → 다시 zip으로 열어 `lib/arm64-v8a/*.so` 추출
   - [x] 정렬 검사 (Windows): NDK의 `llvm-readelf`(`<NDK>/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-readelf.exe`)로 각 `.so`에 `-l` 실행 → 모든 `LOAD` 행의 `Align`이 `0x4000` 이상인지 확인. 결과를 표로 Dev Record에 기록 (라이브러리명 · align · 통과/실패)
   - [x] APK 안 `.so`가 **비압축**이고 zip 엔트리 오프셋이 16 KB 배수인지도 확인 (`zipalign -c -P 16 -v 4 universal.apk` — SDK build-tools 35+에 포함)
-- [ ] **T7. 결정 트리 실행** (AC 8)
+- [x] **T7. 결정 트리 실행** (AC 8) — 결과 A
   - [x] **결과 A — T6 전부 통과:** JDK 11 유지. `mainTemplate.gradle` Java 11 그대로. 결정 A를 기록하고 T8로
   - [ ] **결과 B-1 — 서드파티 `.so`만 실패:** 해당 SDK가 더 최신인지 확인(T3 재확인). 그래도 실패면 Firebase/GMA GitHub 이슈 번호와 함께 기록하고 사용자에게 보고 후 중단
   - [ ] **결과 B-2 — Unity `.so`(libunity/libil2cpp/libmain) 실패:** 62f3(16 KB 지원 56f1+)에서 나오면 안 되는 결과. Unity Discussions 검색 후 사용자에게 보고. 진행 중단
@@ -70,20 +70,20 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
         (c) `mainTemplate.gradle` `sourceCompatibility/targetCompatibility` → `VERSION_17`, AGP 8 요구사항(`namespace`, `buildFeatures`) 반영,
         (d) `gradleTemplate.properties`에 `android.bundle.enableUncompressedNativeLibs` 관련 설정 검토,
         (e) 재빌드 → T6 재검사. 통과하면 **결정 B**. Jenkins·GameCI에서도 JDK 17이 잡히도록 T8에서 처리
-  - [ ] 어느 결과든 `game-architecture.md` **D13** 행, `CLAUDE.md` JDK 행, `project-context.md` Build 행을 같은 커밋에서 갱신
+  - [x] `game-architecture.md` D13 행, `CLAUDE.md` JDK 행, `project-context.md` Build 행 갱신 (커밋 e6ee944)
 - [x] **T8. CI 빌드** (AC 7)
   - [x] ~~Jenkins~~ — 휴면 (사용자: "젠킨스는 현재 안 쓰고 있어"). GitHub Actions 단일 CI. `Jenkinsfile`은 62f3 경로 그대로 참고용
   - [x] GitHub Actions **성공** — run 35623196814 (2026-09-21 16:04~16:26 UTC, 22분, 빌드 15분), artifact `android-aab` 59.8 MB, `[Build] result=Succeeded errors=0 warnings=1`. 실패 원인 2단계 해소: ① 러너 디스크 부족(ENOSPC) → `Free disk space` 단계 / ② `.ulf` 수동 활성화 폐지로 `UNITY_LICENSE` 무효(serial invalid 20110) → `game-ci/unity-builder` 제거, `unityci/editor` 이미지 직접 실행 + `Unity.Licensing.Client --activate-all --include-personal` 이메일/비밀번호 활성화 + `--return-ulf` 반환(trap). **4월 이후 첫 녹색 빌드**
-- [ ] **T9. Play Console 검사** (AC 5)
+- [ ] **T9. Play Console 검사** (AC 5) — **E9로 이월** (개발자 계정·업로드 키 필요. 기술 리스크는 T6 정적 검사 + T10 16 KB 런타임으로 해소. E9-18 릴리스 AAB 스토리에서 내부 테스트 업로드 시 함께 확인)
   - [ ] Play Console(기존 앱 항목 사용, 없으면 내부 테스트용 신규 앱 생성)에 `game.aab` 업로드 → 내부 테스트 트랙. 업로드 키스토어가 없으면 이 스토리에서 **디버그 서명으로 업로드 불가** → `Publishing Settings > Keystore Manager`로 업로드 키 생성, 키스토어 파일과 비밀번호는 저장소 밖(비밀번호 관리자)에 보관하고 경로만 기록. `ProjectSettings`에 키스토어 비밀번호가 평문으로 남지 않도록 `androidUseCustomKeystore`만 켜고 비밀번호는 빌드 시 환경변수(`SOLOHERO_KEYSTORE_PASS`, `SOLOHERO_KEYALIAS_PASS`)에서 `BuildAutomator`가 주입
   - [ ] 업로드 후 "App bundle explorer"와 경고 배너에서 16 KB · 타깃 API · 64-bit 관련 경고 없음 스크린샷/문구를 Dev Record에 기록
-- [ ] **T10. 실기기 확인** (AC 6)
-  - [ ] 내부 테스트 링크 또는 `bundletool install-apks`로 기기 설치. Android 15+ 기기가 있으면 개발자 옵션 "16 KB 페이지 크기로 부팅" 활성화 후 재시도. 없으면 Android Studio 에뮬레이터의 16 KB 시스템 이미지(API 35+ `16k` 태그) 사용
-  - [ ] 프로브 라벨 3줄(Unity 버전 / Firebase `Available` / AdMob initialized) 확인, 30초 대기 후 크래시 없음. `adb logcat -s Unity FirebaseApp` 로그 첨부
-- [ ] **T11. 마무리** (AC 8)
-  - [ ] Dev Agent Record에 결정(A/B), 정렬 검사 표, Play Console 결과, 기기 결과, 변경 파일 목록 기록
-  - [ ] `sprint-status.yaml`의 `1-09-build-pipeline-portrait`를 `review`로
-  - [ ] 커밋 메시지 예: `build: Unity 2022.3.62f3 · API 36 · IL2CPP ARM64 · Firebase 13.17 / GMA 11.5 — 16 KB 스파이크 결과 A(JDK 11 유지)`
+- [x] **T10. 기기 확인** (AC 6) — 에뮬레이터 (iOS 기기만 보유)
+  - [x] `bundletool build-apks --connected-device` → `install-apks`로 **Android 15 / API 35 · 16 KB 페이지(PAGE_SIZE 16384) · x86_64 + ARM 번역** 에뮬레이터에 설치 (`primaryCpuAbi=arm64-v8a`). 실기기 없음(iOS만 보유)
+  - [x] 프로브 화면: `64-bit process: True`, `Firebase: Available (libFirebaseCppApp loaded)`, `AdMob: initialized`. logcat에 `libFirebaseCppApp-13_17_0.so … ok`. **2분 후 프로세스 생존, 크래시 0.** 스크린샷 `Builds/spike2.png`(미커밋)
+- [x] **T11. 마무리** (AC 8)
+  - [x] Dev Agent Record에 결정 A, 정렬 검사 표, 기기 결과, 변경 파일 목록 기록 (Play Console은 이월)
+  - [x] `sprint-status.yaml`의 `1-09-build-pipeline-portrait`를 `review`로
+  - [x] 커밋 — 코드/설정/SDK/CI/문서 단계별 커밋 (864c35b … 481192a)
 
 ## Dev Notes
 
@@ -219,6 +219,10 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 10. **T11** 결과를 Completion Notes에 기록 → D13·CLAUDE.md·project-context 갱신 → 상태 `review`
 
 ### Completion Notes List
+- **T10 결과 (2026-09-22):** 에뮬레이터 `solohero16k35` — `system-images;android-35;google_apis_ps16k;x86_64`, `-gpu swiftshader_indirect`, Pixel 프로필 1080×1920. 앱은 ARM 번역으로 arm64 스플릿 실행. 프로브 3항목 전부 정상, 2분 생존, 크래시 0. **한계:** arm64 네이티브를 x86 호스트에서 번역 실행한 것이라 실제 arm64 기기의 16 KB 동작을 100% 대변하지는 않음 — 실기기 확인은 E9 Play Console 사전 출시 보고서(Firebase Test Lab 실기기)로 보완
+- **에뮬레이터 세팅 교훈:** API 36.1 ps16k 이미지(rev 4)는 emulator 37.1.11에서 `surfaceflinger` SIGABRT 루프 → 사용 불가. `-gpu auto`(호스트 GPU)는 `hasReadColorBufferDma` 어설션 → `swiftshader_indirect` 필수. `sdkmanager --sdk_root`로 사용자 폴더에 설치하면 관리자 권한 불필요(`avdmanager`는 `cmdline-tools`를 같은 루트에 복사해야 이미지를 찾음). 헬퍼: `tools/android/Emu.ps1 {start|install|run|shot|logcat|stop}`
+- **T9 이월:** Play Console 내부 테스트 업로드는 개발자 계정($25)·업로드 키스토어가 필요 → E9-18(릴리스 AAB). AC 5는 그 스토리에서 닫는다
+- **결론:** AC 1·2·3·4·6·7·8 충족, AC 5 이월. 파이프라인 결정 A(JDK 11 유지) 확정. E1 나머지 스토리 착수 가능
 - **CI 재구성 (T8):** GameCI 액션 폐기. 시크릿은 `UNITY_EMAIL`·`UNITY_PASSWORD`만 사용(`UNITY_LICENSE` 불필요 — 삭제 권장). 주의: Unity 계정 2FA 활성화 시 헤드리스 로그인 불가, 비밀번호에 셸 특수문자 금지. `.github/scripts/unity-build.sh`가 활성화·빌드·반환을 담당
 - **CI 구성 변경:** Jenkins 휴면(미운영) → GitHub Actions 단일 CI. GDD Dependencies의 "두 파이프라인 병행으로 단일 실패점 제거"는 현재 성립하지 않음 — Jenkins 재가동 시점은 미정 (아키텍처 Development Environment 절에 기록)
 
@@ -248,6 +252,14 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 - 컴파일 최소 수정 목록 (있다면):
 
 ### File List
+
+- `tools/android/Emu.ps1` (A — 에뮬레이터 시작/설치/실행/스크린샷 헬퍼)
+- `.github/scripts/unity-build.sh` (A), `.github/workflows/build.yml` (M — GameCI 제거), `.github/workflows/activation.yml` (D)
+- `.gitattributes` (M — `*.sh eol=lf`)
+- `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset` (M — App ID)
+- `Assets/Firebase/**`, `Assets/GoogleMobileAds/**`, `Assets/ExternalDependencyManager/**`, `Assets/Plugins/Android/mainTemplate.gradle`, `gradleTemplate.properties` (SDK 상향·Resolver, 커밋 c9d89e5)
+- `Assets/SoloHero/Scenes/Boot.unity` + `.meta`, `ProjectSettings/EditorBuildSettings.asset` (스파이크 씬)
+- `Assets/Scripts/Managers/GameManager.cs` (M — 레거시 컴파일 오류 최소 수정)
 
 - `ProjectSettings/ProjectSettings.asset` (M — Target SDK 36, ARMv7+ARM64, IL2CPP, Stripping Low, maxAspectRatio 2.5)
 - `Jenkinsfile`, `.github/workflows/activation.yml` (변경 없음 — 76f1로 바꿨다가 62f3으로 복원)

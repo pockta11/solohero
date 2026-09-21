@@ -96,6 +96,7 @@ Assets/SoloHero/            # 프로젝트 소유 전부. 벤더(Firebase·Googl
 | JDK | **JDK 11 확정** (Unity 번들 OpenJDK 11.0.14.1). E1-09 스파이크 결과 A — 2022.3.62f3 + AGP 7.4.2로 16 KB 정렬 통과, JDK 17 불필요 |
 | `Assets/google-services.json` | 커밋 금지. 없으면 부트가 `local` 모드로 진입해야 함 |
 | DOTween | Utility Panel > Setup + **Create ASMDEF** |
+| Android 에뮬레이터 (실기기 없음) | `pwsh tools/android/Emu.ps1 start` → AVD `solohero16k35` (Android 15 · 16 KB 페이지 · Google APIs · SwiftShader). `install` / `run` / `shot`. SDK 루트 `C:\Users\user\android-sdk-tools` (bundletool·build-tools 35 포함) |
 | MCP (선택) | `CoplayDev/unity-mcp`(에디터 조작), Context7(2022.3 API 문서), Higgsfield(배경·아이콘 생성) — 설치는 아키텍처 Development Environment 절 |
 
 ## Android Build Configuration
