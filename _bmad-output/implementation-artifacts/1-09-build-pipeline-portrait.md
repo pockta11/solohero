@@ -3,7 +3,7 @@ baseline_commit: d255081eeb78dc3c4f721e2fdbd1e3f73266a97a
 ---
 # Story 1.9: 빌드 파이프라인 세로 설정 갱신 + Android API 36 / 16 KB 실빌드 스파이크
 
-Status: review
+Status: done
 
 <!-- Epic E1-09 · Must · epic-1의 첫 스토리 (architecture D13) -->
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
@@ -232,6 +232,7 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 2026-09-21~22에 순서대로 수행: 62f3 확인 → SDK 36 확인 → Firebase/GMA 임포트 + Force Resolve → Boot 씬 생성 → 로컬 AAB → 16 KB 검사(A) → GitHub Actions(디스크·라이선스 2회 수정 후 성공) → 에뮬레이터 런타임. Play Console만 E9로 이월.
 
 ### Completion Notes List
+- **done (2026-09-22):** 리뷰 패치 적용 후 CI 재검증 — run 35663485173 success, 시트 반환 로그 확인 (`== returning Personal seat`)
 - **T10 결과 (2026-09-22):** 에뮬레이터 `solohero16k35` — `system-images;android-35;google_apis_ps16k;x86_64`, `-gpu swiftshader_indirect`, Pixel 프로필 1080×1920. 앱은 ARM 번역으로 arm64 스플릿 실행. 프로브 3항목 전부 정상, 2분 생존, 크래시 0. **한계:** arm64 네이티브를 x86 호스트에서 번역 실행한 것이라 실제 arm64 기기의 16 KB 동작을 100% 대변하지는 않음 — 실기기 확인은 E9 Play Console 사전 출시 보고서(Firebase Test Lab 실기기)로 보완
 - **에뮬레이터 세팅 교훈:** API 36.1 ps16k 이미지(rev 4)는 emulator 37.1.11에서 `surfaceflinger` SIGABRT 루프 → 사용 불가. `-gpu auto`(호스트 GPU)는 `hasReadColorBufferDma` 어설션 → `swiftshader_indirect` 필수. `sdkmanager --sdk_root`로 사용자 폴더에 설치하면 관리자 권한 불필요(`avdmanager`는 `cmdline-tools`를 같은 루트에 복사해야 이미지를 찾음). 헬퍼: `tools/android/Emu.ps1 {start|install|run|shot|logcat|stop}`
 - **T9 이월:** Play Console 내부 테스트 업로드는 개발자 계정($25)·업로드 키스토어가 필요 → E9-18(릴리스 AAB). AC 5는 그 스토리에서 닫는다
