@@ -71,9 +71,9 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
         (d) `gradleTemplate.properties`에 `android.bundle.enableUncompressedNativeLibs` 관련 설정 검토,
         (e) 재빌드 → T6 재검사. 통과하면 **결정 B**. Jenkins·GameCI에서도 JDK 17이 잡히도록 T8에서 처리
   - [ ] 어느 결과든 `game-architecture.md` **D13** 행, `CLAUDE.md` JDK 행, `project-context.md` Build 행을 같은 커밋에서 갱신
-- [ ] **T8. CI 양쪽 빌드** (AC 7)
+- [x] **T8. CI 빌드** (AC 7)
   - [x] ~~Jenkins~~ — 휴면 (사용자: "젠킨스는 현재 안 쓰고 있어"). GitHub Actions 단일 CI. `Jenkinsfile`은 62f3 경로 그대로 참고용
-  - [ ] GitHub Actions: `main` 푸시 자동 실행 → 성공 + artifact. **1차 실패(run 35608159205): 러너 디스크 부족(ENOSPC, exit 125)** → `Free disk space` 단계 추가(`0a20dee`) → 재실행 대기. `actions/cache@v4` 적용됨
+  - [x] GitHub Actions **성공** — run 35623196814 (2026-09-21 16:04~16:26 UTC, 22분, 빌드 15분), artifact `android-aab` 59.8 MB, `[Build] result=Succeeded errors=0 warnings=1`. 실패 원인 2단계 해소: ① 러너 디스크 부족(ENOSPC) → `Free disk space` 단계 / ② `.ulf` 수동 활성화 폐지로 `UNITY_LICENSE` 무효(serial invalid 20110) → `game-ci/unity-builder` 제거, `unityci/editor` 이미지 직접 실행 + `Unity.Licensing.Client --activate-all --include-personal` 이메일/비밀번호 활성화 + `--return-ulf` 반환(trap). **4월 이후 첫 녹색 빌드**
 - [ ] **T9. Play Console 검사** (AC 5)
   - [ ] Play Console(기존 앱 항목 사용, 없으면 내부 테스트용 신규 앱 생성)에 `game.aab` 업로드 → 내부 테스트 트랙. 업로드 키스토어가 없으면 이 스토리에서 **디버그 서명으로 업로드 불가** → `Publishing Settings > Keystore Manager`로 업로드 키 생성, 키스토어 파일과 비밀번호는 저장소 밖(비밀번호 관리자)에 보관하고 경로만 기록. `ProjectSettings`에 키스토어 비밀번호가 평문으로 남지 않도록 `androidUseCustomKeystore`만 켜고 비밀번호는 빌드 시 환경변수(`SOLOHERO_KEYSTORE_PASS`, `SOLOHERO_KEYALIAS_PASS`)에서 `BuildAutomator`가 주입
   - [ ] 업로드 후 "App bundle explorer"와 경고 배너에서 16 KB · 타깃 API · 64-bit 관련 경고 없음 스크린샷/문구를 Dev Record에 기록
@@ -219,6 +219,7 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 10. **T11** 결과를 Completion Notes에 기록 → D13·CLAUDE.md·project-context 갱신 → 상태 `review`
 
 ### Completion Notes List
+- **CI 재구성 (T8):** GameCI 액션 폐기. 시크릿은 `UNITY_EMAIL`·`UNITY_PASSWORD`만 사용(`UNITY_LICENSE` 불필요 — 삭제 권장). 주의: Unity 계정 2FA 활성화 시 헤드리스 로그인 불가, 비밀번호에 셸 특수문자 금지. `.github/scripts/unity-build.sh`가 활성화·빌드·반환을 담당
 - **CI 구성 변경:** Jenkins 휴면(미운영) → GitHub Actions 단일 CI. GDD Dependencies의 "두 파이프라인 병행으로 단일 실패점 제거"는 현재 성립하지 않음 — Jenkins 재가동 시점은 미정 (아키텍처 Development Environment 절에 기록)
 
 - **AAB:** `Builds/game.aab` 69,153,006 bytes (2022.3.62f3, IL2CPP, ARMv7+ARM64, Target SDK 36). 빌드 시간 9분 44초(첫 IL2CPP + Burst)

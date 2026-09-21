@@ -1311,7 +1311,7 @@ public PullResult Pull()
 | DOTween 설정 | `Tools > Demigiant > DOTween Utility Panel > Setup` + **Create ASMDEF** | asmdef 없으면 `SoloHero.Game`이 참조 못 함 |
 | Python 3.10+ / `uv` | MCP for Unity 서버 실행 | `pip install uv` (기존 환경) |
 | Node.js 18+ | Context7 (`npx`) | |
-| GitHub Actions (주) / Jenkins (휴면) | `BuildAutomator.Build` 호출. 시크릿 `UNITY_LICENSE`·`UNITY_EMAIL`·`UNITY_PASSWORD`. 러너 디스크 확보 단계 필수 (GameCI 이미지 6.6 GB) | 2026-09-21: 로컬 Jenkins 미운영 확인. `Jenkinsfile`은 참고용 유지, 재가동 시점 미정 |
+| GitHub Actions (주) / Jenkins (휴면) | `unityci/editor:ubuntu-2022.3.62f3-android-3` 직접 `docker run` → `.github/scripts/unity-build.sh`(Licensing Client Personal 활성화 → `BuildAutomator.Build` → 시트 반환). 시크릿 `UNITY_EMAIL`·`UNITY_PASSWORD`만. 러너 디스크 확보 단계 필수 | 2026-09-21 첫 성공(run 35623196814, 22분). Unity가 Personal `.ulf` 수동 활성화를 폐지해 `game-ci/unity-builder`·`UNITY_LICENSE`는 사용 불가. 로컬 Jenkins 미운영, `Jenkinsfile` 참고용 |
 
 ### AI Tooling (MCP Servers)
 

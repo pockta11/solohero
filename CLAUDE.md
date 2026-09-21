@@ -34,7 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build Commands
 
 ### GitHub Actions (주 CI)
-Push to `main` 또는 수동. GameCI `unity-builder@v4`, secrets `UNITY_LICENSE` / `UNITY_EMAIL` / `UNITY_PASSWORD`. Artifact `android-aab` (7일). 빌드 전 `Free disk space` 단계가 필수 (GameCI 이미지 6.6 GB, 기본 러너 여유 ~14 GB).
+Push to `main` 또는 수동. `unityci/editor:ubuntu-2022.3.62f3-android-3` 이미지를 직접 `docker run`하고 `.github/scripts/unity-build.sh`가 **Unity Licensing Client로 Personal 시트 활성화 → `BuildAutomator.Build` → 시트 반환**을 수행한다. Secrets: `UNITY_EMAIL` / `UNITY_PASSWORD`만 (Unity가 Personal `.ulf` 수동 활성화를 폐지해 `game-ci/unity-builder`·`UNITY_LICENSE`는 쓸 수 없다). Artifact `android-aab` (7일). 빌드 전 `Free disk space` 단계 필수. 계정 2FA는 꺼져 있어야 하고 비밀번호에 셸 특수문자가 없어야 한다. ~22분/빌드.
 
 ### Jenkins (휴면)
 로컬 Jenkins는 2026-09-21 현재 운영하지 않음. `Jenkinsfile`은 참고용:
