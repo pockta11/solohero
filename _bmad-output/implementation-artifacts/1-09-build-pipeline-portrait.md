@@ -48,7 +48,7 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
   - [x] `Assets/SoloHero/Scenes/Boot.unity` 생성 — Main Camera(Orthographic, 배경 단색) + Canvas(Portrait 1080×1920 CanvasScaler) + TMP Text `StatusLabel`
   - [x] `Assets/SoloHero/Scripts/Game/Boot/BuildSpikeProbe.cs` (MonoBehaviour, **임시** — E1-04 `BootSequence`가 대체하며 삭제). `Start`에서 순서대로: Unity 버전·`SystemInfo`(기기·OS·`Application.targetFrameRate`) 표시 → `FirebaseApp.CheckAndFixDependenciesAsync()` 결과 표시 → `MobileAds.Initialize(status => ...)` 결과 표시. 모든 콜백은 `try/catch`로 감싸고 예외 메시지를 라벨에 출력. 코드 텍스트 영문만
   - [x] `EditorBuildSettings`에 `Boot.unity` 1개 등록
-- [ ] **T5. BuildAutomator 갱신** (AC 4, 7)
+- [x] **T5. BuildAutomator 갱신** (AC 4, 7)
   - [x] `Assets/Editor/BuildAutomator.cs` → `Assets/SoloHero/Scripts/Editor/BuildAutomator.cs`로 이동 (`.meta` 함께). 폴더명이 `Editor`이므로 asmdef 없이도 에디터 어셈블리로 컴파일됨
   - [x] 씬 목록을 하드코딩 대신 `EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path)`로 읽기 (LoginScene·GameScene 참조 제거 — 존재하지 않아 빌드 실패의 원인)
   - [x] `EditorUserBuildSettings.buildAppBundle = true` 유지, `BuildOptions`는 환경변수 `SOLOHERO_DEV_BUILD=1`이면 `Development` 추가 (개발 빌드에서 `BuildConfig.useTestAdIds` 강제 규약의 기반)
@@ -62,9 +62,9 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
   - [x] APK 안 `.so`가 **비압축**이고 zip 엔트리 오프셋이 16 KB 배수인지도 확인 (`zipalign -c -P 16 -v 4 universal.apk` — SDK build-tools 35+에 포함)
 - [x] **T7. 결정 트리 실행** (AC 8) — 결과 A
   - [x] **결과 A — T6 전부 통과:** JDK 11 유지. `mainTemplate.gradle` Java 11 그대로. 결정 A를 기록하고 T8로
-  - [ ] **결과 B-1 — 서드파티 `.so`만 실패:** 해당 SDK가 더 최신인지 확인(T3 재확인). 그래도 실패면 Firebase/GMA GitHub 이슈 번호와 함께 기록하고 사용자에게 보고 후 중단
-  - [ ] **결과 B-2 — Unity `.so`(libunity/libil2cpp/libmain) 실패:** 62f3(16 KB 지원 56f1+)에서 나오면 안 되는 결과. Unity Discussions 검색 후 사용자에게 보고. 진행 중단
-  - [ ] **결과 B-3 — `.so`는 정렬됐으나 `zipalign -P 16` 실패 (패키징 문제, AGP 7.4.2 한계):** AGP·Gradle·JDK 상향 경로 시도 —
+  - [~] N/A — **결과 B-1 — 서드파티 `.so`만 실패:** 해당 SDK가 더 최신인지 확인(T3 재확인). 그래도 실패면 Firebase/GMA GitHub 이슈 번호와 함께 기록하고 사용자에게 보고 후 중단
+  - [~] N/A — **결과 B-2 — Unity `.so`(libunity/libil2cpp/libmain) 실패:** 62f3(16 KB 지원 56f1+)에서 나오면 안 되는 결과. Unity Discussions 검색 후 사용자에게 보고. 진행 중단
+  - [~] N/A — **결과 B-3 — `.so`는 정렬됐으나 `zipalign -P 16` 실패 (패키징 문제, AGP 7.4.2 한계):** AGP·Gradle·JDK 상향 경로 시도 —
         (a) `Edit > Preferences > External Tools > Android`에서 Gradle **8.7+** 설치 경로와 **JDK 17** 경로를 지정(Unity 번들 해제),
         (b) `Assets/Plugins/Android/baseProjectTemplate.gradle`을 커스텀 활성화하고 `com.android.tools.build:gradle:8.5.1`(또는 62f3이 허용하는 최신)로,
         (c) `mainTemplate.gradle` `sourceCompatibility/targetCompatibility` → `VERSION_17`, AGP 8 요구사항(`namespace`, `buildFeatures`) 반영,
