@@ -1311,7 +1311,7 @@ public PullResult Pull()
 | DOTween 설정 | `Tools > Demigiant > DOTween Utility Panel > Setup` + **Create ASMDEF** | asmdef 없으면 `SoloHero.Game`이 참조 못 함 |
 | Python 3.10+ / `uv` | MCP for Unity 서버 실행 | `pip install uv` (기존 환경) |
 | Node.js 18+ | Context7 (`npx`) | |
-| Jenkins (로컬) / GitHub Actions | `BuildAutomator.Build` 호출. 시크릿 `UNITY_LICENSE`·`UNITY_EMAIL`·`UNITY_PASSWORD` | 기존 파이프라인 유지 |
+| GitHub Actions (주) / Jenkins (휴면) | `BuildAutomator.Build` 호출. 시크릿 `UNITY_LICENSE`·`UNITY_EMAIL`·`UNITY_PASSWORD`. 러너 디스크 확보 단계 필수 (GameCI 이미지 6.6 GB) | 2026-09-21: 로컬 Jenkins 미운영 확인. `Jenkinsfile`은 참고용 유지, 재가동 시점 미정 |
 
 ### AI Tooling (MCP Servers)
 

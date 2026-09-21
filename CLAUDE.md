@@ -33,14 +33,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build Commands
 
-### Jenkins (local Windows)
+### GitHub Actions (주 CI)
+Push to `main` 또는 수동. GameCI `unity-builder@v4`, secrets `UNITY_LICENSE` / `UNITY_EMAIL` / `UNITY_PASSWORD`. Artifact `android-aab` (7일). 빌드 전 `Free disk space` 단계가 필수 (GameCI 이미지 6.6 GB, 기본 러너 여유 ~14 GB).
+
+### Jenkins (휴면)
+로컬 Jenkins는 2026-09-21 현재 운영하지 않음. `Jenkinsfile`은 참고용:
 ```
 "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Unity.exe" -quit -batchmode -projectPath "%WORKSPACE%" -executeMethod BuildAutomator.Build -logFile Builds/build.log
 ```
-Output: `Builds/game.aab` (에디터 상향 후 경로의 버전 번호 갱신)
-
-### GitHub Actions (CI)
-Push to `main` 또는 수동. GameCI `unity-builder@v4`, secrets `UNITY_LICENSE` / `UNITY_EMAIL` / `UNITY_PASSWORD`. Artifact `android-aab` (7일).
 
 ### Manual build in Unity Editor
 `Tools > Build > Android AAB` → `BuildAutomator.Build` (Boot + Game 씬, AAB).

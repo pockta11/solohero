@@ -24,7 +24,7 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
 4. **로컬 AAB:** `Tools > Build > Android AAB`로 `Builds/game.aab` 생성 성공. `bundletool build-apks` → 추출한 **arm64-v8a `.so` 전부**가 16 KB 정렬(ELF LOAD 세그먼트 align ≥ `0x4000`)이다 — Unity 라이브러리(`libunity`, `libil2cpp`, `libmain`)와 서드파티(`libFirebaseCppApp`, `libFirebaseCppAuth`, `libFirebaseCppDatabase`, `libFirebaseCppAnalytics` 등) 모두.
 5. **Play Console:** 내부 테스트 트랙에 업로드했을 때 **16 KB 페이지 크기 경고 없음**, **타깃 API 레벨 경고 없음**, 64-bit 요구 충족.
 6. **실기기:** Android 기기(가능하면 Android 15+, 16 KB 모드 지원 기기 또는 에뮬레이터 16 KB 시스템 이미지)에서 설치·실행. 플레이스홀더 부트 씬이 뜨고 `BuildSpikeProbe`가 Firebase 초기화(`CheckAndFixDependenciesAsync` → `Available`)와 AdMob 초기화(`MobileAds.Initialize` 콜백)를 화면 텍스트로 보고하며 **크래시 없음**. (16 KB 크래시는 `libFirebaseCppApp.so` 로드 시점에 나므로 이 프로브가 필수다.)
-7. **CI 양쪽 성공:** Jenkins 로컬 빌드 성공(`Builds/game.aab`), GitHub Actions `Unity Android Build` 성공 + artifact `android-aab` 업로드.
+7. **CI 성공:** GitHub Actions `Unity Android Build` 성공 + artifact `android-aab` 업로드. (Jenkins는 2026-09-21 사용자 확인으로 **휴면** — 로컬 Jenkins 미운영. `Jenkinsfile`은 참고용 유지, 이 AC에서 제외)
 8. **결정 기록:** 아래 결정 트리의 결과(**A: JDK 11 유지** / **B: AGP 8.5+ · Gradle 8.7+ · JDK 17 전환**)를 이 스토리의 Dev Agent Record, `game-architecture.md` D13 행, `CLAUDE.md` Environment Setup JDK 행, `_bmad-output/project-context.md` Build 행에 기록한다. B인 경우 Gradle 템플릿·CI 변경이 커밋에 포함된다.
 
 ## Tasks / Subtasks
@@ -72,8 +72,8 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
         (e) 재빌드 → T6 재검사. 통과하면 **결정 B**. Jenkins·GameCI에서도 JDK 17이 잡히도록 T8에서 처리
   - [ ] 어느 결과든 `game-architecture.md` **D13** 행, `CLAUDE.md` JDK 행, `project-context.md` Build 행을 같은 커밋에서 갱신
 - [ ] **T8. CI 양쪽 빌드** (AC 7)
-  - [ ] Jenkins: `Jenkinsfile` 실행 → `Builds/build.log` 마지막에 `Build succeeded` 확인. 결정 B면 Jenkins 에이전트에 JDK 17 설치 + Unity Preferences 경로가 배치 모드에서도 적용되는지(Preferences는 사용자 단위 — `-executeMethod` 전에 `EditorPrefs`로 `JdkPath`/`GradlePath`를 설정하는 코드를 `BuildAutomator`에 추가) 확인
-  - [ ] GitHub Actions: `workflow_dispatch`로 수동 실행 → 성공 + artifact. `androidExportType: androidAppBundle` 유지. `actions/cache@v3` → `@v4`로 상향(v3 deprecated). 결정 B면 `unity-builder` 이전에 `actions/setup-java@v4`(temurin 17)를 넣고 `JAVA_HOME`이 컨테이너 안에서 보이는지 확인 — GameCI 2022.3 이미지는 JDK 11 동봉이라 실패 가능성 있음. 실패 시 Jenkins만 통과로 두고 GameCI는 이슈로 기록(단일 실패점 제거가 목표이므로 두 파이프라인 중 하나라도 살아 있어야 함)
+  - [x] ~~Jenkins~~ — 휴면 (사용자: "젠킨스는 현재 안 쓰고 있어"). GitHub Actions 단일 CI. `Jenkinsfile`은 62f3 경로 그대로 참고용
+  - [ ] GitHub Actions: `main` 푸시 자동 실행 → 성공 + artifact. **1차 실패(run 35608159205): 러너 디스크 부족(ENOSPC, exit 125)** → `Free disk space` 단계 추가(`0a20dee`) → 재실행 대기. `actions/cache@v4` 적용됨
 - [ ] **T9. Play Console 검사** (AC 5)
   - [ ] Play Console(기존 앱 항목 사용, 없으면 내부 테스트용 신규 앱 생성)에 `game.aab` 업로드 → 내부 테스트 트랙. 업로드 키스토어가 없으면 이 스토리에서 **디버그 서명으로 업로드 불가** → `Publishing Settings > Keystore Manager`로 업로드 키 생성, 키스토어 파일과 비밀번호는 저장소 밖(비밀번호 관리자)에 보관하고 경로만 기록. `ProjectSettings`에 키스토어 비밀번호가 평문으로 남지 않도록 `androidUseCustomKeystore`만 켜고 비밀번호는 빌드 시 환경변수(`SOLOHERO_KEYSTORE_PASS`, `SOLOHERO_KEYALIAS_PASS`)에서 `BuildAutomator`가 주입
   - [ ] 업로드 후 "App bundle explorer"와 경고 배너에서 16 KB · 타깃 API · 64-bit 관련 경고 없음 스크린샷/문구를 Dev Record에 기록
@@ -219,6 +219,7 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 10. **T11** 결과를 Completion Notes에 기록 → D13·CLAUDE.md·project-context 갱신 → 상태 `review`
 
 ### Completion Notes List
+- **CI 구성 변경:** Jenkins 휴면(미운영) → GitHub Actions 단일 CI. GDD Dependencies의 "두 파이프라인 병행으로 단일 실패점 제거"는 현재 성립하지 않음 — Jenkins 재가동 시점은 미정 (아키텍처 Development Environment 절에 기록)
 
 - **AAB:** `Builds/game.aab` 69,153,006 bytes (2022.3.62f3, IL2CPP, ARMv7+ARM64, Target SDK 36). 빌드 시간 9분 44초(첫 IL2CPP + Burst)
 - **빌드 중 발견·수정 2건:** (1) GMA 11.x는 App ID를 `AndroidManifest.xml`이 아니라 `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`(`adMobAndroidAppId`)에서 읽음 → 비어 있어 `BuildMethodException` 로그 → 값 설정. (2) `Active Input Handling = Both`는 Android에서 미지원 경고 → `Input Manager (Old)`(0)로 변경 (D9 선반영, 패키지 제거는 E1-03)
