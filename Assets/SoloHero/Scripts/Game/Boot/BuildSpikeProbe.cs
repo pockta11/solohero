@@ -47,10 +47,19 @@ public sealed class BuildSpikeProbe : MonoBehaviour
         {
             MobileAds.Initialize(status =>
             {
-                var sb = new StringBuilder("AdMob: initialized");
-                foreach (var kv in status.getAdapterStatusMap())
-                    sb.Append($"\n  {kv.Key}: {kv.Value.InitializationState}");
-                lock (_gate) _pendingFromOtherThread = sb.ToString();
+                string line;
+                try
+                {
+                    var sb = new StringBuilder("AdMob: initialized");
+                    foreach (var kv in status.getAdapterStatusMap())
+                        sb.Append($"\n  {kv.Key}: {kv.Value.InitializationState}");
+                    line = sb.ToString();
+                }
+                catch (Exception e)
+                {
+                    line = $"AdMob: callback EXCEPTION {e.GetType().Name}: {e.Message}";
+                }
+                lock (_gate) _pendingFromOtherThread = line;
             });
             Append("AdMob: Initialize() called, waiting for callback");
         }

@@ -3,7 +3,19 @@ name: Unity Android Build
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # 수동 실행 버튼
+    paths-ignore:
+      - '**.md'
+      - '_bmad-output/**'
+      - 'docs/**'
+      - 'tools/**'
+      - '.claude/**'
+      - '_bmad/**'
+  workflow_dispatch:  # manual trigger
+
+# One Personal seat per account: never run two activations at once. Queue, don't cancel.
+concurrency:
+  group: unity-android-build
+  cancel-in-progress: false
 
 env:
   UNITY_IMAGE: unityci/editor:ubuntu-2022.3.62f3-android-3
@@ -12,16 +24,17 @@ jobs:
   build:
     name: Build Android AAB
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
-      # 1. 코드 체크아웃 (Firebase 에디터 바이너리는 LFS)
+      # 1. Checkout (Firebase editor binaries are in LFS)
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           lfs: true
 
-      # 2. 러너 디스크 확보 — unityci/editor android 이미지(6.6 GB) pull 중 ENOSPC 방지
-      #    기본 ubuntu-latest 러너는 여유가 ~14 GB뿐이라 사전 설치된 .NET/Android SDK/Haskell/CodeQL을 제거한다
+      # 2. Free runner disk - the unityci android image is 6.6 GB and the default runner has ~14 GB free.
+      #    Remove preinstalled .NET / Android SDK / Haskell / CodeQL we do not use.
       - name: Free disk space
         run: |
           df -h / | tail -1
@@ -31,7 +44,7 @@ jobs:
           sudo apt-get clean
           df -h / | tail -1
 
-      # 3. Library 캐시 (빌드 속도 향상)
+      # 3. Library cache
       - name: Cache Library
         uses: actions/cache@v4
         with:
@@ -39,23 +52,29 @@ jobs:
           key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: Library-Android-
 
-      # 4. Unity 빌드 — unityci 이미지에서 직접 실행 (game-ci/unity-builder 미사용)
-      #    Personal 라이선스는 .ulf 수동 활성화가 폐지되어 Licensing Client + 이메일/비밀번호로 시트를 받는다
-      #    (.github/scripts/unity-build.sh). 시크릿: UNITY_EMAIL, UNITY_PASSWORD (UNITY_LICENSE는 더 이상 사용하지 않음)
+      # 4. Unity build - unityci image run directly (no game-ci/unity-builder).
+      #    Personal licenses can no longer be activated with a .ulf, so unity-build.sh asks the
+      #    Licensing Client for a seat with email/password and returns it afterwards.
+      #    Secrets: UNITY_EMAIL, UNITY_PASSWORD (UNITY_LICENSE is no longer used).
+      #    --init makes SIGTERM on cancel reach the script so the seat is still returned.
       - name: Build Android AAB
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         run: |
           chmod +x .github/scripts/unity-build.sh
-          docker run --rm \
+          docker run --rm --init \
             -v "$GITHUB_WORKSPACE:/project" -w /project \
             -e UNITY_EMAIL -e UNITY_PASSWORD -e SOLOHERO_DEV_BUILD \
             "$UNITY_IMAGE" \
             bash /project/.github/scripts/unity-build.sh
-          sudo chown -R "$(id -u):$(id -g)" Library Builds
 
-      # 5. AAB 파일 저장 (7일 보관)
+      # 5. Docker wrote as root; hand files back to the runner user so cache/artifact steps work even after a failed build
+      - name: Fix ownership
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" Library Builds 2>/dev/null || true
+
+      # 6. Keep the AAB for 7 days
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:

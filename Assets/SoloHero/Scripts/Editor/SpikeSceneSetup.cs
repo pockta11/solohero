@@ -6,9 +6,9 @@ using UnityEngine;
 
 /// <summary>
 /// Creates the placeholder Boot scene used by story 1-09 (build spike) and registers it in
-/// EditorBuildSettings. Idempotent: BuildAutomator calls EnsureBootScene() so CI can build even
-/// on a fresh checkout. The scene is meant to be committed after the first run.
-/// Replaced by the real Boot scene in E1-04.
+/// EditorBuildSettings. EnsureBootScene() only acts when the build settings contain no enabled
+/// scene at all - it never replaces an existing scene list, so the real Boot scene from E1-04
+/// cannot be silently swapped for the spike scene. Replaced by the real Boot scene in E1-04.
 /// </summary>
 public static class SpikeSceneSetup
 {
@@ -42,29 +42,43 @@ public static class SpikeSceneSetup
             return;
         }
 
-        RegisterAsOnlyScene();
+        RegisterIfMissing();
         AssetDatabase.SaveAssets();
         Debug.Log($"[Spike] boot scene created at {ScenePath} and registered in EditorBuildSettings");
     }
 
+    /// <summary>
+    /// Guarantees at least one enabled scene exists for the build. If the build settings already
+    /// contain any enabled scene, nothing is touched.
+    /// </summary>
     public static void EnsureBootScene()
     {
-        bool sceneExists = File.Exists(ScenePath);
-        bool registered = EditorBuildSettings.scenes.Any(s => s.enabled && s.path == ScenePath);
-        if (sceneExists && registered)
+        if (EditorBuildSettings.scenes.Any(s => s.enabled))
             return;
 
-        if (sceneExists)
+        if (File.Exists(ScenePath))
         {
-            RegisterAsOnlyScene();
+            RegisterIfMissing();
+            Debug.LogWarning("[Spike] no enabled scenes in EditorBuildSettings - registered the spike Boot scene");
             return;
         }
 
+        Debug.LogWarning("[Spike] no scenes in EditorBuildSettings and no Boot scene on disk - creating the spike Boot scene");
         CreateBootScene();
     }
 
-    private static void RegisterAsOnlyScene()
+    private static void RegisterIfMissing()
     {
-        EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        var scenes = EditorBuildSettings.scenes.ToList();
+        var existing = scenes.FirstOrDefault(s => s.path == ScenePath);
+        if (existing != null)
+        {
+            existing.enabled = true;
+        }
+        else
+        {
+            scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
+        }
+        EditorBuildSettings.scenes = scenes.ToArray();
     }
 }

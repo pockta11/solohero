@@ -95,7 +95,7 @@ GDD가 아키텍처로 이월한 4건은 모두 닫혔다.
 | **백엔드** | Firebase RTDB(저장) / 익명 인증 / Analytics — 실시간 동기화 용도 아님 | GDD Platform-Specific |
 | **광고** | Google AdMob 보상형 v25.0.0, 보상형만 사용 | GDD Economy 광고 슬롯 |
 | **네트워킹** | 멀티플레이 없음. 단일 플레이어. 오프라인(네트워크 없음) 상태에서도 전투·성장·로컬 저장이 동작해야 함 | GDD Platform-Specific |
-| **빌드 제약** | JDK 11 고정, Gradle Java 11, Jenkins + GitHub Actions 이중 파이프라인 | GDD Dependencies, CLAUDE.md |
+| **빌드 제약** | JDK 11 고정, Gradle Java 11, GitHub Actions 단일 CI (Jenkins 휴면 — 2026-09-21) | GDD Dependencies, CLAUDE.md |
 | **프로젝트 규모** | 1인 개발. 9 에픽 / 132 스토리 (Must 122 · Should 10) | epics.md |
 | **복잡도 수준** | **중간** — 시스템은 표준 방치형이나 저장 신뢰성·2시간 안정성 두 게이트가 엄격 | 본 문서 분석 |
 
@@ -227,7 +227,7 @@ GDD가 아키텍처로 이월한 4건은 모두 닫혔다.
 | 비동기 | UniTask (Git URL) | 2022.3에는 `Awaitable`이 없음. 코루틴 대신 UniTask (CLAUDE.md 규약) |
 | 트위닝 | DOTween | 계승. `modules.physics` 의존으로 물리 모듈 제거 불가 |
 | 테스트 | Unity Test Framework 1.1.33 (NUnit) | EditMode 테스트 5영역의 실행 기반 |
-| 빌드 | Gradle (내장 AGP 7.4.2 / Gradle 7.5.1) + 커스텀 템플릿 + `BuildAutomator.Build` | Jenkins·GitHub Actions 양쪽 공유 |
+| 빌드 | Gradle (내장 AGP 7.4.2 / Gradle 7.5.1) + 커스텀 템플릿 + `BuildAutomator.Build` | GitHub Actions(`.github/scripts/unity-build.sh`)가 호출. Jenkins 휴면 |
 | Android SDK/JDK | Unity Hub 번들 OpenJDK 11, minSdk 24 | 타깃 API 36 + 16 KB 정렬은 **E1-09 실빌드로 검증** |
 | 백엔드 SDK | Firebase (Auth/RTDB/Analytics) via EDM4U, Google Mobile Ads 25.0.0 | 계승. 16 KB 정렬된 최신 `.so`인지 확인 대상 |
 | 직렬화 | JsonUtility (As-Is `PlayerData` DTO), Newtonsoft.Json 3.2.1 설치됨 | 어느 쪽을 저장 스키마 v2에 쓸지는 Step 4 |
@@ -290,7 +290,7 @@ GDD가 아키텍처로 이월한 4건은 모두 닫혔다.
 | D10 | 물리 | **`physics`·`physics2d` 모듈 유지, 게임플레이에서 Collider/Rigidbody 사용 금지** | — | `physics2d`는 Tilemap 의존, `physics`는 DOTween 의존. 미사용 시 런타임 비용 없음. 판정은 X축 거리 비교 |
 | D11 | 풀 | **`UnityEngine.Pool.ObjectPool<T>` 내장 + 프리팹 래퍼.** 적·데미지 텍스트·VFX·AudioSource 4종, Boot 프리웜 | 2022.3 내장 | 자체 구현 이유 없음 |
 | D12 | 에셋 계약 | **투명 PNG / 32×32·24×32·64×64 / 가로 스트립 / `{entity}_{clip}_{frames}.png` / 히트 프레임 3번째.** 임포트: Point·무압축·PPU 32·밉맵 없음. Sprite Atlas 4종. Pixel Perfect Camera 270×480 | 2D Pixel Perfect (2D Feature 2.0.1) | 출처(무료팩·생성 AI·수작업) 무관 단일 임포트 경로 |
-| D13 | Android | **타깃 API 36 확정. E1-09 실빌드 스파이크를 E1 첫 작업으로.** 실패 시 AGP 8.5+/Gradle 8.7+/JDK 17 전환 허용, CLAUDE.md 갱신 | 2022.3.76f1 | 2026-08-31부터 신규 앱 API 36 필수. 16 KB 정렬은 실빌드로만 확인 가능 |
+| D13 | Android | **타깃 API 36, 에디터 62f3 고정(63f1+는 xLTS), IL2CPP ARMv7+ARM64. 결정 A — JDK 11 · AGP 7.4.2 · Gradle 7.5.1 유지** | 2022.3.62f3 | E1-09 스파이크(2026-09-21): `.so` 18개 LOAD align 0x4000, zipalign -P 16 통과, 16 KB 에뮬레이터 런타임 통과, GitHub Actions 성공. Play Console 검증은 E9-18 |
 | D14 | 상태 관리 | **순수 C# 상태 머신** (히어로 5상태, 스테이지 러너). Animator는 시각 재생만 | — | `StateMachineBehaviour`(3D 시절) 폐기. 상태를 테스트 가능한 코드가 소유 |
 | D15 | 오디오 | **AudioMixer BGM/SFX 2그룹 + `AudioService`**, SFX AudioSource 풀 4개, 음소거 = −80 dB | 내장 | 엔진 제공. 설정 저장 항목 `bgmMuted`·`sfxMuted`와 1:1 |
 

@@ -25,44 +25,55 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $env:ANDROID_SDK_ROOT = $Root; $env:ANDROID_HOME = $Root
-$adb = Join-Path $Root "platform-tools\adb.exe"
+$adbExe = Join-Path $Root "platform-tools\adb.exe"
 $emu = Join-Path $Root "emulator\emulator.exe"
 $jar = Join-Path $Root "bundletool-all.jar"
+$Serial = "emulator-5554"
+function adb { & $adbExe -s $Serial @args }
+function Assert-Exit([string] $what) { if ($LASTEXITCODE -ne 0) { throw "$what failed (exit $LASTEXITCODE)" } }
 
 switch ($Cmd) {
     "start" {
         Start-Process -FilePath $emu -ArgumentList @("-avd", $Avd, "-no-snapshot", "-gpu", "swiftshader_indirect", "-no-boot-anim") `
             -RedirectStandardOutput (Join-Path $Root "emulator.log") -RedirectStandardError (Join-Path $Root "emulator.err") -WindowStyle Normal
+        $booted = $false
         for ($i = 0; $i -lt 72; $i++) {
             Start-Sleep -Seconds 5
-            $b = (& $adb -s emulator-5554 shell getprop sys.boot_completed 2>$null)
-            if ("$b".Trim() -eq "1") { break }
+            $b = (adb shell getprop sys.boot_completed 2>$null)
+            if ("$b".Trim() -eq "1") { $booted = $true; break }
         }
+        if (-not $booted) { throw "emulator $Avd did not report boot_completed within 6 minutes - see $Root\emulator.err" }
         Start-Sleep -Seconds 15
-        "booted: sdk $(& $adb shell getprop ro.build.version.sdk) | PAGE_SIZE $(& $adb shell getconf PAGE_SIZE) | abilist $(& $adb shell getprop ro.product.cpu.abilist)"
+        "booted: sdk $(adb shell getprop ro.build.version.sdk) | PAGE_SIZE $(adb shell getconf PAGE_SIZE) | abilist $(adb shell getprop ro.product.cpu.abilist)"
     }
     "install" {
-        & $Java -jar $jar build-apks --bundle=$Aab --output=Builds/device.apks --connected-device --adb=$adb --overwrite | Select-Object -Last 1
-        & $Java -jar $jar install-apks --apks=Builds/device.apks --adb=$adb | Select-Object -Last 1
-        "installed: $(& $adb shell pm list packages | Select-String $Package)"
+        if (-not (Test-Path $Aab)) { throw "AAB not found: $Aab (run Tools > Build > Android AAB first)" }
+        & $Java -jar $jar build-apks --bundle=$Aab --output=Builds/device.apks --connected-device --device-id=$Serial --adb=$adbExe --overwrite | Select-Object -Last 1
+        Assert-Exit "bundletool build-apks"
+        & $Java -jar $jar install-apks --apks=Builds/device.apks --device-id=$Serial --adb=$adbExe | Select-Object -Last 1
+        Assert-Exit "bundletool install-apks"
+        $pkg = adb shell pm list packages | Select-String $Package
+        if (-not $pkg) { throw "$Package is not installed after install-apks" }
+        "installed: $pkg"
     }
     "run" {
-        & $adb logcat -c
-        & $adb shell am start -n "$Package/com.unity3d.player.UnityPlayerActivity" | Out-Null
+        adb logcat -c
+        adb shell am start -n "$Package/com.unity3d.player.UnityPlayerActivity" | Out-Null
+        Assert-Exit "am start"
         Start-Sleep -Seconds 30
-        "alive: $((& $adb shell pidof $Package) -ne $null)"
-        & $adb logcat -d | Select-String "\[Spike\]|\[Boot\]|FATAL|Fatal signal|SIGSEGV|SIGABRT|Unity   : E" | Select-Object -First 60 | ForEach-Object { $_.Line.Substring([Math]::Min(31, $_.Line.Length)) }
+        "alive: $((adb shell pidof $Package) -ne $null)"
+        adb logcat -d | Select-String "\[Spike\]|\[Boot\]|FATAL|Fatal signal|SIGSEGV|SIGABRT|Unity   : E" | Select-Object -First 60 | ForEach-Object { $_.Line.Substring([Math]::Min(31, $_.Line.Length)) }
     }
     "shot" {
         $out = if ($Arg) { $Arg } else { "Builds/screenshot.png" }
-        & $adb shell screencap -p /sdcard/shot.png; & $adb pull /sdcard/shot.png $out | Out-Null
+        adb shell screencap -p /sdcard/shot.png; adb pull /sdcard/shot.png $out | Out-Null
         "saved $out"
     }
     "logcat" {
-        & $adb logcat -d | Select-String "Unity|$Package" | Select-Object -Last 80 | ForEach-Object { $_.Line }
+        adb logcat -d | Select-String "Unity|$Package" | Select-Object -Last 80 | ForEach-Object { $_.Line }
     }
     "stop" {
-        & $adb emu kill 2>$null | Out-Null
+        adb emu kill 2>$null | Out-Null
         "stopped"
     }
 }

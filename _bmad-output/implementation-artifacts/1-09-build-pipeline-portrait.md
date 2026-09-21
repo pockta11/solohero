@@ -18,11 +18,11 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
 
 ## Acceptance Criteria
 
-1. **에디터 고정 + SDK 36:** 프로젝트는 **2022.3.62f3** 그대로 (63f1+는 Industry/Enterprise 전용 xLTS — 상향 불가). Android **SDK Platform 36**이 Unity 번들 SDK에 설치되어 있고 컴파일 오류 0. `Jenkinsfile`·`activation.yml`은 62f3을 가리킨다.
+1. **에디터 고정 + SDK 36:** 프로젝트는 **2022.3.62f3** 그대로 (63f1+는 Industry/Enterprise 전용 xLTS — 상향 불가). Android **SDK Platform 36**이 Unity 번들 SDK에 설치되어 있고 컴파일 오류 0. `Jenkinsfile`은 62f3을 가리킨다 (`activation.yml`은 `.ulf` 활성화 폐지로 삭제).
 2. **Player Settings (Android):** Scripting Backend **IL2CPP**, Target Architectures **ARM64 + ARMv7**, Target API Level **36 (명시값, "Highest Installed" 아님)**, Minimum API 24, Default Orientation **Portrait** 단독(자동 회전 끔), Aspect Ratio Mode **Custom ≥ 2.5** (20:9 세로 기기 레터박스 방지), Managed Stripping **Low** 이상.
 3. **SDK 상향:** Firebase Unity SDK **≥ 13.17.0** (App·Auth·Database·Analytics), Google Mobile Ads Unity **≥ 11.5.0**, EDM4U는 위 패키지에 동봉된 최신. `Assets > External Dependency Manager > Android Resolver > Force Resolve` 재실행으로 `mainTemplate.gradle` 의존성 블록이 재생성된다.
 4. **로컬 AAB:** `Tools > Build > Android AAB`로 `Builds/game.aab` 생성 성공. `bundletool build-apks` → 추출한 **arm64-v8a `.so` 전부**가 16 KB 정렬(ELF LOAD 세그먼트 align ≥ `0x4000`)이다 — Unity 라이브러리(`libunity`, `libil2cpp`, `libmain`)와 서드파티(`libFirebaseCppApp`, `libFirebaseCppAuth`, `libFirebaseCppDatabase`, `libFirebaseCppAnalytics` 등) 모두.
-5. **Play Console:** 내부 테스트 트랙에 업로드했을 때 **16 KB 페이지 크기 경고 없음**, **타깃 API 레벨 경고 없음**, 64-bit 요구 충족.
+5. **Play Console:** 내부 테스트 트랙에 업로드했을 때 **16 KB 페이지 크기 경고 없음**, **타깃 API 레벨 경고 없음**, 64-bit 요구 충족. (**E9-18로 이월 — 2026-09-22 리뷰에서 소유자 승인.** 개발자 계정·업로드 키 필요. 기술 리스크는 AC 4 정적 정렬 + AC 6 16 KB 런타임으로 해소. 이 AC는 E9-18에서 닫는다)
 6. **실기기:** Android 기기(가능하면 Android 15+, 16 KB 모드 지원 기기 또는 에뮬레이터 16 KB 시스템 이미지)에서 설치·실행. 플레이스홀더 부트 씬이 뜨고 `BuildSpikeProbe`가 Firebase 초기화(`CheckAndFixDependenciesAsync` → `Available`)와 AdMob 초기화(`MobileAds.Initialize` 콜백)를 화면 텍스트로 보고하며 **크래시 없음**. (16 KB 크래시는 `libFirebaseCppApp.so` 로드 시점에 나므로 이 프로브가 필수다.)
 7. **CI 성공:** GitHub Actions `Unity Android Build` 성공 + artifact `android-aab` 업로드. (Jenkins는 2026-09-21 사용자 확인으로 **휴면** — 로컬 Jenkins 미운영. `Jenkinsfile`은 참고용 유지, 이 AC에서 제외)
 8. **결정 기록:** 아래 결정 트리의 결과(**A: JDK 11 유지** / **B: AGP 8.5+ · Gradle 8.7+ · JDK 17 전환**)를 이 스토리의 Dev Agent Record, `game-architecture.md` D13 행, `CLAUDE.md` Environment Setup JDK 행, `_bmad-output/project-context.md` Build 행에 기록한다. B인 경우 Gradle 템플릿·CI 변경이 커밋에 포함된다.
@@ -33,10 +33,10 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
   - [x] ~~2022.3.76f1 설치~~ **불가 확인** — Hub 라이선스 오류 "part of an Extended LTS release, requires Industry or Enterprise". 62f3 유지로 결정 변경, 아키텍처·CLAUDE.md·project-context 갱신
   - [x] Unity 번들 SDK(`Edit > Preferences > External Tools > Android > SDK` 경로)에 **`platforms\android-36`** 존재 확인. 없으면 `<SDK>\cmdline-tools\<ver>\bin\sdkmanager.bat "platforms;android-36" "build-tools;35.0.0"`
   - [x] 62f3에서 프로젝트 열기 → 컴파일 오류 0 확인
-  - [x] `Jenkinsfile`·`.github/workflows/activation.yml` — 62f3 유지 (76f1로 바꿨다가 되돌림)
+  - [x] `Jenkinsfile` — 62f3 유지 (76f1로 바꿨다가 되돌림). `.github/workflows/activation.yml`은 T8에서 삭제 (`.ulf` 수동 활성화 폐지)
 - [x] **T2. Player Settings 세로·64-bit·API 36** (AC 2)
   - [x] `Edit > Project Settings > Player > Android > Other Settings`: Scripting Backend IL2CPP, Api Compatibility .NET Standard 2.1, Target Architectures ARMv7 + ARM64, Minimum API 24, Target API **36**
-  - [x] Resolution and Presentation: Default Orientation Portrait, Auto Rotation 끔, Aspect Ratio Mode Custom → **2.5**
+  - [x] Resolution and Presentation: Default Orientation Portrait, Auto Rotation 끔. Aspect Ratio Mode는 **Native Aspect Ratio 유지**(어떤 비율에서도 레터박스 없음 — AC 2의 목적을 더 강하게 충족). `androidMaxAspectRatio`는 Custom 전환 대비 2.5로 설정(Native에서는 비활성 값)
   - [x] Optimization: Managed Stripping Level Low (Firebase 리플렉션 안전). `Assets/link.xml`은 이 스토리에서 만들지 않는다 (E1-05)
   - [x] Publishing Settings: Custom Main Gradle Template / Custom Gradle Properties Template / Custom Gradle Settings Template 체크 상태 유지 확인 (`Assets/Plugins/Android/*` 사용)
 - [x] **T3. Firebase · AdMob · EDM4U 상향** (AC 3)
@@ -45,8 +45,8 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
   - [x] `Assets > External Dependency Manager > Android Resolver > Force Resolve` → `mainTemplate.gradle`의 `// Android Resolver Dependencies Start` 블록 재생성. **`sourceCompatibility JavaVersion.VERSION_11` 줄은 이 시점에 그대로 둔다** (결정 트리 전)
   - [x] `Assets/Plugins/Android/AndroidManifest.xml`의 AdMob App ID(`ca-app-pub-1435934257467286~9895276357`) 유지 확인
 - [x] **T4. 플레이스홀더 부트 씬 + 프로브** (AC 6)
-  - [x] `Assets/SoloHero/Scenes/Boot.unity` 생성 — Main Camera(Orthographic, 배경 단색) + Canvas(Portrait 1080×1920 CanvasScaler) + TMP Text `StatusLabel`
-  - [x] `Assets/SoloHero/Scripts/Game/Boot/BuildSpikeProbe.cs` (MonoBehaviour, **임시** — E1-04 `BootSequence`가 대체하며 삭제). `Start`에서 순서대로: Unity 버전·`SystemInfo`(기기·OS·`Application.targetFrameRate`) 표시 → `FirebaseApp.CheckAndFixDependenciesAsync()` 결과 표시 → `MobileAds.Initialize(status => ...)` 결과 표시. 모든 콜백은 `try/catch`로 감싸고 예외 메시지를 라벨에 출력. 코드 텍스트 영문만
+  - [x] `Assets/SoloHero/Scenes/Boot.unity` 생성 — Main Camera(Orthographic, 배경 단색) + `BuildSpikeProbe` GO. Canvas/TMP 대신 `OnGUI` 텍스트 (UI 에셋 의존 0, `SpikeSceneSetup`이 코드로 생성)
+  - [x] `Assets/SoloHero/Scripts/Game/Boot/BuildSpikeProbe.cs` (MonoBehaviour, **임시** — E1-04 `BootSequence`가 대체하며 삭제). `Start`에서 순서대로: Unity 버전·`SystemInfo`(기기·OS·64-bit·화면) 표시 → `FirebaseApp.CheckAndFixDependenciesAsync()` 결과 표시 → `MobileAds.Initialize(status => ...)` 결과 표시. 모든 콜백은 `try/catch`로 감싸고 예외 메시지를 라벨에 출력. 코드 텍스트 영문만
   - [x] `EditorBuildSettings`에 `Boot.unity` 1개 등록
 - [x] **T5. BuildAutomator 갱신** (AC 4, 7)
   - [x] `Assets/Editor/BuildAutomator.cs` → `Assets/SoloHero/Scripts/Editor/BuildAutomator.cs`로 이동 (`.meta` 함께). 폴더명이 `Editor`이므로 asmdef 없이도 에디터 어셈블리로 컴파일됨
@@ -59,7 +59,7 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
   - [x] bundletool(최신 jar 다운로드)로 APK 추출:
         `java -jar bundletool.jar build-apks --bundle=Builds/game.aab --output=Builds/spike.apks --mode=universal` → `spike.apks`를 zip으로 열어 `universal.apk` → 다시 zip으로 열어 `lib/arm64-v8a/*.so` 추출
   - [x] 정렬 검사 (Windows): NDK의 `llvm-readelf`(`<NDK>/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-readelf.exe`)로 각 `.so`에 `-l` 실행 → 모든 `LOAD` 행의 `Align`이 `0x4000` 이상인지 확인. 결과를 표로 Dev Record에 기록 (라이브러리명 · align · 통과/실패)
-  - [x] APK 안 `.so`가 **비압축**이고 zip 엔트리 오프셋이 16 KB 배수인지도 확인 (`zipalign -c -P 16 -v 4 universal.apk` — SDK build-tools 35+에 포함)
+  - [x] `zipalign -c -P 16 -v 4 universal.apk` 통과 (SDK build-tools 35+). 실제 AAB의 `.so`는 **압축 저장**이라 zip 오프셋 정렬 대상이 아니며(설치 시 추출), Play의 16 KB 검사는 ELF LOAD 정렬만 본다 — 위 readelf 표가 실질 근거
 - [x] **T7. 결정 트리 실행** (AC 8) — 결과 A
   - [x] **결과 A — T6 전부 통과:** JDK 11 유지. `mainTemplate.gradle` Java 11 그대로. 결정 A를 기록하고 T8로
   - [~] N/A — **결과 B-1 — 서드파티 `.so`만 실패:** 해당 SDK가 더 최신인지 확인(T3 재확인). 그래도 실패면 Firebase/GMA GitHub 이슈 번호와 함께 기록하고 사용자에게 보고 후 중단
@@ -84,6 +84,28 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
   - [x] Dev Agent Record에 결정 A, 정렬 검사 표, 기기 결과, 변경 파일 목록 기록 (Play Console은 이월)
   - [x] `sprint-status.yaml`의 `1-09-build-pipeline-portrait`를 `review`로
   - [x] 커밋 — 코드/설정/SDK/CI/문서 단계별 커밋 (864c35b … 481192a)
+
+### Review Findings (2026-09-22 · gds-code-review · Blind Hunter + Acceptance Auditor; Edge Case Hunter는 API 한도로 실패)
+
+- [x] [Review][Decision] AC 5 (Play Console) 이월 승인 — **승인 (2026-09-22)**, AC 5에 이월 주석 추가 — T9는 E9-18로 이월했으나 AC 5 본문은 여전히 요구를 주장. Jenkins처럼 AC 5에 이월 주석을 달고 스토리를 닫으려면 소유자 승인 필요
+- [x] [Review][Patch] Personal 시트 누수: 취소·타임아웃 시 `--return-ulf` 미실행 (bash가 PID 1이라 SIGTERM 무시, `timeout-minutes` 없음) [.github/scripts/unity-build.sh:25, .github/workflows/build.yml:61]
+- [x] [Review][Patch] 연속 푸시 시 같은 계정으로 동시 활성화 → `concurrency` 그룹 없음, 문서 커밋도 빌드 트리거 [.github/workflows/build.yml:5]
+- [x] [Review][Patch] `EnsureBootScene`이 씬 목록을 통째로 덮어씀 — 실제 Boot 씬 교체 후에도 스파이크 씬만 남길 수 있음 [Assets/SoloHero/Scripts/Editor/SpikeSceneSetup.cs:50]
+- [x] [Review][Patch] `ZipFile.ExtractToDirectory`는 상대 경로를 프로세스 CWD 기준으로 해석 → `cd` 후 실행 시 실패 [tools/spike/Check16Kb.ps1:22]
+- [x] [Review][Patch] readelf 출력이 비면 `$minAlign = MaxValue`로 거짓 PASS [tools/spike/Check16Kb.ps1:56]
+- [x] [Review][Patch] `Emu.ps1 install`이 bundletool 실패를 무시, `start`가 미부팅에도 성공 출력, `-s emulator-5554` 누락 [tools/android/Emu.ps1:36-47]
+- [x] [Review][Patch] `Path.GetDirectoryName("game.aab")`는 `""` 반환 → `CreateDirectory("")` 예외; `-customBuildPath` 경로는 GameCI 제거로 사장 [Assets/SoloHero/Scripts/Editor/BuildAutomator.cs:43, 주석 :1-16]
+- [x] [Review][Patch] 시크릿 비어 있으면 `set -u`가 못 잡음(빈 문자열) → 불명확한 인증 오류; CLAUDE.md의 "특수문자 금지" 서술은 부정확(실제 제약은 `-`로 시작하는 비밀번호) [.github/scripts/unity-build.sh:28, CLAUDE.md]
+- [x] [Review][Patch] `chown`이 빌드 성공 시에만 실행 → 실패 시 root 소유 Library로 캐시 저장 실패 [.github/workflows/build.yml:66]
+- [x] [Review][Patch] `MobileAds.Initialize` 콜백 본문이 try/catch 밖 [Assets/SoloHero/Scripts/Game/Boot/BuildSpikeProbe.cs:48]
+- [x] [Review][Patch] 문서 불일치: 아키텍처 Decision Summary D13 행이 여전히 76f1/JDK 17 [game-architecture.md:293]; `activation.yml` 삭제됐는데 AC1·T1·File List는 "62f3 유지/변경 없음"; T2 "Custom → 2.5"(실제 Native); T4 Canvas/TMP 서술(실제 OnGUI); T6 "비압축 .so"(실제 압축); Dev Record의 "컴파일 미실행"·"남은 작업" 목록·빈 자리표시자·"생성 예정" File List; CLAUDE.md AdMob App ID 위치·GMA 버전·"Boot + Game 씬"; project-context GMA 25.0.0
+- [x] [Review][Defer] `ApplyToolchainOverrides`가 전역 `EditorPrefs`(JdkUseEmbedded/GradleUseEmbedded)를 영구 변경, 복원 없음 [BuildAutomator.cs:86] — deferred, 결정 A에서 미사용 경로. JDK 17 전환이 실제로 필요해질 때 빌드 후 복원 로직과 함께 처리
+- [x] [Review][Defer] 비밀번호가 argv로 전달됨(`/proc/*/cmdline` 노출) [unity-build.sh:28] — deferred, Unity.Licensing.Client에 stdin/파일 입력 옵션이 문서화되어 있지 않음. 컨테이너 내부 한정 노출
+- [x] [Review][Defer] 헬퍼 스크립트 기본값이 `C:\Users\user\android-sdk-tools` 고정 [Check16Kb.ps1, Emu.ps1] — deferred, 파라미터로 덮어쓰기 가능·CLAUDE.md에 기록. 다른 PC에서 쓰게 될 때 환경변수화
+
+Patches applied 2026-09-22 (commit after review): unity-build.sh 시그널·시트 반환·시크릿 검증, build.yml concurrency·paths-ignore·timeout·--init·chown always, SpikeSceneSetup 비파괴 등록, BuildAutomator customBuildPath 제거, 프로브 콜백 try/catch, Check16Kb 절대경로·readelf 가드, Emu.ps1 exit code·-s serial·부팅 실패, 문서 정합성.
+
+Dismissed (noise): AC 7 검증 불가(API로 확인함), `activeInputHandler` 범위 밖(문서화됨), 프로브 `async void`·OnGUI 할당(TEMP 면제), 네임스페이스 없음(asmdef E1 골격에서), Boot.unity 미커밋 의심(커밋됨), build.yml 한국어 주석(규칙은 .cs 대상), GMA Resources 에셋 편집(벤더 필수 파일), pwsh 7.0/7.1 `2>$null` 동작(7.6 사용)
 
 ## Dev Notes
 
@@ -191,7 +213,7 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 
 ### Debug Log References
 
-- 에디터 컴파일은 아직 미실행. API 존재는 DLL 문자열 검색으로 확인: `GoogleMobileAds.dll`에 `RaiseAdEventsOnUnityMainThread`·`getAdapterStatusMap`, `GoogleMobileAds.Core.dll`에 `InitializationState`, `Firebase.App.dll`에 `CheckAndFixDependenciesAsync`.
+- (작성 시점) 에디터 컴파일 전이라 API 존재는 DLL 문자열 검색으로 확인: `GoogleMobileAds.dll`에 `RaiseAdEventsOnUnityMainThread`·`getAdapterStatusMap`, `GoogleMobileAds.Core.dll`에 `InitializationState`, `Firebase.App.dll`에 `CheckAndFixDependenciesAsync`.
 
 ### Implementation Plan (코드 파트, 완료)
 
@@ -205,24 +227,17 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 - `tools/spike/Check16Kb.ps1`: bundletool universal APK → `.so` 추출 → `llvm-readelf -l` LOAD align 표 → `zipalign -c -P 16` → 결과 A/B-1/B-2/B-3 판정 및 exit code
 - `.gitignore`: `*.apks`, `*.keystore`, `*.jks`
 
-### 사람 손이 필요한 남은 작업 (순서대로)
+### 사람 손 작업 (완료 — 기록용)
 
-1. **T1** 62f3 그대로 프로젝트 열기 → 콘솔 컴파일 오류 0 확인 → SDK Platform 36 존재 확인(`Preferences > External Tools`의 SDK 경로 `platforms\android-36`; 없으면 sdkmanager로 설치)
-2. **T3** Firebase Unity SDK 13.17.0 `.unitypackage` 임포트(App·Auth·Database·Analytics) → GMA Unity 11.5.0 임포트 → `Assets > External Dependency Manager > Android Resolver > Force Resolve` → `Assets/Firebase/Editor/*_version-13.17.0_manifest.txt`, `Assets/GoogleMobileAds/GoogleMobileAds_version-11.5.0_manifest.txt`만 남았는지 확인
-3. **T4** `Tools > SoloHero > Spike > Create Boot Scene` 1회 실행 → `Assets/SoloHero/Scenes/Boot.unity` 생성·등록 확인 → 새로 생긴 `.meta` 파일들과 함께 커밋
-4. **T2 검증** `Project Settings > Player > Android`에서 IL2CPP / ARMv7+ARM64 / Target API 36 / Portrait / Stripping Low가 인스펙터에 그대로 보이는지 확인 (파일 편집이 에디터에 반영됐는지)
-5. **T6** `Tools > Build > Android AAB` → `Builds/game.aab` → bundletool jar 다운로드 후 `pwsh tools/spike/Check16Kb.ps1 -Aab Builds/game.aab -Bundletool <jar> -Ndk <62f3 NDK> -BuildTools <SDK build-tools 35+>` 실행 → 출력 표를 아래 Completion Notes에 붙여넣기
-6. **T7** 스크립트 exit code로 결정: 0=A / 2=B-1·B-2 / 3=B-3 (스토리 태스크의 대응 절차)
-7. **T8** Jenkins 실행, GitHub Actions `workflow_dispatch` 실행 → run URL 기록
-8. **T9** Play Console 내부 테스트 업로드(업로드 키 필요 시 `SOLOHERO_KEYSTORE_*` env로 빌드) → 경고 확인
-9. **T10** 기기/에뮬레이터(16 KB) 설치 → 프로브 3줄 + `adb logcat -s Unity` 30초
-10. **T11** 결과를 Completion Notes에 기록 → D13·CLAUDE.md·project-context 갱신 → 상태 `review`
+2026-09-21~22에 순서대로 수행: 62f3 확인 → SDK 36 확인 → Firebase/GMA 임포트 + Force Resolve → Boot 씬 생성 → 로컬 AAB → 16 KB 검사(A) → GitHub Actions(디스크·라이선스 2회 수정 후 성공) → 에뮬레이터 런타임. Play Console만 E9로 이월.
 
 ### Completion Notes List
 - **T10 결과 (2026-09-22):** 에뮬레이터 `solohero16k35` — `system-images;android-35;google_apis_ps16k;x86_64`, `-gpu swiftshader_indirect`, Pixel 프로필 1080×1920. 앱은 ARM 번역으로 arm64 스플릿 실행. 프로브 3항목 전부 정상, 2분 생존, 크래시 0. **한계:** arm64 네이티브를 x86 호스트에서 번역 실행한 것이라 실제 arm64 기기의 16 KB 동작을 100% 대변하지는 않음 — 실기기 확인은 E9 Play Console 사전 출시 보고서(Firebase Test Lab 실기기)로 보완
 - **에뮬레이터 세팅 교훈:** API 36.1 ps16k 이미지(rev 4)는 emulator 37.1.11에서 `surfaceflinger` SIGABRT 루프 → 사용 불가. `-gpu auto`(호스트 GPU)는 `hasReadColorBufferDma` 어설션 → `swiftshader_indirect` 필수. `sdkmanager --sdk_root`로 사용자 폴더에 설치하면 관리자 권한 불필요(`avdmanager`는 `cmdline-tools`를 같은 루트에 복사해야 이미지를 찾음). 헬퍼: `tools/android/Emu.ps1 {start|install|run|shot|logcat|stop}`
 - **T9 이월:** Play Console 내부 테스트 업로드는 개발자 계정($25)·업로드 키스토어가 필요 → E9-18(릴리스 AAB). AC 5는 그 스토리에서 닫는다
 - **결론:** AC 1·2·3·4·6·7·8 충족, AC 5 이월. 파이프라인 결정 A(JDK 11 유지) 확정. E1 나머지 스토리 착수 가능
+- **컴파일 최소 수정:** `Assets/Scripts/Managers/GameManager.cs` — 3D 정리 때 삭제된 `PlayerStatsSO` 참조 2줄을 `OfflineRewardSystem.BaseGoldPerSecond`로 (E1-04에서 클래스 자체 교체). 프로브의 GMA 11 obsolete API 1줄 제거
+- **CI run:** https://github.com/pockta11/solohero/actions/runs/35623196814 (2026-09-21, success, artifact `android-aab` 59.8 MB)
 - **CI 재구성 (T8):** GameCI 액션 폐기. 시크릿은 `UNITY_EMAIL`·`UNITY_PASSWORD`만 사용(`UNITY_LICENSE` 불필요 — 삭제 권장). 주의: Unity 계정 2FA 활성화 시 헤드리스 로그인 불가, 비밀번호에 셸 특수문자 금지. `.github/scripts/unity-build.sh`가 활성화·빌드·반환을 담당
 - **CI 구성 변경:** Jenkins 휴면(미운영) → GitHub Actions 단일 CI. GDD Dependencies의 "두 파이프라인 병행으로 단일 실패점 제거"는 현재 성립하지 않음 — Jenkins 재가동 시점은 미정 (아키텍처 Development Environment 절에 기록)
 
@@ -246,10 +261,6 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 | arm64-v8a + armeabi-v7a | libunity.so | 0x4000 | PASS |
 
 - `zipalign -c -P 16 -v 4` 결과: **PASS** (Verification successful). `.so`는 압축 저장(extractNativeLibs) — 압축 엔트리는 zip 정렬 대상이 아니며 Play는 ELF LOAD 정렬만 요구
-- Play Console 결과 (경고 문구 / 없음):
-- 실기기 / 에뮬레이터 결과 (기기명, Android 버전, 16 KB 모드 여부, 프로브 3줄, logcat 요약):
-- Jenkins 결과 / GitHub Actions run URL:
-- 컴파일 최소 수정 목록 (있다면):
 
 ### File List
 
@@ -262,11 +273,11 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 - `Assets/Scripts/Managers/GameManager.cs` (M — 레거시 컴파일 오류 최소 수정)
 
 - `ProjectSettings/ProjectSettings.asset` (M — Target SDK 36, ARMv7+ARM64, IL2CPP, Stripping Low, maxAspectRatio 2.5)
-- `Jenkinsfile`, `.github/workflows/activation.yml` (변경 없음 — 76f1로 바꿨다가 62f3으로 복원)
+- `Jenkinsfile` (변경 없음 — 76f1로 바꿨다가 62f3으로 복원)
 - `.github/workflows/build.yml` (M — cache v4, artifact 경로)
 - `.gitignore` (M — *.apks, *.keystore, *.jks)
 - `Assets/Editor/BuildAutomator.cs` → `Assets/SoloHero/Scripts/Editor/BuildAutomator.cs` (R + 재작성)
 - `Assets/SoloHero/Scripts/Editor/SpikeSceneSetup.cs` (A)
 - `Assets/SoloHero/Scripts/Game/Boot/BuildSpikeProbe.cs` (A, TEMP)
 - `tools/spike/Check16Kb.ps1` (A)
-- _(에디터 실행 후 생성 예정)_ `Assets/SoloHero/Scenes/Boot.unity`, 신규 폴더·스크립트 `.meta`, `ProjectSettings/ProjectVersion.txt`, `ProjectSettings/EditorBuildSettings.asset`, `Assets/Plugins/Android/mainTemplate.gradle`(Resolver), `Assets/Firebase/**`, `Assets/GoogleMobileAds/**`, `Assets/ExternalDependencyManager/**`
+- (에디터가 생성·갱신, 커밋됨) 신규 폴더·스크립트 `.meta`, `ProjectSettings/EditorBuildSettings.asset`, `Assets/Plugins/Android/mainTemplate.gradle`·`gradleTemplate.properties`(Resolver), `ProjectSettings/AndroidResolverDependencies.xml`. `ProjectVersion.txt`는 62f3 그대로

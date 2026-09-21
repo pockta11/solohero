@@ -7,8 +7,9 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 /// <summary>
-/// Single build entry point shared by Jenkins, GitHub Actions (GameCI) and the editor menu.
+/// Single build entry point shared by the editor menu and CI (.github/scripts/unity-build.sh).
 /// Invoked with: -executeMethod BuildAutomator.Build
+/// Output is always Builds/game.aab.
 ///
 /// Environment variables (all optional):
 ///   SOLOHERO_DEV_BUILD=1          -> BuildOptions.Development (defines DEVELOPMENT_BUILD)
@@ -16,13 +17,10 @@ using UnityEngine;
 ///   SOLOHERO_KEYSTORE_PASS, SOLOHERO_KEYALIAS_NAME, SOLOHERO_KEYALIAS_PASS
 ///   SOLOHERO_JDK_PATH             -> override Unity's embedded JDK (decision B of story 1-09)
 ///   SOLOHERO_GRADLE_PATH          -> override Unity's embedded Gradle (decision B of story 1-09)
-///
-/// GameCI passes -customBuildPath; when present it wins over the default output path so that
-/// the workflow's artifact step finds the bundle.
 /// </summary>
 public static class BuildAutomator
 {
-    private const string DefaultOutputPath = "Builds/game.aab";
+    private const string OutputPath = "Builds/game.aab";
 
     [MenuItem("Tools/Build/Android AAB")]
     public static void Build()
@@ -39,8 +37,8 @@ public static class BuildAutomator
             return;
         }
 
-        string outputPath = ResolveOutputPath();
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? "Builds");
+        string outputPath = OutputPath;
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 
         ApplyToolchainOverrides();
         ApplyKeystoreFromEnvironment();
@@ -70,17 +68,6 @@ public static class BuildAutomator
 
         if (summary.result != BuildResult.Succeeded)
             Fail($"build failed: {summary.result} ({summary.totalErrors} errors)");
-    }
-
-    private static string ResolveOutputPath()
-    {
-        string[] args = Environment.GetCommandLineArgs();
-        for (int i = 0; i < args.Length - 1; i++)
-        {
-            if (string.Equals(args[i], "-customBuildPath", StringComparison.OrdinalIgnoreCase))
-                return args[i + 1];
-        }
-        return DefaultOutputPath;
     }
 
     private static void ApplyToolchainOverrides()

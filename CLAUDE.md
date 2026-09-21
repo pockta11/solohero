@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Screen**: **Portrait 1080×1920** 고정
 - **Platform**: Android AAB, 타깃 API 36, minSdk 24
 - **Backend**: Firebase Auth(익명) / Realtime Database / Analytics
-- **Ads**: Google AdMob 보상형 (v25.0.0)
+- **Ads**: Google Mobile Ads Unity 11.5.0 (Android `play-services-ads` 25.4.0), 보상형만
 - **Async**: UniTask v2.5.11 · **Tween**: DOTween · **JSON**: Newtonsoft 3.2.1 · **UI**: uGUI + TMP
 
 ## 현재 상태 (2026-09-20)
@@ -34,7 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build Commands
 
 ### GitHub Actions (주 CI)
-Push to `main` 또는 수동. `unityci/editor:ubuntu-2022.3.62f3-android-3` 이미지를 직접 `docker run`하고 `.github/scripts/unity-build.sh`가 **Unity Licensing Client로 Personal 시트 활성화 → `BuildAutomator.Build` → 시트 반환**을 수행한다. Secrets: `UNITY_EMAIL` / `UNITY_PASSWORD`만 (Unity가 Personal `.ulf` 수동 활성화를 폐지해 `game-ci/unity-builder`·`UNITY_LICENSE`는 쓸 수 없다). Artifact `android-aab` (7일). 빌드 전 `Free disk space` 단계 필수. 계정 2FA는 꺼져 있어야 하고 비밀번호에 셸 특수문자가 없어야 한다. ~22분/빌드.
+Push to `main` 또는 수동. `unityci/editor:ubuntu-2022.3.62f3-android-3` 이미지를 직접 `docker run`하고 `.github/scripts/unity-build.sh`가 **Unity Licensing Client로 Personal 시트 활성화 → `BuildAutomator.Build` → 시트 반환**을 수행한다. Secrets: `UNITY_EMAIL` / `UNITY_PASSWORD`만 (Unity가 Personal `.ulf` 수동 활성화를 폐지해 `game-ci/unity-builder`·`UNITY_LICENSE`는 쓸 수 없다). Artifact `android-aab` (7일). 빌드 전 `Free disk space` 단계 필수. 계정 2FA는 꺼져 있어야 하고 비밀번호가 `-`로 시작하면 안 된다(옵션으로 파싱됨). 취소·타임아웃에도 시트를 반환하도록 `--init` + trap, 동시 실행은 `concurrency`로 직렬화, `**.md`·`_bmad-output/**`·`tools/**` 변경은 빌드를 트리거하지 않는다. ~22분/빌드.
 
 ### Jenkins (휴면)
 로컬 Jenkins는 2026-09-21 현재 운영하지 않음. `Jenkinsfile`은 참고용:
@@ -43,7 +43,7 @@ Push to `main` 또는 수동. `unityci/editor:ubuntu-2022.3.62f3-android-3` 이�
 ```
 
 ### Manual build in Unity Editor
-`Tools > Build > Android AAB` → `BuildAutomator.Build` (Boot + Game 씬, AAB).
+`Tools > Build > Android AAB` → `BuildAutomator.Build` — `EditorBuildSettings`의 활성 씬으로 `Builds/game.aab` 생성 (현재 스파이크 `Boot.unity` 1개; 활성 씬이 0개일 때만 `SpikeSceneSetup`이 생성·등록).
 
 ## Architecture (요약 — 상세는 game-architecture.md)
 
@@ -101,7 +101,7 @@ Assets/SoloHero/            # 프로젝트 소유 전부. 벤더(Firebase·Googl
 
 ## Android Build Configuration
 
-`Assets/Plugins/Android/`: `mainTemplate.gradle` / `settingsTemplate.gradle`(EDM4U가 갱신), `AndroidManifest.xml`(AdMob App ID `ca-app-pub-1435934257467286~9895276357`), `FirebaseApp.androidlib`, `GoogleMobileAdsPlugin.androidlib`.
+`Assets/Plugins/Android/`: `mainTemplate.gradle` / `settingsTemplate.gradle` / `gradleTemplate.properties`(EDM4U가 갱신), `AndroidManifest.xml`, `FirebaseApp.androidlib`, `GoogleMobileAdsPlugin.androidlib`. **AdMob App ID(`ca-app-pub-1435934257467286~9895276357`)는 GMA 11부터 `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`이 원본**이며 빌드 시 매니페스트에 주입된다 (`AndroidManifest.xml`의 동일 항목은 레거시).
 Gradle Java 호환성 11. 16 KB 페이지 정렬: `pwsh tools/spike/Check16Kb.ps1`로 로컬 검증 (2026-09-21 통과). 새 네이티브 SDK를 추가하면 다시 돌린다.
 
 ## Next Steps

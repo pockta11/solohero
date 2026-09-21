@@ -23,6 +23,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# .NET static calls (ZipFile) resolve relative paths against the process CWD, not PowerShell's $PWD - make everything absolute
+function Resolve-Abs([string] $p) { if ([System.IO.Path]::IsPathRooted($p)) { $p } else { Join-Path (Get-Location).Path $p } }
+$Aab = Resolve-Abs $Aab
+$WorkDir = Resolve-Abs $WorkDir
 $readelf = Join-Path $Ndk "toolchains\llvm\prebuilt\windows-x86_64\bin\llvm-readelf.exe"
 $zipalign = Join-Path $BuildTools "zipalign.exe"
 foreach ($tool in @($readelf, $zipalign, $Bundletool, $Aab, $Java)) {
@@ -54,6 +58,8 @@ $allOk = $true
 foreach ($so in $soFiles) {
     $abi = $so.Directory.Name
     $lines = & $readelf -l $so.FullName | Select-String "^\s*LOAD"
+    if ($LASTEXITCODE -ne 0) { throw "llvm-readelf failed on $($so.Name) (exit $LASTEXITCODE)" }
+    if (-not $lines -or $lines.Count -eq 0) { throw "no LOAD segments parsed for $($so.Name) - readelf output format changed?" }
     $minAlign = [int64]::MaxValue
     foreach ($l in $lines) {
         $parts = ($l.Line -split "\s+") | Where-Object { $_ -ne "" }
