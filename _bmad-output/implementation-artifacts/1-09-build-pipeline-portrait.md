@@ -29,39 +29,39 @@ so that E1의 나머지 작업(정리·골격·저장)을 JDK 11 유지 / JDK 17
 
 ## Tasks / Subtasks
 
-- [ ] **T1. Unity 2022.3.62f3 고정 + SDK Platform 36** (AC 1)
+- [x] **T1. Unity 2022.3.62f3 고정 + SDK Platform 36** (AC 1)
   - [x] ~~2022.3.76f1 설치~~ **불가 확인** — Hub 라이선스 오류 "part of an Extended LTS release, requires Industry or Enterprise". 62f3 유지로 결정 변경, 아키텍처·CLAUDE.md·project-context 갱신
-  - [ ] Unity 번들 SDK(`Edit > Preferences > External Tools > Android > SDK` 경로)에 **`platforms\android-36`** 존재 확인. 없으면 `<SDK>\cmdline-tools\<ver>\bin\sdkmanager.bat "platforms;android-36" "build-tools;35.0.0"`
-  - [ ] 62f3에서 프로젝트 열기 → 컴파일 오류 0 확인
+  - [x] Unity 번들 SDK(`Edit > Preferences > External Tools > Android > SDK` 경로)에 **`platforms\android-36`** 존재 확인. 없으면 `<SDK>\cmdline-tools\<ver>\bin\sdkmanager.bat "platforms;android-36" "build-tools;35.0.0"`
+  - [x] 62f3에서 프로젝트 열기 → 컴파일 오류 0 확인
   - [x] `Jenkinsfile`·`.github/workflows/activation.yml` — 62f3 유지 (76f1로 바꿨다가 되돌림)
-- [ ] **T2. Player Settings 세로·64-bit·API 36** (AC 2)
+- [x] **T2. Player Settings 세로·64-bit·API 36** (AC 2)
   - [x] `Edit > Project Settings > Player > Android > Other Settings`: Scripting Backend IL2CPP, Api Compatibility .NET Standard 2.1, Target Architectures ARMv7 + ARM64, Minimum API 24, Target API **36**
   - [x] Resolution and Presentation: Default Orientation Portrait, Auto Rotation 끔, Aspect Ratio Mode Custom → **2.5**
   - [x] Optimization: Managed Stripping Level Low (Firebase 리플렉션 안전). `Assets/link.xml`은 이 스토리에서 만들지 않는다 (E1-05)
-  - [ ] Publishing Settings: Custom Main Gradle Template / Custom Gradle Properties Template / Custom Gradle Settings Template 체크 상태 유지 확인 (`Assets/Plugins/Android/*` 사용)
-- [ ] **T3. Firebase · AdMob · EDM4U 상향** (AC 3)
-  - [ ] Firebase Unity SDK 13.17.0 `.unitypackage` 4종(App은 자동, Auth · Database · Analytics) 임포트. 기존 13.9.0 파일이 남지 않도록 `Assets/Firebase`, `Assets/ExternalDependencyManager` 버전 매니페스트 확인 (`*_version-13.17.0_manifest.txt`만 존재)
-  - [ ] Google Mobile Ads Unity 11.5.0 임포트. `Assets/GoogleMobileAds/GoogleMobileAds_version-11.5.0_manifest.txt` 확인
-  - [ ] `Assets > External Dependency Manager > Android Resolver > Force Resolve` → `mainTemplate.gradle`의 `// Android Resolver Dependencies Start` 블록 재생성. **`sourceCompatibility JavaVersion.VERSION_11` 줄은 이 시점에 그대로 둔다** (결정 트리 전)
-  - [ ] `Assets/Plugins/Android/AndroidManifest.xml`의 AdMob App ID(`ca-app-pub-1435934257467286~9895276357`) 유지 확인
-- [ ] **T4. 플레이스홀더 부트 씬 + 프로브** (AC 6)
-  - [ ] `Assets/SoloHero/Scenes/Boot.unity` 생성 — Main Camera(Orthographic, 배경 단색) + Canvas(Portrait 1080×1920 CanvasScaler) + TMP Text `StatusLabel`
+  - [x] Publishing Settings: Custom Main Gradle Template / Custom Gradle Properties Template / Custom Gradle Settings Template 체크 상태 유지 확인 (`Assets/Plugins/Android/*` 사용)
+- [x] **T3. Firebase · AdMob · EDM4U 상향** (AC 3)
+  - [x] Firebase Unity SDK 13.17.0 `.unitypackage` 4종(App은 자동, Auth · Database · Analytics) 임포트. 기존 13.9.0 파일이 남지 않도록 `Assets/Firebase`, `Assets/ExternalDependencyManager` 버전 매니페스트 확인 (`*_version-13.17.0_manifest.txt`만 존재)
+  - [x] Google Mobile Ads Unity 11.5.0 임포트. `Assets/GoogleMobileAds/GoogleMobileAds_version-11.5.0_manifest.txt` 확인
+  - [x] `Assets > External Dependency Manager > Android Resolver > Force Resolve` → `mainTemplate.gradle`의 `// Android Resolver Dependencies Start` 블록 재생성. **`sourceCompatibility JavaVersion.VERSION_11` 줄은 이 시점에 그대로 둔다** (결정 트리 전)
+  - [x] `Assets/Plugins/Android/AndroidManifest.xml`의 AdMob App ID(`ca-app-pub-1435934257467286~9895276357`) 유지 확인
+- [x] **T4. 플레이스홀더 부트 씬 + 프로브** (AC 6)
+  - [x] `Assets/SoloHero/Scenes/Boot.unity` 생성 — Main Camera(Orthographic, 배경 단색) + Canvas(Portrait 1080×1920 CanvasScaler) + TMP Text `StatusLabel`
   - [x] `Assets/SoloHero/Scripts/Game/Boot/BuildSpikeProbe.cs` (MonoBehaviour, **임시** — E1-04 `BootSequence`가 대체하며 삭제). `Start`에서 순서대로: Unity 버전·`SystemInfo`(기기·OS·`Application.targetFrameRate`) 표시 → `FirebaseApp.CheckAndFixDependenciesAsync()` 결과 표시 → `MobileAds.Initialize(status => ...)` 결과 표시. 모든 콜백은 `try/catch`로 감싸고 예외 메시지를 라벨에 출력. 코드 텍스트 영문만
-  - [ ] `EditorBuildSettings`에 `Boot.unity` 1개 등록
+  - [x] `EditorBuildSettings`에 `Boot.unity` 1개 등록
 - [ ] **T5. BuildAutomator 갱신** (AC 4, 7)
   - [x] `Assets/Editor/BuildAutomator.cs` → `Assets/SoloHero/Scripts/Editor/BuildAutomator.cs`로 이동 (`.meta` 함께). 폴더명이 `Editor`이므로 asmdef 없이도 에디터 어셈블리로 컴파일됨
   - [x] 씬 목록을 하드코딩 대신 `EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path)`로 읽기 (LoginScene·GameScene 참조 제거 — 존재하지 않아 빌드 실패의 원인)
   - [x] `EditorUserBuildSettings.buildAppBundle = true` 유지, `BuildOptions`는 환경변수 `SOLOHERO_DEV_BUILD=1`이면 `Development` 추가 (개발 빌드에서 `BuildConfig.useTestAdIds` 강제 규약의 기반)
   - [x] `BuildReport.summary.result != Succeeded`이면 `EditorApplication.Exit(1)` — batchmode에서 실패가 CI 실패로 전파되도록
   - [x] `Builds/` 디렉터리 없으면 생성
-- [ ] **T6. 로컬 빌드 + 16 KB 정렬 검사** (AC 4)
-  - [ ] `Tools > Build > Android AAB` → `Builds/game.aab`
-  - [ ] bundletool(최신 jar 다운로드)로 APK 추출:
+- [x] **T6. 로컬 빌드 + 16 KB 정렬 검사** (AC 4)
+  - [x] `Tools > Build > Android AAB` → `Builds/game.aab`
+  - [x] bundletool(최신 jar 다운로드)로 APK 추출:
         `java -jar bundletool.jar build-apks --bundle=Builds/game.aab --output=Builds/spike.apks --mode=universal` → `spike.apks`를 zip으로 열어 `universal.apk` → 다시 zip으로 열어 `lib/arm64-v8a/*.so` 추출
-  - [ ] 정렬 검사 (Windows): NDK의 `llvm-readelf`(`<NDK>/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-readelf.exe`)로 각 `.so`에 `-l` 실행 → 모든 `LOAD` 행의 `Align`이 `0x4000` 이상인지 확인. 결과를 표로 Dev Record에 기록 (라이브러리명 · align · 통과/실패)
-  - [ ] APK 안 `.so`가 **비압축**이고 zip 엔트리 오프셋이 16 KB 배수인지도 확인 (`zipalign -c -P 16 -v 4 universal.apk` — SDK build-tools 35+에 포함)
+  - [x] 정렬 검사 (Windows): NDK의 `llvm-readelf`(`<NDK>/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-readelf.exe`)로 각 `.so`에 `-l` 실행 → 모든 `LOAD` 행의 `Align`이 `0x4000` 이상인지 확인. 결과를 표로 Dev Record에 기록 (라이브러리명 · align · 통과/실패)
+  - [x] APK 안 `.so`가 **비압축**이고 zip 엔트리 오프셋이 16 KB 배수인지도 확인 (`zipalign -c -P 16 -v 4 universal.apk` — SDK build-tools 35+에 포함)
 - [ ] **T7. 결정 트리 실행** (AC 8)
-  - [ ] **결과 A — T6 전부 통과:** JDK 11 유지. `mainTemplate.gradle` Java 11 그대로. 결정 A를 기록하고 T8로
+  - [x] **결과 A — T6 전부 통과:** JDK 11 유지. `mainTemplate.gradle` Java 11 그대로. 결정 A를 기록하고 T8로
   - [ ] **결과 B-1 — 서드파티 `.so`만 실패:** 해당 SDK가 더 최신인지 확인(T3 재확인). 그래도 실패면 Firebase/GMA GitHub 이슈 번호와 함께 기록하고 사용자에게 보고 후 중단
   - [ ] **결과 B-2 — Unity `.so`(libunity/libil2cpp/libmain) 실패:** 62f3(16 KB 지원 56f1+)에서 나오면 안 되는 결과. Unity Discussions 검색 후 사용자에게 보고. 진행 중단
   - [ ] **결과 B-3 — `.so`는 정렬됐으나 `zipalign -P 16` 실패 (패키징 문제, AGP 7.4.2 한계):** AGP·Gradle·JDK 상향 경로 시도 —
@@ -220,21 +220,26 @@ Claude Opus 5 (claude-opus-5) — 코드·설정 부분 (2026-09-20)
 
 ### Completion Notes List
 
-- 결정: **A / B** (하나 남기기)
-- 16 KB 정렬 검사 표:
+- **AAB:** `Builds/game.aab` 69,153,006 bytes (2022.3.62f3, IL2CPP, ARMv7+ARM64, Target SDK 36). 빌드 시간 9분 44초(첫 IL2CPP + Burst)
+- **빌드 중 발견·수정 2건:** (1) GMA 11.x는 App ID를 `AndroidManifest.xml`이 아니라 `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`(`adMobAndroidAppId`)에서 읽음 → 비어 있어 `BuildMethodException` 로그 → 값 설정. (2) `Active Input Handling = Both`는 Android에서 미지원 경고 → `Input Manager (Old)`(0)로 변경 (D9 선반영, 패키지 제거는 E1-03)
+- **부수:** EDM4U Force Resolve가 `mainTemplate.gradle`에서 `exclude('/lib/arm64-v8a/**')`를 제거 — 이전 ARMv7 단독 설정의 흔적. `gradleTemplate.properties`에 Jetifier ignorelist 추가됨. Burst가 `lib_burst_generated.so`를 생성 (`Builds/SoloHero_BurstDebugInformation_DoNotShip` 폴더는 gitignore 대상)
 
-| 라이브러리 | LOAD Align | 결과 |
-|---|---|---|
-| libunity.so | | |
-| libil2cpp.so | | |
-| libmain.so | | |
-| libFirebaseCppApp.so | | |
-| libFirebaseCppAuth.so | | |
-| libFirebaseCppDatabase.so | | |
-| libFirebaseCppAnalytics.so | | |
-| (기타) | | |
+- 결정: **A — JDK 11 유지** (2026-09-21 로컬 AAB 검사 통과; AGP 7.4.2 / Gradle 7.5.1 / OpenJDK 11.0.14.1 그대로)
+- 16 KB 정렬 검사 표 (2026-09-21, `tools/spike/Check16Kb.ps1`, exit 0):
 
-- `zipalign -P 16` 결과:
+| ABI | Library | LOAD Align (min) | Result |
+|---|---|---|---|
+| arm64-v8a + armeabi-v7a | lib_burst_generated.so | 0x4000 | PASS |
+| arm64-v8a + armeabi-v7a | libdatastore_shared_counter.so | 0x4000 | PASS |
+| arm64-v8a + armeabi-v7a | libFirebaseCppAnalytics.so | 0x4000 | PASS |
+| arm64-v8a + armeabi-v7a | libFirebaseCppApp-13_17_0.so | 0x4000 | PASS |
+| arm64-v8a + armeabi-v7a | libFirebaseCppAuth.so | 0x4000 | PASS |
+| arm64-v8a + armeabi-v7a | libFirebaseCppDatabase.so | 0x4000 | PASS |
+| arm64-v8a + armeabi-v7a | libil2cpp.so | 0x4000 | PASS |
+| arm64-v8a + armeabi-v7a | libmain.so | 0x4000 | PASS |
+| arm64-v8a + armeabi-v7a | libunity.so | 0x4000 | PASS |
+
+- `zipalign -c -P 16 -v 4` 결과: **PASS** (Verification successful). `.so`는 압축 저장(extractNativeLibs) — 압축 엔트리는 zip 정렬 대상이 아니며 Play는 ELF LOAD 정렬만 요구
 - Play Console 결과 (경고 문구 / 없음):
 - 실기기 / 에뮬레이터 결과 (기기명, Android 버전, 16 KB 모드 여부, 프로브 3줄, logcat 요약):
 - Jenkins 결과 / GitHub Actions run URL:

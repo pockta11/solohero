@@ -266,7 +266,7 @@ GDD가 아키텍처로 이월한 4건은 모두 닫혔다.
 | D10 | 물리 모듈: `physics2d` 미사용 시 제거 여부 (`physics`는 DOTween 때문에 유지) | 전투는 1D 거리 비교, 충돌 판정 없음 |
 | D11 | 오브젝트 풀 구현: 자체 `ObjectPool<T>` vs `UnityEngine.Pool` (2021.1+) | 복잡도 동인 3 |
 | D12 | 에셋 계약 + 픽셀 퍼펙트 카메라 설정 + 스프라이트 임포트 프리셋 | E8-16, 에셋 출처 무관 단일 임포트 경로 |
-| D13 | Android | **타깃 API 36 확정 (SDK Platform 36 설치, 에디터 62f3 고정). E1-09 실빌드 스파이크를 E1 첫 작업으로.** 실패 시 AGP 8.5+/Gradle 8.7+/JDK 17 전환 허용, CLAUDE.md 갱신 | 2022.3.62f3 | 2026-08-31부터 신규 앱 API 36 필수. 16 KB 정렬은 실빌드로만 확인 가능. 63f1+ 패치는 xLTS(유료)라 엔진 측 수정을 더 받을 수 없음 — 그래서 실빌드 검증이 더 중요 |
+| D13 | Android | **타깃 API 36, 에디터 62f3 고정, IL2CPP ARMv7+ARM64. 결정 A — JDK 11 · AGP 7.4.2 · Gradle 7.5.1 유지** | 2022.3.62f3 | 2026-09-21 E1-09 스파이크: 로컬 AAB의 `.so` 18개 전부 LOAD align 0x4000, zipalign -P 16 통과 (`tools/spike/Check16Kb.ps1` exit 0). Play Console·실기기 검증은 스토리 1-09 T9·T10에서 계속 |
 
 ---
 
@@ -1290,7 +1290,7 @@ public PullResult Pull()
 | ~~O1~~ | R9 가챠 방식 변경 GDD 역반영 — **완료.** 확률표 C 55 / R 33 / E 10 / L 2 %, `GACHA_PITY_RESET_ON_LEGENDARY = true` (decision-log D-049~D-051) | 2026-09-20 |
 | ~~O2~~ | E1-06 완료 기준 갱신 — **완료** (D-052) | 2026-09-20 |
 | O3 | CLAUDE.md 갱신 — Addressables/Input System/JSON 삭제, 구조·규약 반영, JDK 제약 조건부화 | Step 9 Next Steps |
-| O4 | D13 실빌드 스파이크 결과에 따라 JDK 11 → 17 전환 여부 | E1-09 |
+| ~~O4~~ | JDK 11 → 17 전환 여부 — **결정 A: JDK 11 유지** (2026-09-21, 16 KB 로컬 검사 통과) | E1-09 |
 | O5 | Higgsfield 생성물 상업 사용권 확인 → Q-7 라이선스 관리표 | E8-01 |
 
 ### Validation Date
@@ -1305,7 +1305,7 @@ public PullResult Pull()
 
 | 항목 | 요구 | 비고 |
 |---|---|---|
-| Unity Hub + **Unity 2022.3.62f3** (고정) | Android Build Support + Android SDK/NDK + **OpenJDK 11** 모듈 | 63f1+는 xLTS(유료). E1-09 스파이크 결과에 따라 JDK 17로 바뀔 수 있음 (D13) |
+| Unity Hub + **Unity 2022.3.62f3** (고정) | Android Build Support + Android SDK/NDK + **OpenJDK 11** 모듈 | 63f1+는 xLTS(유료). **JDK 11 확정** (E1-09 결과 A, 2026-09-21) |
 | Android SDK Platform 36 | `Target API Level = 36` (또는 Highest Installed) | 2026-08-31 이후 신규 앱 필수 |
 | `Assets/google-services.json` | Firebase Console에서 받아 배치. 커밋 금지 | 없으면 부트가 `local` 모드로 진입 |
 | DOTween 설정 | `Tools > Demigiant > DOTween Utility Panel > Setup` + **Create ASMDEF** | asmdef 없으면 `SoloHero.Game`이 참조 못 함 |

@@ -31,7 +31,7 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 | Backend | Firebase Auth (anonymous) / Realtime Database / Analytics via EDM4U | Save node `users/{uid}/v2` |
 | Ads | Google Mobile Ads 25.0.0, rewarded only | Test IDs forced in development builds |
 | Tests | Unity Test Framework 1.1.33, EditMode only | |
-| Build | Gradle (embedded AGP 7.4.2), custom templates in `Assets/Plugins/Android/`, `BuildAutomator.Build` | JDK 11 today; may become 17 after E1-09 spike (D13) |
+| Build | Gradle (embedded AGP 7.4.2), custom templates in `Assets/Plugins/Android/`, `BuildAutomator.Build` | **JDK 11 confirmed** (E1-09 result A, 2026-09-21): all 18 `.so` 16 KB-aligned with AGP 7.4.2. Re-run `tools/spike/Check16Kb.ps1` whenever a native SDK is added |
 | Removed (do not reintroduce) | Addressables, Input System package, `StreamingAssets/JSON`, `Resources/`, `SingletonMB`, `JsonDataManager`, Box-Muller `GachaSystem` | D1, D2, D9 |
 
 ## Critical Implementation Rules
@@ -88,10 +88,10 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 
 - Android only. Portrait locked. Reference 1080×1920; Pixel Perfect Camera reference 270×480 with integer upscale — taller phones show more vertical world, never stretch.
 - Target API **36** (Google Play requirement for new apps since 2026-08-31). minSdk 24. 16 KB page alignment must pass Play Console — verified by the E1-09 build spike before any other E1 work.
-- Build environment is JDK **11** until the E1-09 spike says otherwise; if AGP ≥ 8.5 becomes necessary, JDK 17 is allowed and `CLAUDE.md` must be updated in the same change.
+- Build environment is JDK **11** (decided by the E1-09 spike, result A). Do not bump AGP/Gradle/JDK without re-running the 16 KB check.
 - `BuildConfig.useTestAdIds` is forced `true` in development builds. Release checklist (E6-14) swaps to real unit IDs; never hardcode an ad unit ID in code.
 - `Assets/google-services.json` is not committed. If missing, boot enters `local` mode (PlayerPrefs only) and the game must still run.
-- Input: legacy Input Manager only. UI via `StandaloneInputModule`; Android back = `Input.GetKeyDown(KeyCode.Escape)` handled solely by `BackKeyRouter` (popup → panel → quit confirm).
+- Input: legacy Input Manager only (`activeInputHandler: 0` since 1-09; the Input System package itself is removed in E1-03). UI via `StandaloneInputModule`; Android back = `Input.GetKeyDown(KeyCode.Escape)` handled solely by `BackKeyRouter` (popup → panel → quit confirm).
 - Debug tooling (`DebugPanel`, `PerfOverlay`, cheats) is wrapped in `#if DEVELOPMENT_BUILD || UNITY_EDITOR`. Release builds must not contain it — compile-time, not a runtime flag.
 - Save on `OnApplicationPause(true)` and `OnApplicationQuit` via `SaveService.FlushAsync()`; write `lastQuitTimeUtc` there and nowhere else.
 
