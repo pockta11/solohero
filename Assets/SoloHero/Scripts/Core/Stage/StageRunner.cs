@@ -3,12 +3,16 @@ using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Progression;
+using SoloHero.Core.Save;
 
 namespace SoloHero.Core.Stage
 {
     public sealed class StageRunner
     {
         private readonly BalanceValues _balance;
+        private readonly SaveDataV2 _save;
+        private readonly StageReward _stageReward;
         private readonly CombatWorld _world;
         private readonly SpawnScheduler _spawner;
         private readonly SkillAutoCaster _skills;
@@ -29,11 +33,13 @@ namespace SoloHero.Core.Stage
         private int _failedG;
         private bool _failedWasBoss;
 
-        public StageRunner(BalanceValues balance, IRandom random, HeroStats stats)
+        public StageRunner(BalanceValues balance, IRandom random, HeroStats stats, SaveDataV2 save)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
             if (random == null) throw new ArgumentNullException(nameof(random));
+            _save = save ?? throw new ArgumentNullException(nameof(save));
             _stats = stats;
+            _stageReward = new StageReward(_save, _balance);
             _world = new CombatWorld(_balance);
             _spawner = new SpawnScheduler(_balance);
             _skills = new SkillAutoCaster(_balance);
@@ -154,14 +160,23 @@ namespace SoloHero.Core.Stage
             // enemy deaths → clear check → boss timer → hero death.
             // Clear beats hero death; boss kill beats timer expiry.
             int gained = _world.ResolveDeaths();
-            if (gained > 0) _kills += gained;
+            if (gained > 0)
+            {
+                _kills += gained;
+                for (int i = 0; i < gained; i++)
+                    KillExp.Grant(_save, _balance, _g);
+            }
             if (_kills >= _killTarget) _cleared = true;
 
             if (_cleared)
             {
-                SetState(StageState.Clearing);
-                _clearTimer = 0f;
-                StageCleared?.Invoke(_g);
+                if (State != StageState.Clearing)
+                {
+                    SetState(StageState.Clearing);
+                    _clearTimer = 0f;
+                    _stageReward.ApplyClear(_g);
+                    StageCleared?.Invoke(_g);
+                }
                 return;
             }
 

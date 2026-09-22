@@ -4,6 +4,7 @@ using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
 
 namespace SoloHero.Tests.EditMode
@@ -14,10 +15,13 @@ namespace SoloHero.Tests.EditMode
             new HeroStats(1_000_000d, 50d, 10_000d, c.ATKSPD_BASE, 0d);
 
         private static StageRunner CreateRunner(BalanceValues c) =>
-            new StageRunner(c, new FixedRandom(0.99d), TankStats(c));
+            new StageRunner(c, new FixedRandom(0.99d), TankStats(c), SaveDataV2.CreateNew());
 
         private static StageRunner CreateRunner(BalanceValues c, HeroStats stats) =>
-            new StageRunner(c, new FixedRandom(0.99d), stats);
+            new StageRunner(c, new FixedRandom(0.99d), stats, SaveDataV2.CreateNew());
+
+        private static StageRunner CreateRunner(BalanceValues c, HeroStats stats, SaveDataV2 save) =>
+            new StageRunner(c, new FixedRandom(0.99d), stats, save);
 
         [Test]
         public void IsBoss_EveryTenthGlobalStage_IsTrue()
@@ -224,6 +228,36 @@ namespace SoloHero.Tests.EditMode
             runner.Tick(c.STAGE_CLEAR_DELAY);
             Assert.AreEqual(2, runner.GlobalStage);
             Assert.AreEqual(StageState.Running, runner.State);
+        }
+
+        [Test]
+        public void Tick_NormalStageClear_GrantsStageGoldAndKillExp()
+        {
+            var c = new BalanceValues();
+            SaveDataV2 save = SaveDataV2.CreateNew();
+            StageRunner runner = CreateRunner(c, TankStats(c), save);
+            runner.Begin(1);
+
+            int guard = 0;
+            while (runner.State != StageState.Clearing && guard++ < 500)
+            {
+                for (int i = 0; i < runner.World.SlotCount; i++)
+                {
+                    EnemyBrain e = runner.World.GetSlot(i);
+                    if (e.IsAlive) e.TakeDamage(e.Hp);
+                }
+
+                runner.Tick(0f);
+                if (runner.State == StageState.Running)
+                    runner.Tick(c.SPAWN_INTERVAL);
+            }
+
+            Assert.AreEqual(StageState.Clearing, runner.State);
+            Assert.AreEqual(Formulas.StageGold(c, 1), save.gold, 1e-9);
+            Assert.AreEqual(c.KILL_TARGET_NORMAL * c.ENEMY_EXP_BASE, save.heroExp, 1e-9);
+
+            runner.Tick(0f);
+            Assert.AreEqual(Formulas.StageGold(c, 1), save.gold, 1e-9);
         }
 
         private sealed class FixedRandom : IRandom
