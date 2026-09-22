@@ -57,7 +57,7 @@ development_status:
   1-02-2d-render-pixel-perfect: review  # E1-02 [M]
   1-03-cleanup-3d-assets: done  # E1-03 [M]
   1-04-boot-sequence: backlog  # E1-04 [M]
-  1-05-save-schema-v2: backlog  # E1-05 [M]
+  1-05-save-schema-v2: review  # E1-05 [M]
   1-06-migration-v1-to-v2: backlog  # E1-06 [M]
   1-07-save-pipeline: backlog  # E1-07 [M]
   1-08-load-fail-defense-ui: backlog  # E1-08 [M]

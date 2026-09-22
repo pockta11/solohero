@@ -1,0 +1,5 @@
+<linker>
+  <assembly fullname="SoloHero.Core">
+    <type fullname="SoloHero.Core.Save.SaveDataV2" preserve="all"/>
+  </assembly>
+</linker>
