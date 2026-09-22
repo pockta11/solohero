@@ -706,18 +706,20 @@ solohero/
 └── .github/workflows/
 ```
 
-**정리 대상 (E1-03에서 수행)**
+**정리 대상 — E1-03에서 수행 완료 (2026-09-22)**
 
-| 현재 | 처리 |
+| 대상 | 처리 (완료) |
 |---|---|
-| `Assets/Scripts/*` (15개) | `Assets/SoloHero/Scripts/{Core,Game}/…`로 이동하며 D6·D8 규약에 맞게 분리. `SingletonMB`·`JsonDataManager`·`GachaSystem`(Box-Muller)은 삭제 |
-| `Assets/Editor/*` | `Assets/SoloHero/Scripts/Editor/` |
-| `Assets/ScriptableObjects/Equipment` | `Assets/SoloHero/Data/Equipment/` (이름 규칙 적용) |
-| `Assets/Fonts`, `Assets/Sprites`, `Assets/Tiles` | `Assets/SoloHero/Art/…`로 이동. 3D 잔재는 삭제 |
-| `Assets/AddressableAssetsData` | 삭제 (D1) |
-| `Assets/StreamingAssets/JSON` | 삭제 (D2) |
-| `Assets/Resources` | 삭제. Resources 폴더는 두지 않는다 (직접 참조만) |
-| `Assets/Prefabs` | `Assets/SoloHero/Prefabs/` |
+| `Assets/Scripts/*` (15개) | **7 삭제** (`SingletonMB`, `JsonDataManager`, `GachaSystem`, `PlayerEquipmentService`, `UpgradeService`, `IDamageable`, `CameraShake`) / **8 격리** → `Assets/SoloHero/Scripts/Legacy/` (`PlayerData`, `EquipmentData`, `GameManager`, `SaveManager`, `OfflineRewardSystem`, `AdMobService`, `MainThreadDispatcher`, `SafeAreaAdjuster`). `Legacy/README.md`가 파일별 이식·폐기 담당 스토리를 정의. **Core/Game에서 Legacy 참조 금지** — 담당 스토리가 이식 후 삭제 |
+| `Assets/Editor/*` | `BuildAutomator`(1-09), `FontSetupWizard`(E1-03) → `Assets/SoloHero/Scripts/Editor/` |
+| `Assets/ScriptableObjects/Equipment` | `Assets/SoloHero/Data/Equipment/` (git mv, GUID 보존). 이름 규칙(`Equipment_{Slot}_{Grade}`)은 E4-04 |
+| `Assets/Sprites`, `Assets/Tiles` (로컬, gitignore) | 삭제 — Kenney 플랫포머/UI 팩, 픽셀아트 아님. `Assets/Fonts`(NotoSansKR)는 E8-12 결정까지 로컬 유지 |
+| `Assets/TextMesh Pro` | Essential Resources(Fonts·Resources·Shaders·Sprites, 3 MB)를 **추적 시작** — CI 체크아웃에 없으면 TMP UI가 깨짐. Examples & Extras·Documentation은 삭제 |
+| `Assets/AddressableAssetsData` | 삭제 + 패키지 제거 + `EditorBuildSettings.m_configObjects` 정리 (D1) |
+| `Assets/StreamingAssets/JSON` | 삭제 (D2). `StreamingAssets` 폴더 자체 소멸 |
+| `Assets/Resources` | **`DOTweenSettings.asset`만 유지** — DOTween이 `Resources.Load`로 읽는 벤더 필수 파일(D1 예외). 같은 유형의 예외: `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`(GMA 11 App ID). 프로젝트 소유 파일은 `Resources`에 두지 않는다 |
+| `Assets/Prefabs` (빈 폴더) | 삭제. 새 프리팹은 `Assets/SoloHero/Prefabs/` |
+| `Packages/manifest.json` | `com.unity.addressables`, `com.unity.inputsystem`(D9), `com.unity.collab-proxy`(미사용) 제거. `InputActions.inputactions` 에셋 삭제 |
 
 ### System Location Mapping
 

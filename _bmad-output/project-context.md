@@ -32,7 +32,7 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 | Ads | Google Mobile Ads Unity 11.5.0 (Android play-services-ads 25.4.0), rewarded only. App ID lives in `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset` (GMA 11+), not only in the manifest | Test IDs forced in development builds |
 | Tests | Unity Test Framework 1.1.33, EditMode only | |
 | Build | Gradle (embedded AGP 7.4.2), custom templates in `Assets/Plugins/Android/`, `BuildAutomator.Build`. CI = GitHub Actions only (Jenkins dormant): plain `docker run unityci/editor` + `.github/scripts/unity-build.sh` (Licensing Client Personal activation, secrets `UNITY_EMAIL`/`UNITY_PASSWORD`; `.ulf`/`UNITY_LICENSE` no longer works). `Free disk space` step is required | **JDK 11 confirmed** (E1-09 result A, 2026-09-21): all 18 `.so` 16 KB-aligned with AGP 7.4.2. Re-run `tools/spike/Check16Kb.ps1` whenever a native SDK is added |
-| Removed (do not reintroduce) | Addressables, Input System package, `StreamingAssets/JSON`, `Resources/`, `SingletonMB`, `JsonDataManager`, Box-Muller `GachaSystem` | D1, D2, D9 |
+| Removed (do not reintroduce) | Addressables, Input System package, `StreamingAssets/JSON`, project-owned `Resources/` (vendor-required exceptions stay: `Assets/Resources/DOTweenSettings.asset`, `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`), `SingletonMB`, `JsonDataManager`, Box-Muller `GachaSystem` — all removed in E1-03 | D1, D2, D9 |
 
 ## Critical Implementation Rules
 
@@ -66,6 +66,7 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 ### Code Organization Rules
 
 - Everything the project owns lives under `Assets/SoloHero/`. Vendor folders (`Firebase/`, `GoogleMobileAds/`, `ExternalDependencyManager/`, `Plugins/Demigiant/`, `TextMesh Pro/`) are read-only.
+- `Assets/SoloHero/Scripts/Legacy/` is a **temporary quarantine** of 3D-era scripts (see its README). Never reference a Legacy type from Core/Game; port the behaviour and delete the legacy file in the owning story.
 - Folder = namespace: `SoloHero.{Assembly}.{Folder}` (`SoloHero.Core.Gacha`, `SoloHero.Game.UI.Panels`).
 - Naming: classes/methods/properties `PascalCase`; private and `[SerializeField]` fields `_camelCase`; interfaces `I*`; services `{Domain}Service` (Core); presenters `{View}Presenter` (Game); events `{Noun}{PastParticiple}` (`GoldChanged`); fallible operations `Try*` returning `Result`; async `*Async`.
 - `BalanceConfig` fields are `UPPER_SNAKE_CASE` matching GDD constant names exactly (`ENEMY_HP_GROWTH`). Only this class may break C# casing. No magic numbers anywhere else — read `BalanceValues`.

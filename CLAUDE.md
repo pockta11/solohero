@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 현재 상태 (2026-09-20)
 
-**2D 리빌드 — 계획 문서 완료, 코드 착수 전.** 3D 쿼터뷰 구현은 2026-09-19에 전면 폐기했다. 생존 스크립트 15개(`Assets/Scripts/`)는 계승 참고용이며 아키텍처 규약에 맞춰 재배치·재작성된다.
+**2D 리빌드 — E1 진행 중.** 3D 쿼터뷰 구현은 2026-09-19에 전면 폐기했다. 1-09(빌드 파이프라인·API 36·16 KB, JDK 11 확정)와 1-03(정리·구조 이행) 완료. 레거시 8종은 `Assets/SoloHero/Scripts/Legacy/`에 격리 상태.
 
 | 문서 | 경로 | 역할 |
 |---|---|---|
@@ -71,13 +71,13 @@ SoloHero.Editor ──▶ SoloHero.Game ──▶ SoloHero.Core
 ### 프로젝트 구조 (목표)
 ```
 Assets/SoloHero/            # 프로젝트 소유 전부. 벤더(Firebase·GoogleMobileAds·EDM4U·Plugins·TextMesh Pro)는 루트 유지
-├── Scripts/{Core,Game,Editor,Tests/EditMode}/
+├── Scripts/{Core,Game,Editor,Tests/EditMode}/   # + Legacy/ (임시 격리, E1-04~E7 이식 후 삭제)
 ├── Data/{Config,Equipment,Enemies,Bosses,Chapters,Skills,Gacha}/   # SO 인스턴스
 ├── Art/{Hero,Enemies,Bosses,Backgrounds,Icons,UI,Vfx,Placeholder,Fonts,Atlases}/
 ├── Animation/  Audio/  Prefabs/
 └── Scenes/{Boot,Game}.unity
 ```
-현재 `Assets/Scripts`·`Assets/Editor`·`Assets/ScriptableObjects` 등은 E1-03에서 위 구조로 이동한다.
+E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트 중 8종은 `Scripts/Legacy/`에 **임시 격리**(README에 담당 스토리) — Core/Game에서 참조 금지, 이식 후 삭제. Addressables·Input System·collab-proxy 패키지, `StreamingAssets/JSON`, `AddressableAssetsData`는 제거됨. `Assets/Resources/DOTweenSettings.asset`은 벤더 필수 예외.
 
 ### 게임 규칙 요약 (GDD 상수표가 원본)
 - 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(15배 HP, 30초). 킬 목표 8 고정. 적 HP `30×1.10^(g−1)`, 골드 `50×1.08^(g−1)`

@@ -48,9 +48,3 @@ memory/
 # Asset Store 임포트 에셋 (로컬에서만 관리, git 제외)
 Assets/Fonts/
 Assets/Fonts.meta
-Assets/Sprites/
-Assets/Sprites.meta
-Assets/TextMesh Pro/
-Assets/TextMesh Pro.meta
-Assets/Tiles/
-Assets/Tiles.meta

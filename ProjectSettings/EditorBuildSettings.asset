@@ -8,5 +8,4 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/SoloHero/Scenes/Boot.unity
     guid: 28dd5793bb9f60445ba17c3f5e588293
-  m_configObjects:
-    com.unity.addressableassets: {fileID: 11400000, guid: c60b01e8787a9a648b554fe28a3f84bc, type: 2}
+  m_configObjects: {}
