@@ -47,6 +47,18 @@ namespace SoloHero.Core.Gacha
             return GachaBatchResult.Ok(items);
         }
 
+        public GachaBatchResult TryPullTenWithGem(SaveDataV2 data)
+        {
+            if (data.gem < _balance.GACHA_COST_TEN_GEM)
+                return GachaBatchResult.Fail(FailReason.NotEnoughGem);
+
+            data.gem -= _balance.GACHA_COST_TEN_GEM;
+            var items = new GachaPullItem[10];
+            for (int i = 0; i < 10; i++)
+                items[i] = ExecuteOnePull(data);
+            return GachaBatchResult.Ok(items);
+        }
+
         private GachaPullItem ExecuteOnePull(SaveDataV2 data)
         {
             data.pityCount++;

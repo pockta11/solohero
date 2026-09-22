@@ -128,6 +128,66 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void TryPullTenWithGem_NotEnoughGem_ReturnsFailWithNoMutation()
+        {
+            BalanceValues balance = new BalanceValues();
+            SaveDataV2 data = SaveDataV2.CreateNew();
+            data.gold = 1000d;
+            data.gem = balance.GACHA_COST_TEN_GEM - 1d;
+            data.pityCount = 12;
+            data.totalPullCount = 3;
+            data.ownedEquipment.Add("Equipment_Sword_Common");
+            data.equippedSword = "Equipment_Sword_Common";
+
+            // Empty queues — fail path must not roll.
+            var rng = new ScriptedRandom(doubles: new double[0], ints: new int[0]);
+            GachaService service = CreateService(balance, rng);
+
+            GachaBatchResult result = service.TryPullTenWithGem(data);
+
+            Assert.IsFalse(result.Status.Ok);
+            Assert.AreEqual(FailReason.NotEnoughGem, result.Status.Reason);
+            Assert.IsFalse(result.RequestSave);
+            Assert.AreEqual(0, result.Items.Length);
+            Assert.AreEqual(1000d, data.gold, 1e-9);
+            Assert.AreEqual(balance.GACHA_COST_TEN_GEM - 1d, data.gem, 1e-9);
+            Assert.AreEqual(12, data.pityCount);
+            Assert.AreEqual(3, data.totalPullCount);
+            Assert.AreEqual(1, data.ownedEquipment.Count);
+            Assert.AreEqual("Equipment_Sword_Common", data.equippedSword);
+        }
+
+        [Test]
+        public void TryPullTenWithGem_EnoughGem_Costs200AndRollsTen()
+        {
+            BalanceValues balance = new BalanceValues();
+            SaveDataV2 data = SaveDataV2.CreateNew();
+            data.gold = 0d;
+            data.gem = balance.GACHA_COST_TEN_GEM;
+
+            var doubles = new double[10];
+            var ints = new int[10];
+            for (int i = 0; i < 10; i++)
+            {
+                ints[i] = i % 4;
+                if (i < 4) doubles[i] = 0.0;
+                else if (i < 8) doubles[i] = 0.60;
+                else doubles[i] = 0.90;
+            }
+
+            var rng = new ScriptedRandom(doubles, ints);
+            GachaService service = CreateService(balance, rng);
+
+            GachaBatchResult result = service.TryPullTenWithGem(data);
+
+            Assert.IsTrue(result.Status.Ok);
+            Assert.AreEqual(10, result.Items.Length);
+            Assert.AreEqual(0d, data.gold, 1e-9);
+            Assert.AreEqual(0d, data.gem, 1e-9);
+            Assert.AreEqual(10, data.totalPullCount);
+        }
+
+        [Test]
         public void TryPull_Duplicate_RefundsInsteadOfSecondCopy()
         {
             BalanceValues balance = new BalanceValues();
