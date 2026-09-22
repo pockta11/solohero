@@ -54,7 +54,7 @@ development_status:
   # ── E1. 2D 전환 기반 ──
   epic-1: in-progress
   1-01-portrait-lock: review  # E1-01 [M]
-  1-02-2d-render-pixel-perfect: backlog  # E1-02 [M]
+  1-02-2d-render-pixel-perfect: review  # E1-02 [M]
   1-03-cleanup-3d-assets: done  # E1-03 [M]
   1-04-boot-sequence: backlog  # E1-04 [M]
   1-05-save-schema-v2: backlog  # E1-05 [M]
