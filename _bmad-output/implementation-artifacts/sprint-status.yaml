@@ -1,5 +1,8 @@
 # generated: 2026-09-20
-# last_updated: 2026-09-22
+# last_updated: 2026-09-23
+# code_landed: main 67d91a4 — EditMode 136. Core combat/stage/growth/gacha/economy.
+#   Game scene ticks StageRunner and draws placeholder squares. Boot has a load-fail banner.
+#   review below means the rule is in code and tested. UI, ads, parallax, pools, and art stay backlog.
 # project: SoloHero
 # project_key: NOKEY
 # tracking_system: file-system
@@ -44,7 +47,7 @@
 # - Story key = "{epic}-{story}-{slug}"; the original ID (E1-01 ...) and priority (M/S) are in the trailing comment
 
 generated: 2026-09-20
-last_updated: 2026-09-22
+last_updated: 2026-09-23
 project: SoloHero
 project_key: NOKEY
 tracking_system: file-system
@@ -60,91 +63,91 @@ development_status:
   1-05-save-schema-v2: done  # E1-05 [M]
   1-06-migration-v1-to-v2: done  # E1-06 [M]
   1-07-save-pipeline: done  # E1-07 [M]
-  1-08-load-fail-defense-ui: backlog  # E1-08 [M]
+  1-08-load-fail-defense-ui: review  # E1-08 [M] banner on Boot, DontDestroyOnLoad into Game
   1-09-build-pipeline-portrait: done  # E1-09 [M] FIRST in epic-1 — API 36 / 16 KB build spike
   1-10-cold-start-measure: backlog  # E1-10 [S]
   1-11-asmdef-core-skeleton: done  # E1-11 [M] AFTER 1-03, BEFORE 1-04 — asmdef 4 + Core/Common + Formulas + BalanceConfig
   epic-1-retrospective: optional
 
   # ── E2. 전투 코어 ──
-  epic-2: backlog
-  2-01-hero-auto-advance: backlog  # E2-01 [M]
+  epic-2: in-progress
+  2-01-hero-auto-advance: review  # E2-01 [M]
   2-02-parallax-background: backlog  # E2-02 [M]
-  2-03-enemy-spawn-rules: backlog  # E2-03 [M]
-  2-04-nearest-targeting: backlog  # E2-04 [M]
-  2-05-engage-range: backlog  # E2-05 [M]
-  2-06-basic-attack-hit-frame: backlog  # E2-06 [M]
-  2-07-damage-and-crit: backlog  # E2-07 [M]
-  2-08-enemy-attack-hero-hit: backlog  # E2-08 [M]
-  2-09-hero-death-restart: backlog  # E2-09 [M]
+  2-03-enemy-spawn-rules: review  # E2-03 [M]
+  2-04-nearest-targeting: review  # E2-04 [M]
+  2-05-engage-range: review  # E2-05 [M]
+  2-06-basic-attack-hit-frame: review  # E2-06 [M]
+  2-07-damage-and-crit: review  # E2-07 [M]
+  2-08-enemy-attack-hero-hit: review  # E2-08 [M]
+  2-09-hero-death-restart: review  # E2-09 [M]
   2-10-object-pools: backlog  # E2-10 [M]
-  2-11-simultaneous-death-edge: backlog  # E2-11 [S]
+  2-11-simultaneous-death-edge: review  # E2-11 [S]
   2-12-background-reset: backlog  # E2-12 [M]
   epic-2-retrospective: optional
 
   # ── E3. 스테이지·챕터 진행 ──
-  epic-3: backlog
-  3-01-global-stage-scaling: backlog  # E3-01 [M]
-  3-02-kill-target-clear: backlog  # E3-02 [M]
-  3-03-auto-advance-stage: backlog  # E3-03 [M]
-  3-04-boss-stage: backlog  # E3-04 [M]
-  3-05-boss-intro-timer: backlog  # E3-05 [M]
+  epic-3: in-progress
+  3-01-global-stage-scaling: review  # E3-01 [M]
+  3-02-kill-target-clear: review  # E3-02 [M]
+  3-03-auto-advance-stage: review  # E3-03 [M]
+  3-04-boss-stage: review  # E3-04 [M]
+  3-05-boss-intro-timer: review  # E3-05 [M]
   3-06-boss-fail-popup: backlog  # E3-06 [M]
-  3-07-retreat-farming: backlog  # E3-07 [M]
-  3-08-highest-farming-split: backlog  # E3-08 [M]
+  3-07-retreat-farming: review  # E3-07 [M]
+  3-08-highest-farming-split: review  # E3-08 [M]
   3-09-stage-select-sheet: backlog  # E3-09 [M]
-  3-10-chapter-unlock-reward: backlog  # E3-10 [M]
+  3-10-chapter-unlock-reward: review  # E3-10 [M]
   3-11-chapter-theme-data: backlog  # E3-11 [M]
   3-12-chapter-theme-cycle: backlog  # E3-12 [S]
   3-13-fail-streak-prompt: backlog  # E3-13 [S]
   epic-3-retrospective: optional
 
   # ── E4. 성장 시스템 ──
-  epic-4: backlog
-  4-01-hero-level-exp: backlog  # E4-01 [M]
-  4-02-upgrade-lanes: backlog  # E4-02 [M]
+  epic-4: in-progress
+  4-01-hero-level-exp: review  # E4-01 [M]
+  4-02-upgrade-lanes: review  # E4-02 [M]
   4-03-upgrade-tap-guard: backlog  # E4-03 [M]
   4-04-equipment-data: backlog  # E4-04 [M]
-  4-05-equip-swap: backlog  # E4-05 [M]
-  4-06-stat-aggregation: backlog  # E4-06 [M]
+  4-05-equip-swap: review  # E4-05 [M]
+  4-06-stat-aggregation: review  # E4-06 [M]
   4-07-skills: backlog  # E4-07 [M]
-  4-08-skill-auto-cast: backlog  # E4-08 [M]
+  4-08-skill-auto-cast: review  # E4-08 [M]
   4-09-skill-manual-tap: backlog  # E4-09 [M]
-  4-10-skill-unlock-gate: backlog  # E4-10 [M]
-  4-11-skill-level-up: backlog  # E4-11 [M]
+  4-10-skill-unlock-gate: review  # E4-10 [M]
+  4-11-skill-level-up: review  # E4-11 [M]
   4-12-battle-cry-refresh: backlog  # E4-12 [M]
   4-13-growth-save-triggers: backlog  # E4-13 [M]
   epic-4-retrospective: optional
 
   # ── E5. 가챠 ──
-  epic-5: backlog
-  5-01-gacha-rate-table-roll: backlog  # E5-01 [M]
-  5-02-pity-reset-rule: backlog  # E5-02 [M]
-  5-03-rate-table-validation: backlog  # E5-03 [M]
-  5-04-pity-ceiling: backlog  # E5-04 [M]
-  5-05-slot-uniform-pick: backlog  # E5-05 [M]
-  5-06-single-pull: backlog  # E5-06 [M]
-  5-07-ten-pull: backlog  # E5-07 [M]
-  5-08-gem-ten-pull: backlog  # E5-08 [S]
-  5-09-auto-equip-rule: backlog  # E5-09 [M]
-  5-10-duplicate-refund: backlog  # E5-10 [M]
+  epic-5: in-progress
+  5-01-gacha-rate-table-roll: review  # E5-01 [M]
+  5-02-pity-reset-rule: review  # E5-02 [M]
+  5-03-rate-table-validation: review  # E5-03 [M]
+  5-04-pity-ceiling: review  # E5-04 [M]
+  5-05-slot-uniform-pick: review  # E5-05 [M]
+  5-06-single-pull: review  # E5-06 [M]
+  5-07-ten-pull: review  # E5-07 [M]
+  5-08-gem-ten-pull: review  # E5-08 [S]
+  5-09-auto-equip-rule: review  # E5-09 [M]
+  5-10-duplicate-refund: review  # E5-10 [M]
   5-11-gacha-presentation: backlog  # E5-11 [M]
   5-12-pity-gauge-ui: backlog  # E5-12 [M]
   5-13-rate-disclosure: backlog  # E5-13 [M]
   5-14-gacha-verifier-run: backlog  # E5-14 [M]
-  5-15-gacha-unit-tests: backlog  # E5-15 [M]
+  5-15-gacha-unit-tests: review  # E5-15 [M]
   epic-5-retrospective: optional
 
   # ── E6. 경제·메타 ──
-  epic-6: backlog
+  epic-6: in-progress
   6-01-gold-sources-sinks: backlog  # E6-01 [M]
   6-02-gem-sources-sinks: backlog  # E6-02 [M]
-  6-03-offline-elapsed: backlog  # E6-03 [M]
-  6-04-offline-rate-by-stage: backlog  # E6-04 [M]
+  6-03-offline-elapsed: review  # E6-03 [M]
+  6-04-offline-rate-by-stage: review  # E6-04 [M]
   6-05-offline-popup: backlog  # E6-05 [M]
-  6-06-offline-min-seconds: backlog  # E6-06 [M]
-  6-07-time-tamper-defense: backlog  # E6-07 [M]
-  6-08-unclaimed-persist: backlog  # E6-08 [M]
+  6-06-offline-min-seconds: review  # E6-06 [M]
+  6-07-time-tamper-defense: review  # E6-07 [M]
+  6-08-unclaimed-persist: review  # E6-08 [M]
   6-09-ad-slot-offline-double: backlog  # E6-09 [M]
   6-10-ad-slot-gem: backlog  # E6-10 [M]
   6-11-ad-slot-gold-booster: backlog  # E6-11 [S]
