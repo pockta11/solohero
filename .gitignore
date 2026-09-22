@@ -38,11 +38,13 @@ ExportedObj/
 .vscode/
 *.DotSettings.user
 
-# Firebase (민감정보)
+# Firebase (민감정보) — 히스토리에는 남아 있다. HEAD에서는 추적하지 않는다.
 Assets/google-services.json
 Assets/google-services.json.meta
 Assets/StreamingAssets/google-services-desktop.json
 Assets/StreamingAssets/google-services-desktop.json.meta
+Assets/Plugins/Android/FirebaseApp.androidlib/res/values/google-services.xml
+Assets/Plugins/Android/FirebaseApp.androidlib/res/values/google-services.xml.meta
 
 # Claude auto-memory
 memory/
