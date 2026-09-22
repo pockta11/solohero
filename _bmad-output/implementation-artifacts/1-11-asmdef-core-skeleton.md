@@ -3,7 +3,7 @@ baseline_commit: 0651876044ba1c8dc39faa3c4c4f7d0e7f0c2fb7
 ---
 # Story 1.11: 어셈블리 골격 (asmdef 4 + Core/Common + Formulas + BalanceConfig)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Epic E1-11 · Must · 선행: 1-03 done. 후행: 1-04 부트는 이 asmdef와 Services/BalanceValues 위에 올라간다 -->
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
@@ -27,32 +27,32 @@ so that 이후 스토리(부트, 저장, 전투, 성장)가 어셈블리를 다�
 
 ## Tasks / Subtasks
 
-- [ ] **T1. asmdef 4개** (AC 1, 6)
-  - [ ] `Assets/SoloHero/Scripts/Core/SoloHero.Core.asmdef` — `noEngineReferences: true`, `references: []`, `autoReferenced: true`
-  - [ ] `Assets/SoloHero/Scripts/Game/SoloHero.Game.asmdef` — `references: ["SoloHero.Core"]`만. `overrideReferences: false` (Firebase·GMA DLL 자동 참조를 끄지 말 것). DOTween·UniTask·TMP는 **넣지 않는다**
-  - [ ] `Assets/SoloHero/Scripts/Editor/SoloHero.Editor.asmdef` — `includePlatforms: ["Editor"]`, `references: ["SoloHero.Core", "SoloHero.Game", "Unity.TextMeshPro"]`. `FontSetupWizard`가 `TMPro`를 쓴다
-  - [ ] `Assets/SoloHero/Scripts/Tests/EditMode/SoloHero.Tests.EditMode.asmdef` — 아래 JSON 그대로. `defineConstraints: ["UNITY_INCLUDE_TESTS"]`, `autoReferenced: false`
-  - [ ] asmdef는 `Scripts/` 루트나 `Legacy/`에 두지 않는다. 두면 Legacy가 Core/Game으로 끌려 들어간다
-- [ ] **T2. Core/Common** (AC 2)
-  - [ ] 파일당 public 타입 1개. 네임스페이스 `SoloHero.Core.Common`. 주석·식별자·로그 문자열은 영문
-  - [ ] `IsExternalInit`만 예외: 네임스페이스 `System.Runtime.CompilerServices`, `internal static class`. 두 번째 사본을 만들지 않는다
-  - [ ] `SystemClock`만 `DateTime`을 호출한다. `SystemRandom`만 `System.Random`을 호출한다. 다른 Core 파일에서 `DateTime.` / `new Random` 금지
-- [ ] **T3. BalanceValues + UpgradeLane + Formulas** (AC 3, 4)
-  - [ ] `SoloHero.Core.Config.BalanceValues` — 아래 필드 표와 동일한 이름·타입·기본값. 메서드 없음
-  - [ ] `SoloHero.Core.Growth.UpgradeLane` — `Hp, Atk, Def, Spd`
-  - [ ] `SoloHero.Core.Formulas` (`Scripts/Core/Formulas.cs`) — 시그니처는 Dev Notes의 코드 블록 그대로
-- [ ] **T4. BalanceConfig SO** (AC 4)
-  - [ ] `SoloHero.Game.Config.BalanceConfig : ScriptableObject`, `[CreateAssetMenu(menuName = "SoloHero/Config/Balance")]`
-  - [ ] 필드 이니셜라이저는 `BalanceValues`와 같은 값. `ToValues()`는 필드별 복사
-  - [ ] 에셋 경로 `Assets/SoloHero/Data/Config/BalanceConfig.asset`. 스크립트 `.meta`의 guid가 생긴 뒤에 에셋을 만든다 (guid가 어긋나면 Missing Script)
-  - [ ] **[사용자]** Unity 2022.3.62f3로 프로젝트를 한 번 열어 새 스크립트·asmdef의 `.meta`를 생성하고, 그 guid로 에셋을 만든 뒤 meta와 에셋을 함께 커밋
-- [ ] **T5. FormulasTests** (AC 5)
-  - [ ] `Assets/SoloHero/Scripts/Tests/EditMode/FormulasTests.cs`, 네임스페이스 `SoloHero.Tests.EditMode`
-  - [ ] `new BalanceValues()`만 사용. 아래 케이스 전부 녹색
-  - [ ] **[사용자]** `Window > General > Test Runner > EditMode > Run All` 녹색. CI는 EditMode를 돌리지 않는다
-- [ ] **T6. 컴파일 회귀** (AC 6)
-  - [ ] **[사용자]** 콘솔 오류 0. `BuildSpikeProbe`가 Firebase·`GoogleMobileAds`를 못 찾으면 `overrideReferences`를 true로 바꾸지 말고, DLL이 Auto Reference인지 확인한다
-  - [ ] **[사용자]** `Tools > Build > Android AAB`가 여전히 성공한다. asmdef는 플레이어 컴파일 경계를 바꾸므로 EditMode 녹색만으로 AC 6을 통과시키지 않는다
+- [x] **T1. asmdef 4개** (AC 1, 6)
+  - [x] `Assets/SoloHero/Scripts/Core/SoloHero.Core.asmdef` — `noEngineReferences: true`, `references: []`, `autoReferenced: true`
+  - [x] `Assets/SoloHero/Scripts/Game/SoloHero.Game.asmdef` — `references: ["SoloHero.Core"]`만. `overrideReferences: false` (Firebase·GMA DLL 자동 참조를 끄지 말 것). DOTween·UniTask·TMP는 **넣지 않는다**
+  - [x] `Assets/SoloHero/Scripts/Editor/SoloHero.Editor.asmdef` — `includePlatforms: ["Editor"]`, `references: ["SoloHero.Core", "SoloHero.Game", "Unity.TextMeshPro"]`. `FontSetupWizard`가 `TMPro`를 쓴다
+  - [x] `Assets/SoloHero/Scripts/Tests/EditMode/SoloHero.Tests.EditMode.asmdef` — 아래 JSON 그대로. `defineConstraints: ["UNITY_INCLUDE_TESTS"]`, `autoReferenced: false`
+  - [x] asmdef는 `Scripts/` 루트나 `Legacy/`에 두지 않는다. 두면 Legacy가 Core/Game으로 끌려 들어간다
+- [x] **T2. Core/Common** (AC 2)
+  - [x] 파일당 public 타입 1개. 네임스페이스 `SoloHero.Core.Common`. 주석·식별자·로그 문자열은 영문
+  - [x] `IsExternalInit`만 예외: 네임스페이스 `System.Runtime.CompilerServices`, `internal static class`. 두 번째 사본을 만들지 않는다
+  - [x] `SystemClock`만 `DateTime`을 호출한다. `SystemRandom`만 `System.Random`을 호출한다. 다른 Core 파일에서 `DateTime.` / `new Random` 금지
+- [x] **T3. BalanceValues + UpgradeLane + Formulas** (AC 3, 4)
+  - [x] `SoloHero.Core.Config.BalanceValues` — 아래 필드 표와 동일한 이름·타입·기본값. 메서드 없음
+  - [x] `SoloHero.Core.Growth.UpgradeLane` — `Hp, Atk, Def, Spd`
+  - [x] `SoloHero.Core.Formulas` (`Scripts/Core/Formulas.cs`) — 시그니처는 Dev Notes의 코드 블록 그대로
+- [x] **T4. BalanceConfig SO** (AC 4)
+  - [x] `SoloHero.Game.Config.BalanceConfig : ScriptableObject`, `[CreateAssetMenu(menuName = "SoloHero/Config/Balance")]`
+  - [x] 필드 이니셜라이저는 `BalanceValues`와 같은 값. `ToValues()`는 필드별 복사
+  - [x] 에셋 경로 `Assets/SoloHero/Data/Config/BalanceConfig.asset`. 스크립트 `.meta`의 guid가 생긴 뒤에 에셋을 만든다 (guid가 어긋나면 Missing Script)
+  - [x] **[사용자]** Unity 2022.3.62f3로 프로젝트를 한 번 열어 새 스크립트·asmdef의 `.meta`를 생성하고, 그 guid로 에셋을 만든 뒤 meta와 에셋을 함께 커밋
+- [x] **T5. FormulasTests** (AC 5)
+  - [x] `Assets/SoloHero/Scripts/Tests/EditMode/FormulasTests.cs`, 네임스페이스 `SoloHero.Tests.EditMode`
+  - [x] `new BalanceValues()`만 사용. 아래 케이스 전부 녹색
+  - [x] **[사용자]** `Window > General > Test Runner > EditMode > Run All` 녹색. CI는 EditMode를 돌리지 않는다
+- [x] **T6. 컴파일 회귀** (AC 6)
+  - [x] **[사용자]** 콘솔 오류 0. `BuildSpikeProbe`가 Firebase·`GoogleMobileAds`를 못 찾으면 `overrideReferences`를 true로 바꾸지 말고, DLL이 Auto Reference인지 확인한다
+  - [x] **[사용자]** `Tools > Build > Android AAB`가 여전히 성공한다. asmdef는 플레이어 컴파일 경계를 바꾸므로 EditMode 녹색만으로 AC 6을 통과시키지 않는다
 
 ## Dev Notes
 
@@ -380,8 +380,34 @@ Assets/SoloHero/Data/Config/BalanceConfig.asset
 
 ### Agent Model Used
 
+Grok 4.7
+
 ### Debug Log References
+
+- Unity 2022.3.62f3 `-runTests -testPlatform EditMode`: `Temp/story-1-11-editmode.xml` result=Passed total=10 passed=10 failed=0. Assembly `SoloHero.Tests.EditMode.dll`.
+- Unity 2022.3.62f3 `-executeMethod BuildAutomator.Build`: `[Build] result=Succeeded size=511275810 errors=0 warnings=0 time=00:01:48.3626353`. Log has no `error CS`.
 
 ### Completion Notes List
 
+- asmdef 4개, Core/Common, `Formulas`, `BalanceValues`, `BalanceConfig` 에셋, `FormulasTests`를 넣었다. `BalanceConfig.cs.meta` guid는 `c4e8a1b27d6f4e0a9c3b5d7e1f2a4b60`.
+- Core `.cs`에 `UnityEngine` 문자열 0건.
+- 에디터를 닫은 뒤 batchmode로 EditMode 10/10과 Android AAB 성공을 확인했다. `overrideReferences`는 false로 두었고 Firebase·GMA 참조 오류는 없었다.
+
 ### File List
+
+- `Assets/SoloHero/Scripts/Core/SoloHero.Core.asmdef`
+- `Assets/SoloHero/Scripts/Core/Common/*.cs` (Result, FailReason, Log, LogTag, LogLevel, ILogSink, NullSink, Services, IClock, SystemClock, IRandom, SystemRandom, IsExternalInit)
+- `Assets/SoloHero/Scripts/Core/Config/BalanceValues.cs`
+- `Assets/SoloHero/Scripts/Core/Growth/UpgradeLane.cs`
+- `Assets/SoloHero/Scripts/Core/Formulas.cs`
+- `Assets/SoloHero/Scripts/Game/SoloHero.Game.asmdef`
+- `Assets/SoloHero/Scripts/Game/Config/BalanceConfig.cs`
+- `Assets/SoloHero/Scripts/Editor/SoloHero.Editor.asmdef`
+- `Assets/SoloHero/Scripts/Tests/EditMode/SoloHero.Tests.EditMode.asmdef`
+- `Assets/SoloHero/Scripts/Tests/EditMode/FormulasTests.cs`
+- `Assets/SoloHero/Data/Config/BalanceConfig.asset`
+- matching `.meta` files for the new folders, scripts, asmdefs, and the asset
+
+### Change Log
+
+- 2026-09-22: Assembly skeleton implemented. EditMode 10/10 and Android AAB succeeded in batchmode.

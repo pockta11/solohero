@@ -1,0 +1,20 @@
+{
+    "name": "SoloHero.Editor",
+    "rootNamespace": "SoloHero.Editor",
+    "references": [
+        "SoloHero.Core",
+        "SoloHero.Game",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
