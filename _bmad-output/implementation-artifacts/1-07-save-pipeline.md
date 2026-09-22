@@ -3,7 +3,7 @@ baseline_commit: 725ddc4e9c9bbacda524f88b1bce16618d15175b
 ---
 # Story 1.07: 저장 파이프라인
 
-Status: review
+Status: done
 
 <!-- Epic E1-07 · Must · 선행: 1-05, 1-06. 부트(1-04)가 이 서비스를 호출한다. 트리거 7종의 호출 지점은 각 도메인 서비스 스토리에서 연결한다 -->
 

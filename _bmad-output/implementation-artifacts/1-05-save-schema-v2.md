@@ -3,7 +3,7 @@ baseline_commit: 42c18ce505e9000694fd3d12966d45d5551ce073
 ---
 # Story 1.05: 저장 스키마 v2
 
-Status: review
+Status: done
 
 <!-- Epic E1-05 · Must · 선행: 1-11 Core. 이관(1-06)·파이프라인(1-07)·부트(1-04)는 이 DTO를 쓴다 -->
 

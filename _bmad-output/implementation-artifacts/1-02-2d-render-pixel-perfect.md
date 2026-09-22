@@ -3,7 +3,7 @@ baseline_commit: 656515ed71caae671ccbcf30424e762dce41228e
 ---
 # Story 1.02: 2D 렌더와 픽셀 퍼펙트
 
-Status: review
+Status: done
 
 <!-- Epic E1-02 · Must · URP Renderer2D는 이미 연결되어 있다. 이 스토리는 Boot 카메라의 Pixel Perfect 설정이다 -->
 

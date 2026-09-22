@@ -3,7 +3,7 @@ baseline_commit: b3b73695e75347df036baad5a0358f2a4df451c0
 ---
 # Story 1.04: 부트 시퀀스
 
-Status: review
+Status: done
 
 <!-- Epic E1-04 · Must · 선행: 1-11, 1-05, 1-06, 1-07. 로드 실패 UI(1-08)와 오프라인 팝업(E6)은 여기서 그리지 않는다 -->
 

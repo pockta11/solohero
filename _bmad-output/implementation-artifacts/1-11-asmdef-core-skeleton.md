@@ -3,7 +3,7 @@ baseline_commit: 0651876044ba1c8dc39faa3c4c4f7d0e7f0c2fb7
 ---
 # Story 1.11: 어셈블리 골격 (asmdef 4 + Core/Common + Formulas + BalanceConfig)
 
-Status: review
+Status: done
 
 <!-- Epic E1-11 · Must · 선행: 1-03 done. 후행: 1-04 부트는 이 asmdef와 Services/BalanceValues 위에 올라간다 -->
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->

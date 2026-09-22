@@ -3,7 +3,7 @@ baseline_commit: a7ede6b89d23f580f2dc8cb3e45804e10a6fbf9b
 ---
 # Story 1.06: v1 → v2 이관
 
-Status: review
+Status: done
 
 <!-- Epic E1-06 · Must · 선행: 1-05 SaveDataV2. 저장 파이프라인(1-07)이 이 함수를 호출한다 -->
 

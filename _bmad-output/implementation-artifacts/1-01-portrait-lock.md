@@ -3,7 +3,7 @@ baseline_commit: ac398a7a1e5b79ed6cb4c0f1574c1d8f51709e1b
 ---
 # Story 1.01: Portrait 고정 (1080×1920)
 
-Status: review
+Status: done
 
 <!-- Epic E1-01 · Must · 선행 없음. 픽셀 퍼펙트(1-02)와 부트(1-04)보다 먼저 화면 크기와 회전을 고정한다 -->
 
