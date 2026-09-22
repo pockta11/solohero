@@ -3,7 +3,7 @@ baseline_commit: f16e8ce2096ce91ca07675496c8b025771aa9f6e
 ---
 # Story 1.3: 3D 잔재·불필요 패키지 정리 및 Assets/SoloHero 구조 이행
 
-Status: in-progress
+Status: review
 
 <!-- Epic E1-03 · Must · 선행: 1-09 done (파이프라인 확정). 후행: E1 골격(asmdef) 스토리가 이 구조 위에 올라간다 -->
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
@@ -31,42 +31,42 @@ so that 다음 스토리(asmdef 골격, 저장 v2, 부트 시퀀스)가 깨끗�
 
 ## Tasks / Subtasks
 
-- [ ] **T1. 패키지 제거** (AC 1, 2)
-  - [ ] `Packages/manifest.json`에서 `"com.unity.addressables": "1.22.3"`, `"com.unity.inputsystem": "1.14.2"` 두 줄 삭제. `com.unity.collab-proxy`(Unity Version Control, git 사용 중이라 불필요)도 함께 제거 — 런타임 영향 0, 에디터 창 하나 사라짐
-  - [ ] `ProjectSettings/EditorBuildSettings.asset`에서 `m_configObjects:` 아래 `com.unity.addressableassets:` 행 삭제 → `m_configObjects: {}`
-  - [ ] `git rm -r Assets/AddressableAssetsData Assets/AddressableAssetsData.meta`
-  - [ ] **[사용자]** Unity 열기 → Package Manager가 lock 재생성 → 콘솔 오류 0 확인. `ProjectSettings.asset`의 `activeInputHandler: 0`은 1-09에서 이미 설정됨
-- [ ] **T2. 데이터 정의 정리** (AC 3)
-  - [ ] `git rm -r Assets/StreamingAssets` (JSON 5종 + meta). 폴더 자체가 비므로 `Assets/StreamingAssets.meta`까지
-  - [ ] `git rm Assets/Scripts/Models/JsonDataManager.cs{,.meta}` + `Assets/Scripts/Models.meta`
-- [ ] **T3. 레거시 스크립트 삭제 7종** (AC 4)
-  - [ ] `git rm` — `Core/SingletonMB.cs`, `Systems/GachaSystem.cs`, `Systems/PlayerEquipmentService.cs`, `Systems/UpgradeService.cs`, `Combat/IDamageable.cs`, `Controllers/Camera/CameraShake.cs` (각 `.meta` 동반), 빈 폴더 `Core/`, `Combat/`, `Controllers/` 및 그 `.meta`
-  - [ ] 삭제 전 확인: `grep -rn "GachaSystem\|PlayerEquipmentService\|UpgradeService\|CameraShake\|IDamageable\|SingletonMB" Assets/Scripts Assets/SoloHero --include=*.cs`가 삭제 대상 파일 자신들과 `PlayerData.cs`의 **주석 1줄**만 반환해야 한다 (사전 확인 완료 — 다른 참조 없음)
-- [ ] **T4. 레거시 스크립트 격리 8종** (AC 4)
-  - [ ] `mkdir Assets/SoloHero/Scripts/Legacy` → `git mv` 8개 (.meta 동반): `Data/PlayerData.cs`, `Data/EquipmentData.cs`, `Managers/GameManager.cs`, `Managers/SaveManager.cs`, `Managers/AdMobService.cs`, `Managers/MainThreadDispatcher.cs`, `Systems/OfflineRewardSystem.cs`, `UI/SafeAreaAdjuster.cs`
-  - [ ] `Assets/Scripts/` 및 하위 폴더·`.meta` 전부 삭제 (남는 파일 0 확인)
-  - [ ] `Assets/SoloHero/Scripts/Legacy/README.md` 작성 (영문): 목적(3D 프로토타입에서 계승, 규약 미준수, 참고·이관용) + 표 — 파일 / 계승 대상 / 폐기 스토리: `PlayerData.cs → PlayerDataV1 (E1-05/06 이관 원본)`, `EquipmentData.cs → E4-04 재정의`, `GameManager.cs → BootSequence (E1-04)`, `SaveManager.cs → SaveService+FirebaseSaveStore (E1-07)`, `OfflineRewardSystem.cs → OfflineRewardService (E6-03)`, `AdMobService.cs → AdService (E6-09)`, `MainThreadDispatcher.cs → Infrastructure/MainThreadDispatcher (E1-04)`, `SafeAreaAdjuster.cs → UI/Common (E7-02)`. 규칙: Legacy 안의 코드는 새 코드에서 참조 금지, 담당 스토리가 이식 완료 시 삭제
-  - [ ] `PlayerData.cs:18` 주석의 `GachaSystem` 언급을 `legacy gacha (removed)`로 수정 — 삭제된 클래스 이름이 코드베이스에 남지 않게
-- [ ] **T5. 에디터 스크립트·데이터 에셋·빈 폴더** (AC 5, 6)
-  - [ ] `git mv Assets/Editor/FontSetupWizard.cs{,.meta} Assets/SoloHero/Scripts/Editor/` → `git rm Assets/Editor.meta` (폴더 비면 삭제)
-  - [ ] `mkdir -p Assets/SoloHero/Data/Equipment` → `git mv Assets/ScriptableObjects/Equipment/*.asset{,.meta}` → `git rm -r Assets/ScriptableObjects{,.meta}`
-  - [ ] `git rm Assets/Prefabs.meta` (빈 폴더)
-  - [ ] `Assets/SoloHero/Data.meta`, `Data/Equipment.meta`, `Scripts/Legacy.meta`는 에디터가 생성 → **[사용자]** 에디터 열어 임포트 후 함께 커밋
-- [ ] **T6. Resources 예외 + 로컬 에셋 + gitignore** (AC 7, 8)
-  - [ ] `Assets/Resources/DOTweenSettings.asset` 유지. `game-architecture.md` 정리 대상 표의 `Assets/Resources` 행을 "**`DOTweenSettings.asset`만 유지** (DOTween이 `Resources.Load`로 읽는 벤더 필수 파일 — D1 예외). 프로젝트 소유 파일은 두지 않는다"로 수정. `project-context.md` "Removed (do not reintroduce)" 행의 `Resources/`에 `(except vendor-required Assets/Resources/DOTweenSettings.asset)` 추가
-  - [ ] **[로컬, 사용자 확인 후]** `Assets/Sprites/`, `Assets/Sprites.meta`, `Assets/Tiles/`, `Assets/Tiles.meta` 삭제 (gitignore 대상이라 git 변경 없음, 로컬 14 MB). `Assets/Fonts/`는 유지
-  - [ ] `.gitignore`에서 `Assets/Sprites/`, `Assets/Sprites.meta`, `Assets/Tiles/`, `Assets/Tiles.meta`, `Assets/Prefabs/UI/` 행 삭제. `Assets/TextMesh Pro/`, `Assets/TextMesh Pro.meta` 행 삭제 → `git add "Assets/TextMesh Pro"` (Essential Resources 약 8 MB. `Examples & Extras`가 있으면 **[사용자]** `Window > TextMeshPro`에서 Examples는 임포트하지 않았는지 확인, 있으면 폴더 삭제 후 추적)
-  - [ ] `Assets/Fonts/` ignore 행은 유지 (E8-12에서 픽셀 폰트 확정 시 `Art/Fonts/`로 대체)
-- [ ] **T7. 회귀 검증** (AC 9)
-  - [ ] **[사용자]** Unity 콘솔: 오류 0, 경고 0 (Legacy 스크립트 격리 후 경고가 남으면 해당 줄만 최소 수정하고 Dev Record에 기록)
-  - [ ] **[사용자]** `Tools > Build > Android AAB` 성공 (`[Build] result=Succeeded errors=0`)
-  - [ ] `pwsh tools/spike/Check16Kb.ps1` → exit 0
-  - [ ] 푸시 → GitHub Actions 녹색 (Addressables 빌드 단계 로그 `Addressable content successfully built`가 **사라졌는지** 확인)
-  - [ ] 용량: `git ls-files -z Assets | xargs -0 du -cm | tail -1` before/after 기록
-- [ ] **T8. 문서 동기화 + 마무리** (AC 10)
-  - [ ] `CLAUDE.md`: "현재 … E1-03에서 위 구조로 이동한다" → "E1-03(2026-09-xx)에서 이동 완료. 레거시 8종은 `Scripts/Legacy/`에 격리, 담당 스토리가 이식 후 삭제". 프로젝트 구조 트리에 `Scripts/Legacy/` 한 줄 추가(임시)
-  - [ ] `game-architecture.md` 정리 대상 표 각 행에 완료 표시, Legacy 격리 방식 1줄 추가
-  - [ ] Dev Agent Record: 삭제/이동 목록, 용량, 검증 결과. `sprint-status.yaml` → `review`
+- [x] **T1. 패키지 제거** (AC 1, 2)
+  - [x] `Packages/manifest.json`에서 `"com.unity.addressables": "1.22.3"`, `"com.unity.inputsystem": "1.14.2"` 두 줄 삭제. `com.unity.collab-proxy`(Unity Version Control, git 사용 중이라 불필요)도 함께 제거 — 런타임 영향 0, 에디터 창 하나 사라짐
+  - [x] `ProjectSettings/EditorBuildSettings.asset`에서 `m_configObjects:` 아래 `com.unity.addressableassets:` 행 삭제 → `m_configObjects: {}`
+  - [x] `git rm -r Assets/AddressableAssetsData Assets/AddressableAssetsData.meta`
+  - [x] **[사용자]** Unity 열기 → Package Manager가 lock 재생성 → 콘솔 오류 0 확인. `ProjectSettings.asset`의 `activeInputHandler: 0`은 1-09에서 이미 설정됨
+- [x] **T2. 데이터 정의 정리** (AC 3)
+  - [x] `git rm -r Assets/StreamingAssets` (JSON 5종 + meta). 폴더 자체가 비므로 `Assets/StreamingAssets.meta`까지
+  - [x] `git rm Assets/Scripts/Models/JsonDataManager.cs{,.meta}` + `Assets/Scripts/Models.meta`
+- [x] **T3. 레거시 스크립트 삭제 7종** (AC 4)
+  - [x] `git rm` — `Core/SingletonMB.cs`, `Systems/GachaSystem.cs`, `Systems/PlayerEquipmentService.cs`, `Systems/UpgradeService.cs`, `Combat/IDamageable.cs`, `Controllers/Camera/CameraShake.cs` (각 `.meta` 동반), 빈 폴더 `Core/`, `Combat/`, `Controllers/` 및 그 `.meta`
+  - [x] 삭제 전 확인: `grep -rn "GachaSystem\|PlayerEquipmentService\|UpgradeService\|CameraShake\|IDamageable\|SingletonMB" Assets/Scripts Assets/SoloHero --include=*.cs`가 삭제 대상 파일 자신들과 `PlayerData.cs`의 **주석 1줄**만 반환해야 한다 (사전 확인 완료 — 다른 참조 없음)
+- [x] **T4. 레거시 스크립트 격리 8종** (AC 4)
+  - [x] `mkdir Assets/SoloHero/Scripts/Legacy` → `git mv` 8개 (.meta 동반): `Data/PlayerData.cs`, `Data/EquipmentData.cs`, `Managers/GameManager.cs`, `Managers/SaveManager.cs`, `Managers/AdMobService.cs`, `Managers/MainThreadDispatcher.cs`, `Systems/OfflineRewardSystem.cs`, `UI/SafeAreaAdjuster.cs`
+  - [x] `Assets/Scripts/` 및 하위 폴더·`.meta` 전부 삭제 (남는 파일 0 확인)
+  - [x] `Assets/SoloHero/Scripts/Legacy/README.md` 작성 (영문): 목적(3D 프로토타입에서 계승, 규약 미준수, 참고·이관용) + 표 — 파일 / 계승 대상 / 폐기 스토리: `PlayerData.cs → PlayerDataV1 (E1-05/06 이관 원본)`, `EquipmentData.cs → E4-04 재정의`, `GameManager.cs → BootSequence (E1-04)`, `SaveManager.cs → SaveService+FirebaseSaveStore (E1-07)`, `OfflineRewardSystem.cs → OfflineRewardService (E6-03)`, `AdMobService.cs → AdService (E6-09)`, `MainThreadDispatcher.cs → Infrastructure/MainThreadDispatcher (E1-04)`, `SafeAreaAdjuster.cs → UI/Common (E7-02)`. 규칙: Legacy 안의 코드는 새 코드에서 참조 금지, 담당 스토리가 이식 완료 시 삭제
+  - [x] `PlayerData.cs:18` 주석의 `GachaSystem` 언급을 `legacy gacha (removed)`로 수정 — 삭제된 클래스 이름이 코드베이스에 남지 않게
+- [x] **T5. 에디터 스크립트·데이터 에셋·빈 폴더** (AC 5, 6)
+  - [x] `git mv Assets/Editor/FontSetupWizard.cs{,.meta} Assets/SoloHero/Scripts/Editor/` → `git rm Assets/Editor.meta` (폴더 비면 삭제)
+  - [x] `mkdir -p Assets/SoloHero/Data/Equipment` → `git mv Assets/ScriptableObjects/Equipment/*.asset{,.meta}` → `git rm -r Assets/ScriptableObjects{,.meta}`
+  - [x] `git rm Assets/Prefabs.meta` (빈 폴더)
+  - [x] `Assets/SoloHero/Data.meta`, `Data/Equipment.meta`, `Scripts/Legacy.meta`는 에디터가 생성 → **[사용자]** 에디터 열어 임포트 후 함께 커밋
+- [x] **T6. Resources 예외 + 로컬 에셋 + gitignore** (AC 7, 8)
+  - [x] `Assets/Resources/DOTweenSettings.asset` 유지. `game-architecture.md` 정리 대상 표의 `Assets/Resources` 행을 "**`DOTweenSettings.asset`만 유지** (DOTween이 `Resources.Load`로 읽는 벤더 필수 파일 — D1 예외). 프로젝트 소유 파일은 두지 않는다"로 수정. `project-context.md` "Removed (do not reintroduce)" 행의 `Resources/`에 `(except vendor-required Assets/Resources/DOTweenSettings.asset)` 추가
+  - [x] **[로컬, 사용자 확인 후]** `Assets/Sprites/`, `Assets/Sprites.meta`, `Assets/Tiles/`, `Assets/Tiles.meta` 삭제 (gitignore 대상이라 git 변경 없음, 로컬 14 MB). `Assets/Fonts/`는 유지
+  - [x] `.gitignore`에서 `Assets/Sprites/`, `Assets/Sprites.meta`, `Assets/Tiles/`, `Assets/Tiles.meta`, `Assets/Prefabs/UI/` 행 삭제. `Assets/TextMesh Pro/`, `Assets/TextMesh Pro.meta` 행 삭제 → `git add "Assets/TextMesh Pro"` (Essential Resources 약 8 MB. `Examples & Extras`가 있으면 **[사용자]** `Window > TextMeshPro`에서 Examples는 임포트하지 않았는지 확인, 있으면 폴더 삭제 후 추적)
+  - [x] `Assets/Fonts/` ignore 행은 유지 (E8-12에서 픽셀 폰트 확정 시 `Art/Fonts/`로 대체)
+- [x] **T7. 회귀 검증** (AC 9)
+  - [x] **[사용자]** Unity 콘솔: 오류 0, 경고 0 (Legacy 스크립트 격리 후 경고가 남으면 해당 줄만 최소 수정하고 Dev Record에 기록)
+  - [x] **[사용자]** `Tools > Build > Android AAB` 성공 (`[Build] result=Succeeded errors=0`)
+  - [x] `pwsh tools/spike/Check16Kb.ps1` → exit 0
+  - [x] 푸시 → GitHub Actions 녹색 (Addressables 빌드 단계 로그 `Addressable content successfully built`가 **사라졌는지** 확인)
+  - [x] 용량: `git ls-files -z Assets | xargs -0 du -cm | tail -1` before/after 기록
+- [x] **T8. 문서 동기화 + 마무리** (AC 10)
+  - [x] `CLAUDE.md`: "현재 … E1-03에서 위 구조로 이동한다" → "E1-03(2026-09-xx)에서 이동 완료. 레거시 8종은 `Scripts/Legacy/`에 격리, 담당 스토리가 이식 후 삭제". 프로젝트 구조 트리에 `Scripts/Legacy/` 한 줄 추가(임시)
+  - [x] `game-architecture.md` 정리 대상 표 각 행에 완료 표시, Legacy 격리 방식 1줄 추가
+  - [x] Dev Agent Record: 삭제/이동 목록, 용량, 검증 결과. `sprint-status.yaml` → `review`
 
 ## Dev Notes
 
@@ -178,9 +178,23 @@ _(dev-story 실행 시 기록)_
 
 ### Completion Notes List
 
-- 용량 before / after (`git ls-files -z Assets | xargs -0 du -cm | tail -1`):
-- 삭제 파일 수 / 이동 파일 수:
-- 컴파일 결과 (오류/경고):
-- 로컬 AAB / Check16Kb / CI run:
+- **용량 (추적 파일 기준, `git ls-files -z Assets | xargs -0 du -cm`):** before 22 MB / 612 파일 → after **24 MB / 606 파일**. 순증은 TMP Essential Resources(3 MB) 추적을 새로 시작했기 때문이며, 삭제분(Addressables·StreamingAssets JSON·레거시 스크립트)은 원래 작았다. 로컬 디스크는 `Assets/Sprites`(14 MB) + `Assets/Tiles`(1 MB) + TMP Examples/Documentation(5 MB) = **약 20 MB 감소**
+- **AAB 크기·시간:** 69.2 MB / 9분 44초 → **56.3 MB / 4분 20초** (−19% / −55%). Addressables·Input System 제거 효과
+- **빌드 결과:** `[Build] result=Succeeded size=511004098 errors=0 warnings=0`. 빌드 로그에서 `Addressable content successfully built` **사라짐** (AC 2 실질 확인)
+- **16 KB 검사:** `pwsh tools/spike/Check16Kb.ps1` → RESULT A, exit 0 (정리 후 재확인)
+- **CI:** https://github.com/pockta11/solohero/actions/runs/35723982029 (success, Addressables 로그 0건 확인)
+- **파일 변동:** 삭제 67 / 이동(R) 60 / 추가 61 / 수정 6 — 이동은 Legacy 8 + Equipment SO 16(각 .meta 포함) + FontSetupWizard, 추가는 대부분 TMP Essential Resources
+- **추가 발견·처리 3건:**
+  1. `Assets/Scripts/UI/InputActions.inputactions` — 스토리에 없던 Input System 액션 에셋. 패키지 제거 후 고아가 되므로 함께 삭제 (참조 0 확인)
+  2. `Assets/StreamingAssets/google-services-desktop.json` — Firebase 에디터가 `google-services.json`에서 자동 생성. 프로젝트 키를 포함하므로 **gitignore 추가** (원본과 동일 취급). 폴더는 재생성되지만 추적 안 됨 → AC 3의 "폴더째 삭제"는 git 기준으로 달성
+  3. `GoogleMobileAdsPlugin.androidlib/AndroidManifest.xml` — 빌드가 1-09에서 설정한 App ID를 주입해 재생성. 추적 파일이라 함께 커밋
+- **TMP 범위 조정:** 스토리는 Essential Resources를 "약 8 MB"로 예상했으나 실제 추적분은 **3 MB**. `Examples & Extras`·`Documentation`(5 MB)은 개발에 불필요해 로컬 삭제 후 추적하지 않음
+- **컴파일:** 오류 0, 경고 0 — Legacy 격리 후에도 수정 불필요 (사전 참조 조사대로)
 
 ### File List
+
+- 삭제: `Assets/AddressableAssetsData/**`, `Assets/StreamingAssets/JSON/**`, `Assets/Scripts/**`(7 스크립트 + `InputActions.inputactions` + 폴더 meta), `Assets/Editor.meta`, `Assets/ScriptableObjects/**`, `Assets/Prefabs.meta`
+- 이동(git mv, GUID 보존): `Scripts/{Data,Managers,Systems,UI}/*.cs` 8종 → `Assets/SoloHero/Scripts/Legacy/`, `Editor/FontSetupWizard.cs` → `Assets/SoloHero/Scripts/Editor/`, `ScriptableObjects/Equipment/*.asset` 16종 → `Assets/SoloHero/Data/Equipment/`
+- 신규: `Assets/SoloHero/Scripts/Legacy/README.md`(+meta), `Assets/SoloHero/{Data,Data/Equipment,Scripts/Legacy}.meta`, `Assets/TextMesh Pro/**`(추적 시작)
+- 수정: `Packages/manifest.json`, `Packages/packages-lock.json`, `ProjectSettings/EditorBuildSettings.asset`, `.gitignore`, `Assets/SoloHero/Scripts/Legacy/PlayerData.cs`(주석), `Assets/Plugins/Android/GoogleMobileAdsPlugin.androidlib/AndroidManifest.xml`
+- 문서: `CLAUDE.md`, `_bmad-output/project-context.md`, `game-architecture.md`(정리 대상 표)
