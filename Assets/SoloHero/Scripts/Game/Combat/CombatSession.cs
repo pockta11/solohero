@@ -12,6 +12,8 @@ namespace SoloHero.Game.Combat
     {
         private StageRunner _runner;
 
+        public StageRunner Runner => _runner;
+
         private void Start()
         {
             BalanceValues balance;

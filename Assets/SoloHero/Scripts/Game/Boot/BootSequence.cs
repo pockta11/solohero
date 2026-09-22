@@ -50,7 +50,13 @@ namespace SoloHero.Game.Boot
             Services.Register(_data);
 
             if (report.LoadFailed)
-                Log.Warn(LogTag.Boot, "load failed, started a new user");
+            {
+                LoadFailBanner banner = FindObjectOfType<LoadFailBanner>();
+                if (banner != null)
+                    banner.Show();
+                else
+                    Log.Warn(LogTag.Boot, "load failed, started a new user");
+            }
 
             EnterGame();
         }
