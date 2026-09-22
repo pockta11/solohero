@@ -41,6 +41,8 @@ ExportedObj/
 # Firebase (민감정보)
 Assets/google-services.json
 Assets/google-services.json.meta
+Assets/StreamingAssets/google-services-desktop.json
+Assets/StreamingAssets/google-services-desktop.json.meta
 
 # Claude auto-memory
 memory/

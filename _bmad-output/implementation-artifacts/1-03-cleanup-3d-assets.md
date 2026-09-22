@@ -1,6 +1,9 @@
+---
+baseline_commit: f16e8ce2096ce91ca07675496c8b025771aa9f6e
+---
 # Story 1.3: 3D 잔재·불필요 패키지 정리 및 Assets/SoloHero 구조 이행
 
-Status: ready-for-dev
+Status: in-progress
 
 <!-- Epic E1-03 · Must · 선행: 1-09 done (파이프라인 확정). 후행: E1 골격(asmdef) 스토리가 이 구조 위에 올라간다 -->
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
