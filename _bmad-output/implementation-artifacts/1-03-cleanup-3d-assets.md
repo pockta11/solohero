@@ -55,7 +55,7 @@ so that 다음 스토리(asmdef 골격, 저장 v2, 부트 시퀀스)가 깨끗�
 - [x] **T6. Resources 예외 + 로컬 에셋 + gitignore** (AC 7, 8)
   - [x] `Assets/Resources/DOTweenSettings.asset` 유지. `game-architecture.md` 정리 대상 표의 `Assets/Resources` 행을 "**`DOTweenSettings.asset`만 유지** (DOTween이 `Resources.Load`로 읽는 벤더 필수 파일 — D1 예외). 프로젝트 소유 파일은 두지 않는다"로 수정. `project-context.md` "Removed (do not reintroduce)" 행의 `Resources/`에 `(except vendor-required Assets/Resources/DOTweenSettings.asset)` 추가
   - [x] **[로컬, 사용자 확인 후]** `Assets/Sprites/`, `Assets/Sprites.meta`, `Assets/Tiles/`, `Assets/Tiles.meta` 삭제 (gitignore 대상이라 git 변경 없음, 로컬 14 MB). `Assets/Fonts/`는 유지
-  - [x] `.gitignore`에서 `Assets/Sprites/`, `Assets/Sprites.meta`, `Assets/Tiles/`, `Assets/Tiles.meta`, `Assets/Prefabs/UI/` 행 삭제. `Assets/TextMesh Pro/`, `Assets/TextMesh Pro.meta` 행 삭제 → `git add "Assets/TextMesh Pro"` (Essential Resources 약 8 MB. `Examples & Extras`가 있으면 **[사용자]** `Window > TextMeshPro`에서 Examples는 임포트하지 않았는지 확인, 있으면 폴더 삭제 후 추적)
+  - [x] `.gitignore`에서 `Assets/Sprites/`, `Assets/Sprites.meta`, `Assets/Tiles/`, `Assets/Tiles.meta` 행 삭제 (`Assets/Prefabs/UI/`는 애초에 없었음 — 스펙 오류). `Assets/TextMesh Pro/`, `Assets/TextMesh Pro.meta` 행 삭제 → `git add "Assets/TextMesh Pro"` (Essential Resources 약 8 MB. `Examples & Extras`가 있으면 **[사용자]** `Window > TextMeshPro`에서 Examples는 임포트하지 않았는지 확인, 있으면 폴더 삭제 후 추적)
   - [x] `Assets/Fonts/` ignore 행은 유지 (E8-12에서 픽셀 폰트 확정 시 `Art/Fonts/`로 대체)
 - [x] **T7. 회귀 검증** (AC 9)
   - [x] **[사용자]** Unity 콘솔: 오류 0, 경고 0 (Legacy 스크립트 격리 후 경고가 남으면 해당 줄만 최소 수정하고 Dev Record에 기록)
@@ -67,6 +67,24 @@ so that 다음 스토리(asmdef 골격, 저장 v2, 부트 시퀀스)가 깨끗�
   - [x] `CLAUDE.md`: "현재 … E1-03에서 위 구조로 이동한다" → "E1-03(2026-09-xx)에서 이동 완료. 레거시 8종은 `Scripts/Legacy/`에 격리, 담당 스토리가 이식 후 삭제". 프로젝트 구조 트리에 `Scripts/Legacy/` 한 줄 추가(임시)
   - [x] `game-architecture.md` 정리 대상 표 각 행에 완료 표시, Legacy 격리 방식 1줄 추가
   - [x] Dev Agent Record: 삭제/이동 목록, 용량, 검증 결과. `sprint-status.yaml` → `review`
+
+### Review Findings (2026-09-22 · gds-code-review · Blind Hunter + Acceptance Auditor)
+
+리뷰어 대부분의 "High" 지적은 diff 범위를 좁혀 전달한 탓의 오탐이었다 (`.meta`·`packages-lock.json`·`Assets/TextMesh Pro/**`·이동된 Equipment SO를 제외한 diff). 실제 트리로 재확인한 결과: `activeInputHandler: 0` 정상, Equipment SO 16종 이동됨(스크립트 GUID 불변), TMP 69파일 추적 중, packages-lock 커밋됨, 삭제된 타입 참조 0건, CI run 35723982029의 head SHA = `c851b11`(최종 코드 커밋)로 녹색 증거 유효.
+
+- [x] [Review][Patch] **보안: `Assets/google-services.json`이 추적 중** — `.gitignore` 규칙은 이미 추적된 파일에 효력이 없다. `git rm --cached`로 HEAD에서 제거(로컬 유지). **히스토리·공개 레포 대응은 사용자 결정 대기** (Open Item)
+- [x] [Review][Patch] v1 강화 비용 상수가 `UpgradeService.cs` 삭제로 유실 — E1-06 환급 계산에 필요. `Legacy/README.md`에 baseCost 4종·공식·환급식 기록
+- [x] [Review][Patch] `Assets/StreamingAssets.meta`가 추적된 채 남아 AC 3 "폴더 소멸"과 불일치 — 추적 해제. 아키텍처 표현도 정정
+- [x] [Review][Patch] `Scripts/Editor/FontSetupWizard.cs`에 한국어 18줄(다이얼로그 문자열 포함) — 격리 폴더 밖이라 영문 전면 번역
+- [x] [Review][Patch] Legacy 폴더의 한국어 주석에 대한 예외가 어디에도 없음 — README에 "이 폴더 안에서만 영문 규칙 유예" 명시
+- [x] [Review][Patch] `Assets/TextMesh Pro/Resources/`가 세 번째 Resources 예외인데 미기록 — project-context·아키텍처에 추가
+- [x] [Review][Patch] Completion Notes 수치가 meta·lock 커밋 이전 값 — 611파일 / D64·R62·A63·M10 / TMP 2.9 MB로 정정
+- [x] [Review][Patch] `Agent Model Used` 자리표시자, T6의 `Assets/Prefabs/UI/` 행(원래 없던 스펙 오류) 정리
+- [x] [Review][Defer] 빈 `Assets/Scenes/` + 추적된 `Assets/Scenes.meta` — 1-09에서 `Boot.unity`가 옮겨간 뒤 남은 껍데기. 이번에 함께 제거
+- [x] [Review][Defer] AdMob androidlib 매니페스트에 App ID가 두 곳(`Assets/Plugins/Android/AndroidManifest.xml`의 레거시 항목 + 생성된 androidlib) — 값이 같아 머지 성공 중. 값이 갈리면 머저 오류가 나므로 E6-14(실 광고 ID 교체) 때 레거시 항목 제거 — deferred
+- [x] [Review][Defer] `Assets/Fonts/`는 ignore인데 `FontSetupWizard`는 추적 — 신규 클론에서 도구가 동작하지 않음. E8-12에서 픽셀 폰트를 `Art/Fonts/`로 추적하며 해소 — deferred (파일 상단 주석에 명시)
+
+Dismissed (오탐): Input System 백엔드 불일치, Equipment SO 유실, TMP 미추적, packages-lock 누락, Legacy 컴파일 실패, `.meta` 미동반, Boot+Game 씬 불일치(1-09 리뷰에서 이미 정정), BOM으로 인한 AAPT 실패(로컬·CI 빌드 모두 성공)
 
 ## Dev Notes
 
@@ -172,23 +190,23 @@ so that 다음 스토리(asmdef 골격, 저장 v2, 부트 시퀀스)가 깨끗�
 
 ### Agent Model Used
 
-_(dev-story 실행 시 기록)_
+Claude Opus 5 (claude-opus-5) — 2026-09-22
 
 ### Debug Log References
 
 ### Completion Notes List
 
-- **용량 (추적 파일 기준, `git ls-files -z Assets | xargs -0 du -cm`):** before 22 MB / 612 파일 → after **24 MB / 606 파일**. 순증은 TMP Essential Resources(3 MB) 추적을 새로 시작했기 때문이며, 삭제분(Addressables·StreamingAssets JSON·레거시 스크립트)은 원래 작았다. 로컬 디스크는 `Assets/Sprites`(14 MB) + `Assets/Tiles`(1 MB) + TMP Examples/Documentation(5 MB) = **약 20 MB 감소**
+- **용량 (추적 파일 기준):** before 22 MB / 612 파일 → after **24 MB / 611 파일** (리뷰에서 재측정 — 앞선 606은 meta·lock 커밋 이전 값이었다). 순증은 TMP Essential Resources(3 MB) 추적을 새로 시작했기 때문이며, 삭제분(Addressables·StreamingAssets JSON·레거시 스크립트)은 원래 작았다. 로컬 디스크는 `Assets/Sprites`(14 MB) + `Assets/Tiles`(1 MB) + TMP Examples/Documentation(5 MB) = **약 20 MB 감소**
 - **AAB 크기·시간:** 69.2 MB / 9분 44초 → **56.3 MB / 4분 20초** (−19% / −55%). Addressables·Input System 제거 효과
 - **빌드 결과:** `[Build] result=Succeeded size=511004098 errors=0 warnings=0`. 빌드 로그에서 `Addressable content successfully built` **사라짐** (AC 2 실질 확인)
 - **16 KB 검사:** `pwsh tools/spike/Check16Kb.ps1` → RESULT A, exit 0 (정리 후 재확인)
 - **CI:** https://github.com/pockta11/solohero/actions/runs/35723982029 (success, Addressables 로그 0건 확인)
-- **파일 변동:** 삭제 67 / 이동(R) 60 / 추가 61 / 수정 6 — 이동은 Legacy 8 + Equipment SO 16(각 .meta 포함) + FontSetupWizard, 추가는 대부분 TMP Essential Resources
+- **파일 변동:** 삭제 64 / 이동(R) 62 / 추가 63 / 수정 10 (`git diff --name-status -M f16e8ce..HEAD`, 최종 트리 기준) — 이동은 Legacy 8 + Equipment SO 16(각 .meta 포함) + FontSetupWizard, 추가는 대부분 TMP Essential Resources
 - **추가 발견·처리 3건:**
   1. `Assets/Scripts/UI/InputActions.inputactions` — 스토리에 없던 Input System 액션 에셋. 패키지 제거 후 고아가 되므로 함께 삭제 (참조 0 확인)
   2. `Assets/StreamingAssets/google-services-desktop.json` — Firebase 에디터가 `google-services.json`에서 자동 생성. 프로젝트 키를 포함하므로 **gitignore 추가** (원본과 동일 취급). 폴더는 재생성되지만 추적 안 됨 → AC 3의 "폴더째 삭제"는 git 기준으로 달성
   3. `GoogleMobileAdsPlugin.androidlib/AndroidManifest.xml` — 빌드가 1-09에서 설정한 App ID를 주입해 재생성. 추적 파일이라 함께 커밋
-- **TMP 범위 조정:** 스토리는 Essential Resources를 "약 8 MB"로 예상했으나 실제 추적분은 **3 MB**. `Examples & Extras`·`Documentation`(5 MB)은 개발에 불필요해 로컬 삭제 후 추적하지 않음
+- **TMP 범위 조정:** 스토리는 Essential Resources를 "약 8 MB"로 예상했으나 실제 추적분은 **2.9 MB**. `Examples & Extras`·`Documentation`(5 MB)은 개발에 불필요해 로컬 삭제 후 추적하지 않음
 - **컴파일:** 오류 0, 경고 0 — Legacy 격리 후에도 수정 불필요 (사전 참조 조사대로)
 
 ### File List

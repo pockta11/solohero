@@ -714,9 +714,9 @@ solohero/
 | `Assets/Editor/*` | `BuildAutomator`(1-09), `FontSetupWizard`(E1-03) → `Assets/SoloHero/Scripts/Editor/` |
 | `Assets/ScriptableObjects/Equipment` | `Assets/SoloHero/Data/Equipment/` (git mv, GUID 보존). 이름 규칙(`Equipment_{Slot}_{Grade}`)은 E4-04 |
 | `Assets/Sprites`, `Assets/Tiles` (로컬, gitignore) | 삭제 — Kenney 플랫포머/UI 팩, 픽셀아트 아님. `Assets/Fonts`(NotoSansKR)는 E8-12 결정까지 로컬 유지 |
-| `Assets/TextMesh Pro` | Essential Resources(Fonts·Resources·Shaders·Sprites, 3 MB)를 **추적 시작** — CI 체크아웃에 없으면 TMP UI가 깨짐. Examples & Extras·Documentation은 삭제 |
+| `Assets/TextMesh Pro` | Essential Resources(Fonts·Resources·Shaders·Sprites, 2.9 MB)를 **추적 시작** — `TextMesh Pro/Resources/`는 D1 Resources 예외 3번째 항목 — CI 체크아웃에 없으면 TMP UI가 깨짐. Examples & Extras·Documentation은 삭제 |
 | `Assets/AddressableAssetsData` | 삭제 + 패키지 제거 + `EditorBuildSettings.m_configObjects` 정리 (D1) |
-| `Assets/StreamingAssets/JSON` | 삭제 (D2). `StreamingAssets` 폴더 자체 소멸 |
+| `Assets/StreamingAssets/JSON` | 삭제 (D2). 추적 파일 0 — 폴더는 Firebase가 생성하는 `google-services-desktop.json`(gitignore) 때문에 로컬에만 남는다 |
 | `Assets/Resources` | **`DOTweenSettings.asset`만 유지** — DOTween이 `Resources.Load`로 읽는 벤더 필수 파일(D1 예외). 같은 유형의 예외: `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`(GMA 11 App ID). 프로젝트 소유 파일은 `Resources`에 두지 않는다 |
 | `Assets/Prefabs` (빈 폴더) | 삭제. 새 프리팹은 `Assets/SoloHero/Prefabs/` |
 | `Packages/manifest.json` | `com.unity.addressables`, `com.unity.inputsystem`(D9), `com.unity.collab-proxy`(미사용) 제거. `InputActions.inputactions` 에셋 삭제 |

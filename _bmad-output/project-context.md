@@ -32,7 +32,7 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 | Ads | Google Mobile Ads Unity 11.5.0 (Android play-services-ads 25.4.0), rewarded only. App ID lives in `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset` (GMA 11+), not only in the manifest | Test IDs forced in development builds |
 | Tests | Unity Test Framework 1.1.33, EditMode only | |
 | Build | Gradle (embedded AGP 7.4.2), custom templates in `Assets/Plugins/Android/`, `BuildAutomator.Build`. CI = GitHub Actions only (Jenkins dormant): plain `docker run unityci/editor` + `.github/scripts/unity-build.sh` (Licensing Client Personal activation, secrets `UNITY_EMAIL`/`UNITY_PASSWORD`; `.ulf`/`UNITY_LICENSE` no longer works). `Free disk space` step is required | **JDK 11 confirmed** (E1-09 result A, 2026-09-21): all 18 `.so` 16 KB-aligned with AGP 7.4.2. Re-run `tools/spike/Check16Kb.ps1` whenever a native SDK is added |
-| Removed (do not reintroduce) | Addressables, Input System package, `StreamingAssets/JSON`, project-owned `Resources/` (vendor-required exceptions stay: `Assets/Resources/DOTweenSettings.asset`, `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`), `SingletonMB`, `JsonDataManager`, Box-Muller `GachaSystem` — all removed in E1-03 | D1, D2, D9 |
+| Removed (do not reintroduce) | Addressables, Input System package, `StreamingAssets/JSON`, project-owned `Resources/` (vendor-required exceptions stay: `Assets/Resources/DOTweenSettings.asset`, `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`, `Assets/TextMesh Pro/Resources/**` - TMP Essentials, tracked since E1-03), `SingletonMB`, `JsonDataManager`, Box-Muller `GachaSystem` — all removed in E1-03 | D1, D2, D9 |
 
 ## Critical Implementation Rules
 
