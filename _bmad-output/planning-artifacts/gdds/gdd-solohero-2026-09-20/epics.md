@@ -32,6 +32,7 @@ status: draft
 | E1-08 | 로드 실패 시 방어 UI를 만든다 | 원격 실패 시 로컬로 시작하고, 데이터가 초기화된 것처럼 보이지 않음 | M |
 | E1-09 | 빌드 파이프라인을 세로 설정에 맞춰 갱신한다 | Jenkins와 GitHub Actions 양쪽에서 AAB 산출 성공 | M |
 | E1-10 | 앱 시작 → 전투 진입 8초 목표를 계측한다 | 콜드 스타트 10회 평균이 목표 이내 | S |
+| E1-11 | 어셈블리 골격을 만든다 (asmdef 4개, Core/Common, Formulas, BalanceConfig, EditMode 테스트) | Core가 UnityEngine을 참조하지 않고, EditMode 테스트 1개가 녹색이다. 1-03 다음, 1-04 앞에 수행한다 | M |
 
 ---
 

@@ -3,7 +3,7 @@ baseline_commit: f16e8ce2096ce91ca07675496c8b025771aa9f6e
 ---
 # Story 1.3: 3D 잔재·불필요 패키지 정리 및 Assets/SoloHero 구조 이행
 
-Status: review
+Status: done
 
 <!-- Epic E1-03 · Must · 선행: 1-09 done (파이프라인 확정). 후행: E1 골격(asmdef) 스토리가 이 구조 위에 올라간다 -->
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
@@ -72,7 +72,7 @@ so that 다음 스토리(asmdef 골격, 저장 v2, 부트 시퀀스)가 깨끗�
 
 리뷰어 대부분의 "High" 지적은 diff 범위를 좁혀 전달한 탓의 오탐이었다 (`.meta`·`packages-lock.json`·`Assets/TextMesh Pro/**`·이동된 Equipment SO를 제외한 diff). 실제 트리로 재확인한 결과: `activeInputHandler: 0` 정상, Equipment SO 16종 이동됨(스크립트 GUID 불변), TMP 69파일 추적 중, packages-lock 커밋됨, 삭제된 타입 참조 0건, CI run 35723982029의 head SHA = `c851b11`(최종 코드 커밋)로 녹색 증거 유효.
 
-- [x] [Review][Patch] **보안: `Assets/google-services.json`이 추적 중** — `.gitignore` 규칙은 이미 추적된 파일에 효력이 없다. `git rm --cached`로 HEAD에서 제거(로컬 유지). **히스토리·공개 레포 대응은 사용자 결정 대기** (Open Item)
+- [x] [Review][Patch] **보안: `Assets/google-services.json`이 추적 중** — `.gitignore` 규칙은 이미 추적된 파일에 효력이 없다. `git rm --cached`로 HEAD에서 제거(로컬 유지). 사용자 결정(2026-09-22): **선택지 1** — 추적만 해제하고 히스토리는 유지. `google-services.json`은 `0651876`에서 이미 인덱스에서 빠졌고, `google-services.xml`도 같은 방식으로 해제(로컬 파일 유지, `.gitignore`에 추가). 익명 RTDB 루트 읽기는 HTTP 401 Permission denied. 규칙 원문(`auth != null`인지, 쓰기 포함인지)은 콘솔에서만 확인 가능 — Firebase CLI 로그인 없음
 - [x] [Review][Patch] v1 강화 비용 상수가 `UpgradeService.cs` 삭제로 유실 — E1-06 환급 계산에 필요. `Legacy/README.md`에 baseCost 4종·공식·환급식 기록
 - [x] [Review][Patch] `Assets/StreamingAssets.meta`가 추적된 채 남아 AC 3 "폴더 소멸"과 불일치 — 추적 해제. 아키텍처 표현도 정정
 - [x] [Review][Patch] `Scripts/Editor/FontSetupWizard.cs`에 한국어 18줄(다이얼로그 문자열 포함) — 격리 폴더 밖이라 영문 전면 번역

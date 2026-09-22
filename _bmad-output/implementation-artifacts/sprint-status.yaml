@@ -55,7 +55,7 @@ development_status:
   epic-1: in-progress
   1-01-portrait-lock: backlog  # E1-01 [M]
   1-02-2d-render-pixel-perfect: backlog  # E1-02 [M]
-  1-03-cleanup-3d-assets: review  # E1-03 [M]
+  1-03-cleanup-3d-assets: done  # E1-03 [M]
   1-04-boot-sequence: backlog  # E1-04 [M]
   1-05-save-schema-v2: backlog  # E1-05 [M]
   1-06-migration-v1-to-v2: backlog  # E1-06 [M]
@@ -63,6 +63,7 @@ development_status:
   1-08-load-fail-defense-ui: backlog  # E1-08 [M]
   1-09-build-pipeline-portrait: done  # E1-09 [M] FIRST in epic-1 — API 36 / 16 KB build spike
   1-10-cold-start-measure: backlog  # E1-10 [S]
+  1-11-asmdef-core-skeleton: ready-for-dev  # E1-11 [M] AFTER 1-03, BEFORE 1-04 — asmdef 4 + Core/Common + Formulas + BalanceConfig
   epic-1-retrospective: optional
 
   # ── E2. 전투 코어 ──
