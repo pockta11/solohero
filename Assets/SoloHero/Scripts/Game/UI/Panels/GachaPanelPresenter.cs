@@ -2,6 +2,7 @@ using System.Text;
 using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Economy;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
@@ -32,9 +33,13 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
         [SerializeField] private GachaRevealView _reveal;
+        [SerializeField] private TapGuardButton _goldPackButton;
+        [SerializeField] private Text _goldPackText;
 
         private readonly StringBuilder _sb = new StringBuilder();
         private GachaService _gacha;
+        private GemShop _shop;
+        private int _shownFarmingStage = -1;
         private BalanceValues _balance;
         private SaveDataV2 _save;
         private ISaveRequester _requester;
@@ -44,6 +49,7 @@ namespace SoloHero.Game.UI.Panels
         private void OnEnable()
         {
             _gacha = PanelServices.TryGet<GachaService>();
+            _shop = PanelServices.TryGet<GemShop>();
             _balance = PanelServices.TryGet<BalanceValues>();
             _save = PanelServices.TryGet<SaveDataV2>();
             _requester = PanelServices.TryGet<ISaveRequester>();
@@ -55,7 +61,7 @@ namespace SoloHero.Game.UI.Panels
         private void LateUpdate()
         {
             if (_save == null) return;
-            if (_save.gold == _shownGold && _save.gem == _shownGem) return;
+            if (_save.gold == _shownGold && _save.gem == _shownGem && _save.farmingStage == _shownFarmingStage) return;
             Refresh();
         }
 
@@ -64,6 +70,21 @@ namespace SoloHero.Game.UI.Panels
         public void PullTen() => Apply(_gacha != null && _save != null ? _gacha.TryPullTen(_save) : default, "gold_ten");
 
         public void PullTenWithGem() => Apply(_gacha != null && _save != null ? _gacha.TryPullTenWithGem(_save) : default, "gem_ten");
+
+        /// <summary>E6-02: gems for an instant gold package worth 100 clears of the farming stage.</summary>
+        public void BuyGoldPack()
+        {
+            if (_shop == null || _save == null) return;
+            double gold = _shop.GoldPackAmount(_save);
+            Result r = _shop.TryBuyGoldPack(_save);
+            if (_toast != null)
+            {
+                if (r.Ok) _toast.Show(Strings.Format("toast.gold_pack", BigNumberFormat.Format(gold)));
+                else _toast.ShowFailure(r.Reason);
+            }
+
+            Refresh();
+        }
 
         private void Apply(GachaBatchResult result, string kind)
         {
@@ -115,6 +136,10 @@ namespace SoloHero.Game.UI.Panels
             if (_singleButton != null) _singleButton.SetAvailable(_save.gold >= _balance.GACHA_COST_SINGLE);
             if (_tenButton != null) _tenButton.SetAvailable(_save.gold >= _balance.GACHA_COST_TEN);
             if (_gemButton != null) _gemButton.SetAvailable(_save.gem >= _balance.GACHA_COST_TEN_GEM);
+            _shownFarmingStage = _save.farmingStage;
+            if (_shop != null && _goldPackText != null)
+                _goldPackText.text = Strings.Format("gacha.gold_pack", _balance.GEM_GOLD_PACK_COST, BigNumberFormat.Format(_shop.GoldPackAmount(_save)));
+            if (_goldPackButton != null) _goldPackButton.SetAvailable(_save.gem >= _balance.GEM_GOLD_PACK_COST);
         }
 
         private void LogPull(GachaPullItem[] items, string kind)

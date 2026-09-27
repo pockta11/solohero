@@ -21,6 +21,7 @@ namespace SoloHero.Game.Boot
     public sealed class BootSequence : MonoBehaviour
     {
         public const string GameSceneName = "Game";
+        private const int QuitSaveTimeoutMs = 1500;
 
         [SerializeField] private BalanceConfig _balance;
         [SerializeField] private TextAsset _strings;
@@ -92,6 +93,7 @@ namespace SoloHero.Game.Boot
             AdService ads = GetComponent<AdService>();
             Services.Register<IAdGateway>(ads != null ? ads : new NoAdGateway());
             Services.Register(new AdSlotPolicy(balance, _data, clock, requester));
+            Services.Register(new GemShop(balance, requester));
         }
 
         private void RegisterSettingsAndAudio()
@@ -177,12 +179,19 @@ namespace SoloHero.Game.Boot
 
         private async void SaveOnQuit()
         {
+            await SaveBeforeQuitAsync();
+        }
+
+        /// <summary>Stamps the quit time and flushes the save; waits at most <see cref="QuitSaveTimeoutMs"/>.</summary>
+        public async Task SaveBeforeQuitAsync()
+        {
             if (_data == null || _save == null) return;
             try
             {
                 if (!_offlinePopupPending)
                     _data.lastQuitTimeUtc = new SystemClock().UtcNowSeconds;
-                await _save.FlushAsync(_data);
+                Task flush = _save.FlushAsync(_data);
+                await Task.WhenAny(flush, Task.Delay(QuitSaveTimeoutMs));
             }
             catch (System.Exception e)
             {

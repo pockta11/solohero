@@ -53,6 +53,8 @@ namespace SoloHero.Core.Config
         public double GACHA_COST_SINGLE = 500;
         public double GACHA_COST_TEN = 4500;
         public int GACHA_COST_TEN_GEM = 200;
+        public int GEM_GOLD_PACK_COST = 50;
+        public double GEM_GOLD_PACK_STAGES = 100;
         public double GACHA_RATE_C = 55;
         public double GACHA_RATE_R = 33;
         public double GACHA_RATE_E = 10;

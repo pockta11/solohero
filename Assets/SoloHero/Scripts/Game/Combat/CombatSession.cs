@@ -88,6 +88,8 @@ namespace SoloHero.Game.Combat
             // Created before Resume so the first stage start is seen (E6-15).
             _telemetry = new GameplayTelemetry(_runner, save, balance, analytics);
             _runner.Resume(save.farmingStage < 1 ? 1 : save.farmingStage, save.retreatMode);
+            // Cold start marker (E1-10): tools/qa/Qa.ps1 coldstart measures launch -> this line.
+            Log.Info(LogTag.Combat, "battle ready at stage " + _runner.GlobalStage);
         }
 
         private void OnDestroy()

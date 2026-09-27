@@ -31,6 +31,12 @@ namespace SoloHero.Game.Infrastructure
         private void Start()
         {
             if (Application.isEditor) return;
+            if (_build != null && !_build.adsEnabled)
+            {
+                Log.Info(LogTag.Ad, "ads disabled by build config");
+                return;
+            }
+
             try
             {
                 MobileAds.Initialize(_ => MainThreadDispatcher.Post(() =>

@@ -13,6 +13,9 @@ namespace SoloHero.Game.Config
         public string rewardedAdUnitIdRelease = "";
         public bool useTestAdIds = true;
 
+        /// <summary>QA builds (SOLOHERO_NO_ADS=1) turn the ad SDK off entirely; the normal paths stay usable.</summary>
+        public bool adsEnabled = true;
+
         public string RewardedAdUnitId
         {
             get

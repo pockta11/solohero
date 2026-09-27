@@ -4,6 +4,7 @@ using SoloHero.Core.Gacha;
 using SoloHero.Core.Save;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
+using SoloHero.Game.View;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,6 +21,8 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private TapGuardButton[] _swapButtons = new TapGuardButton[4];
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private Image[] _slotIcons = new Image[4];
+        [SerializeField] private EquipmentIconSet _icons;
 
         private EquipService _equip;
         private SaveDataV2 _save;
@@ -107,6 +110,13 @@ namespace SoloHero.Game.UI.Panels
                         ? Strings.Format("equip.empty", PanelServices.SlotName(slot))
                         : Strings.Format("equip.slot", PanelServices.SlotName(slot), PanelServices.GradeName((Grade)grade) + (level > 0 ? " +" + level : ""));
                     _slotTexts[s].color = grade < 0 ? Color.white : PanelServices.GradeColor((Grade)grade);
+                }
+
+                if (s < _slotIcons.Length && _slotIcons[s] != null && _icons != null)
+                {
+                    // Empty slot: the common icon as a dim silhouette, so the slot still reads at a glance (E8-07).
+                    _slotIcons[s].sprite = _icons.Get(slot, grade < 0 ? Grade.Common : (Grade)grade);
+                    _slotIcons[s].color = grade < 0 ? new Color(0f, 0f, 0f, 0.45f) : Color.white;
                 }
 
                 if (s < _ownedTexts.Length && _ownedTexts[s] != null)

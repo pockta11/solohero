@@ -4,6 +4,7 @@ using SoloHero.Core.Gacha;
 using SoloHero.Core.Settings;
 using SoloHero.Game.Audio;
 using SoloHero.Game.UI.Common;
+using SoloHero.Game.View;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -33,6 +34,7 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private UiBurst _burst;
         [SerializeField] private GameObject _skipButton;
         [SerializeField] private GameObject _closeHint;
+        [SerializeField] private EquipmentIconSet _icons;
 
         private readonly List<Coroutine> _flips = new List<Coroutine>();
         private GachaPullItem[] _items;
@@ -172,10 +174,11 @@ namespace SoloHero.Game.UI.Panels
             _flips.Clear();
         }
 
-        private static void Face(GachaCard card, GachaPullItem item)
+        private void Face(GachaCard card, GachaPullItem item)
         {
             card.Rect.localScale = Vector3.one;
-            card.ShowFace(PanelServices.GradeColor(item.Grade), PanelServices.GradeName(item.Grade), PanelServices.SlotName(item.Slot), PanelServices.PullNote(item));
+            Sprite icon = _icons != null ? _icons.Get(item.Slot, item.Grade) : null;
+            card.ShowFace(PanelServices.GradeColor(item.Grade), PanelServices.GradeName(item.Grade), PanelServices.SlotName(item.Slot), PanelServices.PullNote(item), icon);
         }
 
         private void Celebrate(int index)

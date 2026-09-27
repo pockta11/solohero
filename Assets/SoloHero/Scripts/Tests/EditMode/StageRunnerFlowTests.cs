@@ -137,5 +137,36 @@ namespace SoloHero.Tests.EditMode
             Assert.IsFalse(runner.StepDown());
             Assert.AreEqual(5, runner.GlobalStage);
         }
+
+        [Test]
+        public void FarmAt_ClearedNormalStage_FarmsThereInRetreatMode()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            save.highestStage = 14;
+            StageRunner runner = Create(b, save, Strong(b));
+            runner.Resume(15, false);
+
+            Assert.IsTrue(runner.FarmAt(7));
+
+            Assert.AreEqual(7, runner.GlobalStage);
+            Assert.IsTrue(runner.RetreatMode);
+        }
+
+        [Test]
+        public void FarmAt_LockedOrBossStage_ChangesNothing()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            save.highestStage = 14;
+            StageRunner runner = Create(b, save, Strong(b));
+            runner.Resume(15, false);
+
+            Assert.IsFalse(runner.FarmAt(15), "not cleared yet");
+            Assert.IsFalse(runner.FarmAt(10), "boss stage");
+            Assert.IsFalse(runner.FarmAt(0));
+            Assert.AreEqual(15, runner.GlobalStage);
+            Assert.IsFalse(runner.RetreatMode);
+        }
     }
 }

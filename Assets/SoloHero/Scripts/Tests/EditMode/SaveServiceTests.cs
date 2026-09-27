@@ -28,8 +28,8 @@ namespace SoloHero.Tests.EditMode
             Task.Delay(120).GetAwaiter().GetResult();
 
             Assert.AreEqual(1, remote.Saved.Count);
-            Assert.AreEqual("2:1:2", remote.Saved[0]);
-            Assert.AreEqual("2:1:2", local.Json);
+            Assert.AreEqual("2:1:2:1", remote.Saved[0]);
+            Assert.AreEqual("2:1:2:1", local.Json);
         }
 
         [Test]
@@ -42,7 +42,7 @@ namespace SoloHero.Tests.EditMode
             service.FlushAsync(Gold(4)).GetAwaiter().GetResult();
 
             Assert.AreEqual(1, remote.Saved.Count);
-            Assert.AreEqual("4:1:2", remote.Saved[0]);
+            Assert.AreEqual("4:1:2:1", remote.Saved[0]);
         }
 
         [Test]
@@ -58,8 +58,8 @@ namespace SoloHero.Tests.EditMode
             remote.SaveGate.SetResult(true);
             flush.GetAwaiter().GetResult();
 
-            CollectionAssert.AreEqual(new[] { "1:1:2", "2:1:2" }, remote.Saved);
-            Assert.AreEqual("2:1:2", local.Json);
+            CollectionAssert.AreEqual(new[] { "1:1:2:1", "2:1:2:1" }, remote.Saved);
+            Assert.AreEqual("2:1:2:1", local.Json);
         }
 
         [Test]
@@ -71,7 +71,7 @@ namespace SoloHero.Tests.EditMode
 
             service.FlushAsync(Gold(9)).GetAwaiter().GetResult();
 
-            Assert.AreEqual("9:1:2", local.Json);
+            Assert.AreEqual("9:1:2:1", local.Json);
             Assert.AreEqual(1, remote.Saved.Count);
         }
 
@@ -115,6 +115,50 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(0, remote.Loads);
         }
 
+        [Test]
+        public void RequestSave_WritesLocalBeforeDebounce_AndBumpsRevision()
+        {
+            var local = new MemoryStore();
+            var remote = new MemoryStore();
+            var service = new SaveService(local, new FakeSerializer(), remote, debounceMs: 5000);
+            SaveDataV2 data = Gold(7);
+
+            service.RequestSave(data);
+            service.RequestSave(data);
+
+            Assert.AreEqual(2L, data.saveRevision);
+            Assert.AreEqual("7:1:2:2", local.Json, "local backup is written without waiting for the debounce");
+            Assert.AreEqual(0, remote.Saved.Count, "the upload still waits for the debounce");
+        }
+
+        [Test]
+        public void Load_LocalNewerThanRemote_KeepsLocalAndUploadsIt()
+        {
+            var local = new MemoryStore { Json = "50:3:2:9" };
+            var remote = new MemoryStore { Json = "40:3:2:7" };
+            var service = new SaveService(local, new FakeSerializer(), remote);
+
+            SaveDataV2 data = service.LoadAsync().GetAwaiter().GetResult();
+
+            Assert.AreEqual(50d, data.gold);
+            Assert.AreEqual(9L, data.saveRevision);
+            CollectionAssert.AreEqual(new[] { "50:3:2:9" }, remote.Saved);
+        }
+
+        [Test]
+        public void Load_RemoteNewerOrEqual_UsesRemoteAndRefreshesLocal()
+        {
+            var local = new MemoryStore { Json = "10:2:2:3" };
+            var remote = new MemoryStore { Json = "90:5:2:3" };
+            var service = new SaveService(local, new FakeSerializer(), remote);
+
+            SaveDataV2 data = service.LoadAsync().GetAwaiter().GetResult();
+
+            Assert.AreEqual(90d, data.gold);
+            Assert.AreEqual("90:5:2:3", local.Json);
+            Assert.AreEqual(0, remote.Saved.Count);
+        }
+
         private static SaveDataV2 Gold(double gold)
         {
             SaveDataV2 data = SaveDataV2.CreateNew();
@@ -149,11 +193,13 @@ namespace SoloHero.Tests.EditMode
 
         private sealed class FakeSerializer : ISaveSerializer
         {
+            /// <summary>"gold:highestStage:dataVersion[:saveRevision]" - the revision only when it is not 0.</summary>
             public string ToJson(SaveDataV2 data)
             {
                 return data.gold.ToString("R", CultureInfo.InvariantCulture)
                     + ":" + data.highestStage
-                    + ":" + data.dataVersion;
+                    + ":" + data.dataVersion
+                    + (data.saveRevision != 0 ? ":" + data.saveRevision.ToString(CultureInfo.InvariantCulture) : "");
             }
 
             public SaveDataV2 FromV2Json(string json)
@@ -164,7 +210,8 @@ namespace SoloHero.Tests.EditMode
                     gold = double.Parse(parts[0], CultureInfo.InvariantCulture),
                     highestStage = int.Parse(parts[1], CultureInfo.InvariantCulture),
                     farmingStage = int.Parse(parts[1], CultureInfo.InvariantCulture),
-                    dataVersion = int.Parse(parts[2], CultureInfo.InvariantCulture)
+                    dataVersion = int.Parse(parts[2], CultureInfo.InvariantCulture),
+                    saveRevision = parts.Length > 3 ? long.Parse(parts[3], CultureInfo.InvariantCulture) : 0L
                 };
             }
 

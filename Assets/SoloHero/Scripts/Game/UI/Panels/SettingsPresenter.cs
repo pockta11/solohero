@@ -20,6 +20,8 @@ namespace SoloHero.Game.UI.Panels
 
         private SettingsService _settings;
 
+        public bool IsOpen => _popup != null && _popup.activeSelf;
+
         private void Awake()
         {
             if (_popup != null) _popup.SetActive(false);

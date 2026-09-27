@@ -81,6 +81,7 @@ namespace SoloHero.Editor
 
             ChapterThemeSet themes = BuildThemes(looks);
             VfxSet vfx = BuildVfx();
+            BuildEquipmentIcons();
             SoundBank bank = BuildSoundBank();
             WireGameScene(hero, looks["pig"], looks["kingpig"], themes, vfx);
             WireBootAudio(bank);
@@ -208,6 +209,34 @@ namespace SoloHero.Editor
             EditorUtility.SetDirty(set);
             AssetDatabase.SaveAssets();
             return set;
+        }
+
+        /// <summary>E8-07: Art/Icons/Equipment/equip_{slot}_{grade}.png into the 16-slot icon set.</summary>
+        private static void BuildEquipmentIcons()
+        {
+            string path = DataArt + "/EquipmentIcons.asset";
+            var set = AssetDatabase.LoadAssetAtPath<EquipmentIconSet>(path);
+            if (set == null)
+            {
+                set = ScriptableObject.CreateInstance<EquipmentIconSet>();
+                AssetDatabase.CreateAsset(set, path);
+            }
+
+            string[] slots = { "sword", "helm", "armor", "boots" };
+            string[] grades = { "common", "rare", "epic", "legendary" };
+            set.icons = new Sprite[slots.Length * grades.Length];
+            for (int s = 0; s < slots.Length; s++)
+            {
+                for (int g = 0; g < grades.Length; g++)
+                {
+                    string file = ArtRoot + "/Icons/Equipment/equip_" + slots[s] + "_" + grades[g] + ".png";
+                    set.icons[s * grades.Length + g] = AssetDatabase.LoadAssetAtPath<Sprite>(file);
+                    if (set.icons[s * grades.Length + g] == null) Debug.LogWarning("[Art] missing icon " + file);
+                }
+            }
+
+            EditorUtility.SetDirty(set);
+            AssetDatabase.SaveAssets();
         }
 
         /// <summary>SfxId.HeroHurt -> Audio/Sfx/sfx_hero_hurt.wav, SfxId.Skill1 -> sfx_skill1.wav.</summary>

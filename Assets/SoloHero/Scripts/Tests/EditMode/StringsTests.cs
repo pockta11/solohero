@@ -56,7 +56,7 @@ namespace SoloHero.Tests.EditMode
         {
             Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));
             var used = new Regex("Strings\\.(?:Get|Format)\\(\"([a-z0-9_.]+)\"");
-            var keyed = new Regex("\"((?:tab|hud|toast|ad|boot|offline|tutorial|stat|char|skill|grade|slot|equip|gacha|settings)\\.[a-z0-9_.]+)\"");
+            var keyed = new Regex("\"((?:tab|hud|toast|ad|boot|offline|tutorial|stat|char|skill|grade|slot|equip|gacha|settings|quit|stage|boss)\\.[a-z0-9_.]+)\"");
             var missing = new List<string>();
 
             foreach (string file in Directory.GetFiles(ScriptsRoot, "*.cs", SearchOption.AllDirectories))
@@ -74,6 +74,13 @@ namespace SoloHero.Tests.EditMode
             }
 
             Assert.IsEmpty(missing, "keys missing from " + TablePath + ": " + string.Join(", ", missing));
+        }
+
+        [Test]
+        public void Table_HasEveryBossName()
+        {
+            Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));
+            for (int i = 1; i <= 5; i++) Assert.IsTrue(table.ContainsKey("boss.name." + i), "boss.name." + i);
         }
 
         [Test]

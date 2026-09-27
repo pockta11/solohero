@@ -43,10 +43,14 @@ namespace SoloHero.Core.Save
             _debounceMs = debounceMs;
         }
 
+        /// <summary>
+        /// Writes the local backup at once (a kill right after a purchase keeps it, E9-08) and debounces the upload.
+        /// </summary>
         public void RequestSave(SaveDataV2 data)
         {
             if (data == null) return;
-            Queue(data);
+            string json = Queue(data);
+            WriteLocalNow(json);
             RestartDebounce();
         }
 
@@ -68,6 +72,15 @@ namespace SoloHero.Core.Save
                 if (!string.IsNullOrEmpty(json))
                 {
                     SaveDataV2 data = _serializer.FromV2Json(json) ?? SaveDataV2.CreateNew();
+                    SaveDataV2 local = await TryLoadLocalV2Async();
+                    if (local != null && local.saveRevision > data.saveRevision)
+                    {
+                        // The app stopped before the last upload: the local backup is newer. Keep it and upload it.
+                        Log.Info(LogTag.Save, "local save newer than remote (" + local.saveRevision + " > " + data.saveRevision + "), uploading");
+                        await TryUploadAsync(local);
+                        return local;
+                    }
+
                     await _localV2.SaveJsonAsync(_serializer.ToJson(data));
                     return data;
                 }
@@ -80,6 +93,44 @@ namespace SoloHero.Core.Save
             {
                 Log.Warn(LogTag.Save, "remote load failed, using local backup: " + e.Message);
                 return await LoadOfflineAsync();
+            }
+        }
+
+        private async Task<SaveDataV2> TryLoadLocalV2Async()
+        {
+            try
+            {
+                string json = await _localV2.LoadJsonAsync();
+                return string.IsNullOrEmpty(json) ? null : _serializer.FromV2Json(json);
+            }
+            catch (Exception e)
+            {
+                Log.Warn(LogTag.Save, "local backup unreadable: " + e.Message);
+                return null;
+            }
+        }
+
+        private async Task TryUploadAsync(SaveDataV2 data)
+        {
+            try
+            {
+                await _remoteV2.SaveJsonAsync(_serializer.ToJson(data));
+            }
+            catch (Exception e)
+            {
+                Log.Warn(LogTag.Save, "upload of newer local save failed, retried on next save: " + e.Message);
+            }
+        }
+
+        private void WriteLocalNow(string json)
+        {
+            try
+            {
+                _ = _localV2.SaveJsonAsync(json);
+            }
+            catch (Exception e)
+            {
+                Log.Warn(LogTag.Save, "local backup write failed: " + e.Message);
             }
         }
 
@@ -122,14 +173,17 @@ namespace SoloHero.Core.Save
             return data;
         }
 
-        private void Queue(SaveDataV2 data)
+        private string Queue(SaveDataV2 data)
         {
+            data.saveRevision++;
             string json = _serializer.ToJson(data);
             lock (_gate)
             {
                 _pending = json;
                 _hasPending = true;
             }
+
+            return json;
         }
 
         private void RestartDebounce()

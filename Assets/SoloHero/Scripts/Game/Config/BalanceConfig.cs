@@ -57,6 +57,8 @@ namespace SoloHero.Game.Config
         public double GACHA_COST_SINGLE = 500;
         public double GACHA_COST_TEN = 4500;
         public int GACHA_COST_TEN_GEM = 200;
+        public int GEM_GOLD_PACK_COST = 50;
+        public double GEM_GOLD_PACK_STAGES = 100;
         public double GACHA_RATE_C = 55;
         public double GACHA_RATE_R = 33;
         public double GACHA_RATE_E = 10;
@@ -187,6 +189,8 @@ namespace SoloHero.Game.Config
                 GACHA_COST_SINGLE = GACHA_COST_SINGLE,
                 GACHA_COST_TEN = GACHA_COST_TEN,
                 GACHA_COST_TEN_GEM = GACHA_COST_TEN_GEM,
+                GEM_GOLD_PACK_COST = GEM_GOLD_PACK_COST,
+                GEM_GOLD_PACK_STAGES = GEM_GOLD_PACK_STAGES,
                 GACHA_RATE_C = GACHA_RATE_C,
                 GACHA_RATE_R = GACHA_RATE_R,
                 GACHA_RATE_E = GACHA_RATE_E,

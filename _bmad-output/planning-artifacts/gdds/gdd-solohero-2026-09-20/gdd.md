@@ -586,6 +586,8 @@ DEF_total      = DEF_기본(20)                          × 1.16^upgradeDefLevel
 | 가챠 | GACHA_COST_SINGLE | 500 | 골드 | |
 | | GACHA_COST_TEN | 4,500 | 골드 | 10% 할인 |
 | | GACHA_COST_TEN_GEM | 200 | 젬 | |
+| | GEM_GOLD_PACK_COST | 50 | 젬 | 골드 즉시 획득 패키지 가격 (D-074) |
+| | GEM_GOLD_PACK_STAGES | 100 | 배 | 패키지 골드 = 현재 파밍 스테이지 클리어 골드 × 이 값 |
 | | GACHA_RATE (C/R/E/L) | 55 / 33 / 10 / 2 | % | 등급 확률표. 합 100. 공시표와 동일 데이터 |
 | | GACHA_PITY | 100 | 회 | Legendary 보장 |
 | | GACHA_PITY_RESET_ON_LEGENDARY | true | — | Legendary 획득 시(천장·자연 모두) pity 리셋 |

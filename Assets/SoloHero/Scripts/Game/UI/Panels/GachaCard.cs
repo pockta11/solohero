@@ -7,6 +7,7 @@ namespace SoloHero.Game.UI.Panels
     public sealed class GachaCard : MonoBehaviour
     {
         [SerializeField] private Image _image;
+        [SerializeField] private Image _icon;
         [SerializeField] private Text _grade;
         [SerializeField] private Text _slot;
         [SerializeField] private Text _note;
@@ -24,8 +25,14 @@ namespace SoloHero.Game.UI.Panels
             Rect.localScale = Vector3.one;
         }
 
-        public void ShowFace(Color gradeColor, string grade, string slot, string note)
+        public void ShowFace(Color gradeColor, string grade, string slot, string note, Sprite icon)
         {
+            if (_icon != null)
+            {
+                _icon.sprite = icon;
+                _icon.enabled = icon != null;
+            }
+
             _image.sprite = _face;
             _image.color = Color.Lerp(new Color(0.1f, 0.1f, 0.14f, 1f), gradeColor, 0.45f);
             _grade.text = grade;
@@ -40,6 +47,7 @@ namespace SoloHero.Game.UI.Panels
         private void SetTexts(bool on)
         {
             if (_grade != null) _grade.enabled = on;
+            if (_icon != null && !on) _icon.enabled = false;
             if (_slot != null) _slot.enabled = on;
             if (_note != null) _note.enabled = on;
         }

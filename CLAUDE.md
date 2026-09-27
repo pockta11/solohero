@@ -17,15 +17,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Ads**: Google Mobile Ads Unity 11.5.0 (Android `play-services-ads` 25.4.0), 보상형만
 - **Async**: UniTask v2.5.11 · **Tween**: DOTween · **JSON**: Newtonsoft 3.2.1 · **UI**: uGUI + TMP
 
-## 현재 상태 (2026-09-20)
+## 현재 상태 (2026-09-28)
 
-**2D 리빌드 — E1 진행 중.** 3D 쿼터뷰 구현은 2026-09-19에 전면 폐기했다. 1-09(빌드 파이프라인·API 36·16 KB, JDK 11 확정)와 1-03(정리·구조 이행) 완료. 레거시 8종은 `Assets/SoloHero/Scripts/Legacy/`에 격리 상태.
+**2D 리빌드 — E1~E8 구현 완료(대부분 review), E9 출시 준비·QA 진행 중.** 3D 쿼터뷰 구현은 2026-09-19에 전면 폐기했다. 1-09(빌드 파이프라인·API 36·16 KB, JDK 11 확정)와 1-03(정리·구조 이행) 완료. 레거시 격리 폴더는 2026-09-28 이식 완료로 삭제.
 
 | 문서 | 경로 | 역할 |
 |---|---|---|
 | **GDD** | `_bmad-output/planning-artifacts/gdds/gdd-solohero-2026-09-20/gdd.md` | 설계 단일 출처. `Number Balancing` 상수표가 모든 수치의 원본 |
 | Epics | 같은 폴더 `epics.md` | 9 에픽 / 132 스토리 |
-| Decision log | 같은 폴더 `decision-log.md` | D-001~D-071 |
+| Decision log | 같은 폴더 `decision-log.md` | D-001~D-076 |
 | **Architecture** | `_bmad-output/planning-artifacts/architecture/arch-solohero-2026-09-20/game-architecture.md` | 결정 D1~D15, ADR 1~7, 구조, 패턴(코드 예시), 검증 |
 | **Project context** | `_bmad-output/project-context.md` | **코드를 만지기 전에 읽는 규칙 62개.** 아키텍처와 충돌 시 아키텍처가 우선 |
 
@@ -37,6 +37,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **성장 패널** 하단 탭바 + 캐릭터·장비·소환·스킬 패널. `Tools > Setup > Build Growth UI`로 씬 재생성
 - Core 규칙 누락 수정: 보스 골드·EXP ×5, 스킬 해금 레벨, 기본 공격 히트 연결, 클리어 저장, 재실행 후 후퇴 유지, v1 장비 id 변환
 - **E8 연출·오디오·적 다양화** (D-068~D-071): 적 8종·보스 3종(돼지 5종 + 색 변형, 외형만 다름), 풀 VFX·카메라 셰이크·크리티컬 숫자·골드 카운트업·강화 펀치·레벨업 링, 가챠 카드 연출, BGM 6 + SFX 18(CC0), 설정 팝업(BGM/SFX/이펙트 축소/30fps). `Tools > Setup > Build Art`가 전부 재생성. 보스 공격 배율 1.1(D-069) — 무광고 남은 FAIL은 V-7(플레이어 모델 의존)뿐
+- **2026-09-28 출시 준비·QA** (D-072~D-076): 분석 이벤트(`GameplayTelemetry` + Firebase Analytics), 스토어 자료 `_bmad-output/implementation-artifacts/store/`, 저장 리비전(강제 종료 유실 방지), 스테이지 선택·뒤로가기·세이프 영역·보스 등장 배너·젬 골드 패키지·장비 아이콘, Legacy 폴더 삭제. QA 보고서 `implementation-artifacts/qa/`
+- **에뮬레이터 QA**: `pwsh tools/qa/Qa.ps1 smoke|forcekill|idle|coldstart|scenarios|firstsession` (adb root로 저장 판독). 광고 WebView가 에뮬레이터에서 약 85초 후 앱을 죽이므로 QA는 `SOLOHERO_NO_ADS=1` 빌드로 (실기기 확인 필요, release-gate B-001)
+- 빌드는 `libFirebaseCppApp` 포함을 자동 검사하고, EDM4U가 pom을 `srcaar`로 바꾸면 빌드 전에 되돌린다
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 
 ## Build Commands
@@ -79,13 +82,13 @@ SoloHero.Editor ──▶ SoloHero.Game ──▶ SoloHero.Core
 ### 프로젝트 구조 (목표)
 ```
 Assets/SoloHero/            # 프로젝트 소유 전부. 벤더(Firebase·GoogleMobileAds·EDM4U·Plugins·TextMesh Pro)는 루트 유지
-├── Scripts/{Core,Game,Editor,Tests/EditMode}/   # + Legacy/ (임시 격리, E1-04~E7 이식 후 삭제)
+├── Scripts/{Core,Game,Editor,Tests/EditMode}/
 ├── Data/{Config,Equipment,Enemies,Bosses,Chapters,Skills,Gacha}/   # SO 인스턴스
 ├── Art/{Hero,Enemies,Bosses,Backgrounds,Icons,UI,Vfx,Placeholder,Fonts,Atlases}/
 ├── Animation/  Audio/  Prefabs/
 └── Scenes/{Boot,Game}.unity
 ```
-E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트 중 8종은 `Scripts/Legacy/`에 **임시 격리**(README에 담당 스토리) — Core/Game에서 참조 금지, 이식 후 삭제. Addressables·Input System·collab-proxy 패키지, `StreamingAssets/JSON`, `AddressableAssetsData`는 제거됨. `Assets/Resources/DOTweenSettings.asset`은 벤더 필수 예외.
+E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트는 `Scripts/Legacy/`에 격리했다가 2026-09-28 전부 이식·삭제했다(장비 SO 16종도 코드 카탈로그 `GachaCatalog`로 대체되어 삭제). Addressables·Input System·collab-proxy 패키지, `StreamingAssets/JSON`, `AddressableAssetsData`는 제거됨. `Assets/Resources/DOTweenSettings.asset`은 벤더 필수 예외.
 
 ### 게임 규칙 요약 (GDD 상수표가 원본)
 - 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(10배 HP, 30초). 킬 목표 8 고정. 적 HP·ATK 성장 1.14, 골드 `50×1.04^(g−1)`, 보스 격파 골드·EXP ×5 (D-053·D-059). 일반 스테이지 사망 → 자동 한 칸 아래 파밍, `도전`으로 복귀 (D-058)
@@ -114,10 +117,10 @@ Gradle Java 호환성 11. 16 KB 페이지 정렬: `pwsh tools/spike/Check16Kb.ps
 
 ## Next Steps
 
-1. **E1-09 스파이크** — 62f3 + SDK Platform 36 + Firebase/AdMob 최신으로 AAB → Play Console 내부 테스트 16 KB 검사
-2. **E1-03 정리** — 아키텍처 "정리 대상" 표대로 이동·삭제, 패키지 제거
-3. **E1 골격** — asmdef 4개 + Core/Common + `Formulas` + `BalanceConfig` + EditMode 테스트 1개 녹색
-4. 이후 E2 전투 코어 → E3/E4 병렬 → E9-01~05 시뮬레이션 1차(E4 착수 전) → E5 → E6 → E7 → E8 → E9
+1. **실기기 확인** — 광고 켠 릴리스 빌드 30분 무크래시(release-gate B-001), 기기 매트릭스(E9-12), FPS·드로우콜(E9-19)
+2. **콘솔 작업(개발자)** — RTDB 보안 규칙 적용(`tools/firebase/database.rules.json`), AdMob 계정 승인·스토어 연결·app-ads.txt, 개인정보처리방침 공개 URL
+3. **Play Console** — 비공개 테스트(개인 계정이면 12명 × 14일) → 프로덕션
+4. 출시 후 분석 이벤트로 V-7(재도전 간격)·보스 첫 도전 실패율 판정
 
 ## Development Milestones
 
@@ -125,6 +128,6 @@ Gradle Java 호환성 11. 16 KB 페이지 정렬: `pwsh tools/spike/Check16Kb.ps
 |---|---|
 | 3D 프로토타입 (전투·가챠·저장·오프라인) | ✅ 완료 후 폐기 (2026-09-19) |
 | 2D 리빌드 GDD · 아키텍처 · project-context | ✅ 2026-09-20 |
-| E1 2D 전환 기반 (스파이크·정리·골격·저장 v2·이관) | 📋 다음 |
-| E2~E8 전투 → 성장 → 가챠 → 경제 → UI → 아트 | 📋 |
-| E9 밸런싱·QA·Google Play 출시 | 📋 |
+| E1 2D 전환 기반 (스파이크·정리·골격·저장 v2·이관) | ✅ |
+| E2~E8 전투 → 성장 → 가챠 → 경제 → UI → 아트 | ✅ 구현 (review) 2026-09-28 |
+| E9 밸런싱·QA·Google Play 출시 | 🔶 시뮬·QA 진행, 실기기·콘솔 작업 대기 |

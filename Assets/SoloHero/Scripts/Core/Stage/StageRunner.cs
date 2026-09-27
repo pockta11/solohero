@@ -118,6 +118,21 @@ namespace SoloHero.Core.Stage
             return true;
         }
 
+        /// <summary>
+        /// Stage select sheet (E3-09, D-072): farm any cleared normal stage. Boss stages are not farmable (30 s timer,
+        /// one kill). Returns false and changes nothing for a locked, boss or out-of-range stage.
+        /// </summary>
+        public bool FarmAt(int g)
+        {
+            if (g < 1 || g > _save.highestStage) return false;
+            if (StageIndex.IsBoss(g, _balance.STAGES_PER_CHAPTER)) return false;
+            FailStreak = 0;
+            _retreatMode = true;
+            _challenging = false;
+            Begin(g);
+            return true;
+        }
+
         /// <summary>The stage a challenge from farming goes to: the first stage not yet cleared.</summary>
         public int FrontierStage => _save.highestStage + 1;
 

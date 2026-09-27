@@ -102,3 +102,26 @@ gacha.tap_close	탭하여 닫기
 
 # level up (E8-11)
 toast.level_up	레벨 {0} 달성!
+
+# back key (E7-14)
+quit.title	게임을 종료할까요?
+quit.confirm	종료
+quit.cancel	취소
+
+# stage select (E3-09)
+stage.title	스테이지 선택
+stage.chapter	{0}장
+stage.boss	보스
+stage.close	닫기
+
+# gem shop (E6-02)
+gacha.gold_pack	젬 {0} → 골드 {1}
+toast.gold_pack	골드 {0} 획득!
+
+# boss intro (E7-11, D-068 boss looks)
+boss.banner	{0}장 보스
+boss.name.1	돼지 왕
+boss.name.2	푸른 돼지 왕
+boss.name.3	그늘 돼지 왕
+boss.name.4	심연의 돼지 왕
+boss.name.5	불꽃 돼지 왕

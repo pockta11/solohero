@@ -6,6 +6,12 @@ namespace SoloHero.Core.Save
     {
         public const int CurrentVersion = 2;
 
+        /// <summary>
+        /// Increments on every save request (E9-08). On load the copy with the higher revision wins, so a remote copy
+        /// that missed the last writes (app killed before the upload) never overwrites a newer local backup.
+        /// </summary>
+        public long saveRevision;
+
         public double gold;
         public double gem;
 

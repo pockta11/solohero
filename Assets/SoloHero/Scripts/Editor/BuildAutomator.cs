@@ -14,6 +14,7 @@ using UnityEngine;
 ///
 /// Environment variables (all optional):
 ///   SOLOHERO_DEV_BUILD=1          -> BuildOptions.Development (defines DEVELOPMENT_BUILD)
+///   SOLOHERO_NO_ADS=1             -> QA build without the ad SDK (BuildConfig.adsEnabled = false for this build only)
 ///   SOLOHERO_KEYSTORE_PATH        -> custom keystore; without it the build is debug-signed
 ///   SOLOHERO_KEYSTORE_PASS, SOLOHERO_KEYALIAS_NAME, SOLOHERO_KEYALIAS_PASS
 ///   SOLOHERO_JDK_PATH             -> override Unity's embedded JDK (decision B of story 1-09)
@@ -22,6 +23,7 @@ using UnityEngine;
 public static class BuildAutomator
 {
     private const string OutputPath = "Builds/game.aab";
+    private const string BuildConfigPath = "Assets/SoloHero/Data/Config/BuildConfig.asset";
 
     [MenuItem("Tools/Build/Android AAB")]
     public static void Build()
@@ -64,7 +66,36 @@ public static class BuildAutomator
                   $"targetSdk={PlayerSettings.Android.targetSdkVersion} minSdk={PlayerSettings.Android.minSdkVersion} " +
                   $"arch={PlayerSettings.Android.targetArchitectures} backend={PlayerSettings.GetScriptingBackend(BuildTargetGroup.Android)}");
 
-        BuildReport report = BuildPipeline.BuildPlayer(playerOptions);
+        SoloHero.Game.Config.BuildConfig config = AssetDatabase.LoadAssetAtPath<SoloHero.Game.Config.BuildConfig>(BuildConfigPath);
+        bool noAds = Environment.GetEnvironmentVariable("SOLOHERO_NO_ADS") == "1" && config != null;
+        if (noAds)
+        {
+            config.adsEnabled = false;
+            EditorUtility.SetDirty(config);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Build] QA build: ads disabled");
+        }
+
+        BuildReport report;
+        try
+        {
+            report = BuildPipeline.BuildPlayer(playerOptions);
+        }
+        finally
+        {
+            if (noAds)
+            {
+                // The build unloads assets, so the reference taken before it is gone: load the config again.
+                var restored = AssetDatabase.LoadAssetAtPath<SoloHero.Game.Config.BuildConfig>(BuildConfigPath);
+                if (restored != null)
+                {
+                    restored.adsEnabled = true;
+                    EditorUtility.SetDirty(restored);
+                    AssetDatabase.SaveAssets();
+                }
+            }
+        }
+
         BuildSummary summary = report.summary;
         Debug.Log($"[Build] result={summary.result} size={summary.totalSize} errors={summary.totalErrors} warnings={summary.totalWarnings} time={summary.totalTime}");
 
