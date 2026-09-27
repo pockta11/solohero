@@ -64,6 +64,7 @@ namespace SoloHero.Core.Balance
             private int _pendingClearG;
             private bool _pendingFail;
             private int _retreatFarmClears;
+            private double _scoreAtFail;
             private double _boosterRemaining;
             private bool _firstFiveRecorded;
             private bool _tutorialDone;
@@ -189,6 +190,10 @@ namespace SoloHero.Core.Balance
                 {
                     _tutorialDone = true;
                     _spender.FreePulls(_b.TUTORIAL_FREE_PULLS);
+                    _save.gold += _b.TUTORIAL_GOLD;
+                    _day.EarnedStage += _b.TUTORIAL_GOLD;
+                    _earnedTotal += _b.TUTORIAL_GOLD;
+                    Spend();
                     CombatLoadout.Apply(_runner, _b, _save);
                 }
 
@@ -280,7 +285,7 @@ namespace SoloHero.Core.Balance
 
                 Spend();
 
-                if (_runner.RetreatMode && _retreatFarmClears >= _s.BossRetryAfterFarmClears)
+                if (_runner.RetreatMode && ReadyToChallenge())
                 {
                     _retreatFarmClears = 0;
                     _runner.ChallengeBoss();
@@ -298,22 +303,26 @@ namespace SoloHero.Core.Balance
 
                 Spend();
 
+                _scoreAtFail = _spender.CurrentScore(_save.highestStage + 1);
+                _retreatFarmClears = 0;
+                // Normal-stage deaths drop to farming inside StageRunner (D-058); a boss fail waits for the player.
                 if (isBoss)
                 {
                     _runner.ChooseRetreat();
-                    _retreatFarmClears = 0;
-                    _attemptStarted = true;
-                }
-                else if (_runner.StepDown())
-                {
-                    // GDD fail-streak prompt: after 3 straight fails on a normal stage, farm one stage lower.
                     _attemptStarted = true;
                 }
             }
 
+            private bool ReadyToChallenge()
+            {
+                if (_retreatFarmClears >= _s.ChallengeAfterFarmClears) return true;
+                double gain = _spender.CurrentScore(_save.highestStage + 1) - _scoreAtFail;
+                return gain >= Math.Log(_s.ChallengePowerGain);
+            }
+
             private void Spend()
             {
-                if (_spender.Spend(_save.highestStage + 1, _s.MaxPurchasesPerDecision))
+                if (_spender.Spend(_save.highestStage + 1, _s.MaxPurchasesPerDecision, _s.SpendAffordableShare))
                     CombatLoadout.Apply(_runner, _b, _save);
             }
 

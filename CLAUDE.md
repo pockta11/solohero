@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|---|
 | **GDD** | `_bmad-output/planning-artifacts/gdds/gdd-solohero-2026-09-20/gdd.md` | 설계 단일 출처. `Number Balancing` 상수표가 모든 수치의 원본 |
 | Epics | 같은 폴더 `epics.md` | 9 에픽 / 132 스토리 |
-| Decision log | 같은 폴더 `decision-log.md` | D-001~D-057 |
+| Decision log | 같은 폴더 `decision-log.md` | D-001~D-061 |
 | **Architecture** | `_bmad-output/planning-artifacts/architecture/arch-solohero-2026-09-20/game-architecture.md` | 결정 D1~D15, ADR 1~7, 구조, 패턴(코드 예시), 검증 |
 | **Project context** | `_bmad-output/project-context.md` | **코드를 만지기 전에 읽는 규칙 62개.** 아키텍처와 충돌 시 아키텍처가 우선 |
 
@@ -33,7 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 2026-09-27 진행
 - **9-01 밸런스 시뮬레이터** `Tools > Balance > Run Simulation` (Core/Balance, 실제 `StageRunner` 헤드리스). 결과 `_bmad-output/implementation-artifacts/balance/`
-- **9-02 1차 튜닝** D-053~D-057 반영 — 무광고 1일 2-7 · 3일 3-8 · 7일 5-5. 13개 판정 중 5개 FAIL 남음(9-02 파일)
+- **9-02 튜닝** D-053~D-061 반영 — 무광고 1일 2-8 · 3일 3-9~4-2 · 7일 5-7. 남은 FAIL은 V-3(설계 충돌, 사용자 결정 대기)과 경계값 V-6a·V-7. 광고 골드 부스터 과속도 결정 대기
 - **성장 패널** 하단 탭바 + 캐릭터·장비·소환·스킬 패널. `Tools > Setup > Build Growth UI`로 씬 재생성
 - Core 규칙 누락 수정: 보스 골드·EXP ×5, 스킬 해금 레벨, 기본 공격 히트 연결, 클리어 저장, 재실행 후 후퇴 유지, v1 장비 id 변환
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
@@ -87,7 +87,7 @@ Assets/SoloHero/            # 프로젝트 소유 전부. 벤더(Firebase·Googl
 E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트 중 8종은 `Scripts/Legacy/`에 **임시 격리**(README에 담당 스토리) — Core/Game에서 참조 금지, 이식 후 삭제. Addressables·Input System·collab-proxy 패키지, `StreamingAssets/JSON`, `AddressableAssetsData`는 제거됨. `Assets/Resources/DOTweenSettings.asset`은 벤더 필수 예외.
 
 ### 게임 규칙 요약 (GDD 상수표가 원본)
-- 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(15배 HP, 30초). 킬 목표 8 고정. 적 HP·ATK 성장 1.13, 골드 `50×1.04^(g−1)`, 보스 격파 골드·EXP ×5 (D-053)
+- 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(10배 HP, 30초). 킬 목표 8 고정. 적 HP·ATK 성장 1.14, 골드 `50×1.04^(g−1)`, 보스 격파 골드·EXP ×5 (D-053·D-059). 일반 스테이지 사망 → 자동 한 칸 아래 파밍, `도전`으로 복귀 (D-058)
 - 강화: HP·ATK·DEF **승산 ×1.16/레벨·상한 없음**, 공격속도 가산 +0.02·최대 100. 비용 `baseCost × 1.12^level` (base 300/450/450/600)
 - 방어: `DEF_REF = 3 × 적ATK`, `피격 = max(1, 적ATK × DEF_REF / (DEF_REF + DEF))`
 - 가챠: 500골드 / 10연 4,500. 확률 **C 55 / R 33 / E 10 / L 2 %**, 100회 천장, Legendary 획득 시 pity 리셋. 중복 자동 환급

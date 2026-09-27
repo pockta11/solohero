@@ -50,7 +50,7 @@ namespace SoloHero.Core.Balance
         private enum Kind { None, Lane, Skill, Pull }
 
         /// <summary>Spends until the best option is unaffordable. Returns true when anything was bought.</summary>
-        public bool Spend(int frontierG, int maxPurchases)
+        public bool Spend(int frontierG, int maxPurchases, double affordableShare = 1d)
         {
             bool bought = false;
 
@@ -73,6 +73,10 @@ namespace SoloHero.Core.Balance
                 int bestIndex = -1;
                 double bestRatio = 0d;
                 double bestCost = 0d;
+                Kind cheapKind = Kind.None;
+                int cheapIndex = -1;
+                double cheapRatio = 0d;
+                double cheapCost = 0d;
 
                 for (int lane = 0; lane < 4; lane++)
                 {
@@ -89,6 +93,14 @@ namespace SoloHero.Core.Balance
                         bestKind = Kind.Lane;
                         bestIndex = lane;
                         bestCost = cost;
+                    }
+
+                    if (cost <= _save.gold && ratio > cheapRatio)
+                    {
+                        cheapRatio = ratio;
+                        cheapKind = Kind.Lane;
+                        cheapIndex = lane;
+                        cheapCost = cost;
                     }
                 }
 
@@ -109,6 +121,14 @@ namespace SoloHero.Core.Balance
                         bestIndex = s;
                         bestCost = cost;
                     }
+
+                    if (cost <= _save.gold && ratio > cheapRatio)
+                    {
+                        cheapRatio = ratio;
+                        cheapKind = Kind.Skill;
+                        cheapIndex = s;
+                        cheapCost = cost;
+                    }
                 }
 
                 double pullRatio = ExpectedPullRatio(now, baseScore, enemyAtk);
@@ -117,6 +137,22 @@ namespace SoloHero.Core.Balance
                     bestRatio = pullRatio;
                     bestKind = Kind.Pull;
                     bestCost = _b.GACHA_COST_SINGLE;
+                }
+
+                if (_b.GACHA_COST_SINGLE <= _save.gold && pullRatio > cheapRatio)
+                {
+                    cheapRatio = pullRatio;
+                    cheapKind = Kind.Pull;
+                    cheapCost = _b.GACHA_COST_SINGLE;
+                }
+
+                if (bestKind != Kind.None && _save.gold < bestCost && cheapKind != Kind.None
+                    && cheapRatio >= bestRatio * affordableShare)
+                {
+                    bestKind = cheapKind;
+                    bestIndex = cheapIndex;
+                    bestRatio = cheapRatio;
+                    bestCost = cheapCost;
                 }
 
                 if (bestKind == Kind.None || _save.gold < bestCost) break;
@@ -142,6 +178,10 @@ namespace SoloHero.Core.Balance
 
             return bought;
         }
+
+        /// <summary>Power score of the current loadout against the frontier enemy.</summary>
+        public double CurrentScore(int frontierG) =>
+            Score(Snapshot.From(_save), Formulas.EnemyAtk(_b, frontierG < 1 ? 1 : frontierG));
 
         /// <summary>Tutorial gift: pulls that cost the player nothing. Not counted as gold earned or spent.</summary>
         public void FreePulls(int count)

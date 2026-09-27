@@ -22,6 +22,7 @@ namespace SoloHero.Core.Stage
         private int _g;
         private bool _isBoss;
         private bool _retreatMode;
+        private bool _challenging;
         private int _killTarget;
         private int _kills;
         private bool _cleared;
@@ -55,7 +56,7 @@ namespace SoloHero.Core.Stage
         public bool RetreatMode => _retreatMode;
         public float BossTimerRemaining => _bossTimer;
         public int FailStreak { get; private set; }
-        public bool PromptRetreat => FailStreak >= _balance.FAIL_STREAK_PROMPT;
+        public bool PromptRetreat => FailStreak >= _balance.FAIL_STREAK_STEP_DOWN;
         public HeroBrain Hero => _hero;
         public CombatWorld World => _world;
         public SkillAutoCaster Skills => _skills;
@@ -103,9 +104,14 @@ namespace SoloHero.Core.Stage
             if (!PromptRetreat || _isBoss || _g <= 1) return false;
             if (State != StageState.Failed && State != StageState.Running) return false;
             FailStreak = 0;
+            _retreatMode = true;
+            _challenging = false;
             Begin(_g - 1);
             return true;
         }
+
+        /// <summary>The stage a challenge from farming goes to: the first stage not yet cleared.</summary>
+        public int FrontierStage => _save.highestStage + 1;
 
         public void SetHeroStats(HeroStats stats)
         {
@@ -124,17 +130,18 @@ namespace SoloHero.Core.Stage
         {
             if (State != StageState.Failed || !_failedWasBoss) return;
             _retreatMode = true;
+            _challenging = false;
             FailStreak = 0;
             Begin(StageIndex.PreviousNormalStage(_failedG));
         }
 
+        /// <summary>Leaves farming for the frontier: the boss after a boss retreat, the wall stage after a step-down.</summary>
         public void ChallengeBoss()
         {
             if (!_retreatMode) return;
-            int per = _balance.STAGES_PER_CHAPTER;
-            int bossG = ((_g - 1) / per + 1) * per;
             _retreatMode = false;
-            Begin(bossG);
+            _challenging = true;
+            Begin(FrontierStage);
         }
 
         public void Tick(float dt)
@@ -196,6 +203,7 @@ namespace SoloHero.Core.Stage
                     SetState(StageState.Clearing);
                     _clearTimer = 0f;
                     FailStreak = 0;
+                    _challenging = false;
                     _stageReward.ApplyClear(_g);
                     StageCleared?.Invoke(_g);
                 }
@@ -239,8 +247,20 @@ namespace SoloHero.Core.Stage
         {
             if (_failedWasBoss) return;
             _retryTimer += dt;
-            if (_retryTimer >= _balance.STAGE_RETRY_DELAY)
-                Begin(_failedG);
+            if (_retryTimer < _balance.STAGE_RETRY_DELAY) return;
+
+            if ((_challenging || PromptRetreat) && _failedG > 1)
+            {
+                // Genre rule (D-058): a normal-stage death, or a failed challenge from farming, drops to
+                // farming one stage lower instead of repeating the death. Challenge returns to the frontier.
+                _challenging = false;
+                _retreatMode = true;
+                FailStreak = 0;
+                Begin(_failedG - 1);
+                return;
+            }
+
+            Begin(_failedG);
         }
 
         private void TickSpawns(float dt)

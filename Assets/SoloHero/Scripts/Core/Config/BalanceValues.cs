@@ -25,9 +25,9 @@ namespace SoloHero.Core.Config
         public int UPG_MAX_LEVEL_SPD = 100;
         public double UPG_FARM_EXPONENT = 1.31;
         public double ENEMY_HP_BASE = 30;
-        public double ENEMY_HP_GROWTH = 1.13;
+        public double ENEMY_HP_GROWTH = 1.14;
         public double ENEMY_ATK_BASE = 5;
-        public double ENEMY_ATK_GROWTH = 1.13;
+        public double ENEMY_ATK_GROWTH = 1.14;
         public double ENEMY_DEF = 0;
         public double ENEMY_EXP_BASE = 5;
         public double ENEMY_EXP_GROWTH = 1.10;
@@ -36,7 +36,7 @@ namespace SoloHero.Core.Config
         public int SPAWN_MAX_ALIVE = 4;
         public double SPAWN_OFFSET_X = 1.5;
         public int KILL_TARGET_NORMAL = 8;
-        public double BOSS_HP_MULT = 15.0;
+        public double BOSS_HP_MULT = 10;
         public double BOSS_ATK_MULT = 1.5;
         public float BOSS_ATK_INTERVAL = 1.8f;
         public double BOSS_GOLD_MULT = 5.0;
@@ -60,6 +60,7 @@ namespace SoloHero.Core.Config
         public int GACHA_PITY = 100;
         public bool GACHA_PITY_RESET_ON_LEGENDARY = true;
         public int TUTORIAL_FREE_PULLS = 1;
+        public double TUTORIAL_GOLD = 1000;
         public double REFUND_C = 50;
         public double REFUND_R = 200;
         public double REFUND_E = 800;
@@ -110,7 +111,7 @@ namespace SoloHero.Core.Config
         public float STAGE_CLEAR_DELAY = 2f;
         public float STAGE_RETRY_DELAY = 3f;
         public float DEATH_ANIM_TIME = 1f;
-        public int FAIL_STREAK_PROMPT = 3;
+        public int FAIL_STREAK_STEP_DOWN = 1;
         public int PPU = 32;
         public int PIXEL_REF_WIDTH = 270;
         public int PIXEL_REF_HEIGHT = 480;

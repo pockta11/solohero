@@ -89,6 +89,29 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void NormalDeath_AfterRetryDelay_FarmsOneStageLowerThenChallengesFrontier()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            save.highestStage = 4;
+            StageRunner runner = Create(b, save, Fragile(b));
+            runner.Begin(5);
+
+            for (int i = 0; i < 600 * 30 && runner.State != StageState.Failed; i++)
+                runner.Tick(Dt);
+            runner.Tick(b.STAGE_RETRY_DELAY + Dt);
+
+            Assert.IsTrue(runner.RetreatMode);
+            Assert.AreEqual(StageState.Retreat, runner.State);
+            Assert.AreEqual(4, runner.GlobalStage);
+
+            runner.ChallengeBoss();
+
+            Assert.IsFalse(runner.RetreatMode);
+            Assert.AreEqual(5, runner.GlobalStage);
+        }
+
+        [Test]
         public void StepDown_WithoutFailStreak_DoesNothing()
         {
             var b = new BalanceValues();

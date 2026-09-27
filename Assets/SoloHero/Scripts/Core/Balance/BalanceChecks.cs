@@ -30,7 +30,7 @@ namespace SoloHero.Core.Balance
         public const int Day1Min = 10;
         public const int Day1Max = 19; // GDD "a day = half to one chapter": chapter 2 boss not yet beaten
         public const int Day3Min = 20;
-        public const int Day3Max = 29;
+        public const int Day3Max = 39; // GDD "a day = half to one chapter": day 1 + 10..20 stages, not into chapter 5
         public const int Day7Min = 40;
         public const int Day7Max = 49;
         public const double StageSecondsMin = 20d;
@@ -242,26 +242,36 @@ namespace SoloHero.Core.Balance
                 Pct(rate) + " (" + fails + " / " + attempts + ")", rate >= NormalFailRateMin && rate <= NormalFailRateMax);
         }
 
+        /// <summary>
+        /// GDD: gold earned is spent within 24 h. For every day d >= 2, everything spent up to the end of day d
+        /// must cover at least 90% of everything earned up to the end of day d - 1 (a one-day lag, no day-edge noise).
+        /// </summary>
         private static SimCheck DailySpend(SimReport r)
         {
+            if (r.Days.Count < 2)
+                return Info("E9-05", "Gold spent within 24 h", ">= 90% of the previous day's total", "needs 2 days");
+
             double worst = double.MaxValue;
             int worstDay = 0;
-            for (int i = 0; i < r.Days.Count; i++)
+            double earnedBefore = r.Days[0].Earned;
+            double spent = r.Days[0].Spent;
+            for (int i = 1; i < r.Days.Count; i++)
             {
-                SimDayRow d = r.Days[i];
-                if (d.Earned <= 0d) continue;
-                double share = d.Spent / d.Earned;
-                if (share < worst)
+                spent += r.Days[i].Spent;
+                if (earnedBefore > 0d)
                 {
-                    worst = share;
-                    worstDay = d.Day;
+                    double share = spent / earnedBefore;
+                    if (share < worst)
+                    {
+                        worst = share;
+                        worstDay = r.Days[i].Day;
+                    }
                 }
+
+                earnedBefore += r.Days[i].Earned;
             }
 
-            if (worstDay == 0)
-                return Make("E9-05", "Gold spent within 24 h", ">= 90% every day", "no earnings", false);
-
-            return Make("E9-05", "Gold spent within 24 h", ">= 90% every day",
+            return Make("E9-05", "Gold spent within 24 h (spent by day d vs earned by day d-1)", ">= 90% every day",
                 "lowest " + Pct(worst) + " on day " + worstDay, worst >= DailySpendMin);
         }
 

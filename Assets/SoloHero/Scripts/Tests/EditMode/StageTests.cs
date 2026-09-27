@@ -169,7 +169,7 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void Tick_OneHeroDeath_DoesNotSetPromptRetreat()
         {
-            var c = new BalanceValues();
+            var c = new BalanceValues { FAIL_STREAK_STEP_DOWN = 3 };
             StageRunner runner = CreateRunner(c);
             runner.Begin(1);
             FailByHeroDeath(runner, c);
@@ -182,30 +182,30 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void Tick_ThreeHeroDeaths_SetsPromptRetreat()
         {
-            var c = new BalanceValues();
+            var c = new BalanceValues { FAIL_STREAK_STEP_DOWN = 3 };
             StageRunner runner = CreateRunner(c);
             runner.Begin(1);
-            for (int i = 0; i < c.FAIL_STREAK_PROMPT; i++)
+            for (int i = 0; i < c.FAIL_STREAK_STEP_DOWN; i++)
                 FailByHeroDeath(runner, c);
 
             Assert.AreEqual(StageState.Failed, runner.State);
-            Assert.AreEqual(c.FAIL_STREAK_PROMPT, runner.FailStreak);
+            Assert.AreEqual(c.FAIL_STREAK_STEP_DOWN, runner.FailStreak);
             Assert.IsTrue(runner.PromptRetreat);
         }
 
         [Test]
         public void Tick_StageClear_ResetsFailStreak()
         {
-            var c = new BalanceValues();
+            var c = new BalanceValues { FAIL_STREAK_STEP_DOWN = 3 };
             StageRunner runner = CreateRunner(c);
             runner.Begin(1);
-            for (int i = 0; i < c.FAIL_STREAK_PROMPT; i++)
+            for (int i = 0; i < c.FAIL_STREAK_STEP_DOWN; i++)
                 FailByHeroDeath(runner, c);
 
             Assert.IsTrue(runner.PromptRetreat);
             runner.Tick(c.STAGE_RETRY_DELAY);
             Assert.AreEqual(StageState.Running, runner.State);
-            Assert.AreEqual(c.FAIL_STREAK_PROMPT, runner.FailStreak);
+            Assert.AreEqual(c.FAIL_STREAK_STEP_DOWN, runner.FailStreak);
 
             int guard = 0;
             while (runner.State != StageState.Clearing && guard++ < 500)
@@ -232,7 +232,7 @@ namespace SoloHero.Tests.EditMode
             var c = new BalanceValues();
             StageRunner runner = CreateRunner(c);
 
-            for (int i = 0; i < c.FAIL_STREAK_PROMPT; i++)
+            for (int i = 0; i < c.FAIL_STREAK_STEP_DOWN; i++)
             {
                 if (i == 0)
                     runner.Begin(10);
@@ -245,7 +245,7 @@ namespace SoloHero.Tests.EditMode
                 Assert.AreEqual(StageState.Failed, runner.State);
             }
 
-            Assert.AreEqual(c.FAIL_STREAK_PROMPT, runner.FailStreak);
+            Assert.AreEqual(c.FAIL_STREAK_STEP_DOWN, runner.FailStreak);
             Assert.IsTrue(runner.PromptRetreat);
 
             runner.ChooseRetreat();

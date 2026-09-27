@@ -39,8 +39,17 @@ namespace SoloHero.Core.Balance
         /// <summary>The tutorial hands out TUTORIAL_FREE_PULLS free pulls at this play time (GDD first 30 minutes: 1-3 min).</summary>
         public double TutorialPullAtSeconds = 60d;
 
-        /// <summary>After a boss fail the player retreats and challenges again after this many farming clears.</summary>
-        public int BossRetryAfterFarmClears = 4;
+        /// <summary>While farming after a fail, challenge again once power grew by this factor since the fail...</summary>
+        public double ChallengePowerGain = 1.15d;
+
+        /// <summary>...or after this many farming clears, whichever comes first.</summary>
+        public int ChallengeAfterFarmClears = 12;
+
+        /// <summary>
+        /// When the best option is too expensive, buy the best affordable one if its value per gold is at least
+        /// this share of the best. 1 = always save for the best; 0.5 = a player who spends what they have.
+        /// </summary>
+        public double SpendAffordableShare = 1d;
 
         /// <summary>Stop spending decisions after this many purchases in one decision point (safety cap).</summary>
         public int MaxPurchasesPerDecision = 400;

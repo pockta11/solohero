@@ -1,5 +1,5 @@
 # generated: 2026-09-20
-# last_updated: 2026-09-27 (9-01 simulator + 9-02 first tuning D-053..D-057; growth panels; review fixes)
+# last_updated: 2026-09-27 (9-01..9-05 simulator and tuning D-053..D-061; growth panels; review fixes)
 # code_landed: local — EditMode 146. Battle HUD has skill buttons and a Retreat? prompt.
 #   Resume restarts the farming stage. ISaveRequester reaches SaveService.
 #   review means the rule is in code. Ads, pools, stage select, and art stay backlog.
@@ -201,10 +201,10 @@ development_status:
   # ── E9. 밸런싱·QA·출시 ──
   epic-9: in-progress
   9-01-balance-simulator: review  # E9-01 [M] Tools > Balance > Run Simulation; baseline fails 10/13 checks
-  9-02-verify-v1-v7: in-progress  # E9-02 [M] D-053~D-057 applied; 5/13 checks still fail
-  9-03-target-curve-checkpoints: backlog  # E9-03 [M] — run before epic-4
-  9-04-wall-and-break-cost: backlog  # E9-04 [M] — run before epic-4
-  9-05-gold-spend-rate: backlog  # E9-05 [M] — run before epic-4
+  9-02-verify-v1-v7: review  # E9-02 [M] D-053~D-061; no-ads fails only V-3 (design) + V-6a/V-7 borderline
+  9-03-target-curve-checkpoints: review  # E9-03 [M] V-1a/b/c pass (no-ads)
+  9-04-wall-and-break-cost: review  # E9-04 [M] boss extra farm 35-50%
+  9-05-gold-spend-rate: review  # E9-05 [M] one-day-lag definition, passes
   9-06-unit-test-suite: backlog  # E9-06 [M]
   9-07-smoke-scenarios: backlog  # E9-07 [M]
   9-08-force-kill-scenarios: backlog  # E9-08 [M]
