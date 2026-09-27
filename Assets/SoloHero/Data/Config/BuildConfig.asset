@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: BuildConfig
   m_EditorClassIdentifier: 
   rewardedAdUnitIdTest: ca-app-pub-3940256099942544/5224354917
-  rewardedAdUnitIdRelease: 
-  useTestAdIds: 1
+  rewardedAdUnitIdRelease: ca-app-pub-1435934257467286/9693141233
+  useTestAdIds: 0

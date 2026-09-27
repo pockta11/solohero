@@ -153,7 +153,7 @@ development_status:
   6-11-ad-slot-gold-booster: review  # E6-11 [S] 1/day (D-064), countdown on HUD, StageRunner.ClearGoldMultiplier
   6-12-ad-daily-reset: review  # E6-12 [M] local-midnight reset in AdSlotPolicy
   6-13-ad-failure-handling: review  # E6-13 [M] failed/closed = no reward, no count; one toast per reason
-  6-14-real-ad-unit-ids: backlog  # E6-14 [M]
+  6-14-real-ad-unit-ids: review  # E6-14 [M] rewarded unit .../9693141233 (one unit, 3 slots); dev builds + editor keep the test id
   6-15-analytics-events: backlog  # E6-15 [S]
   epic-6-retrospective: optional
 
