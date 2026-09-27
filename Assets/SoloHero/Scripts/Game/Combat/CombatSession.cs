@@ -64,5 +64,22 @@ namespace SoloHero.Game.Combat
             if (!enabled || _runner == null) return;
             _runner.Tick(Time.deltaTime);
         }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused || _runner == null) return;
+
+            SaveDataV2 save;
+            try
+            {
+                save = Services.Get<SaveDataV2>();
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            _runner.Begin(save.farmingStage < 1 ? 1 : save.farmingStage);
+        }
     }
 }

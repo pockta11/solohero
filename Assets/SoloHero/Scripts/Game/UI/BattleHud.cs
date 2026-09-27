@@ -1,6 +1,7 @@
 using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
 using SoloHero.Game.Combat;
@@ -19,6 +20,10 @@ namespace SoloHero.Game.UI
         [SerializeField] private GameObject _failPanel;
         [SerializeField] private GameObject _retreatButton;
         [SerializeField] private GameObject _challengeButton;
+        [SerializeField] private Text _slot1Text;
+        [SerializeField] private Text _slot2Text;
+        [SerializeField] private Text _slot3Text;
+        [SerializeField] private Text _retreatPrompt;
 
         private BalanceValues _balance;
         private SaveDataV2 _save;
@@ -32,6 +37,10 @@ namespace SoloHero.Game.UI
         private bool _failPanelVisible;
         private bool _retreatVisible;
         private bool _challengeVisible;
+        private bool _retreatPromptVisible;
+        private int _shownSlot1Seconds = -1;
+        private int _shownSlot2Seconds = -1;
+        private int _shownSlot3Seconds = -1;
 
         private void Awake()
         {
@@ -74,6 +83,8 @@ namespace SoloHero.Game.UI
             RefreshKills(runner);
             RefreshBossTimer(runner);
             RefreshChoices(runner);
+            RefreshSkills(runner);
+            RefreshRetreatPrompt(runner);
         }
 
         public void ChooseRetry()
@@ -95,6 +106,21 @@ namespace SoloHero.Game.UI
             StageRunner runner = CurrentRunner();
             if (runner == null) return;
             runner.ChallengeBoss();
+        }
+
+        public void CastSlot1()
+        {
+            Cast(SkillSlot.Slot1);
+        }
+
+        public void CastSlot2()
+        {
+            Cast(SkillSlot.Slot2);
+        }
+
+        public void CastSlot3()
+        {
+            Cast(SkillSlot.Slot3);
         }
 
         private StageRunner CurrentRunner()
@@ -171,6 +197,43 @@ namespace SoloHero.Game.UI
             SetShown(_failPanel, false, ref _failPanelVisible);
             SetShown(_retreatButton, false, ref _retreatVisible);
             SetShown(_challengeButton, false, ref _challengeVisible);
+            SetShown(_retreatPrompt != null ? _retreatPrompt.gameObject : null, false, ref _retreatPromptVisible);
+        }
+
+        private void Cast(SkillSlot slot)
+        {
+            StageRunner runner = CurrentRunner();
+            if (runner == null) return;
+            runner.Skills.TryCast(slot, runner.Hero, runner.World);
+        }
+
+        private void RefreshSkills(StageRunner runner)
+        {
+            RefreshSkillLabel(_slot1Text, "S1", runner.Skills.CooldownRemaining(SkillSlot.Slot1), ref _shownSlot1Seconds);
+            RefreshSkillLabel(_slot2Text, "S2", runner.Skills.CooldownRemaining(SkillSlot.Slot2), ref _shownSlot2Seconds);
+            RefreshSkillLabel(_slot3Text, "S3", runner.Skills.CooldownRemaining(SkillSlot.Slot3), ref _shownSlot3Seconds);
+        }
+
+        private static void RefreshSkillLabel(Text label, string readyName, float remaining, ref int shownSeconds)
+        {
+            if (label == null) return;
+
+            int seconds = remaining > 0f ? Mathf.CeilToInt(remaining) : 0;
+            if (seconds < 0) seconds = 0;
+            if (shownSeconds == seconds) return;
+
+            shownSeconds = seconds;
+            label.text = seconds > 0 ? readyName + " " + seconds.ToString() : readyName;
+        }
+
+        private void RefreshRetreatPrompt(StageRunner runner)
+        {
+            bool show = runner.PromptRetreat;
+            GameObject promptObject = _retreatPrompt != null ? _retreatPrompt.gameObject : null;
+            SetShown(promptObject, show, ref _retreatPromptVisible);
+            if (!show || _retreatPrompt == null) return;
+            if (_retreatPrompt.text == "Retreat?") return;
+            _retreatPrompt.text = "Retreat?";
         }
 
         private static void SetShown(GameObject target, bool show, ref bool shown)

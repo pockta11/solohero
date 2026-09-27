@@ -1,8 +1,8 @@
 # generated: 2026-09-20
-# last_updated: 2026-09-23
-# code_landed: main 67d91a4 — EditMode 136. Core combat/stage/growth/gacha/economy.
-#   Game scene ticks StageRunner and draws placeholder squares. Boot has a load-fail banner.
-#   review below means the rule is in code and tested. UI, ads, parallax, pools, and art stay backlog.
+# last_updated: 2026-09-27
+# code_landed: local — EditMode 146. Battle HUD has skill buttons and a Retreat? prompt.
+#   Resume restarts the farming stage. ISaveRequester reaches SaveService.
+#   review means the rule is in code. Ads, pools, stage select, and art stay backlog.
 # project: SoloHero
 # project_key: NOKEY
 # tracking_system: file-system
@@ -82,7 +82,7 @@ development_status:
   2-09-hero-death-restart: review  # E2-09 [M]
   2-10-object-pools: backlog  # E2-10 [M]
   2-11-simultaneous-death-edge: review  # E2-11 [S]
-  2-12-background-reset: backlog  # E2-12 [M]
+  2-12-background-reset: review  # E2-12 [M] resume restarts the farming stage
   epic-2-retrospective: optional
 
   # ── E3. 스테이지·챕터 진행 ──
@@ -99,7 +99,7 @@ development_status:
   3-10-chapter-unlock-reward: review  # E3-10 [M]
   3-11-chapter-theme-data: backlog  # E3-11 [M]
   3-12-chapter-theme-cycle: backlog  # E3-12 [S]
-  3-13-fail-streak-prompt: review  # E3-13 [S] flag only, no popup UI yet
+  3-13-fail-streak-prompt: review  # E3-13 [S] HUD shows Retreat? after the fail streak
   epic-3-retrospective: optional
 
   # ── E4. 성장 시스템 ──
@@ -112,11 +112,11 @@ development_status:
   4-06-stat-aggregation: review  # E4-06 [M]
   4-07-skills: backlog  # E4-07 [M]
   4-08-skill-auto-cast: review  # E4-08 [M]
-  4-09-skill-manual-tap: backlog  # E4-09 [M]
+  4-09-skill-manual-tap: review  # E4-09 [M] S1/S2/S3 skip the auto conditions
   4-10-skill-unlock-gate: review  # E4-10 [M]
   4-11-skill-level-up: review  # E4-11 [M]
   4-12-battle-cry-refresh: review  # E4-12 [M] live atk buff multiplies the hero hit once
-  4-13-growth-save-triggers: backlog  # E4-13 [M]
+  4-13-growth-save-triggers: review  # E4-13 [M] ISaveRequester bridge to SaveService
   epic-4-retrospective: optional
 
   # ── E5. 가챠 ──

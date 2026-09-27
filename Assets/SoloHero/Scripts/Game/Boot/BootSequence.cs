@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using SoloHero.Core.Boot;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Game.Config;
 using SoloHero.Game.Infrastructure;
@@ -48,6 +49,7 @@ namespace SoloHero.Game.Boot
             Services.Register<IRandom>(new SystemRandom());
             if (_save != null) Services.Register(_save);
             Services.Register(_data);
+            if (_save != null) Services.Register<ISaveRequester>(new SaveRequestBridge(_save));
 
             if (report.LoadFailed)
             {
