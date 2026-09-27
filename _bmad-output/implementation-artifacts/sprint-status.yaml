@@ -72,7 +72,7 @@ development_status:
   # ── E2. 전투 코어 ──
   epic-2: in-progress
   2-01-hero-auto-advance: review  # E2-01 [M]
-  2-02-parallax-background: backlog  # E2-02 [M]
+  2-02-parallax-background: review  # E2-02 [M] far/mid/near/ground follow the camera
   2-03-enemy-spawn-rules: review  # E2-03 [M]
   2-04-nearest-targeting: review  # E2-04 [M]
   2-05-engage-range: review  # E2-05 [M]
@@ -99,7 +99,7 @@ development_status:
   3-10-chapter-unlock-reward: review  # E3-10 [M]
   3-11-chapter-theme-data: backlog  # E3-11 [M]
   3-12-chapter-theme-cycle: backlog  # E3-12 [S]
-  3-13-fail-streak-prompt: backlog  # E3-13 [S]
+  3-13-fail-streak-prompt: review  # E3-13 [S] flag only, no popup UI yet
   epic-3-retrospective: optional
 
   # ── E4. 성장 시스템 ──
@@ -144,7 +144,7 @@ development_status:
   6-02-gem-sources-sinks: backlog  # E6-02 [M]
   6-03-offline-elapsed: review  # E6-03 [M]
   6-04-offline-rate-by-stage: review  # E6-04 [M]
-  6-05-offline-popup: backlog  # E6-05 [M]
+  6-05-offline-popup: review  # E6-05 [M] claim button, no ad double yet
   6-06-offline-min-seconds: review  # E6-06 [M]
   6-07-time-tamper-defense: review  # E6-07 [M]
   6-08-unclaimed-persist: review  # E6-08 [M]

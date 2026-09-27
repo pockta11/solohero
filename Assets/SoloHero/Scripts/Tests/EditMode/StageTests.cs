@@ -167,6 +167,95 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void Tick_OneHeroDeath_DoesNotSetPromptRetreat()
+        {
+            var c = new BalanceValues();
+            StageRunner runner = CreateRunner(c);
+            runner.Begin(1);
+            FailByHeroDeath(runner, c);
+
+            Assert.AreEqual(StageState.Failed, runner.State);
+            Assert.AreEqual(1, runner.FailStreak);
+            Assert.IsFalse(runner.PromptRetreat);
+        }
+
+        [Test]
+        public void Tick_ThreeHeroDeaths_SetsPromptRetreat()
+        {
+            var c = new BalanceValues();
+            StageRunner runner = CreateRunner(c);
+            runner.Begin(1);
+            for (int i = 0; i < c.FAIL_STREAK_PROMPT; i++)
+                FailByHeroDeath(runner, c);
+
+            Assert.AreEqual(StageState.Failed, runner.State);
+            Assert.AreEqual(c.FAIL_STREAK_PROMPT, runner.FailStreak);
+            Assert.IsTrue(runner.PromptRetreat);
+        }
+
+        [Test]
+        public void Tick_StageClear_ResetsFailStreak()
+        {
+            var c = new BalanceValues();
+            StageRunner runner = CreateRunner(c);
+            runner.Begin(1);
+            for (int i = 0; i < c.FAIL_STREAK_PROMPT; i++)
+                FailByHeroDeath(runner, c);
+
+            Assert.IsTrue(runner.PromptRetreat);
+            runner.Tick(c.STAGE_RETRY_DELAY);
+            Assert.AreEqual(StageState.Running, runner.State);
+            Assert.AreEqual(c.FAIL_STREAK_PROMPT, runner.FailStreak);
+
+            int guard = 0;
+            while (runner.State != StageState.Clearing && guard++ < 500)
+            {
+                for (int i = 0; i < runner.World.SlotCount; i++)
+                {
+                    EnemyBrain e = runner.World.GetSlot(i);
+                    if (e.IsAlive) e.TakeDamage(e.Hp);
+                }
+
+                runner.Tick(0f);
+                if (runner.State == StageState.Running)
+                    runner.Tick(c.SPAWN_INTERVAL);
+            }
+
+            Assert.AreEqual(StageState.Clearing, runner.State);
+            Assert.AreEqual(0, runner.FailStreak);
+            Assert.IsFalse(runner.PromptRetreat);
+        }
+
+        [Test]
+        public void ChooseRetreat_AfterBossFail_ResetsFailStreak()
+        {
+            var c = new BalanceValues();
+            StageRunner runner = CreateRunner(c);
+
+            for (int i = 0; i < c.FAIL_STREAK_PROMPT; i++)
+            {
+                if (i == 0)
+                    runner.Begin(10);
+                else
+                    runner.ChooseRetry();
+
+                runner.Tick(c.BOSS_INTRO_TIME);
+                runner.Hero.Kill();
+                runner.Tick(c.DEATH_ANIM_TIME);
+                Assert.AreEqual(StageState.Failed, runner.State);
+            }
+
+            Assert.AreEqual(c.FAIL_STREAK_PROMPT, runner.FailStreak);
+            Assert.IsTrue(runner.PromptRetreat);
+
+            runner.ChooseRetreat();
+
+            Assert.AreEqual(0, runner.FailStreak);
+            Assert.IsFalse(runner.PromptRetreat);
+            Assert.IsTrue(runner.RetreatMode);
+        }
+
+        [Test]
         public void ChooseRetreat_AfterBossFail_FarmsPreviousStage()
         {
             var c = new BalanceValues();
@@ -258,6 +347,15 @@ namespace SoloHero.Tests.EditMode
 
             runner.Tick(0f);
             Assert.AreEqual(Formulas.StageGold(c, 1), save.gold, 1e-9);
+        }
+
+        private static void FailByHeroDeath(StageRunner runner, BalanceValues c)
+        {
+            if (runner.State == StageState.Failed)
+                runner.Tick(c.STAGE_RETRY_DELAY);
+
+            runner.Hero.Kill();
+            runner.Tick(c.DEATH_ANIM_TIME);
         }
 
         private sealed class FixedRandom : IRandom

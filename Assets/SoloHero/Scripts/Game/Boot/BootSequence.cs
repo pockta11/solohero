@@ -58,7 +58,19 @@ namespace SoloHero.Game.Boot
                     Log.Warn(LogTag.Boot, "load failed, started a new user");
             }
 
+            if (report.Offline.ShowPopup)
+            {
+                OfflineRewardPopup popup = FindObjectOfType<OfflineRewardPopup>();
+                if (popup != null)
+                    popup.Show(report.Offline.Gold);
+            }
+
             EnterGame();
+        }
+
+        public void NotifyOfflineClaimed()
+        {
+            _offlinePopupPending = false;
         }
 
         private SaveService CreateSave(string userId)

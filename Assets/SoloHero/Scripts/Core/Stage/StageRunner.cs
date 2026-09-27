@@ -54,6 +54,8 @@ namespace SoloHero.Core.Stage
         public bool IsBoss => _isBoss;
         public bool RetreatMode => _retreatMode;
         public float BossTimerRemaining => _bossTimer;
+        public int FailStreak { get; private set; }
+        public bool PromptRetreat => FailStreak >= _balance.FAIL_STREAK_PROMPT;
         public HeroBrain Hero => _hero;
         public CombatWorld World => _world;
         public SkillAutoCaster Skills => _skills;
@@ -105,6 +107,7 @@ namespace SoloHero.Core.Stage
         {
             if (State != StageState.Failed || !_failedWasBoss) return;
             _retreatMode = true;
+            FailStreak = 0;
             Begin(StageIndex.PreviousNormalStage(_failedG));
         }
 
@@ -175,6 +178,7 @@ namespace SoloHero.Core.Stage
                 {
                     SetState(StageState.Clearing);
                     _clearTimer = 0f;
+                    FailStreak = 0;
                     _stageReward.ApplyClear(_g);
                     StageCleared?.Invoke(_g);
                 }
@@ -256,6 +260,7 @@ namespace SoloHero.Core.Stage
             _failedG = _g;
             _failedWasBoss = wasBoss;
             _retryTimer = 0f;
+            FailStreak++;
             SetState(StageState.Failed);
             if (wasBoss) BossFailed?.Invoke();
         }
