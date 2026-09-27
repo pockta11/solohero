@@ -53,9 +53,51 @@ namespace SoloHero.Core.Save
             return baseCost * (double)level * (level + 1) / 2d;
         }
 
+        private static readonly string[] LegacyMaterials = { "iron", "steel", "magic", "divine" };
+
+        /// <summary>
+        /// Maps a 3D-era equipment id (asset name or SO id, e.g. "Iron_Sword" / "divine_crown") to the v2 catalog id.
+        /// Material gives the grade (iron C, steel R, magic E, divine L), the item kind gives the slot.
+        /// </summary>
+        public static string MapLegacyId(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return "";
+            string[] parts = id.ToLowerInvariant().Split('_');
+            if (parts.Length != 2) return "";
+
+            int grade = Array.IndexOf(LegacyMaterials, parts[0]);
+            if (grade < 0) return "";
+
+            string slot;
+            switch (parts[1])
+            {
+                case "sword":
+                case "blade":
+                    slot = "Sword";
+                    break;
+                case "helm":
+                case "crown":
+                    slot = "Helm";
+                    break;
+                case "armor":
+                case "robe":
+                    slot = "Armor";
+                    break;
+                case "boots":
+                    slot = "Boots";
+                    break;
+                default:
+                    return "";
+            }
+
+            return "Equipment_" + slot + "_" + ((Gacha.Grade)grade);
+        }
+
         private static string KeepId(string id, IReadOnlyCollection<string> knownEquipmentIds)
         {
             if (string.IsNullOrEmpty(id)) return "";
+            string mapped = MapLegacyId(id);
+            if (mapped.Length > 0) return mapped;
             if (knownEquipmentIds != null && !ContainsId(knownEquipmentIds, id)) return "";
             return id;
         }
@@ -68,9 +110,8 @@ namespace SoloHero.Core.Save
             string[] parts = csv.Split('|');
             for (int i = 0; i < parts.Length; i++)
             {
-                string id = parts[i];
-                if (string.IsNullOrEmpty(id)) continue;
-                if (knownEquipmentIds != null && !ContainsId(knownEquipmentIds, id)) continue;
+                string id = KeepId(parts[i], knownEquipmentIds);
+                if (id.Length == 0 || owned.Contains(id)) continue;
                 owned.Add(id);
             }
 

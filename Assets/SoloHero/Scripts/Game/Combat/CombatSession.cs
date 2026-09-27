@@ -47,12 +47,22 @@ namespace SoloHero.Game.Combat
 
             _balance = balance;
             _save = save;
-            _runner = new StageRunner(balance, random, stats, save);
+            ISaveRequester saveRequester = null;
+            try
+            {
+                saveRequester = Services.Get<ISaveRequester>();
+            }
+            catch (Exception)
+            {
+                Log.Warn(LogTag.Combat, "no save requester, stage clears will not save");
+            }
+
+            _runner = new StageRunner(balance, random, stats, save, saveRequester);
             // Until attack clips carry the OnHitFrame event (E8-06), the hit lands when the attack starts.
             _runner.Hero.AttackRequested += OnAttackRequested;
             _runner.StateChanged += OnStageStateChanged;
             RefreshLoadout();
-            _runner.Begin(save.farmingStage < 1 ? 1 : save.farmingStage);
+            _runner.Resume(save.farmingStage < 1 ? 1 : save.farmingStage, save.retreatMode);
         }
 
         private void OnDestroy()
@@ -100,7 +110,7 @@ namespace SoloHero.Game.Combat
                 return;
             }
 
-            _runner.Begin(save.farmingStage < 1 ? 1 : save.farmingStage);
+            _runner.Resume(save.farmingStage < 1 ? 1 : save.farmingStage, save.retreatMode);
         }
     }
 }

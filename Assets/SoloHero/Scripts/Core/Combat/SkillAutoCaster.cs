@@ -142,6 +142,8 @@ namespace SoloHero.Core.Combat
         {
             int level = _levels[(int)slot];
             double gain = 1d + _balance.SKILL_LEVEL_GAIN * 0.01d * (level - 1);
+            // Battle Cry multiplies ATK, so an active buff also raises skill hits (GDD stat order: buffs last).
+            double buff = 1d + AtkBuffSum;
 
             switch (slot)
             {
@@ -149,13 +151,13 @@ namespace SoloHero.Core.Combat
                 {
                     EnemyBrain target = world.NearestEnemyInRange(_balance.ATTACK_RANGE);
                     if (target == null) return;
-                    double dmg = DamageCalc.SkillHit(hero.Stats, _balance.SKILL_MULT_1 * gain);
+                    double dmg = DamageCalc.SkillHit(hero.Stats, _balance.SKILL_MULT_1 * gain) * buff;
                     target.TakeDamage(dmg);
                     break;
                 }
                 case SkillSlot.Slot2:
                 {
-                    double dmg = DamageCalc.SkillHit(hero.Stats, _balance.SKILL_MULT_2 * gain);
+                    double dmg = DamageCalc.SkillHit(hero.Stats, _balance.SKILL_MULT_2 * gain) * buff;
                     int slots = world.SlotCount;
                     for (int s = 0; s < slots; s++)
                     {

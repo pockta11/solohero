@@ -33,13 +33,13 @@ namespace SoloHero.Core.Stage
         private int _failedG;
         private bool _failedWasBoss;
 
-        public StageRunner(BalanceValues balance, IRandom random, HeroStats stats, SaveDataV2 save)
+        public StageRunner(BalanceValues balance, IRandom random, HeroStats stats, SaveDataV2 save, ISaveRequester saveRequester = null)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
             if (random == null) throw new ArgumentNullException(nameof(random));
             _save = save ?? throw new ArgumentNullException(nameof(save));
             _stats = stats;
-            _stageReward = new StageReward(_save, _balance);
+            _stageReward = new StageReward(_save, _balance, saveRequester);
             _world = new CombatWorld(_balance);
             _spawner = new SpawnScheduler(_balance);
             _skills = new SkillAutoCaster(_balance);
@@ -88,6 +88,23 @@ namespace SoloHero.Core.Stage
                 SetState(StageState.Retreat);
             else
                 SetState(StageState.Running);
+        }
+
+        /// <summary>Starts at the saved farming stage and restores retreat farming after a restart.</summary>
+        public void Resume(int g, bool retreatMode)
+        {
+            _retreatMode = retreatMode && !StageIndex.IsBoss(g < 1 ? 1 : g, _balance.STAGES_PER_CHAPTER);
+            Begin(g);
+        }
+
+        /// <summary>Fail-streak prompt on a normal stage: farm one stage lower. Clearing it moves back up.</summary>
+        public bool StepDown()
+        {
+            if (!PromptRetreat || _isBoss || _g <= 1) return false;
+            if (State != StageState.Failed && State != StageState.Running) return false;
+            FailStreak = 0;
+            Begin(_g - 1);
+            return true;
         }
 
         public void SetHeroStats(HeroStats stats)

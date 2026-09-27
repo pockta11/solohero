@@ -101,6 +101,13 @@ namespace SoloHero.Game.UI
             runner.ChooseRetreat();
         }
 
+        public void ChooseStepDown()
+        {
+            StageRunner runner = CurrentRunner();
+            if (runner == null) return;
+            runner.StepDown();
+        }
+
         public void ChallengeBoss()
         {
             StageRunner runner = CurrentRunner();

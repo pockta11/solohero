@@ -93,10 +93,10 @@ namespace SoloHero.Tests.EditMode
 
             SaveDataV2 data = MigrationV1ToV2.Convert(source, null);
 
-            Assert.AreEqual("Iron_Sword", data.equippedSword);
-            Assert.AreEqual("Iron_Helm", data.equippedHelm);
-            Assert.AreEqual("Iron_Armor", data.equippedArmor);
-            Assert.AreEqual("Iron_Boots", data.equippedBoots);
+            Assert.AreEqual("Equipment_Sword_Common", data.equippedSword);
+            Assert.AreEqual("Equipment_Helm_Common", data.equippedHelm);
+            Assert.AreEqual("Equipment_Armor_Common", data.equippedArmor);
+            Assert.AreEqual("Equipment_Boots_Common", data.equippedBoots);
             Assert.AreEqual(7, data.pityCount);
             Assert.AreEqual(7, data.totalPullCount);
             Assert.AreEqual(1234L, data.lastQuitTimeUtc);
@@ -105,19 +105,30 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void Convert_UnknownEquipment_BecomesEmptyWhenCatalogIsProvided()
         {
-            var known = new HashSet<string> { "Iron_Sword" };
+            var known = new HashSet<string> { "Equipment_Sword_Common" };
             var source = new PlayerDataV1
             {
                 equippedWeapon = "Iron_Sword",
                 equippedHelmet = "Gone_Helm",
-                ownedEquipmentCsv = "Iron_Sword|Gone_Helm|"
+                ownedEquipmentCsv = "Iron_Sword|Gone_Helm|iron_sword|"
             };
 
             SaveDataV2 data = MigrationV1ToV2.Convert(source, known);
 
-            Assert.AreEqual("Iron_Sword", data.equippedSword);
+            Assert.AreEqual("Equipment_Sword_Common", data.equippedSword);
             Assert.AreEqual("", data.equippedHelm);
-            CollectionAssert.AreEqual(new[] { "Iron_Sword" }, data.ownedEquipment);
+            CollectionAssert.AreEqual(new[] { "Equipment_Sword_Common" }, data.ownedEquipment);
+        }
+
+        [TestCase("Iron_Sword", "Equipment_Sword_Common")]
+        [TestCase("steel_helm", "Equipment_Helm_Rare")]
+        [TestCase("Magic_Robe", "Equipment_Armor_Epic")]
+        [TestCase("divine_crown", "Equipment_Helm_Legendary")]
+        [TestCase("Divine_Blade", "Equipment_Sword_Legendary")]
+        [TestCase("Gone_Helm", "")]
+        public void MapLegacyId_KnownMaterial_MapsToCatalogId(string legacy, string expected)
+        {
+            Assert.AreEqual(expected, MigrationV1ToV2.MapLegacyId(legacy));
         }
     }
 }
