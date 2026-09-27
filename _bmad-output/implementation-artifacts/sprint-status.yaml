@@ -110,7 +110,7 @@ development_status:
   4-04-equipment-data: review  # E4-04 [M] grade multipliers on BalanceValues, applied at combat start
   4-05-equip-swap: review  # E4-05 [M]
   4-06-stat-aggregation: review  # E4-06 [M]
-  4-07-skills: backlog  # E4-07 [M]
+  4-07-skills: review  # E4-07 [M] effects pinned by SkillEffectTests; boss Battle Cry auto-cast fixed; SkillData SO (presentation) waits for E8
   4-08-skill-auto-cast: review  # E4-08 [M]
   4-09-skill-manual-tap: review  # E4-09 [M] S1/S2/S3 skip the auto conditions
   4-10-skill-unlock-gate: review  # E4-10 [M]

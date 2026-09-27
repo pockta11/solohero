@@ -94,7 +94,8 @@ namespace SoloHero.Core.Combat
                 if (!_unlocked[i]) continue;
                 if (_cooldown[i] > 0f) continue;
                 if (!MeetsAutoCondition((SkillSlot)i, hero, world, isBossFight)) continue;
-                if (TryCast((SkillSlot)i, hero, world, skipCondition: false).Ok)
+                // Condition already checked with the real boss flag; re-checking inside TryCast would drop it.
+                if (TryCast((SkillSlot)i, hero, world, skipCondition: true).Ok)
                     return;
             }
         }
@@ -141,7 +142,6 @@ namespace SoloHero.Core.Combat
         private void ApplySkill(SkillSlot slot, HeroBrain hero, ICombatWorld world)
         {
             int level = _levels[(int)slot];
-            double gain = 1d + _balance.SKILL_LEVEL_GAIN * 0.01d * (level - 1);
             // Battle Cry multiplies ATK, so an active buff also raises skill hits (GDD stat order: buffs last).
             double buff = 1d + AtkBuffSum;
 
@@ -151,14 +151,14 @@ namespace SoloHero.Core.Combat
                 {
                     EnemyBrain target = world.NearestEnemyInRange(_balance.ATTACK_RANGE);
                     if (target == null) return;
-                    double dmg = DamageCalc.SkillHit(hero.Stats, _balance.SKILL_MULT_1 * gain) * buff;
+                    double dmg = DamageCalc.SkillHit(hero.Stats, SkillLevelService.DamageMultiplier(_balance, SkillSlot.Slot1, level)) * buff;
                     target.TakeDamage(dmg);
                     world.ReportHit(target, dmg, false);
                     break;
                 }
                 case SkillSlot.Slot2:
                 {
-                    double dmg = DamageCalc.SkillHit(hero.Stats, _balance.SKILL_MULT_2 * gain) * buff;
+                    double dmg = DamageCalc.SkillHit(hero.Stats, SkillLevelService.DamageMultiplier(_balance, SkillSlot.Slot2, level)) * buff;
                     int slots = world.SlotCount;
                     for (int s = 0; s < slots; s++)
                     {
@@ -176,7 +176,7 @@ namespace SoloHero.Core.Combat
                 {
                     double heal = hero.MaxHp * (_balance.BATTLECRY_HEAL * 0.01d);
                     hero.Heal(heal);
-                    _atkBuffAmount = _balance.BATTLECRY_ATK_BUFF * 0.01d * gain;
+                    _atkBuffAmount = SkillLevelService.BattleCryAtkBuffFraction(_balance, level);
                     _atkBuffRemaining = _balance.BATTLECRY_DURATION;
                     break;
                 }
