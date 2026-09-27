@@ -11,7 +11,7 @@
 # this script; unity-editor runs in the background so the trap can kill it and still return
 # the seat before exiting.
 #
-# Required env: UNITY_EMAIL, UNITY_PASSWORD   Optional: SOLOHERO_DEV_BUILD=1
+# Required env: UNITY_EMAIL, UNITY_PASSWORD   Optional: SOLOHERO_DEV_BUILD=1, SOLOHERO_VERSION_CODE=<int>
 set -euo pipefail
 
 CLIENT=/opt/unity/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client

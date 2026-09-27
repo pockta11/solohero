@@ -6,6 +6,7 @@ tab.hero	캐릭터
 tab.gear	장비
 tab.summon	소환
 tab.skill	스킬
+tab.settings	설정
 hud.retry	재도전
 hud.retreat	후퇴
 hud.challenge	도전
@@ -32,6 +33,7 @@ ad.booster_started	10분 동안 골드 2배!
 
 # Boot and offline reward
 boot.load_failed	클라우드 저장을 불러오지 못했습니다. 이 기기의 데이터로 진행합니다.
+offline.time	{0}시간 {1}분 / 최대 {2}시간
 offline.claim	받기
 offline.double	광고 보고 2배 ({0})
 offline.ad_failed	광고를 불러올 수 없습니다
@@ -103,6 +105,7 @@ gacha.skip	전체 건너뛰기
 gacha.tap_close	탭하여 닫기
 
 # level up (E8-11)
+toast.chapter_clear	{0}장 클리어! 젬 +{1}
 toast.level_up	레벨 {0} 달성!
 
 # back key (E7-14)

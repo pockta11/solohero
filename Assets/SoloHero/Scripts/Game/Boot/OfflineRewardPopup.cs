@@ -13,6 +13,8 @@ namespace SoloHero.Game.Boot
     {
         [SerializeField] private Button _doubleButton;
         [SerializeField] private Text _doubleLabel;
+        [SerializeField] private Text _timeText;
+        [SerializeField] private RectTransform _capFill;
 
         private double _gold;
         private bool _claimed;
@@ -33,10 +35,16 @@ namespace SoloHero.Game.Boot
             DontDestroyOnLoad(gameObject);
         }
 
-        public void Show(double gold)
+        public void Show(double gold, long countedSeconds = 0, int capSeconds = 0)
         {
             _gold = gold;
             _claimed = false;
+
+            // GDD: the offline popup shows the accumulated time against the 6 h cap.
+            if (_timeText != null)
+                _timeText.text = Strings.Format("offline.time", countedSeconds / 3600, (countedSeconds % 3600) / 60, capSeconds / 3600);
+            if (_capFill != null)
+                _capFill.anchorMax = new Vector2(capSeconds > 0 ? Mathf.Clamp01((float)countedSeconds / capSeconds) : 0f, 1f);
 
             Text text = FindGoldText();
             if (text != null)

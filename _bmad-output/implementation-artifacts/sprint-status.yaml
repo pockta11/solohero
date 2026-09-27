@@ -167,7 +167,7 @@ development_status:
   7-06-equipment-panel: review  # E7-06 [M] swap cycles owned grades
   7-07-gacha-panel: review  # E7-07 [M] pity gauge + rate text, no flip animation
   7-08-skill-panel: review  # E7-08 [M]
-  7-09-settings-panel: review  # E7-09 [M] minimum: BGM / SFX / low effect / 30 fps toggles (SettingsService)
+  7-09-settings-panel: review  # E7-09 [M] 5th bottom tab (GDD): BGM / SFX / low effect / 30 fps + credits with OFL
   7-10-skill-buttons: review  # E7-10 [M] 3 buttons under the ground line with cooldown seconds
   7-11-popups: review  # E7-11 [M] offline, boss intro banner, boss fail, quit confirm, stage select, settings; back key closes each
   7-12-toast-queue: review  # E7-12 [M]
@@ -208,8 +208,8 @@ development_status:
   9-06-unit-test-suite: review  # E9-06 [M] 5 areas covered, 212 EditMode tests
   9-07-smoke-scenarios: review  # E9-07 [M] tools/qa/Qa.ps1 smoke 10/10
   9-08-force-kill-scenarios: review  # E9-08 [M] 20 kills 0.1-1.0 s after a purchase: 0 lost (after D-073)
-  9-09-idle-30min: backlog  # E9-09 [M]
-  9-10-idle-2h: backlog  # E9-10 [M]
+  9-09-idle-30min: review  # E9-09 [M] 30 min alive, level 9 -> 23, PSS flat ~403 MB; FPS needs a device
+  9-10-idle-2h: in-progress  # E9-10 [M] 100 min no game crash, PSS +3.5%; emulator system_server died at 100 min - rerun on device
   9-11-extra-scenarios: review  # E9-11 [M] v1 migration, ad failure, 16:9 / 20:9 layout PASS; boss/retreat in EditMode
   9-12-device-matrix: backlog  # E9-12 [M]
   9-13-bug-severity-gate: review  # E9-13 [M] qa/release-gate.md; B-001 ad WebView crash on emulator pending device check
@@ -218,7 +218,7 @@ development_status:
   9-16-ad-policy-check: review  # E9-16 [M] rewarded only, labelled, optional; 13+ target (store/content-rating.md)
   9-17-min-android-version: review  # E9-17 [S] minSdk 24 / target 36 (9-17-min-android-version.md)
   9-18-release-aab: in-progress  # E9-18 [M] release AAB installs and runs on the emulator; dev device pending
-  9-19-memory-drawcall-measure: backlog  # E9-19 [M]
+  9-19-memory-drawcall-measure: in-progress  # E9-19 [M] emulator PSS 405 MB (translation overhead), textures 36.8 MB; draw calls need a device
   9-20-first-session-5min: review  # E9-20 [M] scripted novice: stage 8, 3 upgrades, 1 pull at 5 min
   9-21-no-ad-completion: review  # E9-21 [M] sim no-ads: 5-10 boss beaten day 8-9 (229-255 play min)
   epic-9-retrospective: optional

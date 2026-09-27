@@ -45,6 +45,7 @@ namespace SoloHero.Game.Combat
         private BalanceValues _balance;
         private StageRunner _hooked;
         private int _shownLevel = -1;
+        private double _shownGem = -1d;
         private int _musicChapter = -1;
         private bool _bossMusic;
 
@@ -88,6 +89,7 @@ namespace SoloHero.Game.Combat
             if (runner == null) return;
             UpdateMusic(runner);
             CheckLevelUp(runner);
+            if (_save != null) _shownGem = _save.gem;
         }
 
         private void Hook(StageRunner runner)
@@ -153,7 +155,17 @@ namespace SoloHero.Game.Combat
 
         private void OnHeroHurt() => Play(SfxId.HeroHurt);
 
-        private void OnStageCleared(int g) => Play(SfxId.Gold);
+        private void OnStageCleared(int g)
+        {
+            Play(SfxId.Gold);
+            if (_hooked == null || !_hooked.IsBoss || _save == null || _shownGem < 0d) return;
+            // A chapter's first boss kill pays CHAPTER_CLEAR_GEM (StageRunner applies it before this event).
+            double gained = _save.gem - _shownGem;
+            if (gained <= 0d) return;
+            StageIndex.FromGlobal(g, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
+            Play(SfxId.GradeEpic);
+            if (_toast != null) _toast.Show(Strings.Format("toast.chapter_clear", chapter, gained));
+        }
 
         private void OnStateChanged(StageState state)
         {

@@ -69,5 +69,17 @@ namespace SoloHero.Tests.EditMode
             Assert.IsTrue(reward.ResetQuitTime);
             Assert.AreEqual(0d, reward.Gold);
         }
+
+        [Test]
+        public void Compute_CountedSeconds_IsElapsedCappedAtOfflineCap()
+        {
+            var b = new BalanceValues();
+
+            OfflineReward under = OfflineReward.Compute(b, 5, 1000, 1000 + 3600);
+            OfflineReward over = OfflineReward.Compute(b, 5, 1000, 1000 + b.OFFLINE_CAP + 500);
+
+            Assert.AreEqual(3600L, under.CountedSeconds);
+            Assert.AreEqual((long)b.OFFLINE_CAP, over.CountedSeconds);
+        }
     }
 }

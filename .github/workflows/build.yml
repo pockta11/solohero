@@ -66,6 +66,7 @@ jobs:
           docker run --rm --init \
             -v "$GITHUB_WORKSPACE:/project" -w /project \
             -e UNITY_EMAIL -e UNITY_PASSWORD -e SOLOHERO_DEV_BUILD \
+            -e SOLOHERO_VERSION_CODE="${{ github.run_number }}" \
             "$UNITY_IMAGE" \
             bash /project/.github/scripts/unity-build.sh
 

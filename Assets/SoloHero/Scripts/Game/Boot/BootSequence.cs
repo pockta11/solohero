@@ -81,7 +81,7 @@ namespace SoloHero.Game.Boot
             {
                 OfflineRewardPopup popup = FindObjectOfType<OfflineRewardPopup>();
                 if (popup != null)
-                    popup.Show(report.Offline.Gold);
+                    popup.Show(report.Offline.Gold, report.Offline.CountedSeconds, balance.OFFLINE_CAP);
             }
 
             EnterGame();

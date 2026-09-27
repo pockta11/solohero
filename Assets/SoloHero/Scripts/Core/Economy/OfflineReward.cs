@@ -10,12 +10,16 @@ namespace SoloHero.Core.Economy
         public readonly bool GrantNow;
         public readonly bool ResetQuitTime;
 
-        public OfflineReward(double gold, bool showPopup, bool grantNow, bool resetQuitTime)
+        /// <summary>Offline seconds that earned gold (capped at OFFLINE_CAP) - the popup's cap gauge.</summary>
+        public readonly long CountedSeconds;
+
+        public OfflineReward(double gold, bool showPopup, bool grantNow, bool resetQuitTime, long countedSeconds = 0)
         {
             Gold = gold;
             ShowPopup = showPopup;
             GrantNow = grantNow;
             ResetQuitTime = resetQuitTime;
+            CountedSeconds = countedSeconds;
         }
 
         public static OfflineReward Compute(BalanceValues balance, int farmingStage, long lastQuitTimeUtc, long nowUtc)
@@ -30,7 +34,7 @@ namespace SoloHero.Core.Economy
             int stage = farmingStage < 1 ? 1 : farmingStage;
             double gold = Formulas.StageGold(balance, stage) / balance.OFFLINE_DIVISOR * counted;
             bool showPopup = elapsed >= balance.OFFLINE_MIN_SECONDS;
-            return new OfflineReward(gold, showPopup, !showPopup && counted > 0, false);
+            return new OfflineReward(gold, showPopup, !showPopup && counted > 0, false, counted);
         }
     }
 }

@@ -14,6 +14,8 @@ using UnityEngine;
 ///
 /// Environment variables (all optional):
 ///   SOLOHERO_DEV_BUILD=1          -> BuildOptions.Development (defines DEVELOPMENT_BUILD)
+///   SOLOHERO_VERSION_CODE=<int>   -> Android versionCode for this build (CI passes github.run_number; every Play
+///                                    upload needs a higher code). Without it the ProjectSettings value is used.
 ///   SOLOHERO_NO_ADS=1             -> QA build without the ad SDK (BuildConfig.adsEnabled = false for this build only)
 ///   SOLOHERO_X86_64=1             -> also build x86_64 for this build only (native emulator runs; not for release).
 ///                                    EDM4U then rewrites mainTemplate.gradle / AndroidResolverDependencies.xml - revert both.
@@ -50,6 +52,8 @@ public static class BuildAutomator
         RepairLocalRepoPoms();
 
         EditorUserBuildSettings.buildAppBundle = true;
+        int versionCodeBefore = PlayerSettings.Android.bundleVersionCode;
+        ApplyVersionCodeFromEnvironment();
 
         var options = BuildOptions.None;
         if (Environment.GetEnvironmentVariable("SOLOHERO_DEV_BUILD") == "1")
@@ -94,6 +98,8 @@ public static class BuildAutomator
         finally
         {
             if (x64) PlayerSettings.Android.targetArchitectures = architectures;
+            // The env version code is for this build only; ProjectSettings keeps its own value.
+            if (PlayerSettings.Android.bundleVersionCode != versionCodeBefore) PlayerSettings.Android.bundleVersionCode = versionCodeBefore;
             if (noAds)
             {
                 // The build unloads assets, so the reference taken before it is gone: load the config again.
@@ -117,6 +123,20 @@ public static class BuildAutomator
         }
 
         VerifyNativeLibraries(outputPath);
+    }
+
+    private static void ApplyVersionCodeFromEnvironment()
+    {
+        string raw = Environment.GetEnvironmentVariable("SOLOHERO_VERSION_CODE");
+        if (string.IsNullOrEmpty(raw)) return;
+        if (!int.TryParse(raw, out int code) || code < 1)
+        {
+            Fail("SOLOHERO_VERSION_CODE must be a positive integer: " + raw);
+            return;
+        }
+
+        PlayerSettings.Android.bundleVersionCode = code;
+        Debug.Log("[Build] versionCode " + code + " (" + PlayerSettings.bundleVersion + ")");
     }
 
     private const string LocalRepo = "Assets/GeneratedLocalRepo";

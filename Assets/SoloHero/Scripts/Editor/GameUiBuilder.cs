@@ -45,7 +45,7 @@ namespace SoloHero.Editor
         private static readonly Color PanelColor = new Color(0.08f, 0.08f, 0.11f, 0.94f);
         private static readonly Color RowColor = new Color(0.14f, 0.14f, 0.19f, 1f);
         private static readonly Color ButtonColor = new Color(0.25f, 0.45f, 0.3f, 1f);
-        private static readonly string[] TabKeys = { "tab.hero", "tab.gear", "tab.summon", "tab.skill" };
+        private static readonly string[] TabKeys = { "tab.hero", "tab.gear", "tab.summon", "tab.skill", "tab.settings" };
         private const string StringsPath = "Assets/SoloHero/Data/Strings/strings_ko.txt";
         private const string CreditsPath = "Assets/SoloHero/Data/Strings/credits_ko.txt";
 
@@ -135,12 +135,34 @@ namespace SoloHero.Editor
                 }
 
                 Button doubleButton = MakeButton("ClaimDouble", panel, 0.52f, 0.1f, 0.94f, 0.38f, "", 34, out Text doubleLabel);
+
+                // Cap gauge (GDD): "3 h 12 min / 6 h" and a bar, between the amount and the buttons.
+                foreach (string stale in new[] { "OfflineTime", "OfflineCap" })
+                {
+                    Transform t = panel.Find(stale);
+                    if (t != null) Object.DestroyImmediate(t.gameObject);
+                }
+
+                var amount = (RectTransform)panel.Find("Amount");
+                if (amount != null)
+                {
+                    amount.anchorMin = new Vector2(0.08f, 0.6f);
+                    amount.anchorMax = new Vector2(0.92f, 0.92f);
+                }
+
+                Text timeText = MakeText("OfflineTime", panel, 0.06f, 0.48f, 0.94f, 0.6f, "", 30, TextAnchor.MiddleCenter);
+                RectTransform cap = Rect("OfflineCap", panel, 0.1f, 0.42f, 0.9f, 0.46f);
+                cap.gameObject.AddComponent<Image>().color = RowColor;
+                RectTransform capFill = Rect("Fill", cap, 0f, 0f, 0.5f, 1f);
+                capFill.gameObject.AddComponent<Image>().color = new Color32(0xFF, 0xC5, 0x31, 0xFF);
                 if (claim != null) Localize(claim.GetComponentInChildren<Text>(true), "offline.claim");
                 doubleButton.GetComponent<Image>().color = new Color(0.55f, 0.42f, 0.12f, 1f);
                 UnityEventTools.AddPersistentListener(doubleButton.onClick, popup.ClaimDoubled);
                 var popupSo = new SerializedObject(popup);
                 popupSo.FindProperty("_doubleButton").objectReferenceValue = doubleButton;
                 popupSo.FindProperty("_doubleLabel").objectReferenceValue = doubleLabel;
+                popupSo.FindProperty("_timeText").objectReferenceValue = timeText;
+                popupSo.FindProperty("_capFill").objectReferenceValue = capFill;
                 popupSo.ApplyModifiedPropertiesWithoutUndo();
             }
             else
@@ -186,13 +208,13 @@ namespace SoloHero.Editor
             GameObject equipment = BuildEquipment(panelArea, session, toast);
             GameObject gacha = BuildGacha(panelArea, session, toast);
             GameObject skill = BuildSkill(panelArea, session, toast);
+            SettingsPresenter settings = BuildSettings(panelArea, hud.transform);
 
-            BuildTabs(root, new[] { character, equipment, gacha, skill });
+            BuildTabs(root, new[] { character, equipment, gacha, skill, settings.gameObject });
             BuildTutorial(root, session, toast);
             BuildDamageText(hud.transform, session);
             BuildAdBar(root, toast);
             GachaRevealView reveal = BuildGachaReveal(hud.transform, gacha.GetComponent<GachaPanelPresenter>());
-            SettingsPresenter settings = BuildSettings(hud.transform);
             StageSelectPresenter stageSelect = BuildStageSelect(hud.transform, session);
             BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>());
             BuildBossIntro(hud.transform, session);
@@ -215,7 +237,7 @@ namespace SoloHero.Editor
             float width = 1f / TabKeys.Length;
             for (int i = 0; i < TabKeys.Length; i++)
             {
-                Button button = MakeButton("Tab" + i, bar, i * width, 0f, (i + 1) * width, 1f, "", 40, out Text tabLabel);
+                Button button = MakeButton("Tab" + i, bar, i * width, 0f, (i + 1) * width, 1f, "", 36, out Text tabLabel);
                 Localize(tabLabel, TabKeys[i]);
                 backgrounds[i] = button.GetComponent<Image>();
                 UnityEventTools.AddIntPersistentListener(button.onClick, host.Toggle, i);
@@ -508,47 +530,36 @@ namespace SoloHero.Editor
             return card;
         }
 
-        /// <summary>E7-09 minimum: a settings button in the sky row and an on/off popup for sound, effects and 30 fps.</summary>
-        private static SettingsPresenter BuildSettings(Transform hud)
+        /// <summary>
+        /// GDD tab bar: settings is the 5th bottom tab (in thumb reach) with 4 on/off rows and credits. The credits
+        /// overlay is a full-screen layer under the HUD root so it covers the whole screen.
+        /// </summary>
+        private static SettingsPresenter BuildSettings(RectTransform area, Transform hud)
         {
-            Button open = MakeButton(SettingsButtonName, hud, 0.76f, 0.80f, 0.96f, 0.845f, "", 30, out Text openLabel);
-            open.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.28f, 0.92f);
-            Localize(openLabel, "settings.button");
-
-            RectTransform holder = Rect(SettingsPopupName, hud, 0f, 0f, 1f, 1f);
-            holder.SetAsLastSibling();
-            SettingsPresenter presenter = holder.gameObject.AddComponent<SettingsPresenter>();
-            UnityEventTools.AddPersistentListener(open.onClick, presenter.Open);
-
-            RectTransform popup = Rect("Popup", holder, 0f, 0f, 1f, 1f);
-            popup.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.88f);
-            RectTransform box = Rect("Box", popup, 0.08f, 0.3f, 0.92f, 0.72f);
-            box.gameObject.AddComponent<Image>().color = PanelColor;
-            Localize(MakeText("Title", box, 0.05f, 0.86f, 0.95f, 0.98f, "", 40, TextAnchor.MiddleCenter), "settings.title");
+            RectTransform panel = Panel("SettingsPanel", area);
+            SettingsPresenter presenter = panel.gameObject.AddComponent<SettingsPresenter>();
 
             var states = new Text[SettingKeys.Length];
             var images = new Image[SettingKeys.Length];
             for (int i = 0; i < SettingKeys.Length; i++)
             {
-                float top = 0.83f - i * 0.17f;
-                RectTransform row = Rect("Row" + i, box, 0.04f, top - 0.15f, 0.96f, top);
+                float top = 0.96f - i * 0.2f;
+                RectTransform row = Rect("Row" + i, panel, 0.03f, top - 0.18f, 0.97f, top);
                 row.gameObject.AddComponent<Image>().color = RowColor;
                 Localize(MakeText("Label", row, 0.04f, 0f, 0.6f, 1f, "", 36, TextAnchor.MiddleLeft), SettingKeys[i]);
-                Button toggle = MakeButton("Toggle", row, 0.64f, 0.12f, 0.97f, 0.88f, "", 34, out states[i]);
+                Button toggle = MakeButton("Toggle", row, 0.66f, 0.12f, 0.98f, 0.88f, "", 34, out states[i]);
                 images[i] = toggle.GetComponent<Image>();
                 UnityEventTools.AddIntPersistentListener(toggle.onClick, presenter.Toggle, i);
             }
 
-            Button credits = MakeButton("Credits", box, 0.06f, 0.03f, 0.46f, 0.13f, "", 34, out Text creditsLabel);
+            Button credits = MakeButton("Credits", panel, 0.3f, 0.03f, 0.7f, 0.15f, "", 34, out Text creditsLabel);
             Localize(creditsLabel, "settings.credits");
             credits.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.34f, 1f);
             UnityEventTools.AddPersistentListener(credits.onClick, presenter.OpenCredits);
-            Button close = MakeButton("Close", box, 0.54f, 0.03f, 0.94f, 0.13f, "", 36, out Text closeLabel);
-            Localize(closeLabel, "settings.close");
-            UnityEventTools.AddPersistentListener(close.onClick, presenter.Close);
 
-            // Credits: a scrollable text over the settings popup.
-            RectTransform creditsPopup = Rect("Credits", holder, 0f, 0f, 1f, 1f);
+            // Credits: a scrollable text over everything.
+            RectTransform creditsPopup = Rect(SettingsPopupName, hud, 0f, 0f, 1f, 1f);
+            creditsPopup.SetAsLastSibling();
             creditsPopup.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.92f);
             RectTransform creditsBox = Rect("Box", creditsPopup, 0.05f, 0.1f, 0.95f, 0.9f);
             creditsBox.gameObject.AddComponent<Image>().color = PanelColor;
@@ -577,14 +588,12 @@ namespace SoloHero.Editor
             creditsPopup.gameObject.SetActive(false);
 
             var so = new SerializedObject(presenter);
-            so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
             SetArray(so, "_stateTexts", states);
             SetArray(so, "_stateImages", images);
             so.FindProperty("_creditsPopup").objectReferenceValue = creditsPopup.gameObject;
             so.FindProperty("_creditsText").objectReferenceValue = creditsText;
             so.FindProperty("_credits").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(CreditsPath);
             so.ApplyModifiedPropertiesWithoutUndo();
-            popup.gameObject.SetActive(false);
             return presenter;
         }
 
