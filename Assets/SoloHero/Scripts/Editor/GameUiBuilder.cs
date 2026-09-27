@@ -363,7 +363,7 @@ namespace SoloHero.Editor
 
         private static void BuildTutorial(RectTransform root, CombatSession session, ToastQueue toast)
         {
-            RectTransform banner = Rect("TutorialBanner", root, 0.05f, 0.575f, 0.95f, 0.615f);
+            RectTransform banner = Rect("TutorialBanner", root, 0.05f, 0.695f, 0.95f, 0.735f);
             banner.gameObject.AddComponent<Image>().color = new Color(0.95f, 0.77f, 0.19f, 0.92f);
             Text label = MakeText("Label", banner, 0f, 0f, 1f, 1f, "", 32, TextAnchor.MiddleCenter);
             label.color = Color.black;
@@ -380,7 +380,7 @@ namespace SoloHero.Editor
 
         private static ToastQueue BuildToast(RectTransform root)
         {
-            RectTransform box = Rect("Toast", root, 0.15f, 0.51f, 0.85f, 0.56f);
+            RectTransform box = Rect("Toast", root, 0.15f, 0.74f, 0.85f, 0.785f);
             box.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.8f);
             Text label = MakeText("Label", box, 0f, 0f, 1f, 1f, "", 34, TextAnchor.MiddleCenter);
             ToastQueue toast = root.gameObject.AddComponent<ToastQueue>();
@@ -400,14 +400,33 @@ namespace SoloHero.Editor
             guard = button.gameObject.AddComponent<TapGuardButton>();
         }
 
+        /// <summary>
+        /// Portrait layout (E7-01): characters stand on the ground line at 50% of the screen height, so nothing
+        /// interactive may sit in 45-62%. Challenge goes into the sky under the ad bar, skills go under the ground.
+        /// </summary>
         private static void MoveChallengeButton(Transform hud)
         {
-            // The old spot (bottom 6-16%) sits under the tab bar; keep boss challenge above the skill buttons.
-            Transform challenge = hud.Find("Challenge");
-            if (challenge == null) return;
-            var rect = (RectTransform)challenge;
-            rect.anchorMin = new Vector2(0.2f, 0.51f);
-            rect.anchorMax = new Vector2(0.8f, 0.57f);
+            SetAnchors(hud, "Challenge", 0.3f, 0.80f, 0.7f, 0.845f);
+            SetAnchors(hud, "Skill1", 0.04f, 0.395f, 0.32f, 0.438f);
+            SetAnchors(hud, "Skill2", 0.36f, 0.395f, 0.64f, 0.438f);
+            SetAnchors(hud, "Skill3", 0.68f, 0.395f, 0.96f, 0.438f);
+            SetAnchors(hud, "RetreatPrompt", 0.2f, 0.64f, 0.8f, 0.69f);
+
+            Transform oldBar = hud.Find("TopBar");
+            if (oldBar != null) Object.DestroyImmediate(oldBar.gameObject);
+            RectTransform bar = Rect("TopBar", hud, 0f, 0.915f, 1f, 1f);
+            bar.gameObject.AddComponent<Image>().color = new Color(0.06f, 0.06f, 0.1f, 0.72f);
+            bar.GetComponent<Image>().raycastTarget = false;
+            bar.SetSiblingIndex(1);
+        }
+
+        private static void SetAnchors(Transform parent, string child, float xMin, float yMin, float xMax, float yMax)
+        {
+            Transform t = parent.Find(child);
+            if (t == null) return;
+            var rect = (RectTransform)t;
+            rect.anchorMin = new Vector2(xMin, yMin);
+            rect.anchorMax = new Vector2(xMax, yMax);
         }
 
         private static RectTransform Panel(string name, RectTransform area)
@@ -467,6 +486,8 @@ namespace SoloHero.Editor
 
         private static Font LoadFont()
         {
+            var galmuri = AssetDatabase.LoadAssetAtPath<Font>(ArtBuilder.FontPath);
+            if (galmuri != null) return galmuri;
             var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             return font != null ? font : Resources.GetBuiltinResource<Font>("Arial.ttf");
         }

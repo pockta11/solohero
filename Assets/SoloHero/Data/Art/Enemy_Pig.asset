@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 934de9d630de4cc3b81407134a6797ef, type: 3}
+  m_Name: Enemy_Pig
+  m_EditorClassIdentifier: 
+  idle:
+  - {fileID: 8722288777779931689, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: 7868599522840403727, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: -8573049581432390157, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: -5873280293093264370, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: -7240180067916305776, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: 4164725210801291926, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: 8831637981314162697, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: 1923826750955355837, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: 8945749783160085335, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: -2464656682846773740, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  - {fileID: -1206584704729578996, guid: 27ace543e03cc6344a74807661427220, type: 3}
+  run:
+  - {fileID: -7480621867812948504, guid: f56ab7bee2c81ad4b95462d919fe2e44, type: 3}
+  - {fileID: 7916373797463772112, guid: f56ab7bee2c81ad4b95462d919fe2e44, type: 3}
+  - {fileID: 2889734025606690077, guid: f56ab7bee2c81ad4b95462d919fe2e44, type: 3}
+  - {fileID: 7402008950697208411, guid: f56ab7bee2c81ad4b95462d919fe2e44, type: 3}
+  - {fileID: 8660831007623444035, guid: f56ab7bee2c81ad4b95462d919fe2e44, type: 3}
+  - {fileID: 3875910232526245425, guid: f56ab7bee2c81ad4b95462d919fe2e44, type: 3}
+  attack:
+  - {fileID: 7049541400918841159, guid: 19ffbafe335d8b64181947b2d07cd982, type: 3}
+  - {fileID: -2914684767394405070, guid: 19ffbafe335d8b64181947b2d07cd982, type: 3}
+  - {fileID: -7000743386788577010, guid: 19ffbafe335d8b64181947b2d07cd982, type: 3}
+  - {fileID: -4342553489872873741, guid: 19ffbafe335d8b64181947b2d07cd982, type: 3}
+  - {fileID: 1974145064865172417, guid: 19ffbafe335d8b64181947b2d07cd982, type: 3}
+  hit:
+  - {fileID: -8886116165158147191, guid: 3436a8820289bd742a6cdc5ac6b2de1f, type: 3}
+  - {fileID: 2506816988777607896, guid: 3436a8820289bd742a6cdc5ac6b2de1f, type: 3}
+  dead:
+  - {fileID: -1228414646841218245, guid: 4d82764fc1084884bbc791b680218406, type: 3}
+  - {fileID: 5733530136149952969, guid: 4d82764fc1084884bbc791b680218406, type: 3}
+  - {fileID: -498660420697502409, guid: 4d82764fc1084884bbc791b680218406, type: 3}
+  - {fileID: 6345477752717748408, guid: 4d82764fc1084884bbc791b680218406, type: 3}
+  fps: 10
+  pixelScale: 2

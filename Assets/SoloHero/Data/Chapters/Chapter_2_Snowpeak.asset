@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555bf3b3f397484f943cce376b6a3dcd, type: 3}
+  m_Name: Chapter_2_Snowpeak
+  m_EditorClassIdentifier: 
+  layers:
+  - {fileID: 21300000, guid: 2dd0ae8a320216e40a71ac34f4642c22, type: 3}
+  - {fileID: 21300000, guid: 341090971089e634b9fd82a6e8fbb859, type: 3}
+  - {fileID: 21300000, guid: d602a79bc898d1e489ded987be528c7f, type: 3}
+  - {fileID: 21300000, guid: 4e9dcbf5470b1d04f98014b463ec5981, type: 3}
+  - {fileID: 21300000, guid: e94ac7dc4ef0c1944a2b59a02a102f65, type: 3}
+  follow:
+  - 0.97
+  - 0.8025
+  - 0.635
+  - 0.46750003
+  - 0.3
+  pixelScale: 3
+  sky: {r: 0, g: 0.69411767, b: 0.72156864, a: 1}

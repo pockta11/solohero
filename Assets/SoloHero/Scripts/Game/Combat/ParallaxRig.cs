@@ -1,52 +1,110 @@
+using SoloHero.Core.Config;
+using SoloHero.Core.Stage;
+using SoloHero.Game.View;
 using UnityEngine;
 
 namespace SoloHero.Game.Combat
 {
+    /// <summary>
+    /// Chapter background (E2-02, E3-11, E3-12, E8-05): tiled parallax layers that loop forever. Each layer follows
+    /// the camera by its theme factor; the ground strip stays in the world. The theme switches with the chapter
+    /// and chapters past the theme count cycle. Layer renderers are created by the scene builder, never at runtime.
+    /// </summary>
     public sealed class ParallaxRig : MonoBehaviour
     {
+        private const float TileCopies = 4f;
+        private const int LayerSortingBase = -40;
+
         [SerializeField] private Camera _camera;
-        [SerializeField] private Transform _far;
-        [SerializeField] private Transform _mid;
-        [SerializeField] private Transform _near;
-        [SerializeField] private Transform _ground;
+        [SerializeField] private CombatSession _session;
+        [SerializeField] private ChapterThemeSet _themes;
+        [SerializeField] private SpriteRenderer[] _layers = new SpriteRenderer[0];
+        [SerializeField] private SpriteRenderer _ground;
 
-        // 1 sticks to the camera. 0 stays in the world. Far layers use a high follow so they scroll slowly.
-        [SerializeField] private float _farFactor = 0.85f;
-        [SerializeField] private float _midFactor = 0.60f;
-        [SerializeField] private float _nearFactor = 0.25f;
-        [SerializeField] private float _groundFactor = 0f;
+        // Every theme's art covers the sky, so the camera colour only shows under the ground strip.
+        [SerializeField] private Color _belowGround = new Color(0.1f, 0.08f, 0.11f, 1f);
 
-        private float _lastCameraX;
+        private BalanceValues _balance = new BalanceValues();
+        private ChapterTheme _shown;
+        private float[] _tileWidths = new float[0];
+        private float _groundWidth = 1f;
 
-        private void OnEnable()
+        private void Awake()
         {
-            if (_camera != null)
-                _lastCameraX = _camera.transform.position.x;
+            try
+            {
+                _balance = Core.Common.Services.Get<BalanceValues>();
+            }
+            catch (System.InvalidOperationException)
+            {
+                _balance = new BalanceValues();
+            }
+
+            _tileWidths = new float[_layers.Length];
+            if (_ground != null && _ground.sprite != null) _groundWidth = _ground.sprite.bounds.size.x * _ground.transform.localScale.x;
+            ApplyTheme(ThemeFor(1));
         }
 
         private void LateUpdate()
         {
-            if (_camera == null)
-                return;
+            if (_camera == null) return;
+
+            StageRunner runner = _session != null ? _session.Runner : null;
+            if (runner != null)
+            {
+                StageIndex.FromGlobal(runner.GlobalStage, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
+                ChapterTheme theme = ThemeFor(chapter);
+                if (theme != _shown) ApplyTheme(theme);
+            }
 
             float cameraX = _camera.transform.position.x;
-            float delta = cameraX - _lastCameraX;
-            _lastCameraX = cameraX;
+            for (int i = 0; i < _layers.Length; i++)
+            {
+                SpriteRenderer layer = _layers[i];
+                if (layer == null || !layer.enabled || _tileWidths[i] <= 0f) continue;
+                float follow = _shown != null && i < _shown.follow.Length ? _shown.follow[i] : 0f;
+                float x = cameraX - Mathf.Repeat(cameraX * (1f - follow), _tileWidths[i]);
+                layer.transform.position = new Vector3(x, 0f, 0f);
+            }
 
-            Shift(_far, delta * _farFactor);
-            Shift(_mid, delta * _midFactor);
-            Shift(_near, delta * _nearFactor);
-            Shift(_ground, delta * _groundFactor);
+            if (_ground != null)
+            {
+                Vector3 p = _ground.transform.position;
+                p.x = cameraX - Mathf.Repeat(cameraX, _groundWidth);
+                _ground.transform.position = p;
+            }
         }
 
-        private static void Shift(Transform layer, float deltaX)
+        private ChapterTheme ThemeFor(int chapter)
         {
-            if (layer == null)
-                return;
+            if (_themes == null || _themes.themes.Length == 0) return null;
+            return _themes.themes[StageIndex.ThemeIndex(chapter, _themes.themes.Length)];
+        }
 
-            Vector3 position = layer.position;
-            position.x += deltaX;
-            layer.position = position;
+        private void ApplyTheme(ChapterTheme theme)
+        {
+            _shown = theme;
+            if (theme == null) return;
+            if (_camera != null) _camera.backgroundColor = _belowGround;
+
+            for (int i = 0; i < _layers.Length; i++)
+            {
+                SpriteRenderer layer = _layers[i];
+                if (layer == null) continue;
+                bool used = i < theme.layers.Length && theme.layers[i] != null;
+                layer.enabled = used;
+                _tileWidths[i] = 0f;
+                if (!used) continue;
+
+                Sprite sprite = theme.layers[i];
+                layer.sprite = sprite;
+                layer.drawMode = SpriteDrawMode.Tiled;
+                layer.sortingOrder = LayerSortingBase + i;
+                layer.transform.localScale = new Vector3(theme.pixelScale, theme.pixelScale, 1f);
+                Vector2 size = sprite.bounds.size;
+                layer.size = new Vector2(size.x * TileCopies, size.y);
+                _tileWidths[i] = size.x * theme.pixelScale;
+            }
         }
     }
 }

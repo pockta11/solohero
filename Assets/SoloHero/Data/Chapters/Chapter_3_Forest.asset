@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555bf3b3f397484f943cce376b6a3dcd, type: 3}
+  m_Name: Chapter_3_Forest
+  m_EditorClassIdentifier: 
+  layers:
+  - {fileID: 21300000, guid: e911f2f2b0c638647b4fd39fe11f1192, type: 3}
+  - {fileID: 21300000, guid: 3e4e0c435f1e0e64888928f99db547df, type: 3}
+  - {fileID: 21300000, guid: 88d0c26219b9aa440beb715f761bf098, type: 3}
+  - {fileID: 21300000, guid: f92ec3f45aa1b244eba04a621584e445, type: 3}
+  follow:
+  - 0.97
+  - 0.74666667
+  - 0.5233333
+  - 0.3
+  pixelScale: 2
+  sky: {r: 0.6901961, g: 0.4392157, b: 0.1882353, a: 1}

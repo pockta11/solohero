@@ -3,20 +3,48 @@ using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Stage;
+using SoloHero.Game.View;
 using UnityEngine;
 
 namespace SoloHero.Game.Combat
 {
+    /// <summary>
+    /// Draws the combat state (E2, E8-02..04): hero and the 4 enemy slots follow Core positions and play sprite
+    /// clips chosen from Core state — run while advancing, attack on each swing, hit when HP drops, dead on death.
+    /// Enemies keep their slot renderer for the death clip after Core frees the slot. The hit lands on the swing
+    /// (D-065), so animation timing never changes combat results.
+    /// </summary>
     public sealed class CombatWorldView : MonoBehaviour
     {
         private const int EnemySlotVisualCount = 4;
+        private const float HitFlashSeconds = 0.08f;
+        private static readonly Color HitFlash = new Color(1f, 0.55f, 0.55f, 1f);
 
         [SerializeField] private CombatSession _session;
         [SerializeField] private Camera _camera;
         [SerializeField] private SpriteRenderer _heroRenderer;
         [SerializeField] private SpriteRenderer[] _enemyRenderers = new SpriteRenderer[EnemySlotVisualCount];
+        [SerializeField] private CharacterArt _heroArt;
+        [SerializeField] private CharacterArt _enemyArt;
+        [SerializeField] private CharacterArt _bossArt;
 
         private BalanceValues _balance;
+        private StageRunner _hooked;
+        private bool _heroAttackPending;
+        private double _heroLastHp;
+        private float _heroFlash;
+        private readonly EnemySlotState[] _slots = new EnemySlotState[EnemySlotVisualCount];
+
+        private sealed class EnemySlotState
+        {
+            public bool Active;
+            public bool Dying;
+            public bool Boss;
+            public double LastHp;
+            public int LastAttacks;
+            public float Flash;
+            public float X;
+        }
 
         private void Awake()
         {
@@ -24,6 +52,7 @@ namespace SoloHero.Game.Combat
                 _session = GetComponent<CombatSession>();
             if (_camera == null)
                 _camera = Camera.main;
+            for (int i = 0; i < _slots.Length; i++) _slots[i] = new EnemySlotState();
 
             try
             {
@@ -33,6 +62,11 @@ namespace SoloHero.Game.Combat
             {
                 _balance = new BalanceValues();
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (_hooked != null) _hooked.Hero.AttackRequested -= OnHeroAttack;
         }
 
         private void LateUpdate()
@@ -45,37 +79,127 @@ namespace SoloHero.Game.Combat
                 return;
             }
 
-            HeroBrain hero = runner.Hero;
-            float heroX = (float)hero.X;
-
-            if (_heroRenderer != null)
+            if (_hooked != runner)
             {
-                _heroRenderer.enabled = true;
-                _heroRenderer.transform.position = new Vector3(heroX, 0f, 0f);
-                _heroRenderer.color = Color.white;
+                if (_hooked != null) _hooked.Hero.AttackRequested -= OnHeroAttack;
+                _hooked = runner;
+                _hooked.Hero.AttackRequested += OnHeroAttack;
+                _heroLastHp = runner.Hero.Hp;
             }
 
-            FollowCamera(heroX);
-
-            int slotCount = world.SlotCount;
+            DrawHero(runner.Hero);
+            FollowCamera((float)runner.Hero.X);
             for (int i = 0; i < EnemySlotVisualCount; i++)
+                DrawEnemy(i, i < world.SlotCount ? world.GetSlot(i) : null);
+        }
+
+        private void OnHeroAttack() => _heroAttackPending = true;
+
+        private void DrawHero(HeroBrain hero)
+        {
+            if (_heroRenderer == null) return;
+            _heroRenderer.enabled = true;
+            _heroRenderer.transform.position = new Vector3((float)hero.X, 0f, 0f);
+            SpriteFlipbook book = Book(_heroRenderer);
+            bool tookHit = hero.Hp < _heroLastHp;
+            _heroLastHp = hero.Hp;
+
+            if (_heroArt != null && book != null)
             {
-                SpriteRenderer renderer = i < _enemyRenderers.Length ? _enemyRenderers[i] : null;
-                if (renderer == null) continue;
-
-                if (i >= slotCount || !world.GetSlot(i).IsActive)
+                SetScale(_heroRenderer, _heroArt.pixelScale);
+                if (hero.State == HeroState.Dead)
                 {
-                    renderer.enabled = false;
-                    continue;
+                    book.Play(_heroArt.dead, _heroArt.fps, loop: false);
                 }
-
-                EnemyBrain enemy = world.GetSlot(i);
-                renderer.enabled = true;
-                renderer.transform.position = new Vector3((float)enemy.X, 0f, 0f);
-                renderer.color = Color.red;
-                float scale = enemy.IsBoss ? 1.5f : 1f;
-                renderer.transform.localScale = new Vector3(scale, scale, 1f);
+                else if (_heroAttackPending)
+                {
+                    // Faster swings play the clip faster so it never lags behind the attack speed.
+                    float fps = Mathf.Max(_heroArt.fps, _heroArt.attack.Length * (float)hero.Stats.AtkSpd);
+                    book.Play(_heroArt.attack, fps, loop: false, restart: true);
+                }
+                else if (tookHit && (book.Current != _heroArt.attack || book.Finished))
+                {
+                    book.Play(_heroArt.hit, _heroArt.fps, loop: false, restart: true);
+                }
+                else if (book.Current == _heroArt.dead || book.Finished || IsLoop(book.Current))
+                {
+                    book.Play(hero.State == HeroState.Advance ? _heroArt.run : _heroArt.idle, _heroArt.fps, loop: true);
+                }
             }
+
+            _heroAttackPending = false;
+            if (tookHit) _heroFlash = HitFlashSeconds;
+            _heroFlash -= Time.deltaTime;
+            _heroRenderer.color = _heroFlash > 0f ? HitFlash : Color.white;
+        }
+
+        private bool IsLoop(Sprite[] clip) =>
+            _heroArt != null && (clip == _heroArt.idle || clip == _heroArt.run);
+
+        private void DrawEnemy(int index, EnemyBrain enemy)
+        {
+            SpriteRenderer renderer = index < _enemyRenderers.Length ? _enemyRenderers[index] : null;
+            if (renderer == null) return;
+            EnemySlotState slot = _slots[index];
+            SpriteFlipbook book = Book(renderer);
+
+            if (enemy != null && enemy.IsActive)
+            {
+                CharacterArt art = enemy.IsBoss ? _bossArt : _enemyArt;
+                bool fresh = !slot.Active || slot.Dying || slot.Boss != enemy.IsBoss;
+                slot.Active = true;
+                slot.Dying = false;
+                slot.Boss = enemy.IsBoss;
+                slot.X = (float)enemy.X;
+                renderer.enabled = true;
+                renderer.transform.position = new Vector3(slot.X, 0f, 0f);
+
+                bool attacked = enemy.AttackCount != slot.LastAttacks;
+                bool hurt = !fresh && enemy.Hp < slot.LastHp;
+                slot.LastAttacks = enemy.AttackCount;
+                slot.LastHp = enemy.Hp;
+                if (hurt) slot.Flash = HitFlashSeconds;
+
+                if (art != null && book != null)
+                {
+                    SetScale(renderer, art.pixelScale);
+                    if (fresh) book.Play(art.idle, art.fps, loop: true, restart: true);
+                    else if (attacked) book.Play(art.attack, art.fps, loop: false, restart: true);
+                    else if (hurt && (book.Current != art.attack || book.Finished)) book.Play(art.hit, art.fps, loop: false, restart: true);
+                    else if (book.Finished) book.Play(art.idle, art.fps, loop: true);
+                }
+            }
+            else if (slot.Active)
+            {
+                // Core freed the slot this frame: the enemy died. Keep drawing it until the death clip ends.
+                slot.Active = false;
+                slot.Dying = true;
+                CharacterArt art = slot.Boss ? _bossArt : _enemyArt;
+                if (art != null && book != null) book.Play(art.dead, art.fps, loop: false, restart: true);
+                else renderer.enabled = false;
+            }
+            else if (slot.Dying && (book == null || book.Finished))
+            {
+                slot.Dying = false;
+                renderer.enabled = false;
+            }
+            else if (!slot.Dying)
+            {
+                renderer.enabled = false;
+            }
+
+            slot.Flash -= Time.deltaTime;
+            renderer.color = slot.Flash > 0f ? HitFlash : Color.white;
+        }
+
+        private static SpriteFlipbook Book(SpriteRenderer renderer) =>
+            renderer != null ? renderer.GetComponent<SpriteFlipbook>() : null;
+
+        private static void SetScale(SpriteRenderer renderer, int scale)
+        {
+            float s = scale < 1 ? 1f : scale;
+            Transform t = renderer.transform;
+            if (t.localScale.x != s) t.localScale = new Vector3(s, s, 1f);
         }
 
         private void FollowCamera(float heroX)
@@ -83,12 +207,6 @@ namespace SoloHero.Game.Combat
             if (_camera == null || _balance == null) return;
 
             float viewWidth = (float)_balance.PIXEL_REF_WIDTH / _balance.PPU;
-            float aspect = _camera.aspect;
-            if (aspect == 0f)
-                aspect = (float)_balance.PIXEL_REF_WIDTH / _balance.PIXEL_REF_HEIGHT;
-            float halfWidth = _camera.orthographicSize * aspect;
-            _ = halfWidth;
-
             float cameraX = heroX + (0.5f - _balance.HERO_SCREEN_X / 100f) * viewWidth;
             Vector3 pos = _camera.transform.position;
             pos.x = cameraX;

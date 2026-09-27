@@ -97,8 +97,8 @@ development_status:
   3-08-highest-farming-split: review  # E3-08 [M]
   3-09-stage-select-sheet: backlog  # E3-09 [M]
   3-10-chapter-unlock-reward: review  # E3-10 [M]
-  3-11-chapter-theme-data: backlog  # E3-11 [M]
-  3-12-chapter-theme-cycle: backlog  # E3-12 [S]
+  3-11-chapter-theme-data: review  # E3-11 [M] ChapterTheme SO x5 + ChapterThemeSet
+  3-12-chapter-theme-cycle: review  # E3-12 [S] StageIndex.ThemeIndex in ParallaxRig
   3-13-fail-streak-prompt: review  # E3-13 [S] HUD shows Retreat? after the fail streak
   epic-3-retrospective: optional
 
@@ -180,22 +180,22 @@ development_status:
 
   # ── E8. 아트·연출 통합 ──
   epic-8: backlog
-  8-01-asset-license-sheet: backlog  # E8-01 [M]
-  8-02-hero-sprites: backlog  # E8-02 [M]
-  8-03-enemy-sprites: backlog  # E8-03 [M]
-  8-04-boss-sprites: backlog  # E8-04 [M]
-  8-05-chapter-backgrounds: backlog  # E8-05 [M]
-  8-06-hit-frame-events: backlog  # E8-06 [M]
+  8-01-asset-license-sheet: review  # E8-01 [M] Art/ASSET_LICENSES.md (CC0 art, OFL font)
+  8-02-hero-sprites: review  # E8-02 [M] Kings and Pigs King Human (CC0) idle/run/attack/hit/dead
+  8-03-enemy-sprites: review  # E8-03 [M] Pig (one enemy type for now)
+  8-04-boss-sprites: review  # E8-04 [M] King Pig x3 scale
+  8-05-chapter-backgrounds: review  # E8-05 [M] 5 CC0 parallax themes, looping tiled layers
+  8-06-hit-frame-events: review  # E8-06 [M] D-065 hit lands on the swing; attack clip speeds up with attack speed
   8-07-equipment-icons: backlog  # E8-07 [M]
   8-08-combat-vfx: backlog  # E8-08 [M]
   8-09-damage-text-gold-countup: backlog  # E8-09 [M]
   8-10-gacha-particles-flip: backlog  # E8-10 [M]
   8-11-upgrade-punch-levelup-ring: backlog  # E8-11 [M]
-  8-12-korean-pixel-font: backlog  # E8-12 [M]
+  8-12-korean-pixel-font: review  # E8-12 [M] Galmuri11 (OFL) on every UI Text
   8-13-bgm-sfx: backlog  # E8-13 [S]
   8-14-silent-play-check: backlog  # E8-14 [M]
   8-15-low-effect-30fps: backlog  # E8-15 [M]
-  8-16-sprite-import-preset: backlog  # E8-16 [M]
+  8-16-sprite-import-preset: review  # E8-16 [M] SpriteImportPreset under Art/
   epic-8-retrospective: optional
 
   # ── E9. 밸런싱·QA·출시 ──

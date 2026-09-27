@@ -17,6 +17,9 @@ namespace SoloHero.Core.Combat
         public double X { get; private set; }
         public bool IsBoss { get; private set; }
 
+        /// <summary>Increments on every attack swing; views watch it to play the attack animation.</summary>
+        public int AttackCount { get; private set; }
+
         public bool IsActive => _active;
         public bool IsAlive => _active && State != EnemyState.Dead && Hp > 0d;
 
@@ -71,6 +74,7 @@ namespace SoloHero.Core.Combat
             if (_atkTimer > 0f) return;
 
             _atkTimer = _atkInterval;
+            AttackCount++;
             double damage = DamageCalc.EnemyHit(_balance, Atk, hero.Def);
             hero.ApplyDamage(damage);
         }
