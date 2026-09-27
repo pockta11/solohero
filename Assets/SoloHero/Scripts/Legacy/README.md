@@ -21,8 +21,8 @@ Rules
 | `GameManager.cs` | `Boot/BootSequence` | E1-04 | Reference for the boot order: Firebase → anonymous auth → load → offline reward → scene |
 | `SaveManager.cs` | `Infrastructure/SaveService` + `FirebaseSaveStore` + `LocalBackupStore` | E1-07 | Debounce (250 ms, last-write-wins), local backup first, flush on pause/quit |
 | `OfflineRewardSystem.cs` | `Core/Economy/OfflineRewardService` | E6-03 | Elapsed-seconds calc; cap and tamper rules move to `BalanceValues` |
-| `AdMobService.cs` | `Infrastructure/AdService` | E6-09 | Rewarded ad load/show flow; callbacks must go through `MainThreadDispatcher` |
-| `MainThreadDispatcher.cs` | `Infrastructure/MainThreadDispatcher` | E1-04 | Architecture keeps this as-is (rename namespace only) |
+| ~~`AdMobService.cs`~~ | `Game/Infrastructure/AdService` | E6-09 | **Ported and deleted 2026-09-27** |
+| ~~`MainThreadDispatcher.cs`~~ | `Game/Infrastructure/MainThreadDispatcher` | E6-09 | **Ported and deleted 2026-09-27** |
 | `SafeAreaAdjuster.cs` | `UI/Common/SafeAreaAdjuster` | E7-02 | Architecture keeps this as-is |
 
 ## v1 constants needed by the save migration (E1-06)

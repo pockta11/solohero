@@ -56,6 +56,9 @@ namespace SoloHero.Core.Stage
         public bool RetreatMode => _retreatMode;
         public float BossTimerRemaining => _bossTimer;
         public int FailStreak { get; private set; }
+
+        /// <summary>Multiplier on stage-clear gold, e.g. the A-3 ad gold booster. Set by the owner every frame.</summary>
+        public double ClearGoldMultiplier { get; set; } = 1d;
         public bool PromptRetreat => FailStreak >= _balance.FAIL_STREAK_STEP_DOWN;
         public HeroBrain Hero => _hero;
         public CombatWorld World => _world;
@@ -204,7 +207,7 @@ namespace SoloHero.Core.Stage
                     _clearTimer = 0f;
                     FailStreak = 0;
                     _challenging = false;
-                    _stageReward.ApplyClear(_g);
+                    _stageReward.ApplyClear(_g, ClearGoldMultiplier);
                     StageCleared?.Invoke(_g);
                 }
                 return;

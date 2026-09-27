@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using SoloHero.Core.Boot;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Economy;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Progression;
@@ -26,6 +27,7 @@ namespace SoloHero.Game.Boot
 
         private async void Start()
         {
+            Log.Sink = new UnityLogSink();
             DontDestroyOnLoad(gameObject);
             try
             {
@@ -55,6 +57,7 @@ namespace SoloHero.Game.Boot
             ISaveRequester requester = _save != null ? new SaveRequestBridge(_save) : null;
             if (requester != null) Services.Register(requester);
             RegisterGrowth(balance, requester);
+            RegisterAds(balance, clock, requester);
 
             if (report.LoadFailed)
             {
@@ -73,6 +76,14 @@ namespace SoloHero.Game.Boot
             }
 
             EnterGame();
+        }
+
+        private void RegisterAds(BalanceValues balance, IClock clock, ISaveRequester requester)
+        {
+            if (GetComponent<MainThreadDispatcher>() == null) gameObject.AddComponent<MainThreadDispatcher>();
+            AdService ads = GetComponent<AdService>();
+            Services.Register<IAdGateway>(ads != null ? ads : new NoAdGateway());
+            Services.Register(new AdSlotPolicy(balance, _data, clock, requester));
         }
 
         private void RegisterGrowth(BalanceValues balance, ISaveRequester requester)

@@ -8,6 +8,8 @@ namespace SoloHero.Core.Common
         MaxLevel,
         OnCooldown,
         Locked,
-        Busy
+        Busy,
+        DailyLimit,
+        AdUnavailable
     }
 }

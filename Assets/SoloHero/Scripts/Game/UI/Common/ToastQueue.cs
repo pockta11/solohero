@@ -42,6 +42,8 @@ namespace SoloHero.Game.UI.Common
                 case FailReason.OnCooldown: return "On cooldown";
                 case FailReason.Locked: return "Locked";
                 case FailReason.Busy: return "Busy";
+                case FailReason.DailyLimit: return "No more today";
+                case FailReason.AdUnavailable: return "Ad not available right now";
                 default: return "";
             }
         }

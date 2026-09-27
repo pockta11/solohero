@@ -10,8 +10,12 @@ namespace SoloHero.Game.Boot
 {
     public sealed class OfflineRewardPopup : MonoBehaviour
     {
+        [SerializeField] private Button _doubleButton;
+        [SerializeField] private Text _doubleLabel;
+
         private double _gold;
         private bool _claimed;
+        private bool _adBusy;
 
         private void Awake()
         {
@@ -30,9 +34,35 @@ namespace SoloHero.Game.Boot
             GameObject panel = FindPanel();
             if (panel != null)
                 panel.SetActive(true);
+            RefreshDoubleButton();
         }
 
-        public void Claim()
+        public void Claim() => ClaimWith(adDoubled: false);
+
+        /// <summary>A-1: watch an ad to claim x2. Ad failure or early close keeps the popup and the normal claim.</summary>
+        public void ClaimDoubled()
+        {
+            if (_claimed || _adBusy) return;
+            AdSlotPolicy policy = TryGet<AdSlotPolicy>();
+            IAdGateway ads = TryGet<IAdGateway>();
+            if (policy == null || ads == null || !policy.CanUse(AdSlot.OfflineDouble).Ok)
+            {
+                RefreshDoubleButton();
+                return;
+            }
+
+            _adBusy = true;
+            ads.Show(outcome =>
+            {
+                _adBusy = false;
+                if (policy.Complete(AdSlot.OfflineDouble, outcome).Ok)
+                    ClaimWith(adDoubled: true);
+                else
+                    RefreshDoubleButton(failed: true);
+            });
+        }
+
+        private void ClaimWith(bool adDoubled)
         {
             if (_claimed)
                 return;
@@ -50,7 +80,7 @@ namespace SoloHero.Game.Boot
                 return;
 
             var reward = new OfflineReward(_gold, showPopup: true, grantNow: false, resetQuitTime: false);
-            Result result = new OfflineClaim(balance, requester).Apply(save, reward, now, adDoubled: false);
+            Result result = new OfflineClaim(balance, requester).Apply(save, reward, now, adDoubled);
             if (!result.Ok)
                 return;
 
@@ -61,6 +91,16 @@ namespace SoloHero.Game.Boot
             BootSequence boot = FindObjectOfType<BootSequence>();
             if (boot != null)
                 boot.NotifyOfflineClaimed();
+        }
+
+        private void RefreshDoubleButton(bool failed = false)
+        {
+            if (_doubleButton == null) return;
+            AdSlotPolicy policy = TryGet<AdSlotPolicy>();
+            int left = policy != null ? policy.Remaining(AdSlot.OfflineDouble) : 0;
+            _doubleButton.interactable = left > 0;
+            if (_doubleLabel != null)
+                _doubleLabel.text = failed ? "Ad not available" : "Ad x2  (" + left + " left)";
         }
 
         private Text FindGoldText()

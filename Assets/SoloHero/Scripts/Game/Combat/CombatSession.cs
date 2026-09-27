@@ -1,6 +1,7 @@
 using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Economy;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
@@ -14,6 +15,7 @@ namespace SoloHero.Game.Combat
         private BalanceValues _balance;
         private SaveDataV2 _save;
         private int _appliedHeroLevel;
+        private AdSlotPolicy _ads;
 
         public StageRunner Runner => _runner;
 
@@ -47,6 +49,15 @@ namespace SoloHero.Game.Combat
 
             _balance = balance;
             _save = save;
+            try
+            {
+                _ads = Services.Get<AdSlotPolicy>();
+            }
+            catch (Exception)
+            {
+                _ads = null;
+            }
+
             ISaveRequester saveRequester = null;
             try
             {
@@ -75,6 +86,7 @@ namespace SoloHero.Game.Combat
         private void Update()
         {
             if (!enabled || _runner == null) return;
+            _runner.ClearGoldMultiplier = _ads != null ? _ads.StageGoldMultiplier : 1d;
             _runner.Tick(Time.deltaTime);
             if (_save.heroLevel != _appliedHeroLevel) RefreshLoadout();
         }

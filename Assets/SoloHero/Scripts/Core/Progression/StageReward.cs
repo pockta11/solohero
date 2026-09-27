@@ -21,13 +21,13 @@ namespace SoloHero.Core.Progression
             _save = save;
         }
 
-        public Result ApplyClear(int g)
+        public Result ApplyClear(int g, double goldMultiplier = 1d)
         {
             if (g < 1)
                 return Result.Fail(FailReason.Locked);
 
             bool isBoss = StageIndex.IsBoss(g, _balance.STAGES_PER_CHAPTER);
-            _data.gold += Formulas.StageClearGold(_balance, g, isBoss);
+            _data.gold += Formulas.StageClearGold(_balance, g, isBoss) * (goldMultiplier > 0d ? goldMultiplier : 1d);
             // BalanceValues has no exp-per-stage field; grant 0 hero exp.
 
             if (isBoss)

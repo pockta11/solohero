@@ -61,7 +61,8 @@ namespace SoloHero.Core.Balance
             private bool _pendingFail;
             private int _retreatFarmClears;
             private double _scoreAtFail;
-            private double _boosterRemaining;
+            private readonly SimClock _clock = new SimClock();
+            private readonly AdSlotPolicy _ads;
             private bool _firstFiveRecorded;
             private bool _tutorialDone;
             private readonly TutorialService _tutorial;
@@ -77,6 +78,7 @@ namespace SoloHero.Core.Balance
                 IRandom gachaRng = new SystemRandom(new Random(unchecked(settings.Seed * 7919 + 17)));
                 var gacha = new GachaService(balance, GachaTableValues.FromBalance(balance), gachaRng, GachaCatalog.Standard(balance));
                 _spender = new SimSpender(balance, _save, gacha);
+                _ads = new AdSlotPolicy(balance, _save, _clock);
                 _tutorial = new TutorialService(balance, gacha);
                 _spender.GradeObtained += OnGradeObtained;
 
@@ -100,9 +102,6 @@ namespace SoloHero.Core.Balance
                     double refund0 = _spender.EarnedRefund;
                     int goldPulls0 = _spender.GoldPulls;
                     int gemPulls0 = _spender.GemPulls;
-                    int adOffline = 0;
-                    int adGem = 0;
-                    int adBooster = 0;
 
                     for (int i = 0; i < _s.DailySessions.Length; i++)
                     {
@@ -111,20 +110,15 @@ namespace SoloHero.Core.Balance
                         _sessionStartUtc = _s.StartUtc + (long)(d - 1) * SecondsPerDay + (long)(session.StartHour * 3600d);
                         _sessionStartPlay = _play;
 
-                        ClaimOffline(d, ref adOffline);
+                        _clock.Now = _sessionStartUtc;
+                        ClaimOffline(d);
                         if (_s.UseAds)
                         {
-                            while (adGem < _b.AD_GEM_DAILY)
-                            {
-                                _save.gem += _b.AD_GEM_REWARD;
-                                adGem++;
-                            }
-
-                            if (adBooster < _b.AD_BOOSTER_DAILY)
-                            {
-                                _boosterRemaining = _b.AD_BOOSTER_SECONDS;
-                                adBooster++;
-                            }
+                            // Same slot rules as the game (AdSlotPolicy): daily limits, local-midnight reset.
+                            while (_ads.CanUse(AdSlot.Gem).Ok)
+                                _ads.Complete(AdSlot.Gem, AdOutcome.Rewarded);
+                            if (_ads.CanUse(AdSlot.GoldBooster).Ok)
+                                _ads.Complete(AdSlot.GoldBooster, AdOutcome.Rewarded);
                         }
 
                         Spend();
@@ -165,18 +159,22 @@ namespace SoloHero.Core.Balance
             private void Step()
             {
                 float dt = _s.DeltaTime;
+                _clock.Now = _sessionStartUtc + (long)(_play - _sessionStartPlay);
+                double boost = _ads.StageGoldMultiplier;
+                _runner.ClearGoldMultiplier = boost;
                 double goldBefore = _save.gold;
                 _runner.Tick(dt);
                 _play += dt;
                 _day.PlaySeconds += dt;
-                if (_boosterRemaining > 0d) _boosterRemaining -= dt;
 
                 double gained = _save.gold - goldBefore;
                 if (gained > 0d)
                 {
-                    _day.EarnedStage += gained;
+                    double boosted = boost > 1d ? gained * (boost - 1d) / boost : 0d;
+                    _day.EarnedStage += gained - boosted;
+                    _day.EarnedBooster += boosted;
                     _earnedTotal += gained;
-                    _sessionStageGold += gained;
+                    _sessionStageGold += gained - boosted;
                 }
 
                 if (_save.heroLevel != _lastHeroLevel)
@@ -259,13 +257,6 @@ namespace SoloHero.Core.Balance
             private void HandleClear(int g)
             {
                 bool isBoss = StageIndex.IsBoss(g, _b.STAGES_PER_CHAPTER);
-                if (_boosterRemaining > 0d)
-                {
-                    double extra = Formulas.StageClearGold(_b, g, isBoss) * (_b.AD_BOOSTER_GOLD_MULT - 1d);
-                    _save.gold += extra;
-                    _day.EarnedBooster += extra;
-                    _earnedTotal += extra;
-                }
 
                 double duration = _play - _attemptStartPlay;
                 if (!isBoss)
@@ -330,7 +321,7 @@ namespace SoloHero.Core.Balance
                     CombatLoadout.Apply(_runner, _b, _save);
             }
 
-            private void ClaimOffline(int day, ref int adOffline)
+            private void ClaimOffline(int day)
             {
                 if (_save.lastQuitTimeUtc <= 0) return;
 
@@ -343,8 +334,8 @@ namespace SoloHero.Core.Balance
 
                 if (reward.Gold <= 0d) return;
 
-                bool doubled = _s.UseAds && reward.ShowPopup && adOffline < _b.AD_OFFLINE_DAILY;
-                if (doubled) adOffline++;
+                bool doubled = _s.UseAds && reward.ShowPopup
+                    && _ads.Complete(AdSlot.OfflineDouble, AdOutcome.Rewarded).Ok;
                 double gold = reward.Gold * (doubled ? _b.OFFLINE_AD_MULT : 1d);
 
                 _report.OfflineClaims.Add(new SimOfflineClaim
@@ -422,6 +413,16 @@ namespace SoloHero.Core.Balance
                 copy.Sort();
                 int n = copy.Count;
                 return n % 2 == 1 ? copy[n / 2] : (copy[n / 2 - 1] + copy[n / 2]) / 2d;
+            }
+
+            /// <summary>Simulated wall clock; the run treats local time as UTC.</summary>
+            private sealed class SimClock : IClock
+            {
+                public long Now;
+
+                public long UtcNowSeconds => Now;
+
+                public DateTime LocalNow => DateTimeOffset.FromUnixTimeSeconds(Now).UtcDateTime;
             }
 
             private StageTrack Track(int g)

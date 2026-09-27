@@ -148,11 +148,11 @@ development_status:
   6-06-offline-min-seconds: review  # E6-06 [M]
   6-07-time-tamper-defense: review  # E6-07 [M]
   6-08-unclaimed-persist: review  # E6-08 [M]
-  6-09-ad-slot-offline-double: backlog  # E6-09 [M]
-  6-10-ad-slot-gem: backlog  # E6-10 [M]
-  6-11-ad-slot-gold-booster: backlog  # E6-11 [S]
-  6-12-ad-daily-reset: backlog  # E6-12 [M]
-  6-13-ad-failure-handling: backlog  # E6-13 [M]
+  6-09-ad-slot-offline-double: review  # E6-09 [M] offline popup Ad x2 via AdSlotPolicy + AdService
+  6-10-ad-slot-gem: review  # E6-10 [M] HUD ad bar, verified with AdMob test ad on emulator
+  6-11-ad-slot-gold-booster: review  # E6-11 [S] 1/day (D-064), countdown on HUD, StageRunner.ClearGoldMultiplier
+  6-12-ad-daily-reset: review  # E6-12 [M] local-midnight reset in AdSlotPolicy
+  6-13-ad-failure-handling: review  # E6-13 [M] failed/closed = no reward, no count; one toast per reason
   6-14-real-ad-unit-ids: backlog  # E6-14 [M]
   6-15-analytics-events: backlog  # E6-15 [S]
   epic-6-retrospective: optional

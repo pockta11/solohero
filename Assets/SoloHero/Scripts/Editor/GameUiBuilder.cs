@@ -1,4 +1,7 @@
+using SoloHero.Game.Boot;
 using SoloHero.Game.Combat;
+using SoloHero.Game.Config;
+using SoloHero.Game.Infrastructure;
 using SoloHero.Game.Pooling;
 using SoloHero.Game.UI.Common;
 using SoloHero.Game.UI.Panels;
@@ -39,7 +42,87 @@ namespace SoloHero.Editor
             BuildInScene();
         }
 
-        public static void BuildBatch() => BuildInScene();
+        public static void BuildBatch()
+        {
+            BuildInScene();
+            BuildBootScene();
+        }
+
+        private const string BootScenePath = "Assets/SoloHero/Scenes/Boot.unity";
+        private const string BuildConfigPath = "Assets/SoloHero/Data/Config/BuildConfig.asset";
+
+        [MenuItem("Tools/Setup/Build Boot Ads")]
+        public static void BuildBootMenu()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            BuildBootScene();
+        }
+
+        /// <summary>
+        /// Boot scene: BuildConfig asset, AdService + MainThreadDispatcher on the Boot object, and the
+        /// "Ad x2" button next to Claim in the offline popup (E6-09). Safe to run again.
+        /// </summary>
+        private static void BuildBootScene()
+        {
+            BuildConfig config = AssetDatabase.LoadAssetAtPath<BuildConfig>(BuildConfigPath);
+            if (config == null)
+            {
+                config = ScriptableObject.CreateInstance<BuildConfig>();
+                AssetDatabase.CreateAsset(config, BuildConfigPath);
+                AssetDatabase.SaveAssets();
+            }
+
+            var scene = EditorSceneManager.OpenScene(BootScenePath, OpenSceneMode.Single);
+            _font = LoadFont();
+            BootSequence boot = Object.FindObjectOfType<BootSequence>();
+            if (boot == null)
+            {
+                Debug.LogError("[UI] BootSequence not found in " + BootScenePath);
+                return;
+            }
+
+            // The E1-09 build spike probe initialises Firebase and AdMob on its own; running it next to the real
+            // boot makes auth fail ("CheckDependencies is running") and forces local mode. Remove it.
+            BuildSpikeProbe probe = Object.FindObjectOfType<BuildSpikeProbe>(true);
+            if (probe != null) Object.DestroyImmediate(probe.gameObject);
+
+            if (boot.GetComponent<MainThreadDispatcher>() == null) boot.gameObject.AddComponent<MainThreadDispatcher>();
+            AdService ads = boot.GetComponent<AdService>();
+            if (ads == null) ads = boot.gameObject.AddComponent<AdService>();
+            var adsSo = new SerializedObject(ads);
+            adsSo.FindProperty("_build").objectReferenceValue = config;
+            adsSo.ApplyModifiedPropertiesWithoutUndo();
+
+            OfflineRewardPopup popup = Object.FindObjectOfType<OfflineRewardPopup>(true);
+            Transform panel = popup != null ? popup.transform.Find("Panel") : null;
+            if (panel != null)
+            {
+                Transform oldDouble = panel.Find("ClaimDouble");
+                if (oldDouble != null) Object.DestroyImmediate(oldDouble.gameObject);
+                var claim = (RectTransform)panel.Find("Claim");
+                if (claim != null)
+                {
+                    claim.anchorMin = new Vector2(0.06f, 0.1f);
+                    claim.anchorMax = new Vector2(0.48f, 0.38f);
+                }
+
+                Button doubleButton = MakeButton("ClaimDouble", panel, 0.52f, 0.1f, 0.94f, 0.38f, "Ad x2", 34, out Text doubleLabel);
+                doubleButton.GetComponent<Image>().color = new Color(0.55f, 0.42f, 0.12f, 1f);
+                UnityEventTools.AddPersistentListener(doubleButton.onClick, popup.ClaimDoubled);
+                var popupSo = new SerializedObject(popup);
+                popupSo.FindProperty("_doubleButton").objectReferenceValue = doubleButton;
+                popupSo.FindProperty("_doubleLabel").objectReferenceValue = doubleLabel;
+                popupSo.ApplyModifiedPropertiesWithoutUndo();
+            }
+            else
+            {
+                Debug.LogWarning("[UI] OfflineRewardPopup/Panel not found; A-1 button skipped");
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[UI] Boot ads set up in " + BootScenePath);
+        }
 
         private static void BuildInScene()
         {
@@ -73,6 +156,7 @@ namespace SoloHero.Editor
             BuildTabs(root, new[] { character, equipment, gacha, skill });
             BuildTutorial(root, session, toast);
             BuildDamageText(hud.transform, session);
+            BuildAdBar(root, toast);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -224,6 +308,29 @@ namespace SoloHero.Editor
         {
             Button button = MakeButton(name, parent, xMin, 0.03f, xMax, 0.21f, "", 32, out label);
             return button.gameObject.AddComponent<TapGuardButton>();
+        }
+
+        private static void BuildAdBar(RectTransform root, ToastQueue toast)
+        {
+            // Under the gold / stage / kills row: A-3 booster on the left, A-2 gems on the right.
+            RectTransform bar = Rect("AdBar", root, 0.04f, 0.865f, 0.96f, 0.91f);
+            Button booster = MakeButton("Booster", bar, 0f, 0f, 0.49f, 1f, "", 28, out Text boosterLabel);
+            Button gem = MakeButton("GemAd", bar, 0.51f, 0f, 1f, 1f, "", 28, out Text gemLabel);
+            booster.GetComponent<Image>().color = new Color(0.55f, 0.42f, 0.12f, 0.95f);
+            gem.GetComponent<Image>().color = new Color(0.3f, 0.2f, 0.5f, 0.95f);
+            TapGuardButton boosterGuard = booster.gameObject.AddComponent<TapGuardButton>();
+            TapGuardButton gemGuard = gem.gameObject.AddComponent<TapGuardButton>();
+
+            AdSlotsPresenter presenter = bar.gameObject.AddComponent<AdSlotsPresenter>();
+            UnityEventTools.AddPersistentListener(boosterGuard.OnTap, presenter.WatchBooster);
+            UnityEventTools.AddPersistentListener(gemGuard.OnTap, presenter.WatchGem);
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_gemButton").objectReferenceValue = gemGuard;
+            so.FindProperty("_gemLabel").objectReferenceValue = gemLabel;
+            so.FindProperty("_boosterButton").objectReferenceValue = boosterGuard;
+            so.FindProperty("_boosterLabel").objectReferenceValue = boosterLabel;
+            so.FindProperty("_toast").objectReferenceValue = toast;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void BuildDamageText(Transform hud, CombatSession session)
