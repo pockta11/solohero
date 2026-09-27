@@ -2,6 +2,8 @@ using System.Threading.Tasks;
 using SoloHero.Core.Boot;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Equipment;
+using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Game.Config;
@@ -49,7 +51,9 @@ namespace SoloHero.Game.Boot
             Services.Register<IRandom>(new SystemRandom());
             if (_save != null) Services.Register(_save);
             Services.Register(_data);
-            if (_save != null) Services.Register<ISaveRequester>(new SaveRequestBridge(_save));
+            ISaveRequester requester = _save != null ? new SaveRequestBridge(_save) : null;
+            if (requester != null) Services.Register(requester);
+            RegisterGrowth(balance, requester);
 
             if (report.LoadFailed)
             {
@@ -70,7 +74,19 @@ namespace SoloHero.Game.Boot
             EnterGame();
         }
 
-        public void NotifyOfflineClaimed()
+        private void RegisterGrowth(BalanceValues balance, ISaveRequester requester)
+        {
+            Services.Register(new UpgradeService(_data, balance, requester));
+            Services.Register(new SkillLevelService(_data, balance, requester));
+            Services.Register(new EquipService(requester));
+            Services.Register(new GachaService(
+                balance,
+                GachaTableValues.FromBalance(balance),
+                Services.Get<IRandom>(),
+                GachaCatalog.Standard(balance)));
+        }
+
+                public void NotifyOfflineClaimed()
         {
             _offlinePopupPending = false;
         }
