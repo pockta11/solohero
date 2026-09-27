@@ -65,6 +65,14 @@ namespace SoloHero.Core.Config
         public double REFUND_R = 200;
         public double REFUND_E = 800;
         public double REFUND_L = 3000;
+        public double EQUIP_ENHANCE_GAIN = 0.1;
+        public int EQUIP_MAX_LEVEL = 10;
+        public int AD_OFFLINE_DAILY = 5;
+        public int AD_GEM_DAILY = 5;
+        public double AD_GEM_REWARD = 5;
+        public int AD_BOOSTER_DAILY = 1;
+        public double AD_BOOSTER_SECONDS = 600;
+        public double AD_BOOSTER_GOLD_MULT = 2.0;
         public double SWORD_ATK_C = 1.10;
         public double SWORD_ATK_R = 1.30;
         public double SWORD_ATK_E = 1.70;

@@ -25,6 +25,7 @@ namespace SoloHero.Game.UI.Panels
         private SaveDataV2 _save;
         private int _shownOwnedCount = -1;
         private string _shownKey = "";
+        private int _shownPulls = -1;
 
         private void OnEnable()
         {
@@ -38,7 +39,7 @@ namespace SoloHero.Game.UI.Panels
         {
             if (_save == null) return;
             string key = _save.equippedSword + _save.equippedHelm + _save.equippedArmor + _save.equippedBoots;
-            if (_save.ownedEquipment.Count == _shownOwnedCount && key == _shownKey) return;
+            if (_save.ownedEquipment.Count == _shownOwnedCount && key == _shownKey && _save.totalPullCount == _shownPulls) return;
             Refresh();
         }
 
@@ -81,6 +82,7 @@ namespace SoloHero.Game.UI.Panels
         {
             if (_save == null) return;
             _shownOwnedCount = _save.ownedEquipment.Count;
+            _shownPulls = _save.totalPullCount;
             _shownKey = _save.equippedSword + _save.equippedHelm + _save.equippedArmor + _save.equippedBoots;
 
             for (int s = 0; s < GachaCatalog.SlotCount; s++)
@@ -93,12 +95,17 @@ namespace SoloHero.Game.UI.Panels
                 {
                     if (!_save.ownedEquipment.Contains(GachaCatalog.IdOf(slot, (Grade)g))) continue;
                     owned++;
-                    ownedList += (ownedList.Length > 0 ? " " : "") + PanelServices.GradeName((Grade)g)[0];
+                    int ownedLevel = EquipmentLevels.Get(_save, GachaCatalog.IdOf(slot, (Grade)g));
+                    ownedList += (ownedList.Length > 0 ? " " : "") + PanelServices.GradeName((Grade)g)[0]
+                        + (ownedLevel > 0 ? "+" + ownedLevel : "");
                 }
 
                 if (s < _slotTexts.Length && _slotTexts[s] != null)
                 {
-                    _slotTexts[s].text = grade < 0 ? slot + ": empty" : slot + ": " + PanelServices.GradeName((Grade)grade);
+                    int level = grade < 0 ? 0 : EquipmentLevels.Get(_save, Equipped(slot));
+                    _slotTexts[s].text = grade < 0
+                        ? slot + ": empty"
+                        : slot + ": " + PanelServices.GradeName((Grade)grade) + (level > 0 ? " +" + level : "");
                     _slotTexts[s].color = grade < 0 ? Color.white : PanelServices.GradeColor((Grade)grade);
                 }
 

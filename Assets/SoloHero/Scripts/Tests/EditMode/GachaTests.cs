@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Save;
 
@@ -188,7 +189,7 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void TryPull_Duplicate_RefundsInsteadOfSecondCopy()
+        public void TryPull_Duplicate_EnhancesOwnedCopy()
         {
             BalanceValues balance = new BalanceValues();
             SaveDataV2 data = SaveDataV2.CreateNew();
@@ -203,8 +204,32 @@ namespace SoloHero.Tests.EditMode
 
             Assert.IsTrue(result.Status.Ok);
             Assert.IsTrue(result.Items[0].WasDuplicate);
-            Assert.AreEqual(balance.REFUND_C, result.Items[0].RefundGold, 1e-9);
+            Assert.AreEqual(1, result.Items[0].EnhancedLevel);
+            Assert.AreEqual(0d, result.Items[0].RefundGold, 1e-9);
             Assert.AreEqual(1, data.ownedEquipment.Count);
+            Assert.AreEqual(1, EquipmentLevels.Get(data, id));
+            Assert.AreEqual(0d, data.gold, 1e-9);
+        }
+
+        [Test]
+        public void TryPull_DuplicateAtMaxLevel_RefundsGold()
+        {
+            BalanceValues balance = new BalanceValues();
+            SaveDataV2 data = SaveDataV2.CreateNew();
+            data.gold = balance.GACHA_COST_SINGLE;
+            string id = "Equipment_Sword_Common";
+            EquipmentLevels.AddOwned(data, id);
+            EquipmentLevels.Set(data, id, balance.EQUIP_MAX_LEVEL);
+
+            var rng = new ScriptedRandom(doubles: new[] { 0.0 }, ints: new[] { 0 });
+            GachaService service = CreateService(balance, rng);
+
+            GachaBatchResult result = service.TryPull(data);
+
+            Assert.IsTrue(result.Items[0].WasDuplicate);
+            Assert.AreEqual(0, result.Items[0].EnhancedLevel);
+            Assert.AreEqual(balance.REFUND_C, result.Items[0].RefundGold, 1e-9);
+            Assert.AreEqual(balance.EQUIP_MAX_LEVEL, EquipmentLevels.Get(data, id));
             Assert.AreEqual(balance.REFUND_C, data.gold, 1e-9);
         }
 

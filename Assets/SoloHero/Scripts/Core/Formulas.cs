@@ -21,6 +21,13 @@ namespace SoloHero.Core
         public static double EnemyExp(BalanceValues c, int g, bool isBoss) =>
             c.ENEMY_EXP_BASE * Math.Pow(c.ENEMY_EXP_GROWTH, g - 1) * (isBoss ? c.BOSS_EXP_MULT : 1d);
 
+        /// <summary>
+        /// Equipment enhancement (D-062): each level multiplies the grade's base effect by (1 + EQUIP_ENHANCE_GAIN),
+        /// so gear keeps pace with the compounding upgrade lanes instead of fading late.
+        /// </summary>
+        public static double EnhancedEffect(BalanceValues c, double baseEffect, int level) =>
+            baseEffect * Math.Pow(1d + c.EQUIP_ENHANCE_GAIN, level < 0 ? 0 : level);
+
         public static double UpgradeCost(BalanceValues c, UpgradeLane lane, int level)
         {
             double baseCost;

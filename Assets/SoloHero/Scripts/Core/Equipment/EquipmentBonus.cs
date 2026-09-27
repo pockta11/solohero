@@ -1,4 +1,5 @@
 using System;
+using SoloHero.Core;
 using SoloHero.Core.Config;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Save;
@@ -41,11 +42,16 @@ namespace SoloHero.Core.Equipment
                 GradeOrNone(data.equippedSword, EquipmentSlot.Sword),
                 GradeOrNone(data.equippedHelm, EquipmentSlot.Helm),
                 GradeOrNone(data.equippedArmor, EquipmentSlot.Armor),
-                GradeOrNone(data.equippedBoots, EquipmentSlot.Boots));
+                GradeOrNone(data.equippedBoots, EquipmentSlot.Boots),
+                EquipmentLevels.Get(data, data.equippedSword),
+                EquipmentLevels.Get(data, data.equippedHelm),
+                EquipmentLevels.Get(data, data.equippedArmor),
+                EquipmentLevels.Get(data, data.equippedBoots));
         }
 
         /// <summary>Grade per slot as <see cref="Grade"/> cast to int; -1 means the slot is empty.</summary>
-        public static EquipmentBonus FromGrades(BalanceValues balance, int sword, int helm, int armor, int boots)
+        public static EquipmentBonus FromGrades(BalanceValues balance, int sword, int helm, int armor, int boots,
+            int swordLevel = 0, int helmLevel = 0, int armorLevel = 0, int bootsLevel = 0)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
 
@@ -61,6 +67,7 @@ namespace SoloHero.Core.Equipment
                     balance.BOOTS_ATKSPD_E,
                     balance.BOOTS_ATKSPD_L,
                     EmptyBoots);
+                bootsSpeed = Formulas.EnhancedEffect(balance, bootsSpeed, bootsLevel);
                 bootsCrit = ByGrade(
                     bootsGrade,
                     balance.BOOTS_CRIT_C,
@@ -68,12 +75,13 @@ namespace SoloHero.Core.Equipment
                     balance.BOOTS_CRIT_E,
                     balance.BOOTS_CRIT_L,
                     EmptyBoots);
+                bootsCrit = Formulas.EnhancedEffect(balance, bootsCrit, bootsLevel);
             }
 
             return new EquipmentBonus(
-                Multiplier(balance, sword, EquipmentSlot.Sword),
-                Multiplier(balance, armor, EquipmentSlot.Armor),
-                Multiplier(balance, helm, EquipmentSlot.Helm),
+                Multiplier(balance, sword, EquipmentSlot.Sword, swordLevel),
+                Multiplier(balance, armor, EquipmentSlot.Armor, armorLevel),
+                Multiplier(balance, helm, EquipmentSlot.Helm, helmLevel),
                 bootsSpeed,
                 bootsCrit);
         }
@@ -82,11 +90,16 @@ namespace SoloHero.Core.Equipment
         public static int GradeOrNone(string id, EquipmentSlot slot) =>
             TryParse(id, slot, out Grade grade) ? (int)grade : -1;
 
-        private static double Multiplier(BalanceValues balance, int gradeIndex, EquipmentSlot slot)
+        private static double Multiplier(BalanceValues balance, int gradeIndex, EquipmentSlot slot, int level)
         {
             if (gradeIndex < 0)
                 return EmptyMult;
 
+            return EmptyMult + Formulas.EnhancedEffect(balance, GradeMultiplier(balance, gradeIndex, slot) - EmptyMult, level);
+        }
+
+        private static double GradeMultiplier(BalanceValues balance, int gradeIndex, EquipmentSlot slot)
+        {
             var grade = (Grade)gradeIndex;
 
             switch (slot)

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Equipment;
 using SoloHero.Core.Save;
 
 namespace SoloHero.Core.Gacha
@@ -88,11 +89,19 @@ namespace SoloHero.Core.Gacha
         {
             if (ContainsId(data.ownedEquipment, def.Id))
             {
+                // D-062: a duplicate enhances the owned copy; only a max-level copy refunds gold.
+                int level = EquipmentLevels.Get(data, def.Id);
+                if (level < _balance.EQUIP_MAX_LEVEL)
+                {
+                    EquipmentLevels.Set(data, def.Id, level + 1);
+                    return new GachaPullItem(def.Id, def.Slot, def.Grade, true, 0d, false, level + 1);
+                }
+
                 data.gold += def.RefundGold;
                 return new GachaPullItem(def.Id, def.Slot, def.Grade, true, def.RefundGold, false);
             }
 
-            data.ownedEquipment.Add(def.Id);
+            EquipmentLevels.AddOwned(data, def.Id);
             bool autoEquipped = TryAutoEquip(data, def);
             return new GachaPullItem(def.Id, def.Slot, def.Grade, false, 0d, autoEquipped);
         }

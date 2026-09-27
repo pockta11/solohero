@@ -34,11 +34,6 @@ namespace SoloHero.Core.Balance
         private sealed class SimRun
         {
             private const int SecondsPerDay = 86400;
-            private const int AdOfflineDailyLimit = 5;
-            private const int AdGemDailyLimit = 5;
-            private const int AdGemReward = 5;
-            private const int AdBoosterDailyLimit = 3;
-            private const double AdBoosterSeconds = 600d;
             private const double FirstSessionCheckSeconds = 300d;
 
             private readonly BalanceValues _b;
@@ -116,15 +111,15 @@ namespace SoloHero.Core.Balance
                         ClaimOffline(d, ref adOffline);
                         if (_s.UseAds)
                         {
-                            while (adGem < AdGemDailyLimit)
+                            while (adGem < _b.AD_GEM_DAILY)
                             {
-                                _save.gem += AdGemReward;
+                                _save.gem += _b.AD_GEM_REWARD;
                                 adGem++;
                             }
 
-                            if (adBooster < AdBoosterDailyLimit)
+                            if (adBooster < _b.AD_BOOSTER_DAILY)
                             {
-                                _boosterRemaining = AdBoosterSeconds;
+                                _boosterRemaining = _b.AD_BOOSTER_SECONDS;
                                 adBooster++;
                             }
                         }
@@ -158,6 +153,7 @@ namespace SoloHero.Core.Balance
                     _report.Days.Add(_day);
                 }
 
+                _report.PullValueParity = Median(_spender.PullToUpgradeValue);
                 _report.TotalPlaySeconds = _play;
                 _report.FinalHighestStage = _save.highestStage;
                 return _report;
@@ -257,7 +253,7 @@ namespace SoloHero.Core.Balance
                 bool isBoss = StageIndex.IsBoss(g, _b.STAGES_PER_CHAPTER);
                 if (_boosterRemaining > 0d)
                 {
-                    double extra = Formulas.StageClearGold(_b, g, isBoss);
+                    double extra = Formulas.StageClearGold(_b, g, isBoss) * (_b.AD_BOOSTER_GOLD_MULT - 1d);
                     _save.gold += extra;
                     _day.EarnedBooster += extra;
                     _earnedTotal += extra;
@@ -339,7 +335,7 @@ namespace SoloHero.Core.Balance
 
                 if (reward.Gold <= 0d) return;
 
-                bool doubled = _s.UseAds && reward.ShowPopup && adOffline < AdOfflineDailyLimit;
+                bool doubled = _s.UseAds && reward.ShowPopup && adOffline < _b.AD_OFFLINE_DAILY;
                 if (doubled) adOffline++;
                 double gold = reward.Gold * (doubled ? _b.OFFLINE_AD_MULT : 1d);
 
@@ -409,6 +405,15 @@ namespace SoloHero.Core.Balance
                     EarnedTotal = _earnedTotal + _spender.EarnedRefund,
                     SpentTotal = _spender.SpentUpgrade + _spender.SpentGacha + _spender.SpentSkill
                 };
+            }
+
+            private static double Median(List<double> values)
+            {
+                if (values.Count == 0) return 0d;
+                var copy = new List<double>(values);
+                copy.Sort();
+                int n = copy.Count;
+                return n % 2 == 1 ? copy[n / 2] : (copy[n / 2 - 1] + copy[n / 2]) / 2d;
             }
 
             private StageTrack Track(int g)

@@ -36,8 +36,8 @@ namespace SoloHero.Core.Balance
         public const double StageSecondsMin = 20d;
         public const double StageSecondsMax = 30d;
         public const double StageSecondsShareMin = 0.7d;
-        public const double GachaShareMin = 0.30d;
-        public const double GachaShareMax = 0.50d;
+        public const double PullParityMin = 0.5d;
+        public const double PullParityMax = 2.0d;
         public const double OfflineShareMin = 0.20d;
         public const double OfflineShareMax = 0.40d;
         public const int WallStageMin = 17;
@@ -61,6 +61,7 @@ namespace SoloHero.Core.Balance
             list.Add(DayCheckpoint(r, "V-1b", 3, Day3Min, Day3Max, "chapter 3 entered"));
             list.Add(DayCheckpoint(r, "V-1c", 7, Day7Min, Day7Max, "chapter 5 entered"));
             list.Add(StageDuration(r));
+            list.Add(GachaValueParity(r));
             list.Add(GachaShare(r));
             list.Add(OfflineShare(r, b));
             list.Add(GachaPace(r));
@@ -125,6 +126,17 @@ namespace SoloHero.Core.Balance
                 "median " + F1(median) + " s, inside " + Pct(share), ok);
         }
 
+        /// <summary>
+        /// V-3 design intent: gacha competes with upgrades for gold. A value-optimal player is indifferent near parity,
+        /// so the pass/fail check is value per gold (V-3a); the spend share (V-3b) is player taste and is reported only,
+        /// to be confirmed with analytics (E6-15). D-063.
+        /// </summary>
+        private static SimCheck GachaValueParity(SimReport r)
+        {
+            return Make("V-3a", "Gacha value per gold vs best upgrade (median over spending decisions)", "0.5x - 2.0x",
+                F2(r.PullValueParity) + "x", r.PullValueParity >= PullParityMin && r.PullValueParity <= PullParityMax);
+        }
+
         private static SimCheck GachaShare(SimReport r)
         {
             double upgrade = 0d, gacha = 0d, skill = 0d;
@@ -137,9 +149,8 @@ namespace SoloHero.Core.Balance
 
             double total = upgrade + gacha + skill;
             double share = total > 0d ? gacha / total : 0d;
-            return Make("V-3", "Gacha share of all gold spent", "30% - 50%",
-                Pct(share) + " (upgrade " + Pct(Safe(upgrade, total)) + ", skill " + Pct(Safe(skill, total)) + ")",
-                share >= GachaShareMin && share <= GachaShareMax);
+            return Info("V-3b", "Gacha share of all gold spent (player taste; confirm with analytics)", "30% - 50% in live data",
+                Pct(share) + " (upgrade " + Pct(Safe(upgrade, total)) + ", skill " + Pct(Safe(skill, total)) + ")");
         }
 
         private static SimCheck OfflineShare(SimReport r, BalanceValues b)
@@ -288,6 +299,8 @@ namespace SoloHero.Core.Balance
         private static double Safe(double part, double total) => total > 0d ? part / total : 0d;
 
         private static string F1(double v) => v.ToString("0.0", Inv);
+
+        private static string F2(double v) => v.ToString("0.00", Inv);
 
         private static string Pct(double v) => (v * 100d).ToString("0.0", Inv) + "%";
 

@@ -123,7 +123,8 @@ namespace SoloHero.Game.UI.Panels
                 if (i > 0) _sb.Append('\n');
                 _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(PanelServices.GradeColor(item.Grade))).Append('>')
                     .Append(PanelServices.GradeName(item.Grade)).Append(' ').Append(item.Slot).Append("</color>");
-                if (item.WasDuplicate) _sb.Append("  dup +").Append(BigNumberFormat.Format(item.RefundGold)).Append(" G");
+                if (item.EnhancedLevel > 0) _sb.Append("  dup -> +").Append(item.EnhancedLevel);
+                else if (item.WasDuplicate) _sb.Append("  max, +").Append(BigNumberFormat.Format(item.RefundGold)).Append(" G");
                 else if (item.AutoEquipped) _sb.Append("  equipped");
                 else _sb.Append("  to inventory");
             }

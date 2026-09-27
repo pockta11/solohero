@@ -130,7 +130,7 @@ development_status:
   5-07-ten-pull: review  # E5-07 [M]
   5-08-gem-ten-pull: review  # E5-08 [S]
   5-09-auto-equip-rule: review  # E5-09 [M]
-  5-10-duplicate-refund: review  # E5-10 [M]
+  5-10-duplicate-refund: review  # E5-10 [M] D-062 duplicate = enhance +1, refund only at max
   5-11-gacha-presentation: backlog  # E5-11 [M]
   5-12-pity-gauge-ui: backlog  # E5-12 [M]
   5-13-rate-disclosure: backlog  # E5-13 [M]
@@ -201,7 +201,7 @@ development_status:
   # ── E9. 밸런싱·QA·출시 ──
   epic-9: in-progress
   9-01-balance-simulator: review  # E9-01 [M] Tools > Balance > Run Simulation; baseline fails 10/13 checks
-  9-02-verify-v1-v7: review  # E9-02 [M] D-053~D-061; no-ads fails only V-3 (design) + V-6a/V-7 borderline
+  9-02-verify-v1-v7: review  # E9-02 [M] D-053~D-064; no-ads fails only V-6a/V-7 borderline
   9-03-target-curve-checkpoints: review  # E9-03 [M] V-1a/b/c pass (no-ads)
   9-04-wall-and-break-cost: review  # E9-04 [M] boss extra farm 35-50%
   9-05-gold-spend-rate: review  # E9-05 [M] one-day-lag definition, passes

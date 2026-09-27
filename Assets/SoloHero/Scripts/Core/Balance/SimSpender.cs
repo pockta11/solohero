@@ -45,6 +45,9 @@ namespace SoloHero.Core.Balance
         public int Upgrades { get; private set; }
         public int TutorialPulls { get; private set; }
 
+        /// <summary>Gold pull value per gold / best upgrade-lane value per gold, one sample per spending decision.</summary>
+        public readonly System.Collections.Generic.List<double> PullToUpgradeValue = new System.Collections.Generic.List<double>();
+
         public event Action<Grade> GradeObtained;
 
         private enum Kind { None, Lane, Skill, Pull }
@@ -64,6 +67,7 @@ namespace SoloHero.Core.Balance
             }
 
             double enemyAtk = Formulas.EnemyAtk(_b, frontierG < 1 ? 1 : frontierG);
+            RecordValueParity(enemyAtk);
             for (int n = 0; n < maxPurchases; n++)
             {
                 Snapshot now = Snapshot.From(_save);
@@ -199,7 +203,8 @@ namespace SoloHero.Core.Balance
         /// <summary>2 ln(DPS) + ln(EHP) against the frontier enemy. DPS counts basic hits, crit and skills.</summary>
         public double Score(Snapshot s, double enemyAtk)
         {
-            EquipmentBonus eq = EquipmentBonus.FromGrades(_b, s.Sword, s.Helm, s.Armor, s.Boots);
+            EquipmentBonus eq = EquipmentBonus.FromGrades(_b, s.Sword, s.Helm, s.Armor, s.Boots,
+                s.SwordLevel, s.HelmLevel, s.ArmorLevel, s.BootsLevel);
             HeroStats st = StatAggregator.Compute(
                 _b, s.HeroLevel, s.UpgHp, s.UpgAtk, s.UpgDef, s.UpgSpd,
                 eq.SwordMult, eq.ArmorMult, eq.HelmMult, eq.BootsSpeedBonus, eq.BootsCritBonus);
@@ -217,6 +222,26 @@ namespace SoloHero.Core.Balance
             double defRef = _b.DEF_REF_MULT * enemyAtk;
             double ehp = st.Hp * (defRef + st.Def) / defRef;
             return DpsWeight * Math.Log(dps) + Math.Log(ehp);
+        }
+
+        private void RecordValueParity(double enemyAtk)
+        {
+            Snapshot now = Snapshot.From(_save);
+            double baseScore = Score(now, enemyAtk);
+            double bestLane = 0d;
+            for (int lane = 0; lane < 4; lane++)
+            {
+                var l = (UpgradeLane)lane;
+                int level = _upgrades.GetLevel(l);
+                if (l == UpgradeLane.Spd && level >= _b.UPG_MAX_LEVEL_SPD) continue;
+                Snapshot next = now;
+                next.AddLane(l);
+                double ratio = (Score(next, enemyAtk) - baseScore) / Formulas.UpgradeCost(_b, l, level);
+                if (ratio > bestLane) bestLane = ratio;
+            }
+
+            if (bestLane > 0d)
+                PullToUpgradeValue.Add(ExpectedPullRatio(now, baseScore, enemyAtk) / bestLane);
         }
 
         private bool PullGold()
@@ -255,9 +280,21 @@ namespace SoloHero.Core.Balance
                     double p = GradeProbability(grade, pityNext) / GachaCatalog.SlotCount;
                     if (p <= 0d) continue;
 
-                    if (_save.ownedEquipment.Contains(GachaCatalog.IdOf(slot, grade)))
+                    string id = GachaCatalog.IdOf(slot, grade);
+                    if (_save.ownedEquipment.Contains(id))
                     {
-                        refund += p * GachaCatalog.RefundOf(_b, grade);
+                        int level = EquipmentLevels.Get(_save, id);
+                        if (level >= _b.EQUIP_MAX_LEVEL)
+                        {
+                            refund += p * GachaCatalog.RefundOf(_b, grade);
+                            continue;
+                        }
+
+                        // A duplicate enhances the copy; it only adds power now if that copy is equipped.
+                        if (g != now.Grade(s)) continue;
+                        Snapshot enhanced = now;
+                        enhanced.SetLevel(s, level + 1);
+                        gain += p * (Score(enhanced, enemyAtk) - baseScore);
                         continue;
                     }
 
@@ -300,9 +337,17 @@ namespace SoloHero.Core.Balance
             public int Helm;
             public int Armor;
             public int Boots;
+            public int SwordLevel;
+            public int HelmLevel;
+            public int ArmorLevel;
+            public int BootsLevel;
 
             public static Snapshot From(SaveDataV2 d) => new Snapshot
             {
+                SwordLevel = EquipmentLevels.Get(d, d.equippedSword),
+                HelmLevel = EquipmentLevels.Get(d, d.equippedHelm),
+                ArmorLevel = EquipmentLevels.Get(d, d.equippedArmor),
+                BootsLevel = EquipmentLevels.Get(d, d.equippedBoots),
                 HeroLevel = d.heroLevel,
                 UpgHp = d.upgradeHp,
                 UpgAtk = d.upgradeAtk,
@@ -346,14 +391,26 @@ namespace SoloHero.Core.Balance
                 }
             }
 
+            /// <summary>Equips a new copy of <paramref name="grade"/>; a fresh copy starts at level 0.</summary>
             public void SetGrade(int slot, int grade)
             {
                 switch ((EquipmentSlot)slot)
                 {
-                    case EquipmentSlot.Sword: Sword = grade; break;
-                    case EquipmentSlot.Helm: Helm = grade; break;
-                    case EquipmentSlot.Armor: Armor = grade; break;
-                    default: Boots = grade; break;
+                    case EquipmentSlot.Sword: Sword = grade; SwordLevel = 0; break;
+                    case EquipmentSlot.Helm: Helm = grade; HelmLevel = 0; break;
+                    case EquipmentSlot.Armor: Armor = grade; ArmorLevel = 0; break;
+                    default: Boots = grade; BootsLevel = 0; break;
+                }
+            }
+
+            public void SetLevel(int slot, int level)
+            {
+                switch ((EquipmentSlot)slot)
+                {
+                    case EquipmentSlot.Sword: SwordLevel = level; break;
+                    case EquipmentSlot.Helm: HelmLevel = level; break;
+                    case EquipmentSlot.Armor: ArmorLevel = level; break;
+                    default: BootsLevel = level; break;
                 }
             }
         }

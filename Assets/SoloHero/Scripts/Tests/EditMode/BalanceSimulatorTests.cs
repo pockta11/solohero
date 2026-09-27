@@ -5,6 +5,7 @@ using SoloHero.Core.Balance;
 using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Progression;
@@ -114,6 +115,34 @@ namespace SoloHero.Tests.EditMode
             double equipped = CombatLoadout.ComputeStats(balance, save).Atk;
 
             Assert.AreEqual(bare * balance.SWORD_ATK_L, equipped, 1e-9);
+        }
+
+        [Test]
+        public void ComputeStats_EnhancedSword_ScalesGradeBonus()
+        {
+            var balance = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            string id = GachaCatalog.IdOf(EquipmentSlot.Sword, Grade.Rare);
+            EquipmentLevels.AddOwned(save, id);
+            save.equippedSword = id;
+            double bare = CombatLoadout.ComputeStats(balance, SaveDataV2.CreateNew()).Atk;
+
+            EquipmentLevels.Set(save, id, 5);
+            double enhanced = CombatLoadout.ComputeStats(balance, save).Atk;
+
+            double expectedMult = 1d + (balance.SWORD_ATK_R - 1d) * System.Math.Pow(1d + balance.EQUIP_ENHANCE_GAIN, 5);
+            Assert.AreEqual(bare * expectedMult, enhanced, 1e-9);
+        }
+
+        [Test]
+        public void Levels_OldSaveWithoutLevels_ReadsZero()
+        {
+            var save = SaveDataV2.CreateNew();
+            save.ownedEquipment.Add("Equipment_Helm_Epic");
+            save.ownedEquipmentLevels = null;
+
+            Assert.AreEqual(0, EquipmentLevels.Get(save, "Equipment_Helm_Epic"));
+            Assert.AreEqual(1, save.ownedEquipmentLevels.Count);
         }
 
         [Test]

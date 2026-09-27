@@ -9,13 +9,17 @@ namespace SoloHero.Core.Gacha
         public readonly double RefundGold;
         public readonly bool AutoEquipped;
 
+        /// <summary>Enhancement level the duplicate raised the item to; 0 when it was new or refunded.</summary>
+        public readonly int EnhancedLevel;
+
         public GachaPullItem(
             string equipmentId,
             EquipmentSlot slot,
             Grade grade,
             bool wasDuplicate,
             double refundGold,
-            bool autoEquipped)
+            bool autoEquipped,
+            int enhancedLevel = 0)
         {
             EquipmentId = equipmentId;
             Slot = slot;
@@ -23,6 +27,7 @@ namespace SoloHero.Core.Gacha
             WasDuplicate = wasDuplicate;
             RefundGold = refundGold;
             AutoEquipped = autoEquipped;
+            EnhancedLevel = enhancedLevel;
         }
     }
 }

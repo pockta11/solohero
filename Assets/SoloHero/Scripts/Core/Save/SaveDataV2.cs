@@ -27,6 +27,7 @@ namespace SoloHero.Core.Save
         public string equippedArmor = "";
         public string equippedBoots = "";
         public List<string> ownedEquipment = new List<string>();
+        public List<int> ownedEquipmentLevels = new List<int>();
 
         public int pityCount;
         public int totalPullCount;

@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|---|
 | **GDD** | `_bmad-output/planning-artifacts/gdds/gdd-solohero-2026-09-20/gdd.md` | 설계 단일 출처. `Number Balancing` 상수표가 모든 수치의 원본 |
 | Epics | 같은 폴더 `epics.md` | 9 에픽 / 132 스토리 |
-| Decision log | 같은 폴더 `decision-log.md` | D-001~D-061 |
+| Decision log | 같은 폴더 `decision-log.md` | D-001~D-064 |
 | **Architecture** | `_bmad-output/planning-artifacts/architecture/arch-solohero-2026-09-20/game-architecture.md` | 결정 D1~D15, ADR 1~7, 구조, 패턴(코드 예시), 검증 |
 | **Project context** | `_bmad-output/project-context.md` | **코드를 만지기 전에 읽는 규칙 62개.** 아키텍처와 충돌 시 아키텍처가 우선 |
 
@@ -33,7 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 2026-09-27 진행
 - **9-01 밸런스 시뮬레이터** `Tools > Balance > Run Simulation` (Core/Balance, 실제 `StageRunner` 헤드리스). 결과 `_bmad-output/implementation-artifacts/balance/`
-- **9-02 튜닝** D-053~D-061 반영 — 무광고 1일 2-8 · 3일 3-9~4-2 · 7일 5-7. 남은 FAIL은 V-3(설계 충돌, 사용자 결정 대기)과 경계값 V-6a·V-7. 광고 골드 부스터 과속도 결정 대기
+- **9-02 튜닝** D-053~D-061 반영 — 무광고 1일 2-8 · 3일 3-9~4-2 · 7일 5-7. 남은 FAIL은 경계값 V-6a·V-7뿐. 중복 강화(D-062)·V-3a 가치 균형(D-063)·광고 부스터 1회(D-064)
 - **성장 패널** 하단 탭바 + 캐릭터·장비·소환·스킬 패널. `Tools > Setup > Build Growth UI`로 씬 재생성
 - Core 규칙 누락 수정: 보스 골드·EXP ×5, 스킬 해금 레벨, 기본 공격 히트 연결, 클리어 저장, 재실행 후 후퇴 유지, v1 장비 id 변환
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
@@ -90,7 +90,7 @@ E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트 중 8종은 `Scrip
 - 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(10배 HP, 30초). 킬 목표 8 고정. 적 HP·ATK 성장 1.14, 골드 `50×1.04^(g−1)`, 보스 격파 골드·EXP ×5 (D-053·D-059). 일반 스테이지 사망 → 자동 한 칸 아래 파밍, `도전`으로 복귀 (D-058)
 - 강화: HP·ATK·DEF **승산 ×1.16/레벨·상한 없음**, 공격속도 가산 +0.02·최대 100. 비용 `baseCost × 1.12^level` (base 300/450/450/600)
 - 방어: `DEF_REF = 3 × 적ATK`, `피격 = max(1, 적ATK × DEF_REF / (DEF_REF + DEF))`
-- 가챠: 500골드 / 10연 4,500. 확률 **C 55 / R 33 / E 10 / L 2 %**, 100회 천장, Legendary 획득 시 pity 리셋. 중복 자동 환급
+- 가챠: 500골드 / 10연 4,500. 확률 **C 55 / R 33 / E 10 / L 2 %**, 100회 천장, Legendary 획득 시 pity 리셋. 중복 = 장비 강화 +1(최대 10, ×1.10/레벨), 최대 레벨만 환급 (D-062)
 - 오프라인: `파밍스테이지_골드 / 3000` 초당 (D-055), 상한 21,600초, 60초 미만 팝업 없음, 음수·상한 2배 초과 → 0. 광고 2배
 - 이동 속도 상수 2.0 u/s — 스탯 아님. SP 없음(쿨다운만). 콤보 없음
 

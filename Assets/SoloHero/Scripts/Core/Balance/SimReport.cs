@@ -100,6 +100,9 @@ namespace SoloHero.Core.Balance
         public double FirstLegendaryPlaySeconds = -1d;
         public int FirstLegendaryDay;
 
+        /// <summary>Median of gold-pull value per gold divided by the best upgrade value per gold.</summary>
+        public double PullValueParity;
+
         public double TotalPlaySeconds;
         public int FinalHighestStage;
 
