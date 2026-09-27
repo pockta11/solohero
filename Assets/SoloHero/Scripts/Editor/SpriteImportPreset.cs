@@ -10,7 +10,7 @@ namespace SoloHero.Editor
     /// E8-16: every texture under Assets/SoloHero/Art gets pixel-art settings (PPU 32, Point, no compression,
     /// no mipmaps). Sheets named "{entity}_{clip}_{frames}.png" are sliced into equal frames with the entity's
     /// foot pivot; backgrounds and tiles become single repeatable sprites pivoted at the bottom centre.
-    /// Do not hand-edit importer settings under Art/ — change this file and reimport.
+    /// Do not hand-edit importer settings under Art/ - change this file and reimport.
     /// </summary>
     public sealed class SpriteImportPreset : AssetPostprocessor
     {

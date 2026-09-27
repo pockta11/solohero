@@ -82,14 +82,14 @@ namespace SoloHero.Game.UI.Panels
             if (_balance == null) return;
             if (_rateText != null)
             {
-                _rateText.text = "Common " + _balance.GACHA_RATE_C + "%  Rare " + _balance.GACHA_RATE_R
-                    + "%  Epic " + _balance.GACHA_RATE_E + "%  Legendary " + _balance.GACHA_RATE_L
-                    + "%\nPull " + _balance.GACHA_PITY + " is a guaranteed Legendary. Any Legendary resets the count.";
+                // The disclosure is drawn from the same table the draw uses (GDD rate disclosure rule).
+                _rateText.text = Strings.Format("gacha.rates",
+                    _balance.GACHA_RATE_C, _balance.GACHA_RATE_R, _balance.GACHA_RATE_E, _balance.GACHA_RATE_L, _balance.GACHA_PITY);
             }
 
-            if (_singleCostText != null) _singleCostText.text = "x1  " + BigNumberFormat.Format(_balance.GACHA_COST_SINGLE) + " G";
-            if (_tenCostText != null) _tenCostText.text = "x10  " + BigNumberFormat.Format(_balance.GACHA_COST_TEN) + " G";
-            if (_gemCostText != null) _gemCostText.text = "x10  " + _balance.GACHA_COST_TEN_GEM + " Gem";
+            if (_singleCostText != null) _singleCostText.text = Strings.Format("gacha.cost_single", BigNumberFormat.Format(_balance.GACHA_COST_SINGLE));
+            if (_tenCostText != null) _tenCostText.text = Strings.Format("gacha.cost_ten", BigNumberFormat.Format(_balance.GACHA_COST_TEN));
+            if (_gemCostText != null) _gemCostText.text = Strings.Format("gacha.cost_gem", _balance.GACHA_COST_TEN_GEM);
         }
 
         private void Refresh()
@@ -100,7 +100,7 @@ namespace SoloHero.Game.UI.Panels
 
             int pity = _balance.GACHA_PITY;
             int left = pity - _save.pityCount;
-            if (_pityText != null) _pityText.text = "Legendary in " + left + " pulls   (" + _save.pityCount + "/" + pity + ")";
+            if (_pityText != null) _pityText.text = Strings.Format("gacha.pity", left, _save.pityCount, pity);
             if (_pityFill != null)
             {
                 // Width by anchor: a Filled image without a sprite ignores fillAmount.
@@ -122,11 +122,11 @@ namespace SoloHero.Game.UI.Panels
                 GachaPullItem item = items[i];
                 if (i > 0) _sb.Append('\n');
                 _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(PanelServices.GradeColor(item.Grade))).Append('>')
-                    .Append(PanelServices.GradeName(item.Grade)).Append(' ').Append(item.Slot).Append("</color>");
-                if (item.EnhancedLevel > 0) _sb.Append("  dup -> +").Append(item.EnhancedLevel);
-                else if (item.WasDuplicate) _sb.Append("  max, +").Append(BigNumberFormat.Format(item.RefundGold)).Append(" G");
-                else if (item.AutoEquipped) _sb.Append("  equipped");
-                else _sb.Append("  to inventory");
+                    .Append(PanelServices.GradeName(item.Grade)).Append(' ').Append(PanelServices.SlotName(item.Slot)).Append("</color>  ");
+                if (item.EnhancedLevel > 0) _sb.Append(Strings.Format("gacha.enhanced", item.EnhancedLevel));
+                else if (item.WasDuplicate) _sb.Append(Strings.Format("gacha.refund", BigNumberFormat.Format(item.RefundGold)));
+                else if (item.AutoEquipped) _sb.Append(Strings.Get("gacha.equipped"));
+                else _sb.Append(Strings.Get("gacha.stored"));
             }
 
             _resultText.text = _sb.ToString();

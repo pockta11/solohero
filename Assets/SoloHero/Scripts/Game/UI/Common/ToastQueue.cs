@@ -31,21 +31,27 @@ namespace SoloHero.Game.UI.Common
 
         public void ShowFailure(FailReason reason) => Show(MessageFor(reason));
 
-        /// <summary>Placeholder English text until the Strings table (E7-17) supplies Korean values.</summary>
-        public static string MessageFor(FailReason reason)
+        /// <summary>Architecture rule: every FailReason maps to one toast key.</summary>
+        public static string KeyFor(FailReason reason)
         {
             switch (reason)
             {
-                case FailReason.NotEnoughGold: return "Not enough gold";
-                case FailReason.NotEnoughGem: return "Not enough gems";
-                case FailReason.MaxLevel: return "Max level";
-                case FailReason.OnCooldown: return "On cooldown";
-                case FailReason.Locked: return "Locked";
-                case FailReason.Busy: return "Busy";
-                case FailReason.DailyLimit: return "No more today";
-                case FailReason.AdUnavailable: return "Ad not available right now";
-                default: return "";
+                case FailReason.NotEnoughGold: return "toast.not_enough_gold";
+                case FailReason.NotEnoughGem: return "toast.not_enough_gem";
+                case FailReason.MaxLevel: return "toast.max_level";
+                case FailReason.OnCooldown: return "toast.on_cooldown";
+                case FailReason.Locked: return "toast.locked";
+                case FailReason.Busy: return "toast.busy";
+                case FailReason.DailyLimit: return "toast.daily_limit";
+                case FailReason.AdUnavailable: return "toast.ad_unavailable";
+                default: return null;
             }
+        }
+
+        public static string MessageFor(FailReason reason)
+        {
+            string key = KeyFor(reason);
+            return key == null ? "" : Strings.Get(key);
         }
 
         private void Update()

@@ -100,7 +100,7 @@ namespace SoloHero.Game.Boot
             int left = policy != null ? policy.Remaining(AdSlot.OfflineDouble) : 0;
             _doubleButton.interactable = left > 0;
             if (_doubleLabel != null)
-                _doubleLabel.text = failed ? "Ad not available" : "Ad x2  (" + left + " left)";
+                _doubleLabel.text = failed ? Strings.Get("offline.ad_failed") : Strings.Format("offline.double", left);
         }
 
         private Text FindGoldText()

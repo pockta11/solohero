@@ -96,7 +96,7 @@ namespace SoloHero.Game.UI.Panels
                     if (!_save.ownedEquipment.Contains(GachaCatalog.IdOf(slot, (Grade)g))) continue;
                     owned++;
                     int ownedLevel = EquipmentLevels.Get(_save, GachaCatalog.IdOf(slot, (Grade)g));
-                    ownedList += (ownedList.Length > 0 ? " " : "") + PanelServices.GradeName((Grade)g)[0]
+                    ownedList += (ownedList.Length > 0 ? " " : "") + PanelServices.GradeName((Grade)g)
                         + (ownedLevel > 0 ? "+" + ownedLevel : "");
                 }
 
@@ -104,13 +104,13 @@ namespace SoloHero.Game.UI.Panels
                 {
                     int level = grade < 0 ? 0 : EquipmentLevels.Get(_save, Equipped(slot));
                     _slotTexts[s].text = grade < 0
-                        ? slot + ": empty"
-                        : slot + ": " + PanelServices.GradeName((Grade)grade) + (level > 0 ? " +" + level : "");
+                        ? Strings.Format("equip.empty", PanelServices.SlotName(slot))
+                        : Strings.Format("equip.slot", PanelServices.SlotName(slot), PanelServices.GradeName((Grade)grade) + (level > 0 ? " +" + level : ""));
                     _slotTexts[s].color = grade < 0 ? Color.white : PanelServices.GradeColor((Grade)grade);
                 }
 
                 if (s < _ownedTexts.Length && _ownedTexts[s] != null)
-                    _ownedTexts[s].text = owned == 0 ? "-" : "Owned " + ownedList;
+                    _ownedTexts[s].text = owned == 0 ? Strings.Get("equip.none") : Strings.Format("equip.owned", ownedList);
                 if (s < _swapButtons.Length && _swapButtons[s] != null)
                     _swapButtons[s].SetAvailable(owned > 1 || (owned == 1 && grade < 0));
             }

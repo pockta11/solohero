@@ -36,10 +36,21 @@ namespace SoloHero.Game.UI.Panels
         {
             switch (grade)
             {
-                case Grade.Common: return "Common";
-                case Grade.Rare: return "Rare";
-                case Grade.Epic: return "Epic";
-                default: return "Legendary";
+                case Grade.Common: return Strings.Get("grade.common");
+                case Grade.Rare: return Strings.Get("grade.rare");
+                case Grade.Epic: return Strings.Get("grade.epic");
+                default: return Strings.Get("grade.legendary");
+            }
+        }
+
+        public static string SlotName(EquipmentSlot slot)
+        {
+            switch (slot)
+            {
+                case EquipmentSlot.Sword: return Strings.Get("slot.sword");
+                case EquipmentSlot.Helm: return Strings.Get("slot.helm");
+                case EquipmentSlot.Armor: return Strings.Get("slot.armor");
+                default: return Strings.Get("slot.boots");
             }
         }
     }

@@ -20,6 +20,7 @@ namespace SoloHero.Game.Boot
         public const string GameSceneName = "Game";
 
         [SerializeField] private BalanceConfig _balance;
+        [SerializeField] private TextAsset _strings;
 
         private SaveService _save;
         private SaveDataV2 _data;
@@ -28,6 +29,7 @@ namespace SoloHero.Game.Boot
         private async void Start()
         {
             Log.Sink = new UnityLogSink();
+            if (_strings != null) Strings.Load(Strings.ParseTsv(_strings.text));
             DontDestroyOnLoad(gameObject);
             try
             {

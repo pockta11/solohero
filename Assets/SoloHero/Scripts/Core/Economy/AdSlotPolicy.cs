@@ -27,6 +27,8 @@ namespace SoloHero.Core.Economy
             _save = save;
         }
 
+        public double GemReward => _balance.AD_GEM_REWARD;
+
         public int DailyLimit(AdSlot slot)
         {
             switch (slot)

@@ -8,7 +8,7 @@ namespace SoloHero.Game.UI.Common
 {
     /// <summary>
     /// A-2 gem ad and A-3 gold booster buttons (E6-10, E6-11): remaining daily count, booster countdown,
-    /// and one message for every failure (E6-13). English until the Strings table (E7-17).
+    /// and one message for every failure (E6-13). Text comes from the Strings table (E7-17).
     /// </summary>
     public sealed class AdSlotsPresenter : MonoBehaviour
     {
@@ -40,11 +40,11 @@ namespace SoloHero.Game.UI.Common
             Refresh();
         }
 
-        public void WatchGem() => Watch(AdSlot.Gem, "Gems received");
+        public void WatchGem() => Watch(AdSlot.Gem, "ad.gem_received");
 
-        public void WatchBooster() => Watch(AdSlot.GoldBooster, "Gold x2 for 10 minutes");
+        public void WatchBooster() => Watch(AdSlot.GoldBooster, "ad.booster_started");
 
-        private void Watch(AdSlot slot, string successText)
+        private void Watch(AdSlot slot, string successKey)
         {
             if (_policy == null || _ads == null || _busy) return;
             Result can = _policy.CanUse(slot);
@@ -61,7 +61,7 @@ namespace SoloHero.Game.UI.Common
                 Result r = _policy.Complete(slot, outcome);
                 if (_toast != null)
                 {
-                    if (r.Ok) _toast.Show(successText);
+                    if (r.Ok) _toast.Show(Strings.Get(successKey));
                     else _toast.ShowFailure(r.Reason);
                 }
 
@@ -74,7 +74,7 @@ namespace SoloHero.Game.UI.Common
             if (_policy == null) return;
 
             int gemLeft = _policy.Remaining(AdSlot.Gem);
-            if (_gemLabel != null) _gemLabel.text = "Ad: Gem +5  (" + gemLeft + ")";
+            if (_gemLabel != null) _gemLabel.text = Strings.Format("ad.gem_button", _policy.GemReward, gemLeft);
             if (_gemButton != null) _gemButton.SetAvailable(!_busy && gemLeft > 0);
 
             long left = _policy.BoosterSecondsLeft;
@@ -82,8 +82,8 @@ namespace SoloHero.Game.UI.Common
             if (_boosterLabel != null)
             {
                 _boosterLabel.text = left > 0
-                    ? "Gold x2  " + (left / 60) + ":" + (left % 60).ToString("00")
-                    : "Ad: Gold x2  (" + boosterLeft + ")";
+                    ? Strings.Format("ad.booster_active", left / 60, (left % 60).ToString("00"))
+                    : Strings.Format("ad.booster_button", boosterLeft);
             }
 
             if (_boosterButton != null) _boosterButton.SetAvailable(!_busy && left == 0 && boosterLeft > 0);

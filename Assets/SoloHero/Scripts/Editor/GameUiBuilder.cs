@@ -17,7 +17,7 @@ namespace SoloHero.Editor
     /// <summary>
     /// Tools > Setup > Build Growth UI. Rebuilds the "GrowthUI" branch under the BattleHud canvas in Game.unity:
     /// bottom tab bar, Character / Equipment / Gacha / Skill panels, toast. Safe to run again (it replaces the branch).
-    /// Layout is placeholder uGUI until the E8 art pass; labels are English until the Strings table (E7-17).
+    /// Layout is placeholder uGUI until the E8 art pass; fixed labels carry LocalizedText keys from the Strings table (E7-17).
     /// Batch: Unity.exe -batchmode -quit -projectPath . -executeMethod SoloHero.Editor.GameUiBuilder.BuildBatch
     /// </summary>
     public static class GameUiBuilder
@@ -31,7 +31,8 @@ namespace SoloHero.Editor
         private static readonly Color PanelColor = new Color(0.08f, 0.08f, 0.11f, 0.94f);
         private static readonly Color RowColor = new Color(0.14f, 0.14f, 0.19f, 1f);
         private static readonly Color ButtonColor = new Color(0.25f, 0.45f, 0.3f, 1f);
-        private static readonly string[] TabNames = { "Hero", "Gear", "Summon", "Skill" };
+        private static readonly string[] TabKeys = { "tab.hero", "tab.gear", "tab.summon", "tab.skill" };
+        private const string StringsPath = "Assets/SoloHero/Data/Strings/strings_ko.txt";
 
         private static Font _font;
 
@@ -93,6 +94,17 @@ namespace SoloHero.Editor
             adsSo.FindProperty("_build").objectReferenceValue = config;
             adsSo.ApplyModifiedPropertiesWithoutUndo();
 
+            var bootSo = new SerializedObject(boot);
+            bootSo.FindProperty("_strings").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(StringsPath);
+            bootSo.ApplyModifiedPropertiesWithoutUndo();
+
+            LoadFailBanner banner = Object.FindObjectOfType<LoadFailBanner>(true);
+            if (banner != null)
+            {
+                Text bannerText = banner.GetComponentInChildren<Text>(true);
+                if (bannerText != null) bannerText.text = "";
+            }
+
             OfflineRewardPopup popup = Object.FindObjectOfType<OfflineRewardPopup>(true);
             Transform panel = popup != null ? popup.transform.Find("Panel") : null;
             if (panel != null)
@@ -106,7 +118,8 @@ namespace SoloHero.Editor
                     claim.anchorMax = new Vector2(0.48f, 0.38f);
                 }
 
-                Button doubleButton = MakeButton("ClaimDouble", panel, 0.52f, 0.1f, 0.94f, 0.38f, "Ad x2", 34, out Text doubleLabel);
+                Button doubleButton = MakeButton("ClaimDouble", panel, 0.52f, 0.1f, 0.94f, 0.38f, "", 34, out Text doubleLabel);
+                if (claim != null) Localize(claim.GetComponentInChildren<Text>(true), "offline.claim");
                 doubleButton.GetComponent<Image>().color = new Color(0.55f, 0.42f, 0.12f, 1f);
                 UnityEventTools.AddPersistentListener(doubleButton.onClick, popup.ClaimDoubled);
                 var popupSo = new SerializedObject(popup);
@@ -167,11 +180,12 @@ namespace SoloHero.Editor
         {
             RectTransform bar = Rect("TabBar", root, 0f, 0f, 1f, TabTop);
             PanelHost host = root.gameObject.AddComponent<PanelHost>();
-            var backgrounds = new Image[TabNames.Length];
-            float width = 1f / TabNames.Length;
-            for (int i = 0; i < TabNames.Length; i++)
+            var backgrounds = new Image[TabKeys.Length];
+            float width = 1f / TabKeys.Length;
+            for (int i = 0; i < TabKeys.Length; i++)
             {
-                Button button = MakeButton("Tab" + TabNames[i], bar, i * width, 0f, (i + 1) * width, 1f, TabNames[i], 40, out Text _);
+                Button button = MakeButton("Tab" + i, bar, i * width, 0f, (i + 1) * width, 1f, "", 40, out Text tabLabel);
+                Localize(tabLabel, TabKeys[i]);
                 backgrounds[i] = button.GetComponent<Image>();
                 UnityEventTools.AddIntPersistentListener(button.onClick, host.Toggle, i);
             }
@@ -247,7 +261,8 @@ namespace SoloHero.Editor
                 row.gameObject.AddComponent<Image>().color = RowColor;
                 slots[i] = MakeText("Equipped", row, 0.03f, 0.5f, 0.66f, 1f, "", 36, TextAnchor.MiddleLeft);
                 owned[i] = MakeText("Owned", row, 0.03f, 0f, 0.66f, 0.5f, "", 28, TextAnchor.MiddleLeft);
-                Button button = MakeButton("Swap", row, 0.7f, 0.12f, 0.98f, 0.88f, "Swap", 34, out Text _);
+                Button button = MakeButton("Swap", row, 0.7f, 0.12f, 0.98f, 0.88f, "", 34, out Text swapLabel);
+                Localize(swapLabel, "equip.swap");
                 buttons[i] = button.gameObject.AddComponent<TapGuardButton>();
                 UnityEventTools.AddIntPersistentListener(buttons[i].OnTap, presenter.Swap, i);
             }
@@ -411,6 +426,9 @@ namespace SoloHero.Editor
             SetAnchors(hud, "Skill2", 0.36f, 0.395f, 0.64f, 0.438f);
             SetAnchors(hud, "Skill3", 0.68f, 0.395f, 0.96f, 0.438f);
             SetAnchors(hud, "RetreatPrompt", 0.2f, 0.64f, 0.8f, 0.69f);
+            Localize(FindLabel(hud, "FailPanel/Retry"), "hud.retry");
+            Localize(FindLabel(hud, "FailPanel/Retreat"), "hud.retreat");
+            Localize(FindLabel(hud, "Challenge"), "hud.challenge");
 
             Transform oldBar = hud.Find("TopBar");
             if (oldBar != null) Object.DestroyImmediate(oldBar.gameObject);
@@ -418,6 +436,24 @@ namespace SoloHero.Editor
             bar.gameObject.AddComponent<Image>().color = new Color(0.06f, 0.06f, 0.1f, 0.72f);
             bar.GetComponent<Image>().raycastTarget = false;
             bar.SetSiblingIndex(1);
+        }
+
+        private static Text FindLabel(Transform parent, string path)
+        {
+            Transform t = parent.Find(path);
+            return t != null ? t.GetComponentInChildren<Text>(true) : null;
+        }
+
+        /// <summary>Stores only the key in the scene; LocalizedText fills the Korean value at runtime (E7-17).</summary>
+        private static void Localize(Text label, string key)
+        {
+            if (label == null) return;
+            LocalizedText localized = label.GetComponent<LocalizedText>();
+            if (localized == null) localized = label.gameObject.AddComponent<LocalizedText>();
+            var so = new SerializedObject(localized);
+            so.FindProperty("_key").stringValue = key;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            label.text = key;
         }
 
         private static void SetAnchors(Transform parent, string child, float xMin, float yMin, float xMax, float yMax)

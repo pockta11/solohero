@@ -170,12 +170,12 @@ development_status:
   7-09-settings-panel: backlog  # E7-09 [M]
   7-10-skill-buttons: backlog  # E7-10 [M]
   7-11-popups: backlog  # E7-11 [M]
-  7-12-toast-queue: review  # E7-12 [M] English text until Strings (E7-17)
+  7-12-toast-queue: review  # E7-12 [M]
   7-13-tutorial-hints: review  # E7-13 [M] TutorialService: gift gold + free pull after 1-2, upgrade banner, skill toast
   7-14-back-key-policy: backlog  # E7-14 [M]
   7-15-global-tap-guard: review  # E7-15 [M] TapGuardButton on every spend button
   7-16-big-number-format: backlog  # E7-16 [M]
-  7-17-strings-table: backlog  # E7-17 [S]
+  7-17-strings-table: review  # E7-17 [S] strings_ko.txt + LocalizedText, ASCII-only code test
   epic-7-retrospective: optional
 
   # ── E8. 아트·연출 통합 ──

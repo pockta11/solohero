@@ -12,7 +12,7 @@ namespace SoloHero.Game.UI.Common
 {
     /// <summary>
     /// Tutorial hints (E7-13): polls <see cref="TutorialService"/> a few times a second, shows the reward and skill
-    /// unlock as toasts and keeps the upgrade hint banner up until the first upgrade. English until Strings (E7-17).
+    /// unlock as toasts and keeps the upgrade hint banner up until the first upgrade. Text comes from the Strings table (E7-17).
     /// </summary>
     public sealed class TutorialHints : MonoBehaviour
     {
@@ -50,10 +50,10 @@ namespace SoloHero.Game.UI.Common
                     if (_toast != null) _toast.Show(RewardText(_tutorial.LastRewardItems));
                     break;
                 case TutorialEvent.HintUpgrade:
-                    SetBanner(true, "Tip: open Hero and tap a lane to upgrade");
+                    SetBanner(true, Strings.Get("tutorial.upgrade_tip"));
                     return;
                 case TutorialEvent.HintSkill:
-                    if (_toast != null) _toast.Show("Whirlwind unlocked! Level skills in the Skill tab");
+                    if (_toast != null) _toast.Show(Strings.Get("tutorial.skill_unlocked"));
                     break;
             }
 
@@ -63,9 +63,9 @@ namespace SoloHero.Game.UI.Common
         private string RewardText(GachaPullItem[] items)
         {
             _sb.Clear();
-            _sb.Append("Welcome gift: gold + free summon");
+            _sb.Append(Strings.Get("tutorial.welcome"));
             for (int i = 0; i < items.Length; i++)
-                _sb.Append(i == 0 ? " - " : ", ").Append(PanelServices.GradeName(items[i].Grade)).Append(' ').Append(items[i].Slot);
+                _sb.Append(i == 0 ? " - " : ", ").Append(PanelServices.GradeName(items[i].Grade)).Append(' ').Append(PanelServices.SlotName(items[i].Slot));
             return _sb.ToString();
         }
 

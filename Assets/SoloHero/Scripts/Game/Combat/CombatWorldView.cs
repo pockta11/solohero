@@ -10,7 +10,7 @@ namespace SoloHero.Game.Combat
 {
     /// <summary>
     /// Draws the combat state (E2, E8-02..04): hero and the 4 enemy slots follow Core positions and play sprite
-    /// clips chosen from Core state — run while advancing, attack on each swing, hit when HP drops, dead on death.
+    /// clips chosen from Core state - run while advancing, attack on each swing, hit when HP drops, dead on death.
     /// Enemies keep their slot renderer for the death clip after Core frees the slot. The hit lands on the swing
     /// (D-065), so animation timing never changes combat results.
     /// </summary>

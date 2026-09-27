@@ -25,7 +25,7 @@ namespace SoloHero.Game.UI
         [SerializeField] private Text _slot3Text;
         [SerializeField] private Text _retreatPrompt;
 
-        private const string FarmingText = "Back to farming...";
+        private const string FarmingKey = "hud.farming";
 
         private BalanceValues _balance;
         private SaveDataV2 _save;
@@ -218,9 +218,9 @@ namespace SoloHero.Game.UI
 
         private void RefreshSkills(StageRunner runner)
         {
-            RefreshSkillLabel(_slot1Text, "S1", runner.Skills.CooldownRemaining(SkillSlot.Slot1), ref _shownSlot1Seconds);
-            RefreshSkillLabel(_slot2Text, "S2", runner.Skills.CooldownRemaining(SkillSlot.Slot2), ref _shownSlot2Seconds);
-            RefreshSkillLabel(_slot3Text, "S3", runner.Skills.CooldownRemaining(SkillSlot.Slot3), ref _shownSlot3Seconds);
+            RefreshSkillLabel(_slot1Text, Strings.Get("skill.name.1"), runner.Skills.CooldownRemaining(SkillSlot.Slot1), ref _shownSlot1Seconds);
+            RefreshSkillLabel(_slot2Text, Strings.Get("skill.name.2"), runner.Skills.CooldownRemaining(SkillSlot.Slot2), ref _shownSlot2Seconds);
+            RefreshSkillLabel(_slot3Text, Strings.Get("skill.name.3"), runner.Skills.CooldownRemaining(SkillSlot.Slot3), ref _shownSlot3Seconds);
         }
 
         private static void RefreshSkillLabel(Text label, string readyName, float remaining, ref int shownSeconds)
@@ -232,7 +232,7 @@ namespace SoloHero.Game.UI
             if (shownSeconds == seconds) return;
 
             shownSeconds = seconds;
-            label.text = seconds > 0 ? readyName + " " + seconds.ToString() : readyName;
+            label.text = seconds > 0 ? Strings.Format("hud.skill_cooldown", readyName, seconds) : readyName;
         }
 
         private void RefreshRetreatPrompt(StageRunner runner)
@@ -242,8 +242,9 @@ namespace SoloHero.Game.UI
             GameObject promptObject = _retreatPrompt != null ? _retreatPrompt.gameObject : null;
             SetShown(promptObject, show, ref _retreatPromptVisible);
             if (!show || _retreatPrompt == null) return;
-            if (_retreatPrompt.text == FarmingText) return;
-            _retreatPrompt.text = FarmingText;
+            string farming = Strings.Get(FarmingKey);
+            if (_retreatPrompt.text == farming) return;
+            _retreatPrompt.text = farming;
         }
 
         private static void SetShown(GameObject target, bool show, ref bool shown)

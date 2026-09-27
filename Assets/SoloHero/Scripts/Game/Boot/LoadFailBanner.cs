@@ -1,3 +1,4 @@
+using SoloHero.Core.Common;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,7 +6,7 @@ namespace SoloHero.Game.Boot
 {
     public sealed class LoadFailBanner : MonoBehaviour
     {
-        public const string Message = "Could not load the cloud save. Local data is in use.";
+        public const string MessageKey = "boot.load_failed";
 
         private void Awake()
         {
@@ -20,7 +21,7 @@ namespace SoloHero.Game.Boot
             if (text == null)
                 return;
 
-            text.text = Message;
+            text.text = Strings.Get(MessageKey);
             text.gameObject.SetActive(true);
             text.enabled = true;
         }

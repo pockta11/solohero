@@ -12,7 +12,7 @@ namespace SoloHero.Game.UI.Panels
     /// <summary>Skill panel (E7-08): 3 fixed skills with unlock level, skill level and level-up cost.</summary>
     public sealed class SkillPanelPresenter : MonoBehaviour
     {
-        private static readonly string[] SkillNames = { "Power Strike", "Whirlwind", "Battle Cry" };
+        private static readonly string[] SkillNameKeys = { "skill.name.1", "skill.name.2", "skill.name.3" };
 
         [SerializeField] private Text[] _levelTexts = new Text[3];
         [SerializeField] private Text[] _costTexts = new Text[3];
@@ -73,12 +73,12 @@ namespace SoloHero.Game.UI.Panels
                 if (i < _levelTexts.Length && _levelTexts[i] != null)
                 {
                     _levelTexts[i].text = unlocked
-                        ? SkillNames[i] + "  Lv " + level + "/" + _balance.SKILL_MAX_LEVEL
-                        : SkillNames[i] + "  (hero Lv " + SkillLevelService.UnlockHeroLevel(_balance, slot) + ")";
+                        ? Strings.Format("skill.level", Strings.Get(SkillNameKeys[i]), level, _balance.SKILL_MAX_LEVEL)
+                        : Strings.Format("skill.unlock_at", Strings.Get(SkillNameKeys[i]), SkillLevelService.UnlockHeroLevel(_balance, slot));
                 }
 
                 if (i < _costTexts.Length && _costTexts[i] != null)
-                    _costTexts[i].text = !unlocked ? "Locked" : max ? "MAX" : BigNumberFormat.Format(cost);
+                    _costTexts[i].text = !unlocked ? Strings.Get("skill.locked") : max ? Strings.Get("char.max") : BigNumberFormat.Format(cost);
                 if (i < _buttons.Length && _buttons[i] != null)
                     _buttons[i].SetAvailable(unlocked && !max && _save.gold >= cost);
             }

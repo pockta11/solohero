@@ -14,7 +14,7 @@ namespace SoloHero.Game.UI.Panels
     /// <summary>Character panel (E7-05): 4 upgrade lanes with level, cost and MAX state, plus the stat summary.</summary>
     public sealed class CharacterPanelPresenter : MonoBehaviour
     {
-        private static readonly string[] LaneNames = { "HP", "ATK", "DEF", "ATK SPD" };
+        private static readonly string[] LaneKeys = { "stat.hp", "stat.atk", "stat.def", "stat.atkspd" };
 
         [SerializeField] private Text[] _levelTexts = new Text[4];
         [SerializeField] private Text[] _costTexts = new Text[4];
@@ -70,21 +70,22 @@ namespace SoloHero.Game.UI.Panels
                 double cost = max ? 0d : Formulas.UpgradeCost(_balance, lane, level);
 
                 if (i < _levelTexts.Length && _levelTexts[i] != null)
-                    _levelTexts[i].text = LaneNames[i] + "  Lv " + level;
+                    _levelTexts[i].text = Strings.Format("char.lane", Strings.Get(LaneKeys[i]), level);
                 if (i < _costTexts.Length && _costTexts[i] != null)
-                    _costTexts[i].text = max ? "MAX" : BigNumberFormat.Format(cost);
+                    _costTexts[i].text = max ? Strings.Get("char.max") : BigNumberFormat.Format(cost);
                 if (i < _buttons.Length && _buttons[i] != null)
                     _buttons[i].SetAvailable(!max && _save.gold >= cost);
             }
 
             if (_summaryText == null) return;
             HeroStats s = CombatLoadout.ComputeStats(_balance, _save);
-            _summaryText.text = "Lv " + _save.heroLevel
-                + "   HP " + BigNumberFormat.Format(s.Hp)
-                + "   ATK " + BigNumberFormat.Format(s.Atk)
-                + "   DEF " + BigNumberFormat.Format(s.Def)
-                + "\nATK SPD " + s.AtkSpd.ToString("0.00")
-                + "/s   CRIT " + s.CritRate.ToString("0") + "%";
+            _summaryText.text = Strings.Format("char.summary",
+                _save.heroLevel,
+                BigNumberFormat.Format(s.Hp),
+                BigNumberFormat.Format(s.Atk),
+                BigNumberFormat.Format(s.Def),
+                s.AtkSpd.ToString("0.00"),
+                s.CritRate.ToString("0"));
         }
     }
 }
