@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using SoloHero.Core.Analytics;
 using SoloHero.Core.Boot;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
@@ -47,7 +48,8 @@ namespace SoloHero.Game.Boot
         {
             BalanceValues balance = _balance != null ? _balance.ToValues() : new BalanceValues();
             var clock = new SystemClock();
-            BootReport report = await BootFlow.RunAsync(new AuthService(), CreateSave, balance, clock);
+            var auth = new AuthService();
+            BootReport report = await BootFlow.RunAsync(auth, CreateSave, balance, clock);
 
             _save = report.Save;
             _data = report.Data;
@@ -63,6 +65,7 @@ namespace SoloHero.Game.Boot
             RegisterGrowth(balance, requester);
             RegisterAds(balance, clock, requester);
             RegisterSettingsAndAudio();
+            Services.Register<IAnalytics>(new AnalyticsService(auth.FirebaseReady));
 
             if (report.LoadFailed)
             {

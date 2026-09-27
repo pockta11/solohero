@@ -1,4 +1,5 @@
 using System;
+using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Economy;
@@ -16,6 +17,7 @@ namespace SoloHero.Game.Combat
         private SaveDataV2 _save;
         private int _appliedHeroLevel;
         private AdSlotPolicy _ads;
+        private GameplayTelemetry _telemetry;
 
         public StageRunner Runner => _runner;
 
@@ -73,11 +75,29 @@ namespace SoloHero.Game.Combat
             _runner.Hero.AttackRequested += OnAttackRequested;
             _runner.StateChanged += OnStageStateChanged;
             RefreshLoadout();
+            IAnalytics analytics;
+            try
+            {
+                analytics = Services.Get<IAnalytics>();
+            }
+            catch (Exception)
+            {
+                analytics = new NullAnalytics();
+            }
+
+            // Created before Resume so the first stage start is seen (E6-15).
+            _telemetry = new GameplayTelemetry(_runner, save, balance, analytics);
             _runner.Resume(save.farmingStage < 1 ? 1 : save.farmingStage, save.retreatMode);
         }
 
         private void OnDestroy()
         {
+            if (_telemetry != null)
+            {
+                _telemetry.Flush();
+                _telemetry.Dispose();
+            }
+
             if (_runner == null) return;
             _runner.Hero.AttackRequested -= OnAttackRequested;
             _runner.StateChanged -= OnStageStateChanged;
@@ -88,6 +108,7 @@ namespace SoloHero.Game.Combat
             if (!enabled || _runner == null) return;
             _runner.ClearGoldMultiplier = _ads != null ? _ads.StageGoldMultiplier : 1d;
             _runner.Tick(Time.deltaTime);
+            _telemetry?.Tick(Time.deltaTime);
             if (_save.heroLevel != _appliedHeroLevel) RefreshLoadout();
         }
 
@@ -110,6 +131,7 @@ namespace SoloHero.Game.Combat
 
         private void OnApplicationPause(bool paused)
         {
+            if (paused) _telemetry?.Flush();
             if (paused || _runner == null) return;
 
             SaveDataV2 save;

@@ -1,4 +1,5 @@
 using System.Text;
+using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Gacha;
@@ -58,13 +59,13 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
-        public void PullSingle() => Apply(_gacha != null && _save != null ? _gacha.TryPull(_save) : default);
+        public void PullSingle() => Apply(_gacha != null && _save != null ? _gacha.TryPull(_save) : default, "gold_single");
 
-        public void PullTen() => Apply(_gacha != null && _save != null ? _gacha.TryPullTen(_save) : default);
+        public void PullTen() => Apply(_gacha != null && _save != null ? _gacha.TryPullTen(_save) : default, "gold_ten");
 
-        public void PullTenWithGem() => Apply(_gacha != null && _save != null ? _gacha.TryPullTenWithGem(_save) : default);
+        public void PullTenWithGem() => Apply(_gacha != null && _save != null ? _gacha.TryPullTenWithGem(_save) : default, "gem_ten");
 
-        private void Apply(GachaBatchResult result)
+        private void Apply(GachaBatchResult result, string kind)
         {
             if (!result.Status.Ok || result.Items == null)
             {
@@ -74,6 +75,7 @@ namespace SoloHero.Game.UI.Panels
 
             if (_requester != null) _requester.RequestSave();
             if (_session != null) _session.RefreshLoadout();
+            LogPull(result.Items, kind);
             DrawResult(result.Items);
             if (_reveal != null) _reveal.Show(result.Items);
             Refresh();
@@ -113,6 +115,21 @@ namespace SoloHero.Game.UI.Panels
             if (_singleButton != null) _singleButton.SetAvailable(_save.gold >= _balance.GACHA_COST_SINGLE);
             if (_tenButton != null) _tenButton.SetAvailable(_save.gold >= _balance.GACHA_COST_TEN);
             if (_gemButton != null) _gemButton.SetAvailable(_save.gem >= _balance.GACHA_COST_TEN_GEM);
+        }
+
+        private void LogPull(GachaPullItem[] items, string kind)
+        {
+            Grade best = Grade.Common;
+            for (int i = 0; i < items.Length; i++)
+            {
+                if (items[i].Grade > best) best = items[i].Grade;
+            }
+
+            GameAnalytics.Log(AnalyticsEvents.GachaPull,
+                AnalyticsParam.Of(AnalyticsEvents.PKind, kind),
+                AnalyticsParam.Of(AnalyticsEvents.PCount, items.Length),
+                AnalyticsParam.Of(AnalyticsEvents.PBestGrade, (long)best),
+                AnalyticsParam.Of(AnalyticsEvents.PPity, _save != null ? _save.pityCount : 0));
         }
 
         private void DrawResult(GachaPullItem[] items)

@@ -154,7 +154,7 @@ development_status:
   6-12-ad-daily-reset: review  # E6-12 [M] local-midnight reset in AdSlotPolicy
   6-13-ad-failure-handling: review  # E6-13 [M] failed/closed = no reward, no count; one toast per reason
   6-14-real-ad-unit-ids: review  # E6-14 [M] rewarded unit .../9693141233 (one unit, 3 slots); dev builds + editor keep the test id
-  6-15-analytics-events: backlog  # E6-15 [S]
+  6-15-analytics-events: review  # E6-15 [S] 14 events + highest_chapter; GameplayTelemetry (Core) + AnalyticsService (Firebase)
   epic-6-retrospective: optional
 
   # ── E7. UI/UX 세로 레이아웃 ──
@@ -213,9 +213,9 @@ development_status:
   9-11-extra-scenarios: backlog  # E9-11 [M]
   9-12-device-matrix: backlog  # E9-12 [M]
   9-13-bug-severity-gate: backlog  # E9-13 [M]
-  9-14-store-assets: backlog  # E9-14 [M]
-  9-15-rate-disclosure-policy: backlog  # E9-15 [M]
-  9-16-ad-policy-check: backlog  # E9-16 [M]
+  9-14-store-assets: review  # E9-14 [M] store/: icon 512, feature graphic, 4 draft shots, listing-ko, privacy-policy.html, data-safety; dev fills email/URL
+  9-15-rate-disclosure-policy: review  # E9-15 [M] no IAP -> legal disclosure not required; in-game + store text anyway (store/content-rating.md)
+  9-16-ad-policy-check: review  # E9-16 [M] rewarded only, labelled, optional; 13+ target (store/content-rating.md)
   9-17-min-android-version: backlog  # E9-17 [S]
   9-18-release-aab: backlog  # E9-18 [M]
   9-19-memory-drawcall-measure: backlog  # E9-19 [M]

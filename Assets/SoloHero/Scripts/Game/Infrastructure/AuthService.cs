@@ -11,6 +11,9 @@ namespace SoloHero.Game.Infrastructure
     {
         public const string LocalUserId = "local";
 
+        /// <summary>True once Firebase dependencies resolved; analytics works even if sign-in later fails.</summary>
+        public bool FirebaseReady { get; private set; }
+
         public async Task<string> SignInAsync()
         {
             try
@@ -22,6 +25,7 @@ namespace SoloHero.Game.Infrastructure
                     return LocalUserId;
                 }
 
+                FirebaseReady = true;
                 FirebaseAuth auth = FirebaseAuth.DefaultInstance;
                 if (auth.CurrentUser != null)
                 {

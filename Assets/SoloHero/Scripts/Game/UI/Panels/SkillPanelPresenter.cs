@@ -1,3 +1,4 @@
+using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
@@ -57,6 +58,9 @@ namespace SoloHero.Game.UI.Panels
             }
 
             if (_session != null) _session.RefreshLoadout();
+            GameAnalytics.Log(AnalyticsEvents.SkillLevel,
+                AnalyticsParam.Of(AnalyticsEvents.PSlot, slot),
+                AnalyticsParam.Of(AnalyticsEvents.PLevel, SkillLevelService.EffectiveLevel(_skills.GetSavedLevel((SkillSlot)slot))));
             Celebrate(slot);
             Refresh();
         }

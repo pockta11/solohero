@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
@@ -42,6 +43,7 @@ public static class BuildAutomator
 
         ApplyToolchainOverrides();
         ApplyKeystoreFromEnvironment();
+        RepairLocalRepoPoms();
 
         EditorUserBuildSettings.buildAppBundle = true;
 
@@ -67,7 +69,56 @@ public static class BuildAutomator
         Debug.Log($"[Build] result={summary.result} size={summary.totalSize} errors={summary.totalErrors} warnings={summary.totalWarnings} time={summary.totalTime}");
 
         if (summary.result != BuildResult.Succeeded)
+        {
             Fail($"build failed: {summary.result} ({summary.totalErrors} errors)");
+            return;
+        }
+
+        VerifyNativeLibraries(outputPath);
+    }
+
+    private const string LocalRepo = "Assets/GeneratedLocalRepo";
+
+    /// <summary>
+    /// EDM4U sometimes rewrites a local-repo pom to packaging "srcaar" while the file next to it is ".aar". Gradle then
+    /// resolves nothing for that artifact and the Firebase native library silently drops out of the build (the app
+    /// boots in local mode with DllNotFoundException FirebaseCppApp). Point such poms back at the file that exists.
+    /// </summary>
+    private static void RepairLocalRepoPoms()
+    {
+        if (!Directory.Exists(LocalRepo)) return;
+        foreach (string pom in Directory.GetFiles(LocalRepo, "*.pom", SearchOption.AllDirectories))
+        {
+            string text = File.ReadAllText(pom);
+            string aar = Path.ChangeExtension(pom, ".aar");
+            if (!text.Contains("<packaging>srcaar</packaging>") || !File.Exists(aar)) continue;
+            File.WriteAllText(pom, text.Replace("<packaging>srcaar</packaging>", "<packaging>aar</packaging>"));
+            Debug.LogWarning("[Build] repaired pom packaging srcaar -> aar: " + pom);
+        }
+    }
+
+    /// <summary>Fails the build when a native library the app needs at boot is missing from the bundle.</summary>
+    private static void VerifyNativeLibraries(string aabPath)
+    {
+        string[] required = { "base/lib/arm64-v8a/libFirebaseCppApp-" };
+        try
+        {
+            using (ZipArchive zip = ZipFile.OpenRead(aabPath))
+            {
+                foreach (string prefix in required)
+                {
+                    if (zip.Entries.Any(e => e.FullName.StartsWith(prefix, StringComparison.Ordinal))) continue;
+                    Fail("native library missing from " + aabPath + ": " + prefix + "*.so");
+                    return;
+                }
+            }
+
+            Debug.Log("[Build] native libraries verified");
+        }
+        catch (Exception e)
+        {
+            Fail("could not inspect " + aabPath + ": " + e.Message);
+        }
     }
 
     private static void ApplyToolchainOverrides()

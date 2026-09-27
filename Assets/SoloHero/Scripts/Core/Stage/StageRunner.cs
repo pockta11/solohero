@@ -68,6 +68,9 @@ namespace SoloHero.Core.Stage
         public event Action<int> StageCleared;
         public event Action BossFailed;
 
+        /// <summary>Raised at the end of every <see cref="Begin"/>, even when the state enum does not change.</summary>
+        public event Action<int> StageStarted;
+
         public void Begin(int g)
         {
             if (g < 1) g = 1;
@@ -92,6 +95,8 @@ namespace SoloHero.Core.Stage
                 SetState(StageState.Retreat);
             else
                 SetState(StageState.Running);
+
+            StageStarted?.Invoke(_g);
         }
 
         /// <summary>Starts at the saved farming stage and restores retreat farming after a restart.</summary>

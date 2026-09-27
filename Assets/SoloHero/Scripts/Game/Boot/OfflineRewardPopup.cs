@@ -1,3 +1,4 @@
+using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Economy;
@@ -55,7 +56,10 @@ namespace SoloHero.Game.Boot
             ads.Show(outcome =>
             {
                 _adBusy = false;
-                if (policy.Complete(AdSlot.OfflineDouble, outcome).Ok)
+                bool rewarded = policy.Complete(AdSlot.OfflineDouble, outcome).Ok;
+                UI.Common.GameAnalytics.Log(rewarded ? AnalyticsEvents.AdReward : AnalyticsEvents.AdFail,
+                    AnalyticsParam.Of(AnalyticsEvents.PSlot, AdSlot.OfflineDouble.ToString()));
+                if (rewarded)
                     ClaimWith(adDoubled: true);
                 else
                     RefreshDoubleButton(failed: true);
@@ -85,6 +89,9 @@ namespace SoloHero.Game.Boot
                 return;
 
             _claimed = true;
+            UI.Common.GameAnalytics.Log(AnalyticsEvents.OfflineClaim,
+                AnalyticsParam.Of(AnalyticsEvents.PGold, System.Math.Round(adDoubled ? _gold * balance.OFFLINE_AD_MULT : _gold)),
+                AnalyticsParam.Of(AnalyticsEvents.PDoubled, adDoubled));
             if (panel != null)
                 panel.SetActive(false);
 

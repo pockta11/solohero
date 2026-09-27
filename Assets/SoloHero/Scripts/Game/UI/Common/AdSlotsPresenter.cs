@@ -1,3 +1,4 @@
+using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Economy;
 using SoloHero.Game.UI.Panels;
@@ -59,6 +60,8 @@ namespace SoloHero.Game.UI.Common
             {
                 _busy = false;
                 Result r = _policy.Complete(slot, outcome);
+                GameAnalytics.Log(r.Ok ? AnalyticsEvents.AdReward : AnalyticsEvents.AdFail,
+                    AnalyticsParam.Of(AnalyticsEvents.PSlot, slot.ToString()));
                 if (_toast != null)
                 {
                     if (r.Ok) _toast.Show(Strings.Get(successKey));

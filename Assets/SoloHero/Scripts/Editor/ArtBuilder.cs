@@ -86,6 +86,7 @@ namespace SoloHero.Editor
             WireBootAudio(bank);
 
             GameUiBuilder.BuildBatch();
+            AppIconSetup.Apply();
             ApplyFont(GameScene);
             ApplyFont(BootScene);
             Debug.Log("[Art] art built and wired");

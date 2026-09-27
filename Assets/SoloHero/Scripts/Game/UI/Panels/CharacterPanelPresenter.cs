@@ -1,4 +1,5 @@
 using SoloHero.Core;
+using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
@@ -58,6 +59,9 @@ namespace SoloHero.Game.UI.Panels
             }
 
             if (_session != null) _session.RefreshLoadout();
+            GameAnalytics.Log(AnalyticsEvents.Upgrade,
+                AnalyticsParam.Of(AnalyticsEvents.PLane, lane),
+                AnalyticsParam.Of(AnalyticsEvents.PLevel, _upgrade.GetLevel((UpgradeLane)lane)));
             Celebrate(lane);
             Refresh();
         }
