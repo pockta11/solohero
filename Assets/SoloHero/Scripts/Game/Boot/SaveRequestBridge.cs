@@ -28,6 +28,7 @@ namespace SoloHero.Game.Boot
                 return;
             }
 
+            SoloHero.Core.Common.Log.Info(SoloHero.Core.Common.LogTag.Save, "request save");
             _save.RequestSave(data);
         }
     }

@@ -23,9 +23,14 @@ namespace SoloHero.Game.Infrastructure
                 }
 
                 FirebaseAuth auth = FirebaseAuth.DefaultInstance;
-                if (auth.CurrentUser != null) return auth.CurrentUser.UserId;
+                if (auth.CurrentUser != null)
+                {
+                    Log.Info(LogTag.Boot, "existing user " + auth.CurrentUser.UserId);
+                    return auth.CurrentUser.UserId;
+                }
 
                 AuthResult result = await auth.SignInAnonymouslyAsync();
+                Log.Info(LogTag.Boot, "signed in " + result.User.UserId);
                 return result.User.UserId;
             }
             catch (Exception e)

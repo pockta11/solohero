@@ -25,14 +25,18 @@ namespace SoloHero.Game.Infrastructure
 
         public async Task<string> LoadJsonAsync()
         {
+            SoloHero.Core.Common.Log.Info(SoloHero.Core.Common.LogTag.Save, "remote load start " + _node.Key);
             DataSnapshot snapshot = await _node.GetValueAsync();
+            SoloHero.Core.Common.Log.Info(SoloHero.Core.Common.LogTag.Save, "remote load done exists=" + snapshot.Exists);
             if (!snapshot.Exists) return null;
             return snapshot.GetRawJsonValue();
         }
 
         public async Task SaveJsonAsync(string json)
         {
+            SoloHero.Core.Common.Log.Info(SoloHero.Core.Common.LogTag.Save, "remote save start");
             await _node.SetRawJsonValueAsync(json);
+            SoloHero.Core.Common.Log.Info(SoloHero.Core.Common.LogTag.Save, "remote save done");
         }
     }
 }
