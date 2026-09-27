@@ -67,6 +67,7 @@ namespace SoloHero.Editor
             GameObject skill = BuildSkill(panelArea, session, toast);
 
             BuildTabs(root, new[] { character, equipment, gacha, skill });
+            BuildTutorial(root, session, toast);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -218,6 +219,23 @@ namespace SoloHero.Editor
         {
             Button button = MakeButton(name, parent, xMin, 0.03f, xMax, 0.21f, "", 32, out label);
             return button.gameObject.AddComponent<TapGuardButton>();
+        }
+
+        private static void BuildTutorial(RectTransform root, CombatSession session, ToastQueue toast)
+        {
+            RectTransform banner = Rect("TutorialBanner", root, 0.05f, 0.575f, 0.95f, 0.615f);
+            banner.gameObject.AddComponent<Image>().color = new Color(0.95f, 0.77f, 0.19f, 0.92f);
+            Text label = MakeText("Label", banner, 0f, 0f, 1f, 1f, "", 32, TextAnchor.MiddleCenter);
+            label.color = Color.black;
+            banner.gameObject.SetActive(false);
+
+            TutorialHints hints = root.gameObject.AddComponent<TutorialHints>();
+            var so = new SerializedObject(hints);
+            so.FindProperty("_banner").objectReferenceValue = banner.gameObject;
+            so.FindProperty("_bannerText").objectReferenceValue = label;
+            so.FindProperty("_toast").objectReferenceValue = toast;
+            so.FindProperty("_session").objectReferenceValue = session;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static ToastQueue BuildToast(RectTransform root)

@@ -25,6 +25,8 @@ namespace SoloHero.Game.UI
         [SerializeField] private Text _slot3Text;
         [SerializeField] private Text _retreatPrompt;
 
+        private const string FarmingText = "Back to farming...";
+
         private BalanceValues _balance;
         private SaveDataV2 _save;
         private bool _goldShown;
@@ -235,12 +237,13 @@ namespace SoloHero.Game.UI
 
         private void RefreshRetreatPrompt(StageRunner runner)
         {
-            bool show = runner.PromptRetreat;
+            // D-058: a normal-stage death drops to farming by itself after the retry delay; say so while waiting.
+            bool show = runner.PromptRetreat && !runner.IsBoss && runner.State == StageState.Failed && runner.GlobalStage > 1;
             GameObject promptObject = _retreatPrompt != null ? _retreatPrompt.gameObject : null;
             SetShown(promptObject, show, ref _retreatPromptVisible);
             if (!show || _retreatPrompt == null) return;
-            if (_retreatPrompt.text == "Retreat?") return;
-            _retreatPrompt.text = "Retreat?";
+            if (_retreatPrompt.text == FarmingText) return;
+            _retreatPrompt.text = FarmingText;
         }
 
         private static void SetShown(GameObject target, bool show, ref bool shown)

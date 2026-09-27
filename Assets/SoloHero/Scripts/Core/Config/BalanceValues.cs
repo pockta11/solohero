@@ -61,6 +61,7 @@ namespace SoloHero.Core.Config
         public bool GACHA_PITY_RESET_ON_LEGENDARY = true;
         public int TUTORIAL_FREE_PULLS = 1;
         public double TUTORIAL_GOLD = 1000;
+        public int TUTORIAL_REWARD_STAGE = 2;
         public double REFUND_C = 50;
         public double REFUND_R = 200;
         public double REFUND_E = 800;

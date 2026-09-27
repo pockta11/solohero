@@ -4,6 +4,7 @@ using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
+using SoloHero.Core.Progression;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Game.Config;
@@ -79,11 +80,13 @@ namespace SoloHero.Game.Boot
             Services.Register(new UpgradeService(_data, balance, requester));
             Services.Register(new SkillLevelService(_data, balance, requester));
             Services.Register(new EquipService(requester));
-            Services.Register(new GachaService(
+            var gacha = new GachaService(
                 balance,
                 GachaTableValues.FromBalance(balance),
                 Services.Get<IRandom>(),
-                GachaCatalog.Standard(balance)));
+                GachaCatalog.Standard(balance));
+            Services.Register(gacha);
+            Services.Register(new TutorialService(balance, gacha, requester));
         }
 
                 public void NotifyOfflineClaimed()

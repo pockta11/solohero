@@ -187,16 +187,14 @@ namespace SoloHero.Core.Balance
         public double CurrentScore(int frontierG) =>
             Score(Snapshot.From(_save), Formulas.EnemyAtk(_b, frontierG < 1 ? 1 : frontierG));
 
-        /// <summary>Tutorial gift: pulls that cost the player nothing. Not counted as gold earned or spent.</summary>
-        public void FreePulls(int count)
+        /// <summary>Records tutorial free pulls (made by TutorialService) without counting them as gold spent.</summary>
+        public void CountTutorialPulls(GachaPullItem[] items)
         {
-            for (int i = 0; i < count; i++)
+            TutorialPulls += items.Length;
+            for (int i = 0; i < items.Length; i++)
             {
-                _save.gold += _b.GACHA_COST_SINGLE;
-                GachaBatchResult r = _gacha.TryPull(_save);
-                if (!r.Status.Ok) return;
-                TutorialPulls += r.Items.Length;
-                Collect(r);
+                EarnedRefund += items[i].RefundGold;
+                GradeObtained?.Invoke(items[i].Grade);
             }
         }
 

@@ -36,9 +36,6 @@ namespace SoloHero.Core.Balance
         /// <summary>Watch every rewarded ad the day allows (offline x2, gem, gold booster).</summary>
         public bool UseAds;
 
-        /// <summary>The tutorial hands out TUTORIAL_FREE_PULLS free pulls at this play time (GDD first 30 minutes: 1-3 min).</summary>
-        public double TutorialPullAtSeconds = 60d;
-
         /// <summary>While farming after a fail, challenge again once power grew by this factor since the fail...</summary>
         public double ChallengePowerGain = 1.15d;
 

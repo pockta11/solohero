@@ -5,6 +5,7 @@ using SoloHero.Core.Config;
 using SoloHero.Core.Economy;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
+using SoloHero.Core.Progression;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
 
@@ -63,6 +64,7 @@ namespace SoloHero.Core.Balance
             private double _boosterRemaining;
             private bool _firstFiveRecorded;
             private bool _tutorialDone;
+            private readonly TutorialService _tutorial;
 
             public SimRun(BalanceValues balance, SimSettings settings)
             {
@@ -75,6 +77,7 @@ namespace SoloHero.Core.Balance
                 IRandom gachaRng = new SystemRandom(new Random(unchecked(settings.Seed * 7919 + 17)));
                 var gacha = new GachaService(balance, GachaTableValues.FromBalance(balance), gachaRng, GachaCatalog.Standard(balance));
                 _spender = new SimSpender(balance, _save, gacha);
+                _tutorial = new TutorialService(balance, gacha);
                 _spender.GradeObtained += OnGradeObtained;
 
                 _runner = new StageRunner(balance, combatRng, CombatLoadout.ComputeStats(balance, _save), _save);
@@ -182,15 +185,20 @@ namespace SoloHero.Core.Balance
                     CombatLoadout.Apply(_runner, _b, _save);
                 }
 
-                if (!_tutorialDone && _play >= _s.TutorialPullAtSeconds)
+                if (!_tutorialDone)
                 {
-                    _tutorialDone = true;
-                    _spender.FreePulls(_b.TUTORIAL_FREE_PULLS);
-                    _save.gold += _b.TUTORIAL_GOLD;
-                    _day.EarnedStage += _b.TUTORIAL_GOLD;
-                    _earnedTotal += _b.TUTORIAL_GOLD;
-                    Spend();
-                    CombatLoadout.Apply(_runner, _b, _save);
+                    // Same tutorial as the game (E7-13): reward after the first clears, not counted as spend.
+                    double goldBeforeTutorial = _save.gold;
+                    if (_tutorial.Tick(_save) == TutorialEvent.Rewarded)
+                    {
+                        _tutorialDone = true;
+                        double gift = _save.gold - goldBeforeTutorial;
+                        _day.EarnedStage += gift;
+                        _earnedTotal += gift;
+                        _spender.CountTutorialPulls(_tutorial.LastRewardItems);
+                        Spend();
+                        CombatLoadout.Apply(_runner, _b, _save);
+                    }
                 }
 
                 if (!_firstFiveRecorded && _play >= FirstSessionCheckSeconds)
