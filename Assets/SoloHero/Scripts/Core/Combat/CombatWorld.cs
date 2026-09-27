@@ -51,7 +51,16 @@ namespace SoloHero.Core.Combat
             }
         }
 
+        /// <summary>Every hero hit (basic or skill) on an enemy: target, damage, crit.</summary>
+        public event Action<EnemyBrain, double, bool> HitLanded;
+
         public void BindHero(HeroBrain hero) => _hero = hero;
+
+        public void ReportHit(EnemyBrain target, double amount, bool crit)
+        {
+            if (target == null) return;
+            HitLanded?.Invoke(target, amount, crit);
+        }
 
         public EnemyBrain GetSlot(int index) => _slots[index];
 

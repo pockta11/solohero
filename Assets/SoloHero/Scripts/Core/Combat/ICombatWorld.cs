@@ -19,5 +19,8 @@ namespace SoloHero.Core.Combat
         EnemyBrain NearestEnemyToTheRight();
 
         int CountEnemiesInRange(double range);
+
+        /// <summary>Called by whoever damaged an enemy so views can show damage text. No game state changes here.</summary>
+        void ReportHit(EnemyBrain target, double amount, bool crit);
     }
 }

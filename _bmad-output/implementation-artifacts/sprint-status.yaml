@@ -80,7 +80,7 @@ development_status:
   2-07-damage-and-crit: review  # E2-07 [M]
   2-08-enemy-attack-hero-hit: review  # E2-08 [M]
   2-09-hero-death-restart: review  # E2-09 [M]
-  2-10-object-pools: backlog  # E2-10 [M]
+  2-10-object-pools: review  # E2-10 [M] ViewPool (pre-warmed, never instantiates) + pooled damage text; enemies reuse 4 fixed slots
   2-11-simultaneous-death-edge: review  # E2-11 [S]
   2-12-background-reset: review  # E2-12 [M] resume restarts the farming stage
   epic-2-retrospective: optional

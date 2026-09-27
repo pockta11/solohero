@@ -153,6 +153,7 @@ namespace SoloHero.Core.Combat
                     if (target == null) return;
                     double dmg = DamageCalc.SkillHit(hero.Stats, _balance.SKILL_MULT_1 * gain) * buff;
                     target.TakeDamage(dmg);
+                    world.ReportHit(target, dmg, false);
                     break;
                 }
                 case SkillSlot.Slot2:
@@ -166,6 +167,7 @@ namespace SoloHero.Core.Combat
                         if (e.X < world.HeroX) continue;
                         if (e.X - world.HeroX > _balance.WHIRLWIND_RANGE) continue;
                         e.TakeDamage(dmg);
+                        world.ReportHit(e, dmg, false);
                     }
 
                     break;

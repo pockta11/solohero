@@ -1,4 +1,5 @@
 using SoloHero.Game.Combat;
+using SoloHero.Game.Pooling;
 using SoloHero.Game.UI.Common;
 using SoloHero.Game.UI.Panels;
 using UnityEditor;
@@ -20,6 +21,7 @@ namespace SoloHero.Editor
     {
         private const string ScenePath = "Assets/SoloHero/Scenes/Game.unity";
         private const string RootName = "GrowthUI";
+        private const string DamageLayerName = "DamageTextLayer";
         private const float TabTop = 0.07f;
         private const float PanelTop = 0.40f;
 
@@ -52,6 +54,8 @@ namespace SoloHero.Editor
             _font = LoadFont();
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
+            Transform oldText = hud.transform.Find(DamageLayerName);
+            if (oldText != null) Object.DestroyImmediate(oldText.gameObject);
 
             CombatSession session = Object.FindObjectOfType<CombatSession>();
             RectTransform root = Rect(RootName, hud.transform, 0f, 0f, 1f, 1f);
@@ -68,6 +72,7 @@ namespace SoloHero.Editor
 
             BuildTabs(root, new[] { character, equipment, gacha, skill });
             BuildTutorial(root, session, toast);
+            BuildDamageText(hud.transform, session);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -219,6 +224,34 @@ namespace SoloHero.Editor
         {
             Button button = MakeButton(name, parent, xMin, 0.03f, xMax, 0.21f, "", 32, out label);
             return button.gameObject.AddComponent<TapGuardButton>();
+        }
+
+        private static void BuildDamageText(Transform hud, CombatSession session)
+        {
+            // Last sibling: numbers draw over the battle HUD. Raycasts off so they never block taps.
+            RectTransform layer = Rect(DamageLayerName, hud, 0f, 0f, 1f, 1f);
+            layer.SetAsLastSibling();
+            RectTransform templateRect = Rect("DamageTextTemplate", layer, 0.5f, 0.5f, 0.5f, 0.5f);
+            templateRect.sizeDelta = new Vector2(360f, 70f);
+            Text label = templateRect.gameObject.AddComponent<Text>();
+            label.font = _font;
+            label.fontSize = 34;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            label.raycastTarget = false;
+            templateRect.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
+            DamageText template = templateRect.gameObject.AddComponent<DamageText>();
+            var templateSo = new SerializedObject(template);
+            templateSo.FindProperty("_label").objectReferenceValue = label;
+            templateSo.ApplyModifiedPropertiesWithoutUndo();
+            templateRect.gameObject.SetActive(false);
+
+            DamageTextPool pool = layer.gameObject.AddComponent<DamageTextPool>();
+            var so = new SerializedObject(pool);
+            so.FindProperty("_template").objectReferenceValue = template;
+            so.FindProperty("_session").objectReferenceValue = session;
+            so.FindProperty("_layer").objectReferenceValue = layer;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void BuildTutorial(RectTransform root, CombatSession session, ToastQueue toast)

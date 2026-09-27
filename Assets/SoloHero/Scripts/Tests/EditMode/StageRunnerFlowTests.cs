@@ -112,6 +112,22 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void Tick_HeroHits_ReportEveryHitToWorld()
+        {
+            var b = new BalanceValues();
+            StageRunner runner = Create(b, SaveDataV2.CreateNew(), Strong(b));
+            int hits = 0;
+            runner.World.HitLanded += (target, amount, crit) => hits++;
+            runner.Begin(1);
+
+            for (int i = 0; i < 60 * 30 && runner.State != StageState.Clearing; i++)
+                runner.Tick(Dt);
+
+            Assert.AreEqual(StageState.Clearing, runner.State);
+            Assert.GreaterOrEqual(hits, b.KILL_TARGET_NORMAL);
+        }
+
+        [Test]
         public void StepDown_WithoutFailStreak_DoesNothing()
         {
             var b = new BalanceValues();

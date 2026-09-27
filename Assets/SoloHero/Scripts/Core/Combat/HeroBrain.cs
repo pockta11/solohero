@@ -84,6 +84,7 @@ namespace SoloHero.Core.Combat
             bool crit = DamageCalc.RollCrit(_stats, _random);
             double dmg = DamageCalc.HeroHit(_stats, crit, _balance) * (1d + _atkBuffFraction);
             target.TakeDamage(dmg);
+            world.ReportHit(target, dmg, crit);
             DealtDamage?.Invoke(dmg, crit);
         }
 
