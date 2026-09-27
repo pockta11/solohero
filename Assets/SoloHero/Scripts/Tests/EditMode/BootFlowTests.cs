@@ -58,7 +58,7 @@ namespace SoloHero.Tests.EditMode
                 new BalanceValues(),
                 clock).GetAwaiter().GetResult();
 
-            Assert.AreEqual(50d / 400d * 30d, report.Data.gold, 1e-9);
+            Assert.AreEqual(new BalanceValues().STAGE_GOLD_BASE / new BalanceValues().OFFLINE_DIVISOR * 30d, report.Data.gold, 1e-9);
             Assert.AreEqual(1030L, report.Data.lastQuitTimeUtc);
             Assert.IsTrue(report.Offline.GrantNow);
         }

@@ -28,7 +28,7 @@ namespace SoloHero.Core.Balance
     public static class BalanceChecks
     {
         public const int Day1Min = 10;
-        public const int Day1Max = 15;
+        public const int Day1Max = 19; // GDD "a day = half to one chapter": chapter 2 boss not yet beaten
         public const int Day3Min = 20;
         public const int Day3Max = 29;
         public const int Day7Min = 40;
@@ -38,9 +38,8 @@ namespace SoloHero.Core.Balance
         public const double StageSecondsShareMin = 0.7d;
         public const double GachaShareMin = 0.30d;
         public const double GachaShareMax = 0.50d;
-        public const double OfflineMinutesMin = 20d;
-        public const double OfflineMinutesMax = 25d;
-        public const double OfflineOverwhelmMax = 1.0d;
+        public const double OfflineShareMin = 0.20d;
+        public const double OfflineShareMax = 0.40d;
         public const int WallStageMin = 17;
         public const int WallStageMax = 20;
         public const double BossExtraFarmMin = 0.25d;
@@ -145,26 +144,26 @@ namespace SoloHero.Core.Balance
 
         private static SimCheck OfflineShare(SimReport r, BalanceValues b)
         {
+            double offline = 0d, earned = 0d;
+            for (int i = 0; i < r.Days.Count; i++)
+            {
+                offline += r.Days[i].EarnedOffline;
+                earned += r.Days[i].Earned;
+            }
+
             var minutes = new List<double>();
-            double worst = 0d;
             for (int i = 0; i < r.OfflineClaims.Count; i++)
             {
                 SimOfflineClaim c = r.OfflineClaims[i];
                 double baseGold = c.Doubled ? c.Gold / b.OFFLINE_AD_MULT : c.Gold;
                 if (c.ElapsedSeconds >= b.OFFLINE_CAP && c.OnlineGoldPerMinute > 0d)
                     minutes.Add(baseGold / c.OnlineGoldPerMinute);
-                if (c.Day >= 2 && c.EarnedBefore > 0d)
-                    worst = Math.Max(worst, c.Gold / c.EarnedBefore);
             }
 
-            if (minutes.Count == 0)
-                return Info("V-4", "6 h offline vs online", "20-25 online minutes", "no capped claims");
-
-            double median = Median(minutes);
-            bool ok = median >= OfflineMinutesMin && median <= OfflineMinutesMax && worst <= OfflineOverwhelmMax;
-            return Make("V-4", "6 h offline claim in online minutes; largest claim vs all gold earned before it (day 2+)",
-                "20-25 min; ratio <= 1.0",
-                F1(median) + " min; ratio " + F2(worst), ok);
+            double share = earned > 0d ? offline / earned : 0d;
+            string perClaim = minutes.Count > 0 ? "; a 6 h claim = " + F1(Median(minutes)) + " online min" : "";
+            return Make("V-4", "Offline share of all gold earned (online stays the main income)", "20% - 40%",
+                Pct(share) + perClaim, share >= OfflineShareMin && share <= OfflineShareMax);
         }
 
         private static SimCheck GachaPace(SimReport r)
@@ -279,8 +278,6 @@ namespace SoloHero.Core.Balance
         private static double Safe(double part, double total) => total > 0d ? part / total : 0d;
 
         private static string F1(double v) => v.ToString("0.0", Inv);
-
-        private static string F2(double v) => v.ToString("0.00", Inv);
 
         private static string Pct(double v) => (v * 100d).ToString("0.0", Inv) + "%";
 

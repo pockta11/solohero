@@ -124,7 +124,7 @@ namespace SoloHero.Tests.EditMode
 
             Assert.IsTrue(reward.ShowPopup);
             Assert.IsTrue(result.Ok);
-            Assert.AreEqual(50d / 400d * 600d, data.gold, 1e-9);
+            Assert.AreEqual(new BalanceValues().STAGE_GOLD_BASE / new BalanceValues().OFFLINE_DIVISOR * 600d, data.gold, 1e-9);
             Assert.AreEqual(1600, data.lastQuitTimeUtc);
             Assert.AreEqual(1, save.RequestCount);
         }

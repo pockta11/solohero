@@ -66,6 +66,7 @@ namespace SoloHero.Core.Balance
             private int _retreatFarmClears;
             private double _boosterRemaining;
             private bool _firstFiveRecorded;
+            private bool _tutorialDone;
 
             public SimRun(BalanceValues balance, SimSettings settings)
             {
@@ -129,7 +130,7 @@ namespace SoloHero.Core.Balance
 
                         Spend();
                         // Resume rule (E2-12): coming back restarts the current farming stage.
-                        _runner.Begin(_save.farmingStage < 1 ? 1 : _save.farmingStage);
+                        _runner.Resume(_save.farmingStage < 1 ? 1 : _save.farmingStage, _save.retreatMode);
                         _attemptStarted = true;
                         ProcessAttemptStart();
 
@@ -184,6 +185,13 @@ namespace SoloHero.Core.Balance
                     CombatLoadout.Apply(_runner, _b, _save);
                 }
 
+                if (!_tutorialDone && _play >= _s.TutorialPullAtSeconds)
+                {
+                    _tutorialDone = true;
+                    _spender.FreePulls(_b.TUTORIAL_FREE_PULLS);
+                    CombatLoadout.Apply(_runner, _b, _save);
+                }
+
                 if (!_firstFiveRecorded && _play >= FirstSessionCheckSeconds)
                 {
                     _firstFiveRecorded = true;
@@ -230,6 +238,7 @@ namespace SoloHero.Core.Balance
 
                 int g = _runner.GlobalStage;
                 _save.farmingStage = g;
+                _save.retreatMode = _runner.RetreatMode;
                 _attemptStartPlay = _play;
                 StageTrack track = Track(g);
                 if (track.FirstStartPlay < 0d) track.FirstStartPlay = _play;
@@ -295,17 +304,16 @@ namespace SoloHero.Core.Balance
                     _retreatFarmClears = 0;
                     _attemptStarted = true;
                 }
-                else if (_runner.PromptRetreat && g > 1)
+                else if (_runner.StepDown())
                 {
                     // GDD fail-streak prompt: after 3 straight fails on a normal stage, farm one stage lower.
-                    _runner.Begin(g - 1);
                     _attemptStarted = true;
                 }
             }
 
             private void Spend()
             {
-                if (_spender.Spend(_save.highestStage + 1, _s.TutorialFirstPull, _s.MaxPurchasesPerDecision))
+                if (_spender.Spend(_save.highestStage + 1, _s.MaxPurchasesPerDecision))
                     CombatLoadout.Apply(_runner, _b, _save);
             }
 

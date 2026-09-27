@@ -9,12 +9,15 @@ namespace SoloHero.Core.Balance
 {
     /// <summary>
     /// Greedy player model: every option (4 upgrade lanes, 3 skills, one gold pull) is scored by
-    /// expected gain in ln(DPS) + ln(EHP) per gold, and the best one is bought when affordable.
+    /// expected gain in 2 ln(DPS) + ln(EHP) per gold, and the best one is bought when affordable.
     /// When the best option is not affordable the player saves for it instead of buying a worse one.
     /// </summary>
     public sealed class SimSpender
     {
         private const int WhirlwindAssumedTargets = 2;
+
+        /// <summary>Clear speed counts twice: DPS sets both stage time and survival (fight length), EHP only survival.</summary>
+        private const double DpsWeight = 2d;
 
         private readonly BalanceValues _b;
         private readonly SaveDataV2 _save;
@@ -40,13 +43,14 @@ namespace SoloHero.Core.Balance
         public int GoldPulls { get; private set; }
         public int GemPulls { get; private set; }
         public int Upgrades { get; private set; }
+        public int TutorialPulls { get; private set; }
 
         public event Action<Grade> GradeObtained;
 
         private enum Kind { None, Lane, Skill, Pull }
 
         /// <summary>Spends until the best option is unaffordable. Returns true when anything was bought.</summary>
-        public bool Spend(int frontierG, bool tutorialFirstPull, int maxPurchases)
+        public bool Spend(int frontierG, int maxPurchases)
         {
             bool bought = false;
 
@@ -58,9 +62,6 @@ namespace SoloHero.Core.Balance
                 Collect(r);
                 bought = true;
             }
-
-            if (tutorialFirstPull && _save.totalPullCount == 0 && _save.gold >= _b.GACHA_COST_SINGLE)
-                bought |= PullGold();
 
             double enemyAtk = Formulas.EnemyAtk(_b, frontierG < 1 ? 1 : frontierG);
             for (int n = 0; n < maxPurchases; n++)
@@ -142,7 +143,20 @@ namespace SoloHero.Core.Balance
             return bought;
         }
 
-        /// <summary>ln(DPS) + ln(EHP) against the frontier enemy. DPS counts basic hits, crit and skills.</summary>
+        /// <summary>Tutorial gift: pulls that cost the player nothing. Not counted as gold earned or spent.</summary>
+        public void FreePulls(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                _save.gold += _b.GACHA_COST_SINGLE;
+                GachaBatchResult r = _gacha.TryPull(_save);
+                if (!r.Status.Ok) return;
+                TutorialPulls += r.Items.Length;
+                Collect(r);
+            }
+        }
+
+        /// <summary>2 ln(DPS) + ln(EHP) against the frontier enemy. DPS counts basic hits, crit and skills.</summary>
         public double Score(Snapshot s, double enemyAtk)
         {
             EquipmentBonus eq = EquipmentBonus.FromGrades(_b, s.Sword, s.Helm, s.Armor, s.Boots);
@@ -162,7 +176,7 @@ namespace SoloHero.Core.Balance
             double dps = st.Atk * (hitsPerSecond + skills) * buff;
             double defRef = _b.DEF_REF_MULT * enemyAtk;
             double ehp = st.Hp * (defRef + st.Def) / defRef;
-            return Math.Log(dps) + Math.Log(ehp);
+            return DpsWeight * Math.Log(dps) + Math.Log(ehp);
         }
 
         private bool PullGold()

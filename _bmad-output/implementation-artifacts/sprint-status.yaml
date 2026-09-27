@@ -1,5 +1,5 @@
 # generated: 2026-09-20
-# last_updated: 2026-09-27 (9-01 simulator; boss gold/exp x5, skill unlock gate, hit frame wired)
+# last_updated: 2026-09-27 (9-01 simulator + 9-02 first tuning D-053..D-057; growth panels; review fixes)
 # code_landed: local — EditMode 146. Battle HUD has skill buttons and a Retreat? prompt.
 #   Resume restarts the farming stage. ISaveRequester reaches SaveService.
 #   review means the rule is in code. Ads, pools, stage select, and art stay backlog.
@@ -106,7 +106,7 @@ development_status:
   epic-4: in-progress
   4-01-hero-level-exp: review  # E4-01 [M]
   4-02-upgrade-lanes: review  # E4-02 [M]
-  4-03-upgrade-tap-guard: backlog  # E4-03 [M]
+  4-03-upgrade-tap-guard: review  # E4-03 [M] via TapGuardButton
   4-04-equipment-data: review  # E4-04 [M] grade multipliers on BalanceValues, applied at combat start
   4-05-equip-swap: review  # E4-05 [M]
   4-06-stat-aggregation: review  # E4-06 [M]
@@ -162,18 +162,18 @@ development_status:
   7-01-portrait-layout-grid: backlog  # E7-01 [M]
   7-02-safe-area: backlog  # E7-02 [M]
   7-03-battle-hud: review  # E7-03 [M] gold, stage, kills, boss timer
-  7-04-tab-bar-panels: backlog  # E7-04 [M]
-  7-05-character-panel: backlog  # E7-05 [M]
-  7-06-equipment-panel: backlog  # E7-06 [M]
-  7-07-gacha-panel: backlog  # E7-07 [M]
-  7-08-skill-panel: backlog  # E7-08 [M]
+  7-04-tab-bar-panels: review  # E7-04 [M] PanelHost, instant switch (slide in E8)
+  7-05-character-panel: review  # E7-05 [M]
+  7-06-equipment-panel: review  # E7-06 [M] swap cycles owned grades
+  7-07-gacha-panel: review  # E7-07 [M] pity gauge + rate text, no flip animation
+  7-08-skill-panel: review  # E7-08 [M]
   7-09-settings-panel: backlog  # E7-09 [M]
   7-10-skill-buttons: backlog  # E7-10 [M]
   7-11-popups: backlog  # E7-11 [M]
-  7-12-toast-queue: backlog  # E7-12 [M]
+  7-12-toast-queue: review  # E7-12 [M] English text until Strings (E7-17)
   7-13-tutorial-hints: backlog  # E7-13 [M]
   7-14-back-key-policy: backlog  # E7-14 [M]
-  7-15-global-tap-guard: backlog  # E7-15 [M]
+  7-15-global-tap-guard: review  # E7-15 [M] TapGuardButton on every spend button
   7-16-big-number-format: backlog  # E7-16 [M]
   7-17-strings-table: backlog  # E7-17 [S]
   epic-7-retrospective: optional
@@ -201,7 +201,7 @@ development_status:
   # ── E9. 밸런싱·QA·출시 ──
   epic-9: in-progress
   9-01-balance-simulator: review  # E9-01 [M] Tools > Balance > Run Simulation; baseline fails 10/13 checks
-  9-02-verify-v1-v7: backlog  # E9-02 [M] — run before epic-4
+  9-02-verify-v1-v7: in-progress  # E9-02 [M] D-053~D-057 applied; 5/13 checks still fail
   9-03-target-curve-checkpoints: backlog  # E9-03 [M] — run before epic-4
   9-04-wall-and-break-cost: backlog  # E9-04 [M] — run before epic-4
   9-05-gold-spend-rate: backlog  # E9-05 [M] — run before epic-4

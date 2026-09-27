@@ -19,7 +19,7 @@ namespace SoloHero.Tests.EditMode
         public void EnemyHp_StageTwo_AppliesGrowth()
         {
             var c = new BalanceValues();
-            Assert.AreEqual(30d * Math.Pow(1.10d, 1), Formulas.EnemyHp(c, 2), 1e-9);
+            Assert.AreEqual(c.ENEMY_HP_BASE * c.ENEMY_HP_GROWTH, Formulas.EnemyHp(c, 2), 1e-9);
         }
 
         [Test]
@@ -27,7 +27,7 @@ namespace SoloHero.Tests.EditMode
         {
             var c = new BalanceValues();
             Assert.AreEqual(5d, Formulas.EnemyAtk(c, 1), 1e-9);
-            Assert.AreEqual(5d * Math.Pow(1.10d, 1), Formulas.EnemyAtk(c, 2), 1e-9);
+            Assert.AreEqual(c.ENEMY_ATK_BASE * c.ENEMY_ATK_GROWTH, Formulas.EnemyAtk(c, 2), 1e-9);
         }
 
         [Test]
@@ -41,32 +41,32 @@ namespace SoloHero.Tests.EditMode
         public void StageGold_StageTwo_AppliesGrowth()
         {
             var c = new BalanceValues();
-            Assert.AreEqual(50d * Math.Pow(1.08d, 1), Formulas.StageGold(c, 2), 1e-9);
+            Assert.AreEqual(c.STAGE_GOLD_BASE * c.STAGE_GOLD_GROWTH, Formulas.StageGold(c, 2), 1e-9);
         }
 
         [Test]
         public void UpgradeCost_HpLevelZero_EqualsBase()
         {
             var c = new BalanceValues();
-            Assert.AreEqual(100d, Formulas.UpgradeCost(c, UpgradeLane.Hp, 0), 1e-9);
+            Assert.AreEqual(c.UPG_BASE_HP, Formulas.UpgradeCost(c, UpgradeLane.Hp, 0), 1e-9);
         }
 
         [Test]
         public void UpgradeCost_EachLaneLevelOne_AppliesGrowth()
         {
             var c = new BalanceValues();
-            double growth = Math.Pow(1.12d, 1);
-            Assert.AreEqual(100d * growth, Formulas.UpgradeCost(c, UpgradeLane.Hp, 1), 1e-9);
-            Assert.AreEqual(150d * growth, Formulas.UpgradeCost(c, UpgradeLane.Atk, 1), 1e-9);
-            Assert.AreEqual(150d * growth, Formulas.UpgradeCost(c, UpgradeLane.Def, 1), 1e-9);
-            Assert.AreEqual(200d * growth, Formulas.UpgradeCost(c, UpgradeLane.Spd, 1), 1e-9);
+            double growth = c.UPG_COST_GROWTH;
+            Assert.AreEqual(c.UPG_BASE_HP * growth, Formulas.UpgradeCost(c, UpgradeLane.Hp, 1), 1e-9);
+            Assert.AreEqual(c.UPG_BASE_ATK * growth, Formulas.UpgradeCost(c, UpgradeLane.Atk, 1), 1e-9);
+            Assert.AreEqual(c.UPG_BASE_DEF * growth, Formulas.UpgradeCost(c, UpgradeLane.Def, 1), 1e-9);
+            Assert.AreEqual(c.UPG_BASE_SPD * growth, Formulas.UpgradeCost(c, UpgradeLane.Spd, 1), 1e-9);
         }
 
         [Test]
         public void HitDamage_DefEqualsRef_IsHalf()
         {
             var c = new BalanceValues();
-            Assert.AreEqual(4d, Formulas.HitDamage(c, 8d, 64d), 1e-9);
+            Assert.AreEqual(4d, Formulas.HitDamage(c, 8d, c.DEF_REF_MULT * 8d), 1e-9);
         }
 
         [Test]

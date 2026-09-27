@@ -23,7 +23,7 @@ namespace SoloHero.Tests.EditMode
             var balance = new BalanceValues();
             OfflineReward reward = OfflineReward.Compute(balance, 1, 1000, 1600);
 
-            Assert.AreEqual(50d / 400d * 600d, reward.Gold, 1e-9);
+            Assert.AreEqual(new BalanceValues().STAGE_GOLD_BASE / new BalanceValues().OFFLINE_DIVISOR * 600d, reward.Gold, 1e-9);
             Assert.IsTrue(reward.ShowPopup);
             Assert.IsFalse(reward.GrantNow);
         }
@@ -33,7 +33,7 @@ namespace SoloHero.Tests.EditMode
         {
             OfflineReward reward = OfflineReward.Compute(new BalanceValues(), 1, 1000, 1030);
 
-            Assert.AreEqual(50d / 400d * 30d, reward.Gold, 1e-9);
+            Assert.AreEqual(new BalanceValues().STAGE_GOLD_BASE / new BalanceValues().OFFLINE_DIVISOR * 30d, reward.Gold, 1e-9);
             Assert.IsFalse(reward.ShowPopup);
             Assert.IsTrue(reward.GrantNow);
         }
@@ -45,7 +45,7 @@ namespace SoloHero.Tests.EditMode
             long now = 100 + balance.OFFLINE_CAP + 50;
             OfflineReward reward = OfflineReward.Compute(balance, 1, 100, now);
 
-            Assert.AreEqual(50d / 400d * balance.OFFLINE_CAP, reward.Gold, 1e-9);
+            Assert.AreEqual(new BalanceValues().STAGE_GOLD_BASE / new BalanceValues().OFFLINE_DIVISOR * balance.OFFLINE_CAP, reward.Gold, 1e-9);
             Assert.IsTrue(reward.ShowPopup);
             Assert.IsFalse(reward.ResetQuitTime);
         }
