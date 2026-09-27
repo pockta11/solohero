@@ -15,6 +15,12 @@ namespace SoloHero.Core
         public static double StageGold(BalanceValues c, int g) =>
             c.STAGE_GOLD_BASE * Math.Pow(c.STAGE_GOLD_GROWTH, g - 1);
 
+        public static double StageClearGold(BalanceValues c, int g, bool isBoss) =>
+            StageGold(c, g) * (isBoss ? c.BOSS_GOLD_MULT : 1d);
+
+        public static double EnemyExp(BalanceValues c, int g, bool isBoss) =>
+            c.ENEMY_EXP_BASE * Math.Pow(c.ENEMY_EXP_GROWTH, g - 1) * (isBoss ? c.BOSS_EXP_MULT : 1d);
+
         public static double UpgradeCost(BalanceValues c, UpgradeLane lane, int level)
         {
             double baseCost;

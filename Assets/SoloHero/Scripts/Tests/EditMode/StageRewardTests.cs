@@ -100,7 +100,7 @@ namespace SoloHero.Tests.EditMode
             var balance = new BalanceValues();
             var save = new FakeSaveRequester();
             var reward = new StageReward(data, balance, save);
-            double expectedGold = Formulas.StageGold(balance, 10);
+            double expectedGold = Formulas.StageGold(balance, 10) * balance.BOSS_GOLD_MULT;
 
             Result result = reward.ApplyClear(10);
 
@@ -122,7 +122,7 @@ namespace SoloHero.Tests.EditMode
             data.highestStage = 10;
             var balance = new BalanceValues();
             var reward = new StageReward(data, balance, new FakeSaveRequester());
-            double expectedGold = Formulas.StageGold(balance, 10);
+            double expectedGold = Formulas.StageGold(balance, 10) * balance.BOSS_GOLD_MULT;
 
             Result result = reward.ApplyClear(10);
 

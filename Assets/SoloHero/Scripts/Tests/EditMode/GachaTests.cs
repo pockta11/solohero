@@ -25,7 +25,7 @@ namespace SoloHero.Tests.EditMode
             data.gold = balance.GACHA_COST_SINGLE;
             data.pityCount = balance.GACHA_PITY - 1;
 
-            // Slot only — grade roll is skipped on pity.
+            // Slot only - grade roll is skipped on pity.
             var rng = new ScriptedRandom(doubles: new double[0], ints: new[] { 0 });
             GachaService service = CreateService(balance, rng);
 
@@ -139,7 +139,7 @@ namespace SoloHero.Tests.EditMode
             data.ownedEquipment.Add("Equipment_Sword_Common");
             data.equippedSword = "Equipment_Sword_Common";
 
-            // Empty queues — fail path must not roll.
+            // Empty queues - fail path must not roll.
             var rng = new ScriptedRandom(doubles: new double[0], ints: new int[0]);
             GachaService service = CreateService(balance, rng);
 

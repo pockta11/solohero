@@ -1,7 +1,6 @@
 using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
-using SoloHero.Core.Equipment;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
@@ -12,6 +11,9 @@ namespace SoloHero.Game.Combat
     public sealed class CombatSession : MonoBehaviour
     {
         private StageRunner _runner;
+        private BalanceValues _balance;
+        private SaveDataV2 _save;
+        private int _appliedHeroLevel;
 
         public StageRunner Runner => _runner;
 
@@ -31,19 +33,7 @@ namespace SoloHero.Game.Combat
                 return;
             }
 
-            EquipmentBonus bonus = EquipmentBonus.Resolve(balance, save);
-            HeroStats stats = StatAggregator.Compute(
-                balance,
-                save.heroLevel,
-                save.upgradeHp,
-                save.upgradeAtk,
-                save.upgradeDef,
-                save.upgradeSpd,
-                bonus.SwordMult,
-                bonus.ArmorMult,
-                bonus.HelmMult,
-                bonus.BootsSpeedBonus,
-                bonus.BootsCritBonus);
+            HeroStats stats = CombatLoadout.ComputeStats(balance, save);
 
             IRandom random;
             try
@@ -55,14 +45,45 @@ namespace SoloHero.Game.Combat
                 random = new SystemRandom();
             }
 
+            _balance = balance;
+            _save = save;
             _runner = new StageRunner(balance, random, stats, save);
+            // Until attack clips carry the OnHitFrame event (E8-06), the hit lands when the attack starts.
+            _runner.Hero.AttackRequested += OnAttackRequested;
+            _runner.StateChanged += OnStageStateChanged;
+            RefreshLoadout();
             _runner.Begin(save.farmingStage < 1 ? 1 : save.farmingStage);
+        }
+
+        private void OnDestroy()
+        {
+            if (_runner == null) return;
+            _runner.Hero.AttackRequested -= OnAttackRequested;
+            _runner.StateChanged -= OnStageStateChanged;
         }
 
         private void Update()
         {
             if (!enabled || _runner == null) return;
             _runner.Tick(Time.deltaTime);
+            if (_save.heroLevel != _appliedHeroLevel) RefreshLoadout();
+        }
+
+        /// <summary>Call after any growth change (upgrade, equip, skill level) so combat uses the new loadout.</summary>
+        public void RefreshLoadout()
+        {
+            if (_runner == null) return;
+            CombatLoadout.Apply(_runner, _balance, _save);
+            _appliedHeroLevel = _save.heroLevel;
+        }
+
+        private void OnAttackRequested() => _runner.Hero.OnHitFrame(_runner.World);
+
+        private void OnStageStateChanged(StageState state)
+        {
+            if (state != StageState.Running && state != StageState.Retreat && state != StageState.BossIntro) return;
+            _save.farmingStage = _runner.GlobalStage;
+            _save.retreatMode = _runner.RetreatMode;
         }
 
         private void OnApplicationPause(bool paused)

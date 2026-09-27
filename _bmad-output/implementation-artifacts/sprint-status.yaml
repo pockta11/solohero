@@ -1,5 +1,5 @@
 # generated: 2026-09-20
-# last_updated: 2026-09-27
+# last_updated: 2026-09-27 (9-01 simulator; boss gold/exp x5, skill unlock gate, hit frame wired)
 # code_landed: local — EditMode 146. Battle HUD has skill buttons and a Retreat? prompt.
 #   Resume restarts the farming stage. ISaveRequester reaches SaveService.
 #   review means the rule is in code. Ads, pools, stage select, and art stay backlog.
@@ -199,8 +199,8 @@ development_status:
   epic-8-retrospective: optional
 
   # ── E9. 밸런싱·QA·출시 ──
-  epic-9: backlog
-  9-01-balance-simulator: backlog  # E9-01 [M] — run before epic-4
+  epic-9: in-progress
+  9-01-balance-simulator: review  # E9-01 [M] Tools > Balance > Run Simulation; baseline fails 10/13 checks
   9-02-verify-v1-v7: backlog  # E9-02 [M] — run before epic-4
   9-03-target-curve-checkpoints: backlog  # E9-03 [M] — run before epic-4
   9-04-wall-and-break-cost: backlog  # E9-04 [M] — run before epic-4

@@ -36,10 +36,24 @@ namespace SoloHero.Core.Equipment
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             if (data == null) throw new ArgumentNullException(nameof(data));
 
+            return FromGrades(
+                balance,
+                GradeOrNone(data.equippedSword, EquipmentSlot.Sword),
+                GradeOrNone(data.equippedHelm, EquipmentSlot.Helm),
+                GradeOrNone(data.equippedArmor, EquipmentSlot.Armor),
+                GradeOrNone(data.equippedBoots, EquipmentSlot.Boots));
+        }
+
+        /// <summary>Grade per slot as <see cref="Grade"/> cast to int; -1 means the slot is empty.</summary>
+        public static EquipmentBonus FromGrades(BalanceValues balance, int sword, int helm, int armor, int boots)
+        {
+            if (balance == null) throw new ArgumentNullException(nameof(balance));
+
             double bootsSpeed = EmptyBoots;
             double bootsCrit = EmptyBoots;
-            if (TryParse(data.equippedBoots, EquipmentSlot.Boots, out Grade bootsGrade))
+            if (boots >= 0)
             {
+                var bootsGrade = (Grade)boots;
                 bootsSpeed = ByGrade(
                     bootsGrade,
                     balance.BOOTS_ATKSPD_C,
@@ -57,17 +71,23 @@ namespace SoloHero.Core.Equipment
             }
 
             return new EquipmentBonus(
-                Multiplier(balance, data.equippedSword, EquipmentSlot.Sword),
-                Multiplier(balance, data.equippedArmor, EquipmentSlot.Armor),
-                Multiplier(balance, data.equippedHelm, EquipmentSlot.Helm),
+                Multiplier(balance, sword, EquipmentSlot.Sword),
+                Multiplier(balance, armor, EquipmentSlot.Armor),
+                Multiplier(balance, helm, EquipmentSlot.Helm),
                 bootsSpeed,
                 bootsCrit);
         }
 
-        private static double Multiplier(BalanceValues balance, string id, EquipmentSlot slot)
+        /// <summary>Returns the grade of an equipped id as int, or -1 when empty or not a valid id for the slot.</summary>
+        public static int GradeOrNone(string id, EquipmentSlot slot) =>
+            TryParse(id, slot, out Grade grade) ? (int)grade : -1;
+
+        private static double Multiplier(BalanceValues balance, int gradeIndex, EquipmentSlot slot)
         {
-            if (!TryParse(id, slot, out Grade grade))
+            if (gradeIndex < 0)
                 return EmptyMult;
+
+            var grade = (Grade)gradeIndex;
 
             switch (slot)
             {

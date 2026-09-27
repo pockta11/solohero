@@ -161,14 +161,14 @@ namespace SoloHero.Core.Stage
             _hero.Tick(dt, _world);
 
             // Simultaneous resolution order (GDD):
-            // enemy deaths → clear check → boss timer → hero death.
+            // enemy deaths -> clear check -> boss timer -> hero death.
             // Clear beats hero death; boss kill beats timer expiry.
             int gained = _world.ResolveDeaths();
             if (gained > 0)
             {
                 _kills += gained;
                 for (int i = 0; i < gained; i++)
-                    KillExp.Grant(_save, _balance, _g);
+                    KillExp.Grant(_save, _balance, _g, _isBoss);
             }
             if (_kills >= _killTarget) _cleared = true;
 

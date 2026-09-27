@@ -26,10 +26,11 @@ namespace SoloHero.Core.Progression
             if (g < 1)
                 return Result.Fail(FailReason.Locked);
 
-            _data.gold += Formulas.StageGold(_balance, g);
+            bool isBoss = StageIndex.IsBoss(g, _balance.STAGES_PER_CHAPTER);
+            _data.gold += Formulas.StageClearGold(_balance, g, isBoss);
             // BalanceValues has no exp-per-stage field; grant 0 hero exp.
 
-            if (StageIndex.IsBoss(g, _balance.STAGES_PER_CHAPTER))
+            if (isBoss)
             {
                 StageIndex.FromGlobal(g, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
                 int index = chapter - 1;

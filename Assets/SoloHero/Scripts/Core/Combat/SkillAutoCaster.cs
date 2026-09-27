@@ -10,6 +10,7 @@ namespace SoloHero.Core.Combat
         private readonly BalanceValues _balance;
         private readonly float[] _cooldown;
         private readonly int[] _levels;
+        private readonly bool[] _unlocked;
         private float _sequenceGap;
         private double _atkBuffRemaining;
         private double _atkBuffAmount;
@@ -19,6 +20,7 @@ namespace SoloHero.Core.Combat
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
             _cooldown = new float[3];
             _levels = new int[] { 1, 1, 1 };
+            _unlocked = new bool[] { true, true, true };
             _sequenceGap = 0f;
         }
 
@@ -31,6 +33,19 @@ namespace SoloHero.Core.Combat
             if (level < 1) level = 1;
             if (level > _balance.SKILL_MAX_LEVEL) level = _balance.SKILL_MAX_LEVEL;
             _levels[i] = level;
+        }
+
+        public void SetUnlocked(SkillSlot slot, bool unlocked)
+        {
+            int i = (int)slot;
+            if (i < 0 || i >= _unlocked.Length) return;
+            _unlocked[i] = unlocked;
+        }
+
+        public bool IsUnlocked(SkillSlot slot)
+        {
+            int i = (int)slot;
+            return i >= 0 && i < _unlocked.Length && _unlocked[i];
         }
 
         public void SetCooldown(SkillSlot slot, float seconds)
@@ -76,6 +91,7 @@ namespace SoloHero.Core.Combat
 
             for (int i = 0; i < 3; i++)
             {
+                if (!_unlocked[i]) continue;
                 if (_cooldown[i] > 0f) continue;
                 if (!MeetsAutoCondition((SkillSlot)i, hero, world, isBossFight)) continue;
                 if (TryCast((SkillSlot)i, hero, world, skipCondition: false).Ok)
@@ -91,6 +107,7 @@ namespace SoloHero.Core.Combat
 
             int i = (int)slot;
             if (i < 0 || i >= _cooldown.Length) return Result.Fail(FailReason.Locked);
+            if (!_unlocked[i]) return Result.Fail(FailReason.Locked);
             if (_cooldown[i] > 0f) return Result.Fail(FailReason.OnCooldown);
             if (!skipCondition && !MeetsAutoCondition(slot, hero, world, false))
                 return Result.Fail(FailReason.Busy);
@@ -155,7 +172,7 @@ namespace SoloHero.Core.Combat
                 {
                     double heal = hero.MaxHp * (_balance.BATTLECRY_HEAL * 0.01d);
                     hero.Heal(heal);
-                    _atkBuffAmount = _balance.BATTLECRY_ATK_BUFF * 0.01d;
+                    _atkBuffAmount = _balance.BATTLECRY_ATK_BUFF * 0.01d * gain;
                     _atkBuffRemaining = _balance.BATTLECRY_DURATION;
                     break;
                 }

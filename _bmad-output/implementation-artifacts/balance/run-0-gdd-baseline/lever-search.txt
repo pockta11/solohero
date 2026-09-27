@@ -1,0 +1,15 @@
+== random top
+7.48 | K=3.768 costG=1.114 expo=1.134 goldG=1.078 enemyG=1.159 boss=14.037 lvAtk=0.672 offDiv=2442 gachaK=0.359 | days 15/27/44 med 28.9 in 63 % f5upg 0 b10f 6 wall 20 fr 32.5 % gacha 31 % off 36 % bossX 85 % failed 6
+8.16 | K=5.576 costG=1.167 expo=1.122 goldG=1.042 enemyG=1.134 boss=15.271 lvAtk=1.724 offDiv=2133 gachaK=2.899 | days 19/29/49 med 27.7 in 69 % f5upg 1 b10f 3 wall 20 fr 15.3 % gacha 6 % off 42 % bossX 240 % failed 9
+8.51 | K=5.555 costG=1.193 expo=1.145 goldG=1.032 enemyG=1.144 boss=17.017 lvAtk=1.809 offDiv=1740 gachaK=2.781 | days 19/29/39 med 26.1 in 67 % f5upg 1 b10f 4 wall 20 fr 10.9 % gacha 6 % off 47 % bossX 265 % failed 10
+8.65 | K=3.712 costG=1.130 expo=1.237 goldG=1.035 enemyG=1.141 boss=16.477 lvAtk=0.904 offDiv=1219 gachaK=0.399 | days 19/29/47 med 28.7 in 60 % f5upg 0 b10f 3 wall 20 fr 21.3 % gacha 16 % off 55 % bossX 181 % failed 9
+9.31 | K=4.137 costG=1.157 expo=1.286 goldG=1.041 enemyG=1.156 boss=14.568 lvAtk=1.082 offDiv=1497 gachaK=0.882 | days 17/29/45 med 29.1 in 54 % f5upg 0 b10f 4 wall 20 fr 29.0 % gacha 8 % off 55 % bossX 119 % failed 9
+9.52 | K=4.665 costG=1.116 expo=1.433 goldG=1.060 enemyG=1.145 boss=13.531 lvAtk=0.900 offDiv=2683 gachaK=3.553 | days 16/27/46 med 30.2 in 43 % f5upg 0 b10f 6 wall 20 fr 24.1 % gacha 5 % off 40 % bossX 139 % failed 9
+9.62 | K=2.652 costG=1.158 expo=1.111 goldG=1.040 enemyG=1.132 boss=15.370 lvAtk=0.705 offDiv=2566 gachaK=1.740 | days 18/29/47 med 28.1 in 58 % f5upg 1 b10f 5 wall 20 fr 16.2 % gacha 5 % off 38 % bossX 261 % failed 9
+9.69 | K=4.301 costG=1.162 expo=1.165 goldG=1.063 enemyG=1.143 boss=18.590 lvAtk=0.904 offDiv=2622 gachaK=0.700 | days 18/29/49 med 28.7 in 60 % f5upg 0 b10f 6 wall 20 fr 18.0 % gacha 16 % off 37 % bossX 249 % failed 9
+== refined (3 seeds)
+7.77 | K=5.795 costG=1.169 expo=1.116 goldG=1.038 enemyG=1.134 boss=15.271 lvAtk=1.701 offDiv=2154 gachaK=3.241 | days 19/29/39 med 28.1 in 64 % f5upg 1 b10f 3 wall 20 fr 16.2 % gacha 6 % off 43 % bossX 188 % failed 10
+8.23 | K=5.507 costG=1.197 expo=1.164 goldG=1.033 enemyG=1.144 boss=16.723 lvAtk=1.809 offDiv=1681 gachaK=2.591 | days 19/29/39 med 27.1 in 58 % f5upg 1 b10f 4 wall 20 fr 13.1 % gacha 7 % off 49 % bossX 236 % failed 10
+8.25 | K=3.768 costG=1.110 expo=1.134 goldG=1.078 enemyG=1.159 boss=14.037 lvAtk=0.672 offDiv=2442 gachaK=0.359 | days 15/27/41 med 29.1 in 65 % f5upg 0 b10f 5 wall 20 fr 33.0 % gacha 32 % off 36 % bossX 84 % failed 7
+8.52 | K=3.556 costG=1.130 expo=1.237 goldG=1.035 enemyG=1.141 boss=16.685 lvAtk=0.778 offDiv=1442 gachaK=0.399 | days 18/29/39 med 28.7 in 61 % f5upg 0 b10f 5 wall 20 fr 15.1 % gacha 16 % off 50 % bossX 192 % failed 10
+8.78 | K=4.137 costG=1.155 expo=1.273 goldG=1.041 enemyG=1.159 boss=16.438 lvAtk=1.082 offDiv=1497 gachaK=0.882 | days 17/28/39 med 28.7 in 61 % f5upg 0 b10f 5 wall 20 fr 24.9 % gacha 8 % off 54 % bossX 143 % failed 10
