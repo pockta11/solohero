@@ -92,7 +92,7 @@ development_status:
   3-03-auto-advance-stage: review  # E3-03 [M]
   3-04-boss-stage: review  # E3-04 [M]
   3-05-boss-intro-timer: review  # E3-05 [M]
-  3-06-boss-fail-popup: backlog  # E3-06 [M]
+  3-06-boss-fail-popup: review  # E3-06 [M] retry / retreat / challenge on the battle HUD
   3-07-retreat-farming: review  # E3-07 [M]
   3-08-highest-farming-split: review  # E3-08 [M]
   3-09-stage-select-sheet: backlog  # E3-09 [M]
@@ -107,7 +107,7 @@ development_status:
   4-01-hero-level-exp: review  # E4-01 [M]
   4-02-upgrade-lanes: review  # E4-02 [M]
   4-03-upgrade-tap-guard: backlog  # E4-03 [M]
-  4-04-equipment-data: backlog  # E4-04 [M]
+  4-04-equipment-data: review  # E4-04 [M] grade multipliers on BalanceValues, applied at combat start
   4-05-equip-swap: review  # E4-05 [M]
   4-06-stat-aggregation: review  # E4-06 [M]
   4-07-skills: backlog  # E4-07 [M]
@@ -115,7 +115,7 @@ development_status:
   4-09-skill-manual-tap: backlog  # E4-09 [M]
   4-10-skill-unlock-gate: review  # E4-10 [M]
   4-11-skill-level-up: review  # E4-11 [M]
-  4-12-battle-cry-refresh: backlog  # E4-12 [M]
+  4-12-battle-cry-refresh: review  # E4-12 [M] live atk buff multiplies the hero hit once
   4-13-growth-save-triggers: backlog  # E4-13 [M]
   epic-4-retrospective: optional
 
@@ -158,10 +158,10 @@ development_status:
   epic-6-retrospective: optional
 
   # ── E7. UI/UX 세로 레이아웃 ──
-  epic-7: backlog
+  epic-7: in-progress
   7-01-portrait-layout-grid: backlog  # E7-01 [M]
   7-02-safe-area: backlog  # E7-02 [M]
-  7-03-battle-hud: backlog  # E7-03 [M]
+  7-03-battle-hud: review  # E7-03 [M] gold, stage, kills, boss timer
   7-04-tab-bar-panels: backlog  # E7-04 [M]
   7-05-character-panel: backlog  # E7-05 [M]
   7-06-equipment-panel: backlog  # E7-06 [M]

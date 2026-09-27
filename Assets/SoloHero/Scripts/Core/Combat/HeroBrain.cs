@@ -12,6 +12,7 @@ namespace SoloHero.Core.Combat
         private HeroStats _stats;
         private float _attackTimer;
         private bool _attackPending;
+        private double _atkBuffFraction;
 
         public HeroBrain(BalanceValues balance, IRandom random, HeroStats stats)
         {
@@ -81,9 +82,15 @@ namespace SoloHero.Core.Combat
             if (target == null) return;
 
             bool crit = DamageCalc.RollCrit(_stats, _random);
-            double dmg = DamageCalc.HeroHit(_stats, crit, _balance);
+            double dmg = DamageCalc.HeroHit(_stats, crit, _balance) * (1d + _atkBuffFraction);
             target.TakeDamage(dmg);
             DealtDamage?.Invoke(dmg, crit);
+        }
+
+        public void SetAtkBuffFraction(double fraction)
+        {
+            if (fraction < 0d) fraction = 0d;
+            _atkBuffFraction = fraction;
         }
 
         public void ApplyDamage(double amount)

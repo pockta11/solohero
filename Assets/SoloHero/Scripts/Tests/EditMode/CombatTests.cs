@@ -71,6 +71,50 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void OnHitFrame_AtkBuffFraction030_DealsOnePointThreeTimesHeroHit()
+        {
+            var c = new BalanceValues();
+            var rng = new FixedRandom(0.99d);
+            HeroBrain hero = CreateHero(c, rng);
+            var world = new CombatWorld(c);
+            world.BindHero(hero);
+            EnemyBrain enemy;
+            world.TryActivateSlot(out enemy);
+            enemy.Reset(c, 1000d, 5d, c.ENEMY_ATK_INTERVAL, c.ATTACK_RANGE * 0.5d, false);
+
+            hero.Tick(0f, world);
+            hero.Tick(0f, world);
+            hero.SetAtkBuffFraction(0.30d);
+
+            hero.OnHitFrame(world);
+
+            double unbuffed = DamageCalc.HeroHit(BaseStats(c), false, c);
+            Assert.AreEqual(1000d - unbuffed * 1.3d, enemy.Hp, 1e-9);
+        }
+
+        [Test]
+        public void SetAtkBuffFraction_Negative_TreatedAsZero()
+        {
+            var c = new BalanceValues();
+            var rng = new FixedRandom(0.99d);
+            HeroBrain hero = CreateHero(c, rng);
+            var world = new CombatWorld(c);
+            world.BindHero(hero);
+            EnemyBrain enemy;
+            world.TryActivateSlot(out enemy);
+            enemy.Reset(c, 1000d, 5d, c.ENEMY_ATK_INTERVAL, c.ATTACK_RANGE * 0.5d, false);
+
+            hero.Tick(0f, world);
+            hero.Tick(0f, world);
+            hero.SetAtkBuffFraction(-0.5d);
+
+            hero.OnHitFrame(world);
+
+            double unbuffed = DamageCalc.HeroHit(BaseStats(c), false, c);
+            Assert.AreEqual(1000d - unbuffed, enemy.Hp, 1e-9);
+        }
+
+        [Test]
         public void OnHitFrame_OutOfRange_DoesNotDamage()
         {
             var c = new BalanceValues();

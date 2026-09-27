@@ -99,6 +99,26 @@ namespace SoloHero.Game.Config
         public int PIXEL_REF_HEIGHT = 480;
         public int BATTLE_VIEW_RATIO = 55;
         public int HERO_SCREEN_X = 30;
+        public double SWORD_ATK_C = 1.10;
+        public double SWORD_ATK_R = 1.30;
+        public double SWORD_ATK_E = 1.70;
+        public double SWORD_ATK_L = 2.40;
+        public double HELM_DEF_C = 1.10;
+        public double HELM_DEF_R = 1.25;
+        public double HELM_DEF_E = 1.50;
+        public double HELM_DEF_L = 2.00;
+        public double ARMOR_HP_C = 1.10;
+        public double ARMOR_HP_R = 1.25;
+        public double ARMOR_HP_E = 1.50;
+        public double ARMOR_HP_L = 2.00;
+        public double BOOTS_ATKSPD_C = 0.03;
+        public double BOOTS_ATKSPD_R = 0.08;
+        public double BOOTS_ATKSPD_E = 0.15;
+        public double BOOTS_ATKSPD_L = 0.25;
+        public double BOOTS_CRIT_C = 1;
+        public double BOOTS_CRIT_R = 3;
+        public double BOOTS_CRIT_E = 6;
+        public double BOOTS_CRIT_L = 10;
         public int SAVE_DEBOUNCE = 250;
 
         public BalanceValues ToValues()
@@ -198,6 +218,26 @@ namespace SoloHero.Game.Config
                 PIXEL_REF_HEIGHT = PIXEL_REF_HEIGHT,
                 BATTLE_VIEW_RATIO = BATTLE_VIEW_RATIO,
                 HERO_SCREEN_X = HERO_SCREEN_X,
+                SWORD_ATK_C = SWORD_ATK_C,
+                SWORD_ATK_R = SWORD_ATK_R,
+                SWORD_ATK_E = SWORD_ATK_E,
+                SWORD_ATK_L = SWORD_ATK_L,
+                HELM_DEF_C = HELM_DEF_C,
+                HELM_DEF_R = HELM_DEF_R,
+                HELM_DEF_E = HELM_DEF_E,
+                HELM_DEF_L = HELM_DEF_L,
+                ARMOR_HP_C = ARMOR_HP_C,
+                ARMOR_HP_R = ARMOR_HP_R,
+                ARMOR_HP_E = ARMOR_HP_E,
+                ARMOR_HP_L = ARMOR_HP_L,
+                BOOTS_ATKSPD_C = BOOTS_ATKSPD_C,
+                BOOTS_ATKSPD_R = BOOTS_ATKSPD_R,
+                BOOTS_ATKSPD_E = BOOTS_ATKSPD_E,
+                BOOTS_ATKSPD_L = BOOTS_ATKSPD_L,
+                BOOTS_CRIT_C = BOOTS_CRIT_C,
+                BOOTS_CRIT_R = BOOTS_CRIT_R,
+                BOOTS_CRIT_E = BOOTS_CRIT_E,
+                BOOTS_CRIT_L = BOOTS_CRIT_L,
                 SAVE_DEBOUNCE = SAVE_DEBOUNCE
             };
         }

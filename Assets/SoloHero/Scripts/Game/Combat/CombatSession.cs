@@ -1,6 +1,7 @@
 using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Equipment;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
@@ -30,7 +31,19 @@ namespace SoloHero.Game.Combat
                 return;
             }
 
-            HeroStats stats = StatAggregator.Compute(balance, save);
+            EquipmentBonus bonus = EquipmentBonus.Resolve(balance, save);
+            HeroStats stats = StatAggregator.Compute(
+                balance,
+                save.heroLevel,
+                save.upgradeHp,
+                save.upgradeAtk,
+                save.upgradeDef,
+                save.upgradeSpd,
+                bonus.SwordMult,
+                bonus.ArmorMult,
+                bonus.HelmMult,
+                bonus.BootsSpeedBonus,
+                bonus.BootsCritBonus);
 
             IRandom random;
             try

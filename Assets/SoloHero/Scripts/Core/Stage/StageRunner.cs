@@ -154,6 +154,7 @@ namespace SoloHero.Core.Stage
             _world.TickEnemies(dt);
             bool bossFight = State == StageState.BossTimer;
             _skills.Tick(dt, _hero, _world, bossFight);
+            _hero.SetAtkBuffFraction(_skills.AtkBuffSum);
             _hero.Tick(dt, _world);
 
             // Simultaneous resolution order (GDD):
