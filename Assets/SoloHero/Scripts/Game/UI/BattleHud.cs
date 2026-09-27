@@ -28,6 +28,7 @@ namespace SoloHero.Game.UI
         [SerializeField] private UiPunch _goldPunch;
 
         private const string FarmingKey = "hud.farming";
+        private const string AutoRetreatKey = "hud.auto_retreat";
         private const float GoldCountSeconds = 0.4f;
 
         private BalanceValues _balance;
@@ -265,13 +266,17 @@ namespace SoloHero.Game.UI
         private void RefreshRetreatPrompt(StageRunner runner)
         {
             // D-058: a normal-stage death drops to farming by itself after the retry delay; say so while waiting.
-            bool show = runner.PromptRetreat && !runner.IsBoss && runner.State == StageState.Failed && runner.GlobalStage > 1;
+            // D-077: a boss fail offers retry / retreat and retreats by itself after a countdown.
+            bool bossFail = runner.IsBoss && runner.State == StageState.Failed;
+            bool show = bossFail || (runner.PromptRetreat && !runner.IsBoss && runner.State == StageState.Failed && runner.GlobalStage > 1);
             GameObject promptObject = _retreatPrompt != null ? _retreatPrompt.gameObject : null;
             SetShown(promptObject, show, ref _retreatPromptVisible);
             if (!show || _retreatPrompt == null) return;
-            string farming = Strings.Get(FarmingKey);
-            if (_retreatPrompt.text == farming) return;
-            _retreatPrompt.text = farming;
+            string text = bossFail
+                ? Strings.Format(AutoRetreatKey, Mathf.CeilToInt(runner.BossAutoRetreatRemaining))
+                : Strings.Get(FarmingKey);
+            if (_retreatPrompt.text == text) return;
+            _retreatPrompt.text = text;
         }
 
         private static void SetShown(GameObject target, bool show, ref bool shown)

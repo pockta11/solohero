@@ -30,7 +30,14 @@ New-Item -ItemType Directory -Force $OutDir | Out-Null
 function Adb { & $adbExe -s $Serial @args }
 function Launch { Adb shell am start -n $activity | Out-Null }
 function Stop-App { Adb shell am force-stop $pkg | Out-Null }
-function Alive { return [bool](Adb shell pidof $pkg) }
+# Three looks a second apart: a Unity build or an adb server restart can make one pidof come back empty.
+function Alive {
+    for ($k = 0; $k -lt 3; $k++) {
+        if (Adb shell pidof $pkg 2>$null) { return $true }
+        Start-Sleep 1
+    }
+    return $false
+}
 function Tap([int]$x, [int]$y) { Adb shell input tap $x $y | Out-Null }
 
 function Read-Save {

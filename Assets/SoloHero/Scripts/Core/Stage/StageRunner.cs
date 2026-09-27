@@ -266,10 +266,21 @@ namespace SoloHero.Core.Stage
             Begin(_g + 1);
         }
 
+        /// <summary>Seconds until a failed boss auto-retreats (D-077); 0 when not waiting on a boss fail.</summary>
+        public float BossAutoRetreatRemaining =>
+            State == StageState.Failed && _failedWasBoss ? Math.Max(0f, _balance.BOSS_FAIL_AUTO_RETREAT - _retryTimer) : 0f;
+
         private void TickFailed(float dt)
         {
-            if (_failedWasBoss) return;
             _retryTimer += dt;
+            if (_failedWasBoss)
+            {
+                // D-077: an idle game must keep farming while nobody watches - the retry / retreat choice is offered
+                // for a few seconds, then the runner retreats to farming by itself.
+                if (_retryTimer >= _balance.BOSS_FAIL_AUTO_RETREAT) ChooseRetreat();
+                return;
+            }
+
             if (_retryTimer < _balance.STAGE_RETRY_DELAY) return;
 
             if ((_challenging || PromptRetreat) && _failedG > 1)

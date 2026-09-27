@@ -256,6 +256,27 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void BossFail_NoChoice_RetreatsToFarmingAfterCountdown()
+        {
+            var c = new BalanceValues();
+            StageRunner runner = CreateRunner(c);
+            runner.Begin(10);
+            runner.Tick(c.BOSS_INTRO_TIME);
+            runner.Tick(c.BOSS_TIME_LIMIT + 0.01f);
+            Assert.AreEqual(StageState.Failed, runner.State);
+            Assert.That(runner.BossAutoRetreatRemaining, Is.EqualTo(c.BOSS_FAIL_AUTO_RETREAT).Within(0.02f));
+
+            runner.Tick(c.BOSS_FAIL_AUTO_RETREAT - 0.1f);
+            Assert.AreEqual(StageState.Failed, runner.State, "the choice stays open during the countdown");
+
+            runner.Tick(0.2f);
+
+            Assert.IsTrue(runner.RetreatMode);
+            Assert.AreEqual(9, runner.GlobalStage);
+            Assert.AreEqual(0f, runner.BossAutoRetreatRemaining);
+        }
+
+        [Test]
         public void ChooseRetreat_AfterBossFail_FarmsPreviousStage()
         {
             var c = new BalanceValues();

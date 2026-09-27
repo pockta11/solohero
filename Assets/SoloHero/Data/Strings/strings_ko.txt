@@ -10,6 +10,7 @@ hud.retry	재도전
 hud.retreat	후퇴
 hud.challenge	도전
 hud.farming	파밍으로 돌아갑니다...
+hud.auto_retreat	{0}초 후 자동 후퇴
 hud.skill_cooldown	{0} {1}
 
 # Failure toasts (FailReason)

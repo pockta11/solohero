@@ -105,6 +105,7 @@ namespace SoloHero.Game.Config
         public int MVP_CHAPTERS = 5;
         public float STAGE_CLEAR_DELAY = 2f;
         public float STAGE_RETRY_DELAY = 3f;
+        public float BOSS_FAIL_AUTO_RETREAT = 5f;
         public float DEATH_ANIM_TIME = 1f;
         public int FAIL_STREAK_STEP_DOWN = 1;
         public int PPU = 32;
@@ -237,6 +238,7 @@ namespace SoloHero.Game.Config
                 MVP_CHAPTERS = MVP_CHAPTERS,
                 STAGE_CLEAR_DELAY = STAGE_CLEAR_DELAY,
                 STAGE_RETRY_DELAY = STAGE_RETRY_DELAY,
+                BOSS_FAIL_AUTO_RETREAT = BOSS_FAIL_AUTO_RETREAT,
                 DEATH_ANIM_TIME = DEATH_ANIM_TIME,
                 FAIL_STREAK_STEP_DOWN = FAIL_STREAK_STEP_DOWN,
                 PPU = PPU,
