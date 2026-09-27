@@ -65,7 +65,7 @@ development_status:
   1-07-save-pipeline: done  # E1-07 [M]
   1-08-load-fail-defense-ui: review  # E1-08 [M] banner on Boot, DontDestroyOnLoad into Game
   1-09-build-pipeline-portrait: done  # E1-09 [M] FIRST in epic-1 — API 36 / 16 KB build spike
-  1-10-cold-start-measure: backlog  # E1-10 [S]
+  1-10-cold-start-measure: review  # E1-10 [S] emulator: avg 7.1 s / max 7.4 s to battle (10 runs); first run after install slower
   1-11-asmdef-core-skeleton: done  # E1-11 [M] AFTER 1-03, BEFORE 1-04 — asmdef 4 + Core/Common + Formulas + BalanceConfig
   epic-1-retrospective: optional
 
@@ -207,18 +207,18 @@ development_status:
   9-05-gold-spend-rate: review  # E9-05 [M] one-day-lag definition, passes
   9-06-unit-test-suite: review  # E9-06 [M] 5 areas covered, 212 EditMode tests
   9-07-smoke-scenarios: review  # E9-07 [M] tools/qa/Qa.ps1 smoke 10/10
-  9-08-force-kill-scenarios: backlog  # E9-08 [M]
+  9-08-force-kill-scenarios: review  # E9-08 [M] 20 kills 0.1-1.0 s after a purchase: 0 lost (after D-073)
   9-09-idle-30min: backlog  # E9-09 [M]
   9-10-idle-2h: backlog  # E9-10 [M]
-  9-11-extra-scenarios: backlog  # E9-11 [M]
+  9-11-extra-scenarios: review  # E9-11 [M] v1 migration, ad failure, 16:9 / 20:9 layout PASS; boss/retreat in EditMode
   9-12-device-matrix: backlog  # E9-12 [M]
   9-13-bug-severity-gate: review  # E9-13 [M] qa/release-gate.md; B-001 ad WebView crash on emulator pending device check
   9-14-store-assets: review  # E9-14 [M] store/: icon 512, feature graphic, 4 draft shots, listing-ko, privacy-policy.html, data-safety; dev fills email/URL
   9-15-rate-disclosure-policy: review  # E9-15 [M] no IAP -> legal disclosure not required; in-game + store text anyway (store/content-rating.md)
   9-16-ad-policy-check: review  # E9-16 [M] rewarded only, labelled, optional; 13+ target (store/content-rating.md)
   9-17-min-android-version: review  # E9-17 [S] minSdk 24 / target 36 (9-17-min-android-version.md)
-  9-18-release-aab: backlog  # E9-18 [M]
+  9-18-release-aab: in-progress  # E9-18 [M] release AAB installs and runs on the emulator; dev device pending
   9-19-memory-drawcall-measure: backlog  # E9-19 [M]
-  9-20-first-session-5min: backlog  # E9-20 [M]
+  9-20-first-session-5min: review  # E9-20 [M] scripted novice: stage 8, 3 upgrades, 1 pull at 5 min
   9-21-no-ad-completion: review  # E9-21 [M] sim no-ads: 5-10 boss beaten day 8-9 (229-255 play min)
   epic-9-retrospective: optional

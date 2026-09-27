@@ -15,7 +15,8 @@ param(
     [int]$Count = 10,
     [int]$Minutes = 30,
     [string]$Serial = 'emulator-5554',
-    [string]$OutDir = 'Builds/qa'
+    [string]$OutDir = 'Builds/qa',
+    [string]$Only = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -73,13 +74,21 @@ function Unity-Errors {
 
 # Launch and wait for the "battle ready" marker (CombatSession) instead of a fixed delay: a first launch after an
 # install or a data wipe takes 30+ s on this emulator. Falls back after 120 s.
+function Wait-Ready([int]$timeoutSec = 120) {
+    $appPid = $null
+    for ($k = 0; $k -lt $timeoutSec * 2; $k++) {
+        Start-Sleep -Milliseconds 500
+        if (-not $appPid) { $appPid = (Adb shell pidof $pkg) ; if ($appPid) { $appPid = $appPid.Trim() } ; continue }
+        # Only this process's log: a marker left by the previous run must not count.
+        if (Adb logcat -d --pid=$appPid -s Unity:I | Select-String 'battle ready') { return $true }
+    }
+    return $false
+}
+
 function Boot {
     Adb logcat -c
     Launch
-    for ($k = 0; $k -lt 240; $k++) {
-        Start-Sleep -Milliseconds 500
-        if (Adb logcat -d -s Unity:I | Select-String 'battle ready') { break }
-    }
+    if (-not (Wait-Ready)) { Write-Warning 'battle ready not seen within 120 s' }
     Start-Sleep -Seconds 2
     Close-Popups
 }
@@ -140,6 +149,7 @@ switch ($Cmd) {
     'scenarios' {
         Adb root | Out-Null; Start-Sleep 2
         # 1. v1 -> v2 migration: a fresh install that only has the 3D-era backup key.
+        if ($Only -eq '' -or $Only -eq 'migration') {
         Stop-App
         Adb shell pm clear $pkg | Out-Null
         $v1 = '{"gold":1000,"chapter":2,"stageNumber":3,"upgradeHpLevel":3,"upgradeAtkLevel":0,"upgradeDefLevel":0,"upgradeSpdLevel":0,"gachaPullCount":7,"equippedWeapon":"Iron_Sword","ownedEquipmentCsv":"Iron_Sword","dataVersion":1}'
@@ -154,6 +164,7 @@ switch ($Cmd) {
         $migOk = $m -and [double]$m.gold -ge (1000 + $refund) -and [int]$m.upgradeHp -eq 0 -and [int]$m.highestStage -gt 1 -and $m.equippedSword -ne ''
         "scenario migration: gold {0} (>= {1}), upgradeHp {2}, highestStage {3}, sword '{4}' -> {5}" -f $m.gold, (1000 + $refund), $m.upgradeHp, $m.highestStage, $m.equippedSword, ($(if ($migOk) { 'PASS' } else { 'FAIL' }))
         Stop-App
+        }
 
         # 2. Ad failure (QA build has no ad SDK): tapping the gem ad keeps gems and the daily count, app stays up.
         Boot
@@ -217,9 +228,11 @@ switch ($Cmd) {
             $t0 = Get-Date
             Launch
             $ready = $null
-            for ($k = 0; $k -lt 120 -and -not $ready; $k++) {
+            $appPid = $null
+            for ($k = 0; $k -lt 480 -and -not $ready; $k++) {
                 Start-Sleep -Milliseconds 250
-                if (Adb logcat -d -s Unity:I | Select-String 'battle ready') { $ready = Get-Date }
+                if (-not $appPid) { $appPid = (Adb shell pidof $pkg); if ($appPid) { $appPid = $appPid.Trim() }; continue }
+                if (Adb logcat -d --pid=$appPid -s Unity:I | Select-String 'battle ready') { $ready = Get-Date }
             }
             $sec = if ($ready) { ($ready - $t0).TotalSeconds } else { -1 }
             $times += $sec
@@ -230,6 +243,9 @@ switch ($Cmd) {
     }
 
     'idle' {
+        # Keep the screen on: a sleeping screen pauses the app and the protocol would measure nothing.
+        Adb shell svc power stayon true | Out-Null
+        Adb shell settings put system screen_off_timeout 2147483647 | Out-Null
         Boot
         Tap 540 1300
         $samples = @()

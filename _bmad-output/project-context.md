@@ -66,13 +66,13 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 ### Code Organization Rules
 
 - Everything the project owns lives under `Assets/SoloHero/`. Vendor folders (`Firebase/`, `GoogleMobileAds/`, `ExternalDependencyManager/`, `Plugins/Demigiant/`, `TextMesh Pro/`) are read-only.
-- `Assets/SoloHero/Scripts/Legacy/` is a **temporary quarantine** of 3D-era scripts (see its README). Never reference a Legacy type from Core/Game; port the behaviour and delete the legacy file in the owning story.
+- The 3D-era `Scripts/Legacy/` quarantine was fully ported and deleted on 2026-09-28 (D-076). Do not bring 3D-era code back; v1 save handling lives in `MigrationV1ToV2`.
 - Folder = namespace: `SoloHero.{Assembly}.{Folder}` (`SoloHero.Core.Gacha`, `SoloHero.Game.UI.Panels`).
 - Naming: classes/methods/properties `PascalCase`; private and `[SerializeField]` fields `_camelCase`; interfaces `I*`; services `{Domain}Service` (Core); presenters `{View}Presenter` (Game); events `{Noun}{PastParticiple}` (`GoldChanged`); fallible operations `Try*` returning `Result`; async `*Async`.
 - `BalanceConfig` fields are `UPPER_SNAKE_CASE` matching GDD constant names exactly (`ENEMY_HP_GROWTH`). Only this class may break C# casing. No magic numbers anywhere else — read `BalanceValues`.
 - All formulas live in `Formulas`, `StatAggregator`, `DamageCalc`, `BigNumberFormat`. Arithmetic on game values outside these four files is a violation.
 - Asset names: SO `{Type}_{Name}[_{Variant}]` (`Equipment_Sword_Rare`), prefab `{Category}_{Name}` (`Popup_OfflineReward`), sprite sheets `{entity}_{clip}_{frames}.png` (`slime_run_6.png` — last number drives auto-slicing), audio `bgm_{theme}.ogg` / `sfx_{event}.wav`.
-- Equipment/enemy/skill `id` strings equal the SO asset name. Saved data stores these strings.
+- Equipment ids come from `GachaCatalog.IdOf(slot, grade)` (`Equipment_Sword_Rare`); saved data stores these strings. 3D-era ids are mapped by `MigrationV1ToV2.MapLegacyId` (D-076).
 - Save-state field names come verbatim from the GDD table (`highestStage`, `farmingStage`, `retreatMode`, `pityCount`, `upgradeHp` …). Do not invent synonyms.
 - **All text inside code is English** — identifiers, comments, log messages, string keys. Korean appears only in the `Strings` table values. Non-ASCII in a `.cs` file is a review failure.
 - Player-facing text: `Strings.Get("toast.not_enough_gold")`. No literal Korean in `.cs` or prefabs.
@@ -95,10 +95,11 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 - Input: legacy Input Manager only (`activeInputHandler: 0` since 1-09; the Input System package itself is removed in E1-03). UI via `StandaloneInputModule`; Android back = `Input.GetKeyDown(KeyCode.Escape)` handled solely by `BackKeyRouter` (popup → panel → quit confirm).
 - Debug tooling (`DebugPanel`, `PerfOverlay`, cheats) is wrapped in `#if DEVELOPMENT_BUILD || UNITY_EDITOR`. Release builds must not contain it — compile-time, not a runtime flag.
 - Save on `OnApplicationPause(true)` and `OnApplicationQuit` via `SaveService.FlushAsync()`; write `lastQuitTimeUtc` there and nowhere else.
+- Every save request bumps `SaveDataV2.saveRevision` and writes the local backup at once; only the upload is debounced. On load the copy with the higher revision wins and a newer local copy is uploaded (D-073). Never bypass `SaveService` to write either store.
 
 ### Critical Don't-Miss Rules
 
-- **Mutation order is always: mutate `PlayerState` → raise event → `RequestSave()`.** Only the seven GDD save triggers call `RequestSave` (stage clear, gacha result, equip change, upgrade success, skill level-up, offline claim, pause/quit flush). UI, views, and event handlers never call it.
+- **Mutation order is always: mutate `PlayerState` → raise event → `RequestSave()`.** Only the seven GDD save triggers call `RequestSave` (stage clear, gacha result, equip change, upgrade success, skill level-up, offline claim, pause/quit flush), plus the other currency-changing player decisions that follow the same rule: ad rewards (`AdSlotPolicy`), the gem gold pack (`GemShop`) and the farming stage choice (`FarmingStageService`). UI, views, and event handlers never call it.
 - Expected failures (not enough gold, max level, on cooldown, locked, busy) return `Result.Fail(reason)` — never throw, never `Debug.LogError`. Exceptions are for programmer errors only.
 - External I/O failure is a fallback, not an error state: remote load fails → local backup; ad fails → normal claim stays enabled; auth fails → `local` mode. Nothing ever calls `Application.Quit` or blocks boot.
 - Gacha: **confirm result → save → then animate.** Skipping or quitting mid-animation must not lose or duplicate a pull. 10-pull deducts the full price up front; pity counts per pull.

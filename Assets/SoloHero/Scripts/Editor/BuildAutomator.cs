@@ -15,7 +15,8 @@ using UnityEngine;
 /// Environment variables (all optional):
 ///   SOLOHERO_DEV_BUILD=1          -> BuildOptions.Development (defines DEVELOPMENT_BUILD)
 ///   SOLOHERO_NO_ADS=1             -> QA build without the ad SDK (BuildConfig.adsEnabled = false for this build only)
-///   SOLOHERO_X86_64=1             -> also build x86_64 for this build only (native emulator runs; not for release)
+///   SOLOHERO_X86_64=1             -> also build x86_64 for this build only (native emulator runs; not for release).
+///                                    EDM4U then rewrites mainTemplate.gradle / AndroidResolverDependencies.xml - revert both.
 ///   SOLOHERO_KEYSTORE_PATH        -> custom keystore; without it the build is debug-signed
 ///   SOLOHERO_KEYSTORE_PASS, SOLOHERO_KEYALIAS_NAME, SOLOHERO_KEYALIAS_PASS
 ///   SOLOHERO_JDK_PATH             -> override Unity's embedded JDK (decision B of story 1-09)
