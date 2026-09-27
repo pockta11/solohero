@@ -183,9 +183,7 @@ namespace SoloHero.Editor
             RectTransform fillRect = Rect("Fill", gauge, 0f, 0f, 1f, 1f);
             Image fill = fillRect.gameObject.AddComponent<Image>();
             fill.color = new Color32(0xFF, 0xC5, 0x31, 0xFF);
-            fill.type = Image.Type.Filled;
-            fill.fillMethod = Image.FillMethod.Horizontal;
-            fill.fillAmount = 0f;
+            fillRect.anchorMax = new Vector2(0f, 1f);
 
             Text rates = MakeText("Rates", panel, 0.04f, 0.68f, 0.96f, 0.82f, "", 26, TextAnchor.MiddleCenter);
             Text result = MakeText("Result", panel, 0.04f, 0.24f, 0.96f, 0.67f, "", 26, TextAnchor.UpperCenter);

@@ -101,7 +101,12 @@ namespace SoloHero.Game.UI.Panels
             int pity = _balance.GACHA_PITY;
             int left = pity - _save.pityCount;
             if (_pityText != null) _pityText.text = "Legendary in " + left + " pulls   (" + _save.pityCount + "/" + pity + ")";
-            if (_pityFill != null) _pityFill.fillAmount = pity > 0 ? (float)_save.pityCount / pity : 0f;
+            if (_pityFill != null)
+            {
+                // Width by anchor: a Filled image without a sprite ignores fillAmount.
+                float ratio = pity > 0 ? Mathf.Clamp01((float)_save.pityCount / pity) : 0f;
+                _pityFill.rectTransform.anchorMax = new Vector2(ratio, 1f);
+            }
 
             if (_singleButton != null) _singleButton.SetAvailable(_save.gold >= _balance.GACHA_COST_SINGLE);
             if (_tenButton != null) _tenButton.SetAvailable(_save.gold >= _balance.GACHA_COST_TEN);
