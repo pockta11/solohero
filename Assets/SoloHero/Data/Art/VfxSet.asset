@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2644dea8b75381349afa7f6814c3dfa3, type: 3}
+  m_Name: VfxSet
+  m_EditorClassIdentifier: 
+  slash:
+  - {fileID: -6454123031949915407, guid: 526374336f9185245b6585e4ce9c8d52, type: 3}
+  - {fileID: -4000616532394920120, guid: 526374336f9185245b6585e4ce9c8d52, type: 3}
+  - {fileID: -3783533049220918061, guid: 526374336f9185245b6585e4ce9c8d52, type: 3}
+  - {fileID: 462568422054837375, guid: 526374336f9185245b6585e4ce9c8d52, type: 3}
+  whirl:
+  - {fileID: -1611048329189102118, guid: 474ee0de81dd6b548b3259a77daaaa91, type: 3}
+  - {fileID: -6952006842097137869, guid: 474ee0de81dd6b548b3259a77daaaa91, type: 3}
+  - {fileID: 6247747145532131843, guid: 474ee0de81dd6b548b3259a77daaaa91, type: 3}
+  - {fileID: -1676415319558593872, guid: 474ee0de81dd6b548b3259a77daaaa91, type: 3}
+  - {fileID: -7465956955484296384, guid: 474ee0de81dd6b548b3259a77daaaa91, type: 3}
+  ring:
+  - {fileID: 1989269723559697071, guid: fa33d9e11ed0ebb4a85516953fd78156, type: 3}
+  - {fileID: 4475355010641225481, guid: fa33d9e11ed0ebb4a85516953fd78156, type: 3}
+  - {fileID: -3476785167189596721, guid: fa33d9e11ed0ebb4a85516953fd78156, type: 3}
+  - {fileID: -5085083751010581263, guid: fa33d9e11ed0ebb4a85516953fd78156, type: 3}
+  - {fileID: 3814937396989953567, guid: fa33d9e11ed0ebb4a85516953fd78156, type: 3}
+  - {fileID: 6279261345890261179, guid: fa33d9e11ed0ebb4a85516953fd78156, type: 3}
+  boom:
+  - {fileID: 459745188292032055, guid: 755ce72860a94d04ba7b84da9074cf01, type: 3}
+  - {fileID: 1573550610916946365, guid: 755ce72860a94d04ba7b84da9074cf01, type: 3}
+  - {fileID: -8540445287158633691, guid: 755ce72860a94d04ba7b84da9074cf01, type: 3}
+  - {fileID: -8145901472050795189, guid: 755ce72860a94d04ba7b84da9074cf01, type: 3}
+  - {fileID: 4950064224326363562, guid: 755ce72860a94d04ba7b84da9074cf01, type: 3}
+  - {fileID: -12269604458815407, guid: 755ce72860a94d04ba7b84da9074cf01, type: 3}
+  spark:
+  - {fileID: 2000527404649149709, guid: 801b6f27fbf38ad489814afb20543e3f, type: 3}
+  - {fileID: 7342261542746805968, guid: 801b6f27fbf38ad489814afb20543e3f, type: 3}
+  - {fileID: -6163379150325527223, guid: 801b6f27fbf38ad489814afb20543e3f, type: 3}
+  - {fileID: 5288872640271736492, guid: 801b6f27fbf38ad489814afb20543e3f, type: 3}
+  fps: 18

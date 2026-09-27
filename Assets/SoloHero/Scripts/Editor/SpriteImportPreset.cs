@@ -9,7 +9,8 @@ namespace SoloHero.Editor
     /// <summary>
     /// E8-16: every texture under Assets/SoloHero/Art gets pixel-art settings (PPU 32, Point, no compression,
     /// no mipmaps). Sheets named "{entity}_{clip}_{frames}.png" are sliced into equal frames with the entity's
-    /// foot pivot; backgrounds and tiles become single repeatable sprites pivoted at the bottom centre.
+    /// foot pivot (VFX sheets pivot at their centre); backgrounds and tiles become single repeatable sprites pivoted
+    /// at the bottom centre, and UI sprites single sprites pivoted at the centre.
     /// Do not hand-edit importer settings under Art/ - change this file and reimport.
     /// </summary>
     public sealed class SpriteImportPreset : AssetPostprocessor
@@ -24,7 +25,18 @@ namespace SoloHero.Editor
         {
             { "king", new Vector2(32f, 14f) },
             { "pig", new Vector2(20f, 0f) },
+            { "pigr", new Vector2(20f, 0f) },
+            { "boxpig", new Vector2(15f, 0f) },
+            { "boxpigv", new Vector2(15f, 0f) },
+            { "bombpig", new Vector2(11f, 0f) },
+            { "bombpigr", new Vector2(11f, 0f) },
+            { "hidepig", new Vector2(13f, 0f) },
+            { "matchpig", new Vector2(14f, 0f) },
             { "kingpig", new Vector2(20f, 0f) },
+            { "kingpigb", new Vector2(20f, 0f) },
+            { "kingpigd", new Vector2(20f, 0f) },
+            { "kingpign", new Vector2(20f, 0f) },
+            { "kingpigr", new Vector2(20f, 0f) },
         };
 
         private void OnPreprocessTexture()
@@ -48,10 +60,11 @@ namespace SoloHero.Editor
             string name = Path.GetFileNameWithoutExtension(path);
             Match sheet = SheetName.Match(name);
             bool repeating = path.Contains("/Backgrounds/") || path.Contains("/Tiles/");
-            if (repeating || !sheet.Success)
+            bool ui = path.Contains("/UI/");
+            if (repeating || ui || !sheet.Success)
             {
                 importer.spriteImportMode = SpriteImportMode.Single;
-                settings.spriteAlignment = (int)SpriteAlignment.BottomCenter;
+                settings.spriteAlignment = (int)(ui ? SpriteAlignment.Center : SpriteAlignment.BottomCenter);
                 importer.wrapMode = repeating ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
                 importer.SetTextureSettings(settings);
                 return;
@@ -64,7 +77,9 @@ namespace SoloHero.Editor
             int frames = int.Parse(sheet.Groups[3].Value);
             importer.GetSourceTextureWidthAndHeight(out int width, out int height);
             int frameWidth = frames > 0 ? width / frames : width;
-            Vector2 pivotPx = FootPivotPx.TryGetValue(sheet.Groups[1].Value, out Vector2 p) ? p : new Vector2(frameWidth / 2f, 0f);
+            bool vfx = path.Contains("/Vfx/");
+            Vector2 pivotPx = vfx ? new Vector2(frameWidth / 2f, height / 2f)
+                : FootPivotPx.TryGetValue(sheet.Groups[1].Value, out Vector2 p) ? p : new Vector2(frameWidth / 2f, 0f);
             var pivot = new Vector2(pivotPx.x / frameWidth, pivotPx.y / height);
 
             var metas = new SpriteMetaData[frames];

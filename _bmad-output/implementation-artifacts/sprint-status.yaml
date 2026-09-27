@@ -1,5 +1,5 @@
 # generated: 2026-09-20
-# last_updated: 2026-09-27 (9-01..9-05 simulator and tuning D-053..D-061; growth panels; review fixes)
+# last_updated: 2026-09-27 (E8 juice + audio + enemy looks D-068..D-071, boss ATK 1.1)
 # code_landed: local — EditMode 146. Battle HUD has skill buttons and a Retreat? prompt.
 #   Resume restarts the farming stage. ISaveRequester reaches SaveService.
 #   review means the rule is in code. Ads, pools, stage select, and art stay backlog.
@@ -131,7 +131,7 @@ development_status:
   5-08-gem-ten-pull: review  # E5-08 [S]
   5-09-auto-equip-rule: review  # E5-09 [M]
   5-10-duplicate-refund: review  # E5-10 [M] D-062 duplicate = enhance +1, refund only at max
-  5-11-gacha-presentation: backlog  # E5-11 [M]
+  5-11-gacha-presentation: review  # E5-11 [M] summon circle, card flips (1: 0.4 s / 10: 0.15 s apart), best-card highlight, skip all
   5-12-pity-gauge-ui: backlog  # E5-12 [M]
   5-13-rate-disclosure: backlog  # E5-13 [M]
   5-14-gacha-verifier-run: backlog  # E5-14 [M]
@@ -167,7 +167,7 @@ development_status:
   7-06-equipment-panel: review  # E7-06 [M] swap cycles owned grades
   7-07-gacha-panel: review  # E7-07 [M] pity gauge + rate text, no flip animation
   7-08-skill-panel: review  # E7-08 [M]
-  7-09-settings-panel: backlog  # E7-09 [M]
+  7-09-settings-panel: review  # E7-09 [M] minimum: BGM / SFX / low effect / 30 fps toggles (SettingsService)
   7-10-skill-buttons: backlog  # E7-10 [M]
   7-11-popups: backlog  # E7-11 [M]
   7-12-toast-queue: review  # E7-12 [M]
@@ -182,28 +182,28 @@ development_status:
   epic-8: backlog
   8-01-asset-license-sheet: review  # E8-01 [M] Art/ASSET_LICENSES.md (CC0 art, OFL font)
   8-02-hero-sprites: review  # E8-02 [M] Kings and Pigs King Human (CC0) idle/run/attack/hit/dead
-  8-03-enemy-sprites: review  # E8-03 [M] Pig (one enemy type for now)
-  8-04-boss-sprites: review  # E8-04 [M] King Pig x3 scale
+  8-03-enemy-sprites: review  # E8-03 [M] D-068: 5 Kings and Pigs pigs + 3 recolours, 2-3 per chapter by spawn order
+  8-04-boss-sprites: review  # E8-04 [M] D-068: King Pig green / blue / red + 2 dark variants, x3 scale
   8-05-chapter-backgrounds: review  # E8-05 [M] 5 CC0 parallax themes, looping tiled layers
   8-06-hit-frame-events: review  # E8-06 [M] D-065 hit lands on the swing; attack clip speeds up with attack speed
   8-07-equipment-icons: backlog  # E8-07 [M]
-  8-08-combat-vfx: backlog  # E8-08 [M]
-  8-09-damage-text-gold-countup: backlog  # E8-09 [M]
-  8-10-gacha-particles-flip: backlog  # E8-10 [M]
-  8-11-upgrade-punch-levelup-ring: backlog  # E8-11 [M]
+  8-08-combat-vfx: review  # E8-08 [M] pooled slash / crit / skill 3 / death puff / level ring, camera shake
+  8-09-damage-text-gold-countup: review  # E8-09 [M] crit pop + arc, gold count-up 0.4 s + punch
+  8-10-gacha-particles-flip: review  # E8-10 [M] UI grade particles (UiBurst), card flip, Epic+ shake + fanfare
+  8-11-upgrade-punch-levelup-ring: review  # E8-11 [M] row punch + chime on upgrade / skill level, level-up ring + toast
   8-12-korean-pixel-font: review  # E8-12 [M] Galmuri11 (OFL) on every UI Text
-  8-13-bgm-sfx: backlog  # E8-13 [S]
+  8-13-bgm-sfx: review  # E8-13 [S] D-070: 6 BGM + 18 SFX (CC0 Juhani Junkala), separate mute
   8-14-silent-play-check: backlog  # E8-14 [M]
-  8-15-low-effect-30fps: backlog  # E8-15 [M]
+  8-15-low-effect-30fps: review  # E8-15 [M] D-071 scope; 30 fps via targetFrameRate
   8-16-sprite-import-preset: review  # E8-16 [M] SpriteImportPreset under Art/
   epic-8-retrospective: optional
 
   # ── E9. 밸런싱·QA·출시 ──
   epic-9: in-progress
   9-01-balance-simulator: review  # E9-01 [M] Tools > Balance > Run Simulation; baseline fails 10/13 checks
-  9-02-verify-v1-v7: review  # E9-02 [M] D-053~D-064; no-ads fails only V-6a/V-7 borderline
+  9-02-verify-v1-v7: review  # E9-02 [M] D-053~D-069; no-ads fails only V-7 (10.3-11.2%, player-model bound, D-069)
   9-03-target-curve-checkpoints: review  # E9-03 [M] V-1a/b/c pass (no-ads)
-  9-04-wall-and-break-cost: review  # E9-04 [M] boss extra farm 35-50%
+  9-04-wall-and-break-cost: review  # E9-04 [M] boss extra farm 26-34% (no-ads)
   9-05-gold-spend-rate: review  # E9-05 [M] one-day-lag definition, passes
   9-06-unit-test-suite: backlog  # E9-06 [M]
   9-07-smoke-scenarios: backlog  # E9-07 [M]

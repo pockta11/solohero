@@ -3,6 +3,7 @@ using SoloHero.Game.Combat;
 using SoloHero.Game.Config;
 using SoloHero.Game.Infrastructure;
 using SoloHero.Game.Pooling;
+using SoloHero.Game.UI;
 using SoloHero.Game.UI.Common;
 using SoloHero.Game.UI.Panels;
 using UnityEditor;
@@ -25,6 +26,14 @@ namespace SoloHero.Editor
         private const string ScenePath = "Assets/SoloHero/Scenes/Game.unity";
         private const string RootName = "GrowthUI";
         private const string DamageLayerName = "DamageTextLayer";
+        private const string RevealName = "GachaReveal";
+        private const string SettingsButtonName = "SettingsButton";
+        private const string SettingsPopupName = "SettingsPopup";
+        private const string CardBackPath = "Assets/SoloHero/Art/UI/ui_card_back.png";
+        private const string CardFacePath = "Assets/SoloHero/Art/UI/ui_card_face.png";
+        private const string CirclePath = "Assets/SoloHero/Art/UI/ui_summon_circle.png";
+        private const int BurstParticles = 24;
+        private static readonly string[] SettingKeys = { "settings.bgm", "settings.sfx", "settings.low_effect", "settings.fps30" };
         private const float TabTop = 0.07f;
         private const float PanelTop = 0.40f;
 
@@ -150,8 +159,11 @@ namespace SoloHero.Editor
             _font = LoadFont();
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
-            Transform oldText = hud.transform.Find(DamageLayerName);
-            if (oldText != null) Object.DestroyImmediate(oldText.gameObject);
+            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName })
+            {
+                Transform stale = hud.transform.Find(name);
+                if (stale != null) Object.DestroyImmediate(stale.gameObject);
+            }
 
             CombatSession session = Object.FindObjectOfType<CombatSession>();
             RectTransform root = Rect(RootName, hud.transform, 0f, 0f, 1f, 1f);
@@ -170,6 +182,9 @@ namespace SoloHero.Editor
             BuildTutorial(root, session, toast);
             BuildDamageText(hud.transform, session);
             BuildAdBar(root, toast);
+            BuildGachaReveal(hud.transform, gacha.GetComponent<GachaPanelPresenter>());
+            BuildSettings(hud.transform);
+            WireJuice(hud, toast);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -213,6 +228,7 @@ namespace SoloHero.Editor
             }
 
             var so = new SerializedObject(presenter);
+            SetArray(so, "_punches", RowPunches(levels));
             SetArray(so, "_levelTexts", levels);
             SetArray(so, "_costTexts", costs);
             SetArray(so, "_buttons", buttons);
@@ -238,6 +254,7 @@ namespace SoloHero.Editor
             }
 
             var so = new SerializedObject(presenter);
+            SetArray(so, "_punches", RowPunches(levels));
             SetArray(so, "_levelTexts", levels);
             SetArray(so, "_costTexts", costs);
             SetArray(so, "_buttons", buttons);
@@ -291,7 +308,8 @@ namespace SoloHero.Editor
             fillRect.anchorMax = new Vector2(0f, 1f);
 
             Text rates = MakeText("Rates", panel, 0.04f, 0.68f, 0.96f, 0.82f, "", 26, TextAnchor.MiddleCenter);
-            Text result = MakeText("Result", panel, 0.04f, 0.24f, 0.96f, 0.67f, "", 26, TextAnchor.UpperCenter);
+            Text result = MakeText("Result", panel, 0.04f, 0.23f, 0.96f, 0.67f, "", 21, TextAnchor.UpperCenter);
+            result.lineSpacing = 0.92f;
             result.supportRichText = true;
             result.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -317,6 +335,182 @@ namespace SoloHero.Editor
             so.FindProperty("_toast").objectReferenceValue = toast;
             so.ApplyModifiedPropertiesWithoutUndo();
             return panel.gameObject;
+        }
+
+        private static UiPunch[] RowPunches(Text[] rowLabels)
+        {
+            var punches = new UiPunch[rowLabels.Length];
+            for (int i = 0; i < rowLabels.Length; i++) punches[i] = rowLabels[i].transform.parent.gameObject.AddComponent<UiPunch>();
+            return punches;
+        }
+
+        /// <summary>E8-09 gold punch on the HUD gold label, and the level-up toast for CombatFx.</summary>
+        private static void WireJuice(GameObject hud, ToastQueue toast)
+        {
+            BattleHud battleHud = Object.FindObjectOfType<BattleHud>();
+            if (battleHud != null)
+            {
+                var so = new SerializedObject(battleHud);
+                var gold = so.FindProperty("_goldText").objectReferenceValue as Text;
+                if (gold != null)
+                {
+                    UiPunch punch = gold.GetComponent<UiPunch>();
+                    if (punch == null) punch = gold.gameObject.AddComponent<UiPunch>();
+                    so.FindProperty("_goldPunch").objectReferenceValue = punch;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
+
+            CombatFx fx = Object.FindObjectOfType<CombatFx>();
+            if (fx != null)
+            {
+                var so = new SerializedObject(fx);
+                so.FindProperty("_toast").objectReferenceValue = toast;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
+
+        /// <summary>
+        /// E5-11 / E8-10 overlay, last sibling of the HUD so it covers everything: dim tap area, summon circle,
+        /// 10 cards (the view lays them out), UI particles, skip button and close hint.
+        /// </summary>
+        private static void BuildGachaReveal(Transform hud, GachaPanelPresenter presenter)
+        {
+            RectTransform holder = Rect(RevealName, hud, 0f, 0f, 1f, 1f);
+            holder.SetAsLastSibling();
+            GachaRevealView view = holder.gameObject.AddComponent<GachaRevealView>();
+
+            RectTransform root = Rect("Root", holder, 0f, 0f, 1f, 1f);
+            Image dim = root.gameObject.AddComponent<Image>();
+            dim.color = new Color(0.02f, 0.02f, 0.05f, 0.95f);
+            Button tap = root.gameObject.AddComponent<Button>();
+            tap.transition = Selectable.Transition.None;
+            UnityEventTools.AddPersistentListener(tap.onClick, view.Tap);
+
+            RectTransform circle = Rect("Circle", root, 0.5f, 0.55f, 0.5f, 0.55f);
+            circle.sizeDelta = new Vector2(640f, 640f);
+            Image circleImage = circle.gameObject.AddComponent<Image>();
+            circleImage.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(CirclePath);
+            circleImage.color = new Color(0.75f, 0.65f, 1f, 1f);
+            circleImage.raycastTarget = false;
+
+            RectTransform area = Rect("Cards", root, 0.02f, 0.3f, 0.98f, 0.8f);
+            Sprite back = AssetDatabase.LoadAssetAtPath<Sprite>(CardBackPath);
+            Sprite face = AssetDatabase.LoadAssetAtPath<Sprite>(CardFacePath);
+            var cards = new GachaCard[10];
+            for (int i = 0; i < cards.Length; i++) cards[i] = BuildCard(area, i, back, face);
+
+            RectTransform burstRect = Rect("Burst", root, 0f, 0f, 1f, 1f);
+            UiBurst burst = burstRect.gameObject.AddComponent<UiBurst>();
+            var particles = new Image[BurstParticles];
+            for (int i = 0; i < BurstParticles; i++)
+            {
+                RectTransform dot = Rect("P" + i, burstRect, 0.5f, 0.5f, 0.5f, 0.5f);
+                dot.sizeDelta = i % 3 == 0 ? new Vector2(18f, 18f) : new Vector2(12f, 12f);
+                particles[i] = dot.gameObject.AddComponent<Image>();
+                particles[i].raycastTarget = false;
+            }
+
+            var burstSo = new SerializedObject(burst);
+            SetArray(burstSo, "_particles", particles);
+            burstSo.ApplyModifiedPropertiesWithoutUndo();
+
+            Button skip = MakeButton("Skip", root, 0.3f, 0.2f, 0.7f, 0.25f, "", 34, out Text skipLabel);
+            Localize(skipLabel, "gacha.skip");
+            UnityEventTools.AddPersistentListener(skip.onClick, view.SkipAll);
+            Text hint = MakeText("CloseHint", root, 0.1f, 0.2f, 0.9f, 0.25f, "", 34, TextAnchor.MiddleCenter);
+            Localize(hint, "gacha.tap_close");
+
+            var so = new SerializedObject(view);
+            so.FindProperty("_root").objectReferenceValue = root.gameObject;
+            so.FindProperty("_circle").objectReferenceValue = circle;
+            so.FindProperty("_circleImage").objectReferenceValue = circleImage;
+            so.FindProperty("_cardArea").objectReferenceValue = area;
+            SetArray(so, "_cards", cards);
+            so.FindProperty("_burst").objectReferenceValue = burst;
+            so.FindProperty("_skipButton").objectReferenceValue = skip.gameObject;
+            so.FindProperty("_closeHint").objectReferenceValue = hint.gameObject;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            root.gameObject.SetActive(false);
+
+            if (presenter != null)
+            {
+                var presenterSo = new SerializedObject(presenter);
+                presenterSo.FindProperty("_reveal").objectReferenceValue = view;
+                presenterSo.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
+
+        private static GachaCard BuildCard(RectTransform area, int index, Sprite back, Sprite face)
+        {
+            RectTransform rect = Rect("Card" + index, area, 0f, 0f, 0.2f, 0.4f);
+            Image image = rect.gameObject.AddComponent<Image>();
+            image.sprite = back;
+            image.raycastTarget = false;
+            Text grade = MakeText("Grade", rect, 0.04f, 0.58f, 0.96f, 0.9f, "", 34, TextAnchor.MiddleCenter);
+            Text slot = MakeText("Slot", rect, 0.04f, 0.34f, 0.96f, 0.58f, "", 28, TextAnchor.MiddleCenter);
+            Text note = MakeText("Note", rect, 0.04f, 0.08f, 0.96f, 0.34f, "", 22, TextAnchor.MiddleCenter);
+            foreach (Text t in new[] { grade, slot, note })
+            {
+                t.horizontalOverflow = HorizontalWrapMode.Wrap;
+                t.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
+            }
+
+            rect.gameObject.AddComponent<UiPunch>();
+            GachaCard card = rect.gameObject.AddComponent<GachaCard>();
+            var so = new SerializedObject(card);
+            so.FindProperty("_image").objectReferenceValue = image;
+            so.FindProperty("_grade").objectReferenceValue = grade;
+            so.FindProperty("_slot").objectReferenceValue = slot;
+            so.FindProperty("_note").objectReferenceValue = note;
+            so.FindProperty("_back").objectReferenceValue = back;
+            so.FindProperty("_face").objectReferenceValue = face;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            rect.gameObject.SetActive(false);
+            return card;
+        }
+
+        /// <summary>E7-09 minimum: a settings button in the sky row and an on/off popup for sound, effects and 30 fps.</summary>
+        private static void BuildSettings(Transform hud)
+        {
+            Button open = MakeButton(SettingsButtonName, hud, 0.76f, 0.80f, 0.96f, 0.845f, "", 30, out Text openLabel);
+            open.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.28f, 0.92f);
+            Localize(openLabel, "settings.button");
+
+            RectTransform holder = Rect(SettingsPopupName, hud, 0f, 0f, 1f, 1f);
+            holder.SetAsLastSibling();
+            SettingsPresenter presenter = holder.gameObject.AddComponent<SettingsPresenter>();
+            UnityEventTools.AddPersistentListener(open.onClick, presenter.Open);
+
+            RectTransform popup = Rect("Popup", holder, 0f, 0f, 1f, 1f);
+            popup.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.88f);
+            RectTransform box = Rect("Box", popup, 0.08f, 0.3f, 0.92f, 0.72f);
+            box.gameObject.AddComponent<Image>().color = PanelColor;
+            Localize(MakeText("Title", box, 0.05f, 0.86f, 0.95f, 0.98f, "", 40, TextAnchor.MiddleCenter), "settings.title");
+
+            var states = new Text[SettingKeys.Length];
+            var images = new Image[SettingKeys.Length];
+            for (int i = 0; i < SettingKeys.Length; i++)
+            {
+                float top = 0.83f - i * 0.17f;
+                RectTransform row = Rect("Row" + i, box, 0.04f, top - 0.15f, 0.96f, top);
+                row.gameObject.AddComponent<Image>().color = RowColor;
+                Localize(MakeText("Label", row, 0.04f, 0f, 0.6f, 1f, "", 36, TextAnchor.MiddleLeft), SettingKeys[i]);
+                Button toggle = MakeButton("Toggle", row, 0.64f, 0.12f, 0.97f, 0.88f, "", 34, out states[i]);
+                images[i] = toggle.GetComponent<Image>();
+                UnityEventTools.AddIntPersistentListener(toggle.onClick, presenter.Toggle, i);
+            }
+
+            Button close = MakeButton("Close", box, 0.3f, 0.03f, 0.7f, 0.13f, "", 36, out Text closeLabel);
+            Localize(closeLabel, "settings.close");
+            UnityEventTools.AddPersistentListener(close.onClick, presenter.Close);
+
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
+            SetArray(so, "_stateTexts", states);
+            SetArray(so, "_stateImages", images);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            popup.gameObject.SetActive(false);
         }
 
         private static TapGuardButton GuardButton(RectTransform parent, string name, float xMin, float xMax, out Text label)

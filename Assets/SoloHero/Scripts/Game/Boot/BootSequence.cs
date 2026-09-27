@@ -8,6 +8,8 @@ using SoloHero.Core.Gacha;
 using SoloHero.Core.Progression;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
+using SoloHero.Core.Settings;
+using SoloHero.Game.Audio;
 using SoloHero.Game.Config;
 using SoloHero.Game.Infrastructure;
 using UnityEngine;
@@ -60,6 +62,7 @@ namespace SoloHero.Game.Boot
             if (requester != null) Services.Register(requester);
             RegisterGrowth(balance, requester);
             RegisterAds(balance, clock, requester);
+            RegisterSettingsAndAudio();
 
             if (report.LoadFailed)
             {
@@ -88,6 +91,24 @@ namespace SoloHero.Game.Boot
             Services.Register(new AdSlotPolicy(balance, _data, clock, requester));
         }
 
+        private void RegisterSettingsAndAudio()
+        {
+            var settings = new SettingsService(_data);
+            Services.Register(settings);
+            settings.Changed += () => Application.targetFrameRate = settings.TargetFrameRate;
+            Application.targetFrameRate = settings.TargetFrameRate;
+
+            AudioService audio = GetComponent<AudioService>();
+            if (audio == null)
+            {
+                Log.Warn(LogTag.Audio, "no AudioService on the boot object, playing silent");
+                return;
+            }
+
+            audio.Bind(settings);
+            Services.Register(audio);
+        }
+
         private void RegisterGrowth(BalanceValues balance, ISaveRequester requester)
         {
             Services.Register(new UpgradeService(_data, balance, requester));
@@ -102,7 +123,7 @@ namespace SoloHero.Game.Boot
             Services.Register(new TutorialService(balance, gacha, requester));
         }
 
-                public void NotifyOfflineClaimed()
+        public void NotifyOfflineClaimed()
         {
             _offlinePopupPending = false;
         }

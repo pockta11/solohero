@@ -4,6 +4,7 @@ using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
+using SoloHero.Game.Audio;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
 using UnityEngine;
@@ -22,10 +23,12 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text _summaryText;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private UiPunch[] _punches = new UiPunch[4];
 
         private UpgradeService _upgrade;
         private BalanceValues _balance;
         private SaveDataV2 _save;
+        private AudioService _audio;
         private double _shownGold = -1d;
 
         private void OnEnable()
@@ -33,6 +36,7 @@ namespace SoloHero.Game.UI.Panels
             _upgrade = PanelServices.TryGet<UpgradeService>();
             _balance = PanelServices.TryGet<BalanceValues>();
             _save = PanelServices.TryGet<SaveDataV2>();
+            _audio = PanelServices.TryGet<AudioService>();
             _shownGold = -1d;
             Refresh();
         }
@@ -54,6 +58,7 @@ namespace SoloHero.Game.UI.Panels
             }
 
             if (_session != null) _session.RefreshLoadout();
+            Celebrate(lane);
             Refresh();
         }
 
@@ -86,6 +91,13 @@ namespace SoloHero.Game.UI.Panels
                 BigNumberFormat.Format(s.Def),
                 s.AtkSpd.ToString("0.00"),
                 s.CritRate.ToString("0"));
+        }
+
+        /// <summary>E8-11: every successful purchase punches its row and plays the upgrade chime.</summary>
+        private void Celebrate(int row)
+        {
+            if (row >= 0 && row < _punches.Length && _punches[row] != null) _punches[row].Play();
+            if (_audio != null) _audio.Play(SfxId.Upgrade);
         }
     }
 }

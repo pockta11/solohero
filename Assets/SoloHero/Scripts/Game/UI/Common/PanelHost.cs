@@ -1,3 +1,5 @@
+using SoloHero.Game.Audio;
+using SoloHero.Game.UI.Panels;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,7 +7,7 @@ namespace SoloHero.Game.UI.Common
 {
     /// <summary>
     /// Bottom tab bar host (E7-04): one panel open at a time, tapping the open tab closes it.
-    /// The slide animation arrives with DOTween in E8; for now panels switch instantly.
+    /// Panels switch instantly (no slide) and play the open / close sound (E8-13).
     /// </summary>
     public sealed class PanelHost : MonoBehaviour
     {
@@ -37,6 +39,8 @@ namespace SoloHero.Game.UI.Common
                 return;
             }
 
+            Sound(SfxId.PanelOpen);
+
             if (_open >= 0 && _panels[_open] != null) _panels[_open].SetActive(false);
             _open = index;
             if (_panels[_open] != null) _panels[_open].SetActive(true);
@@ -46,9 +50,16 @@ namespace SoloHero.Game.UI.Common
         public void Close()
         {
             if (_open < 0) return;
+            Sound(SfxId.PanelClose);
             if (_panels[_open] != null) _panels[_open].SetActive(false);
             _open = -1;
             RefreshTabs();
+        }
+
+        private static void Sound(SfxId id)
+        {
+            AudioService audio = PanelServices.TryGet<AudioService>();
+            if (audio != null) audio.Play(id);
         }
 
         private void RefreshTabs()

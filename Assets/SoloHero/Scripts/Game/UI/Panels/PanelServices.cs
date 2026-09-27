@@ -53,5 +53,13 @@ namespace SoloHero.Game.UI.Panels
                 default: return Strings.Get("slot.boots");
             }
         }
+
+        /// <summary>What happened to a pulled item: enhanced, refunded, equipped or stored.</summary>
+        public static string PullNote(GachaPullItem item)
+        {
+            if (item.EnhancedLevel > 0) return Strings.Format("gacha.enhanced", item.EnhancedLevel);
+            if (item.WasDuplicate) return Strings.Format("gacha.refund", BigNumberFormat.Format(item.RefundGold));
+            return Strings.Get(item.AutoEquipped ? "gacha.equipped" : "gacha.stored");
+        }
     }
 }

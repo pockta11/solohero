@@ -7,7 +7,7 @@ using UnityEngine;
 namespace SoloHero.Game.Pooling
 {
     /// <summary>
-    /// Shows every hero hit as a pooled floating number over the enemy (E2-10, E8-09 placeholder look).
+    /// Shows every hero hit as a pooled floating number over the enemy (E2-10, E8-09).
     /// Pre-warmed at scene start; when all texts are busy a hit is simply not shown (no runtime Instantiate).
     /// </summary>
     public sealed class DamageTextPool : MonoBehaviour
@@ -24,8 +24,11 @@ namespace SoloHero.Game.Pooling
         [SerializeField] private int _normalSize = 34;
         [SerializeField] private int _critSize = 46;
 
+        private const float NormalJitterPixels = 18f;
+
         private ViewPool<DamageText> _pool;
         private CombatWorld _world;
+        private float _nextDrift = 1f;
 
         public int ActiveCount => _pool != null ? _pool.CountActive : 0;
 
@@ -60,7 +63,10 @@ namespace SoloHero.Game.Pooling
 
             Vector3 screen = _camera.WorldToScreenPoint(new Vector3((float)target.X, EnemyHeadOffset, 0f));
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_layer, screen, null, out Vector2 local);
-            text.Show(this, local, BigNumberFormat.Format(amount), crit ? _critColor : _normalColor, crit ? _critSize : _normalSize);
+            // Small sideways jitter keeps numbers from stacking on one spot; crits alternate their arc direction.
+            if (!crit) local.x += Random.Range(-NormalJitterPixels, NormalJitterPixels);
+            _nextDrift = -_nextDrift;
+            text.Show(this, local, BigNumberFormat.Format(amount), crit ? _critColor : _normalColor, crit ? _critSize : _normalSize, crit, _nextDrift);
         }
     }
 }

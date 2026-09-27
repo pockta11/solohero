@@ -26,6 +26,9 @@ namespace SoloHero.Core.Combat
 
         public double AtkBuffSum => _atkBuffRemaining > 0d ? _atkBuffAmount : 0d;
 
+        /// <summary>Raised after a skill is applied (auto or manual). Views play the skill VFX / SFX from it.</summary>
+        public event Action<SkillSlot> SkillCast;
+
         public void SetLevel(SkillSlot slot, int level)
         {
             int i = (int)slot;
@@ -120,6 +123,7 @@ namespace SoloHero.Core.Combat
             _cooldown[i] = CooldownOf(slot);
             _sequenceGap = _balance.SKILL_SEQUENCE_GAP;
             hero.EndSkill(world);
+            SkillCast?.Invoke(slot);
             return Result.Success;
         }
 

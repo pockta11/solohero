@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|---|
 | **GDD** | `_bmad-output/planning-artifacts/gdds/gdd-solohero-2026-09-20/gdd.md` | 설계 단일 출처. `Number Balancing` 상수표가 모든 수치의 원본 |
 | Epics | 같은 폴더 `epics.md` | 9 에픽 / 132 스토리 |
-| Decision log | 같은 폴더 `decision-log.md` | D-001~D-064 |
+| Decision log | 같은 폴더 `decision-log.md` | D-001~D-071 |
 | **Architecture** | `_bmad-output/planning-artifacts/architecture/arch-solohero-2026-09-20/game-architecture.md` | 결정 D1~D15, ADR 1~7, 구조, 패턴(코드 예시), 검증 |
 | **Project context** | `_bmad-output/project-context.md` | **코드를 만지기 전에 읽는 규칙 62개.** 아키텍처와 충돌 시 아키텍처가 우선 |
 
@@ -36,6 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **9-02 튜닝** D-053~D-061 반영 — 무광고 1일 2-8 · 3일 3-9~4-2 · 7일 5-7. 남은 FAIL은 경계값 V-6a·V-7뿐. 중복 강화(D-062)·V-3a 가치 균형(D-063)·광고 부스터 1회(D-064)
 - **성장 패널** 하단 탭바 + 캐릭터·장비·소환·스킬 패널. `Tools > Setup > Build Growth UI`로 씬 재생성
 - Core 규칙 누락 수정: 보스 골드·EXP ×5, 스킬 해금 레벨, 기본 공격 히트 연결, 클리어 저장, 재실행 후 후퇴 유지, v1 장비 id 변환
+- **E8 연출·오디오·적 다양화** (D-068~D-071): 적 8종·보스 3종(돼지 5종 + 색 변형, 외형만 다름), 풀 VFX·카메라 셰이크·크리티컬 숫자·골드 카운트업·강화 펀치·레벨업 링, 가챠 카드 연출, BGM 6 + SFX 18(CC0), 설정 팝업(BGM/SFX/이펙트 축소/30fps). `Tools > Setup > Build Art`가 전부 재생성. 보스 공격 배율 1.1(D-069) — 무광고 남은 FAIL은 V-7(플레이어 모델 의존)뿐
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 
 ## Build Commands

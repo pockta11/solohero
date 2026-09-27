@@ -1,3 +1,5 @@
+using SoloHero.Game.Audio;
+using SoloHero.Game.UI.Panels;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -49,6 +51,8 @@ namespace SoloHero.Game.UI.Common
             if (_busy) return;
             _busy = true;
             _button.interactable = false;
+            AudioService audio = PanelServices.TryGet<AudioService>();
+            if (audio != null) audio.Play(SfxId.Tap);
             _onTap.Invoke();
         }
     }

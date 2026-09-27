@@ -17,13 +17,19 @@ namespace SoloHero.Core.Combat
         public double X { get; private set; }
         public bool IsBoss { get; private set; }
 
+        /// <summary>Order of this enemy within its stage (0-based). Views use it to pick one of the chapter's looks.</summary>
+        public int SpawnIndex { get; private set; }
+
+        /// <summary>Increments on every <see cref="Reset"/>; views use it to tell a reused slot from the same enemy.</summary>
+        public int Generation { get; private set; }
+
         /// <summary>Increments on every attack swing; views watch it to play the attack animation.</summary>
         public int AttackCount { get; private set; }
 
         public bool IsActive => _active;
         public bool IsAlive => _active && State != EnemyState.Dead && Hp > 0d;
 
-        public void Reset(BalanceValues balance, double maxHp, double atk, float atkInterval, double x, bool isBoss)
+        public void Reset(BalanceValues balance, double maxHp, double atk, float atkInterval, double x, bool isBoss, int spawnIndex = 0)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
             MaxHp = maxHp;
@@ -33,6 +39,8 @@ namespace SoloHero.Core.Combat
             _atkTimer = atkInterval;
             X = x;
             IsBoss = isBoss;
+            SpawnIndex = spawnIndex < 0 ? 0 : spawnIndex;
+            Generation++;
             State = EnemyState.Idle;
             _active = true;
         }

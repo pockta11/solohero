@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using SoloHero.Core.Common;
+using SoloHero.Game.Audio;
+using SoloHero.Game.UI.Panels;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -67,6 +69,8 @@ namespace SoloHero.Game.UI.Common
             if (_label != null) _label.text = _pending.Dequeue();
             if (_root != null) _root.SetActive(true);
             _remaining = ShowSeconds;
+            AudioService audio = PanelServices.TryGet<AudioService>();
+            if (audio != null) audio.Play(SfxId.Toast);
         }
     }
 }

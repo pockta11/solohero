@@ -56,7 +56,7 @@ namespace SoloHero.Tests.EditMode
         {
             Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));
             var used = new Regex("Strings\\.(?:Get|Format)\\(\"([a-z0-9_.]+)\"");
-            var keyed = new Regex("\"((?:tab|hud|toast|ad|boot|offline|tutorial|stat|char|skill|grade|slot|equip|gacha)\\.[a-z0-9_.]+)\"");
+            var keyed = new Regex("\"((?:tab|hud|toast|ad|boot|offline|tutorial|stat|char|skill|grade|slot|equip|gacha|settings)\\.[a-z0-9_.]+)\"");
             var missing = new List<string>();
 
             foreach (string file in Directory.GetFiles(ScriptsRoot, "*.cs", SearchOption.AllDirectories))

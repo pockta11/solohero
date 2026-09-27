@@ -2,6 +2,7 @@ using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
+using SoloHero.Game.Audio;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
 using UnityEngine;
@@ -19,10 +20,12 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private TapGuardButton[] _buttons = new TapGuardButton[3];
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private UiPunch[] _punches = new UiPunch[3];
 
         private SkillLevelService _skills;
         private BalanceValues _balance;
         private SaveDataV2 _save;
+        private AudioService _audio;
         private double _shownGold = -1d;
         private int _shownHeroLevel = -1;
 
@@ -31,6 +34,7 @@ namespace SoloHero.Game.UI.Panels
             _skills = PanelServices.TryGet<SkillLevelService>();
             _balance = PanelServices.TryGet<BalanceValues>();
             _save = PanelServices.TryGet<SaveDataV2>();
+            _audio = PanelServices.TryGet<AudioService>();
             _shownGold = -1d;
             Refresh();
         }
@@ -53,6 +57,7 @@ namespace SoloHero.Game.UI.Panels
             }
 
             if (_session != null) _session.RefreshLoadout();
+            Celebrate(slot);
             Refresh();
         }
 
@@ -82,6 +87,13 @@ namespace SoloHero.Game.UI.Panels
                 if (i < _buttons.Length && _buttons[i] != null)
                     _buttons[i].SetAvailable(unlocked && !max && _save.gold >= cost);
             }
+        }
+
+        /// <summary>E8-11: every successful purchase punches its row and plays the upgrade chime.</summary>
+        private void Celebrate(int row)
+        {
+            if (row >= 0 && row < _punches.Length && _punches[row] != null) _punches[row].Play();
+            if (_audio != null) _audio.Play(SfxId.Upgrade);
         }
     }
 }

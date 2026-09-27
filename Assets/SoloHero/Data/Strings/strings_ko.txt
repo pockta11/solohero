@@ -84,3 +84,21 @@ gacha.enhanced	중복 -> +{0} 강화
 gacha.refund	최대 강화, +{0} G
 gacha.equipped	장착
 gacha.stored	보관
+
+# settings (E7-09, E8-13, E8-15)
+settings.button	설정
+settings.title	설정
+settings.bgm	배경음
+settings.sfx	효과음
+settings.low_effect	이펙트 축소
+settings.fps30	30fps 모드
+settings.on	켜짐
+settings.off	꺼짐
+settings.close	닫기
+
+# gacha reveal (E5-11)
+gacha.skip	전체 건너뛰기
+gacha.tap_close	탭하여 닫기
+
+# level up (E8-11)
+toast.level_up	레벨 {0} 달성!

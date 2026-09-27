@@ -5,6 +5,7 @@ using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
 using SoloHero.Game.Combat;
+using SoloHero.Game.UI.Common;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,13 +25,18 @@ namespace SoloHero.Game.UI
         [SerializeField] private Text _slot2Text;
         [SerializeField] private Text _slot3Text;
         [SerializeField] private Text _retreatPrompt;
+        [SerializeField] private UiPunch _goldPunch;
 
         private const string FarmingKey = "hud.farming";
+        private const float GoldCountSeconds = 0.4f;
 
         private BalanceValues _balance;
         private SaveDataV2 _save;
         private bool _goldShown;
         private double _shownGold;
+        private double _goldFrom;
+        private double _goldTo;
+        private float _goldT = 1f;
         private int _shownGlobalStage = -1;
         private int _shownKills = -1;
         private int _shownKillTarget = -1;
@@ -137,6 +143,7 @@ namespace SoloHero.Game.UI
             return _session != null ? _session.Runner : null;
         }
 
+        /// <summary>E8-09: gold counts toward its new value over 0.4 s; gains also punch the label.</summary>
         private void RefreshGold()
         {
             if (_goldText == null) return;
@@ -149,9 +156,29 @@ namespace SoloHero.Game.UI
                 return;
             }
 
-            if (_goldShown && _shownGold == _save.gold) return;
-            _shownGold = _save.gold;
-            _goldShown = true;
+            if (!_goldShown)
+            {
+                _goldShown = true;
+                _goldFrom = _goldTo = _shownGold = _save.gold;
+                _goldT = 1f;
+                _goldText.text = BigNumberFormat.Format(_shownGold);
+                return;
+            }
+
+            if (_save.gold != _goldTo)
+            {
+                if (_save.gold > _goldTo && _goldPunch != null) _goldPunch.Play();
+                _goldFrom = _shownGold;
+                _goldTo = _save.gold;
+                _goldT = 0f;
+            }
+
+            if (_goldT >= 1f) return;
+            _goldT = Mathf.Min(1f, _goldT + Time.unscaledDeltaTime / GoldCountSeconds);
+            float eased = 1f - (1f - _goldT) * (1f - _goldT);
+            double value = _goldT >= 1f ? _goldTo : _goldFrom + (_goldTo - _goldFrom) * eased;
+            if (value == _shownGold) return;
+            _shownGold = value;
             _goldText.text = BigNumberFormat.Format(_shownGold);
         }
 

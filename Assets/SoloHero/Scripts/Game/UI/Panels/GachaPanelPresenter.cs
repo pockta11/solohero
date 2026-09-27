@@ -14,7 +14,7 @@ namespace SoloHero.Game.UI.Panels
     /// <summary>
     /// Gacha panel (E7-07): single / 10 / gem 10 pulls, pity gauge, rate disclosure and the last result.
     /// Order is confirm -> save -> show: the service settles gold and items, then the save is requested,
-    /// then the result text is drawn. The card flip animation (E5-11) will slot in after the save.
+    /// then the card reveal (E5-11) plays and the result list is drawn.
     /// </summary>
     public sealed class GachaPanelPresenter : MonoBehaviour
     {
@@ -30,6 +30,7 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private TapGuardButton _gemButton;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private GachaRevealView _reveal;
 
         private readonly StringBuilder _sb = new StringBuilder();
         private GachaService _gacha;
@@ -74,6 +75,7 @@ namespace SoloHero.Game.UI.Panels
             if (_requester != null) _requester.RequestSave();
             if (_session != null) _session.RefreshLoadout();
             DrawResult(result.Items);
+            if (_reveal != null) _reveal.Show(result.Items);
             Refresh();
         }
 
@@ -123,10 +125,7 @@ namespace SoloHero.Game.UI.Panels
                 if (i > 0) _sb.Append('\n');
                 _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(PanelServices.GradeColor(item.Grade))).Append('>')
                     .Append(PanelServices.GradeName(item.Grade)).Append(' ').Append(PanelServices.SlotName(item.Slot)).Append("</color>  ");
-                if (item.EnhancedLevel > 0) _sb.Append(Strings.Format("gacha.enhanced", item.EnhancedLevel));
-                else if (item.WasDuplicate) _sb.Append(Strings.Format("gacha.refund", BigNumberFormat.Format(item.RefundGold)));
-                else if (item.AutoEquipped) _sb.Append(Strings.Get("gacha.equipped"));
-                else _sb.Append(Strings.Get("gacha.stored"));
+                _sb.Append(PanelServices.PullNote(item));
             }
 
             _resultText.text = _sb.ToString();

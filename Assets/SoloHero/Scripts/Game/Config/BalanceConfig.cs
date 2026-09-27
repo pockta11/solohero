@@ -41,7 +41,7 @@ namespace SoloHero.Game.Config
         public double SPAWN_OFFSET_X = 1.5;
         public int KILL_TARGET_NORMAL = 8;
         public double BOSS_HP_MULT = 10;
-        public double BOSS_ATK_MULT = 1.5;
+        public double BOSS_ATK_MULT = 1.1;
         public float BOSS_ATK_INTERVAL = 1.8f;
         public double BOSS_GOLD_MULT = 5.0;
         public double BOSS_EXP_MULT = 5.0;

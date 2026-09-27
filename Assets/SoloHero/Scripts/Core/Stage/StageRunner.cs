@@ -291,7 +291,8 @@ namespace SoloHero.Core.Stage
             }
 
             double x = _world.SpawnXAheadOfHero();
-            brain.Reset(_balance, hp, atk, interval, x, isBoss);
+            // SpawnIndex only picks the look (E8-03); every enemy of a stage has the same stats.
+            brain.Reset(_balance, hp, atk, interval, x, isBoss, isBoss ? 0 : _spawner.Spawned - 1);
             return true;
         }
 
