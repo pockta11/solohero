@@ -18,6 +18,16 @@ namespace SoloHero.Game.Boot
         private bool _claimed;
         private bool _adBusy;
 
+        /// <summary>Open and not yet claimed; the back key claims normally (E7-14).</summary>
+        public bool IsOpen
+        {
+            get
+            {
+                GameObject panel = FindPanel();
+                return !_claimed && panel != null && panel.activeSelf;
+            }
+        }
+
         private void Awake()
         {
             DontDestroyOnLoad(gameObject);

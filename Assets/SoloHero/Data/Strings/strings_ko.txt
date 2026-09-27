@@ -95,6 +95,7 @@ settings.fps30	30fps 모드
 settings.on	켜짐
 settings.off	꺼짐
 settings.close	닫기
+settings.credits	크레딧
 
 # gacha reveal (E5-11)
 gacha.skip	전체 건너뛰기

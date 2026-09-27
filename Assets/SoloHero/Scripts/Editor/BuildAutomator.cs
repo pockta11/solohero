@@ -15,6 +15,7 @@ using UnityEngine;
 /// Environment variables (all optional):
 ///   SOLOHERO_DEV_BUILD=1          -> BuildOptions.Development (defines DEVELOPMENT_BUILD)
 ///   SOLOHERO_NO_ADS=1             -> QA build without the ad SDK (BuildConfig.adsEnabled = false for this build only)
+///   SOLOHERO_X86_64=1             -> also build x86_64 for this build only (native emulator runs; not for release)
 ///   SOLOHERO_KEYSTORE_PATH        -> custom keystore; without it the build is debug-signed
 ///   SOLOHERO_KEYSTORE_PASS, SOLOHERO_KEYALIAS_NAME, SOLOHERO_KEYALIAS_PASS
 ///   SOLOHERO_JDK_PATH             -> override Unity's embedded JDK (decision B of story 1-09)
@@ -76,6 +77,14 @@ public static class BuildAutomator
             Debug.Log("[Build] QA build: ads disabled");
         }
 
+        AndroidArchitecture architectures = PlayerSettings.Android.targetArchitectures;
+        bool x64 = Environment.GetEnvironmentVariable("SOLOHERO_X86_64") == "1";
+        if (x64)
+        {
+            PlayerSettings.Android.targetArchitectures = architectures | AndroidArchitecture.X86_64;
+            Debug.Log("[Build] experiment: x86_64 added");
+        }
+
         BuildReport report;
         try
         {
@@ -83,6 +92,7 @@ public static class BuildAutomator
         }
         finally
         {
+            if (x64) PlayerSettings.Android.targetArchitectures = architectures;
             if (noAds)
             {
                 // The build unloads assets, so the reference taken before it is gone: load the config again.

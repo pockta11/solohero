@@ -47,6 +47,7 @@ namespace SoloHero.Editor
         private static readonly Color ButtonColor = new Color(0.25f, 0.45f, 0.3f, 1f);
         private static readonly string[] TabKeys = { "tab.hero", "tab.gear", "tab.summon", "tab.skill" };
         private const string StringsPath = "Assets/SoloHero/Data/Strings/strings_ko.txt";
+        private const string CreditsPath = "Assets/SoloHero/Data/Strings/credits_ko.txt";
 
         private static Font _font;
 
@@ -538,14 +539,50 @@ namespace SoloHero.Editor
                 UnityEventTools.AddIntPersistentListener(toggle.onClick, presenter.Toggle, i);
             }
 
-            Button close = MakeButton("Close", box, 0.3f, 0.03f, 0.7f, 0.13f, "", 36, out Text closeLabel);
+            Button credits = MakeButton("Credits", box, 0.06f, 0.03f, 0.46f, 0.13f, "", 34, out Text creditsLabel);
+            Localize(creditsLabel, "settings.credits");
+            credits.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.34f, 1f);
+            UnityEventTools.AddPersistentListener(credits.onClick, presenter.OpenCredits);
+            Button close = MakeButton("Close", box, 0.54f, 0.03f, 0.94f, 0.13f, "", 36, out Text closeLabel);
             Localize(closeLabel, "settings.close");
             UnityEventTools.AddPersistentListener(close.onClick, presenter.Close);
+
+            // Credits: a scrollable text over the settings popup.
+            RectTransform creditsPopup = Rect("Credits", holder, 0f, 0f, 1f, 1f);
+            creditsPopup.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.92f);
+            RectTransform creditsBox = Rect("Box", creditsPopup, 0.05f, 0.1f, 0.95f, 0.9f);
+            creditsBox.gameObject.AddComponent<Image>().color = PanelColor;
+            RectTransform viewport = Rect("Viewport", creditsBox, 0.04f, 0.12f, 0.96f, 0.97f);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            RectTransform content = Rect("Content", viewport, 0f, 1f, 1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            Text creditsText = content.gameObject.AddComponent<Text>();
+            creditsText.font = _font;
+            creditsText.fontSize = 26;
+            creditsText.color = Color.white;
+            creditsText.alignment = TextAnchor.UpperLeft;
+            creditsText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            creditsText.verticalOverflow = VerticalWrapMode.Overflow;
+            creditsText.raycastTarget = false;
+            ContentSizeFitter fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            ScrollRect scroll = creditsBox.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport;
+            scroll.content = content;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            Button creditsClose = MakeButton("Close", creditsBox, 0.3f, 0.02f, 0.7f, 0.1f, "", 34, out Text creditsCloseLabel);
+            Localize(creditsCloseLabel, "settings.close");
+            UnityEventTools.AddPersistentListener(creditsClose.onClick, presenter.CloseCredits);
+            creditsPopup.gameObject.SetActive(false);
 
             var so = new SerializedObject(presenter);
             so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
             SetArray(so, "_stateTexts", states);
             SetArray(so, "_stateImages", images);
+            so.FindProperty("_creditsPopup").objectReferenceValue = creditsPopup.gameObject;
+            so.FindProperty("_creditsText").objectReferenceValue = creditsText;
+            so.FindProperty("_credits").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(CreditsPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             popup.gameObject.SetActive(false);
             return presenter;

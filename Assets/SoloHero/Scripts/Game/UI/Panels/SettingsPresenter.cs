@@ -17,14 +17,30 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private GameObject _popup;
         [SerializeField] private Text[] _stateTexts = new Text[4];
         [SerializeField] private Image[] _stateImages = new Image[4];
+        [SerializeField] private GameObject _creditsPopup;
+        [SerializeField] private Text _creditsText;
+        [SerializeField] private TextAsset _credits;
 
         private SettingsService _settings;
 
-        public bool IsOpen => _popup != null && _popup.activeSelf;
+        public bool IsOpen => (_popup != null && _popup.activeSelf) || (_creditsPopup != null && _creditsPopup.activeSelf);
 
         private void Awake()
         {
             if (_popup != null) _popup.SetActive(false);
+            if (_creditsPopup != null) _creditsPopup.SetActive(false);
+        }
+
+        /// <summary>Credits and the font's SIL OFL text (the OFL asks for the license to travel with the font).</summary>
+        public void OpenCredits()
+        {
+            if (_creditsText != null && _credits != null) _creditsText.text = _credits.text;
+            if (_creditsPopup != null) _creditsPopup.SetActive(true);
+        }
+
+        public void CloseCredits()
+        {
+            if (_creditsPopup != null) _creditsPopup.SetActive(false);
         }
 
         public void Open()
@@ -34,8 +50,15 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
+        /// <summary>Back key: credits first, then the settings popup.</summary>
         public void Close()
         {
+            if (_creditsPopup != null && _creditsPopup.activeSelf)
+            {
+                _creditsPopup.SetActive(false);
+                return;
+            }
+
             if (_popup != null) _popup.SetActive(false);
         }
 

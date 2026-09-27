@@ -63,7 +63,7 @@ function Shot([string]$name) {
 # Home key = OnApplicationPause(true) = the pause save; waits until the local save exists.
 function Pause-Save {
     Adb shell input keyevent KEYCODE_HOME | Out-Null
-    for ($k = 0; $k -lt 10; $k++) { Start-Sleep 1; if (Read-Save) { return } }
+    for ($k = 0; $k -lt 20; $k++) { Start-Sleep 1; if (Read-Save) { return } }
 }
 
 function Unity-Errors {
@@ -71,10 +71,16 @@ function Unity-Errors {
     return @($log | Select-String -Pattern 'Exception|Fatal signal|FATAL' | Where-Object { $_ -notmatch 'TranslateDllNotFoundException' })
 }
 
+# Launch and wait for the "battle ready" marker (CombatSession) instead of a fixed delay: a first launch after an
+# install or a data wipe takes 30+ s on this emulator. Falls back after 120 s.
 function Boot {
     Adb logcat -c
     Launch
-    Start-Sleep -Seconds $bootSeconds
+    for ($k = 0; $k -lt 240; $k++) {
+        Start-Sleep -Milliseconds 500
+        if (Adb logcat -d -s Unity:I | Select-String 'battle ready') { break }
+    }
+    Start-Sleep -Seconds 2
     Close-Popups
 }
 
@@ -151,20 +157,24 @@ switch ($Cmd) {
 
         # 2. Ad failure (QA build has no ad SDK): tapping the gem ad keeps gems and the daily count, app stays up.
         Boot
-        Pause-Save
         $before = Read-Save
-        Launch; Start-Sleep 3
         Tap 792 215; Start-Sleep 2
         Shot 'scenario-ad-fail.png'
         Pause-Save
         $after = Read-Save
-        $adOk = [double]$after.gem -eq [double]$before.gem -and [int]$after.adCountA2 -eq [int]$before.adCountA2
+        $adOk = $null -ne $before -and $null -ne $after -and [double]$after.gem -eq [double]$before.gem -and [int]$after.adCountA2 -eq [int]$before.adCountA2
         "scenario ad failure: gem {0} -> {1}, count {2} -> {3} -> {4}" -f $before.gem, $after.gem, $before.adCountA2, $after.adCountA2, ($(if ($adOk) { 'PASS' } else { 'FAIL' }))
 
-        # 3. Portrait / safe area: every control inside the screen (manual look at the shot).
-        Launch; Start-Sleep 3
-        Shot 'scenario-portrait.png'
-        "scenario portrait: see $OutDir/scenario-portrait.png"
+        # 3. Portrait / safe area: 16:9 and a tall 20:9 screen, every control inside (look at the shots).
+        Stop-App; Boot
+        Shot 'scenario-portrait-16x9.png'
+        Stop-App
+        Adb shell wm size 1080x2400 | Out-Null
+        Boot
+        Shot 'scenario-portrait-20x9.png'
+        Stop-App
+        Adb shell wm size reset | Out-Null
+        "scenario portrait: see $OutDir/scenario-portrait-16x9.png and -20x9.png"
         Stop-App
     }
 
@@ -175,7 +185,7 @@ switch ($Cmd) {
         Boot
         $start = Get-Date
         $pulled = $false
-        while (((Get-Date) - $start).TotalSeconds -lt 300 - $bootSeconds) {
+        while (((Get-Date) - $start).TotalSeconds -lt 300) {
             Start-Sleep 15
             Tap 135 1853; Start-Sleep 1
             Tap 865 1345; Start-Sleep 0.5

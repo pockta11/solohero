@@ -5,7 +5,7 @@ using UnityEngine;
 namespace SoloHero.Game.UI.Common
 {
     /// <summary>
-    /// Android back key (E7-14, GDD UI rule): closes the top-most open layer - gacha reveal, settings, quit confirm,
+    /// Android back key (E7-14, GDD UI rule): closes the top-most open layer - quit confirm, offline reward (claims x1), gacha reveal, stage select, settings,
     /// then the open growth panel. With nothing open it asks before quitting, so a stray back press in battle never
     /// closes the game. Quitting saves first (the same flush as pause).
     /// </summary>
@@ -35,6 +35,14 @@ namespace SoloHero.Game.UI.Common
             if (_quitConfirm != null && _quitConfirm.activeSelf)
             {
                 CancelQuit();
+                return;
+            }
+
+            // The offline reward popup lives on the boot object; back claims the normal (x1) reward and closes it.
+            OfflineRewardPopup offline = FindObjectOfType<OfflineRewardPopup>();
+            if (offline != null && offline.IsOpen)
+            {
+                if (!_quitting) offline.Claim();
                 return;
             }
 
