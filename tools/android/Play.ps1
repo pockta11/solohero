@@ -4,8 +4,10 @@
   keeps the screen on and launches SoloHero.
 
 .DESCRIPTION
-  Install the emulator build first (x86_64, runs natively - the ARM build is translated on this emulator and
-  its ad WebView crashes after ~85 s):  pwsh tools/android/Emu.ps1 install -Aab Builds/game-emulator.aab
+  Install the emulator build first: x86_64 (runs natively) and without the ad SDK, whose WebView crashes the
+  app on this emulator. Build with SOLOHERO_X86_64=1 SOLOHERO_NO_ADS=1 (BuildAutomator.Build), copy
+  Builds/game.aab to Builds/game-emulator.aab, then:  pwsh tools/android/Emu.ps1 install -Aab Builds/game-emulator.aab
+  Ad buttons stay on screen in that build but do nothing.
   Mouse click = tap, Esc = Android back. Closing the emulator window shuts it down (progress is saved).
 #>
 $ErrorActionPreference = "Stop"
