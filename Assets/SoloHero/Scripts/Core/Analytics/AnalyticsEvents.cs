@@ -18,6 +18,7 @@ namespace SoloHero.Core.Analytics
         public const string GachaPull = "gacha_pull";
         public const string Upgrade = "upgrade";
         public const string SkillLevel = "skill_level";
+        public const string SkillSummon = "skill_summon";
         public const string AdReward = "ad_reward";
         public const string AdFail = "ad_fail";
         public const string OfflineClaim = "offline_claim";
@@ -39,6 +40,7 @@ namespace SoloHero.Core.Analytics
         public const string PPity = "pity";
         public const string PLane = "lane";
         public const string PSlot = "slot";
+        public const string PSkill = "skill";
         public const string PGold = "gold";
         public const string PDoubled = "doubled";
     }

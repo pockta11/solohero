@@ -24,5 +24,10 @@ namespace SoloHero.Game.Audio
         GradeLegendary = 15,
         Gold = 16,
         Toast = 17,
+        SkillFire = 18,
+        SkillThunder = 19,
+        SkillIce = 20,
+        SkillHeal = 21,
+        SkillMagic = 22,
     }
 }

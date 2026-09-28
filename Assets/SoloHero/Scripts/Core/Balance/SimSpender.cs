@@ -1,47 +1,53 @@
 using System;
+using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
+using SoloHero.Core.Skills;
 
 namespace SoloHero.Core.Balance
 {
     /// <summary>
-    /// Greedy player model: every option (4 upgrade lanes, 3 skills, one gold pull) is scored by
-    /// expected gain in 2 ln(DPS) + ln(EHP) per gold, and the best one is bought when affordable.
-    /// When the best option is not affordable the player saves for it instead of buying a worse one.
+    /// Greedy player model: every option (4 upgrade lanes, a level-up for each owned skill, one equipment pull, one
+    /// skill summon) is scored by expected gain in 2 ln(DPS) + ln(EHP) per gold, and the best one is bought when
+    /// affordable. When the best option is not affordable the player saves for it instead of buying a worse one.
+    /// After a skill summon the player auto-equips the strongest skills (the panel's auto-equip button).
     /// </summary>
     public sealed class SimSpender
     {
-        private const int WhirlwindAssumedTargets = 2;
-
         /// <summary>Clear speed counts twice: DPS sets both stage time and survival (fight length), EHP only survival.</summary>
         private const double DpsWeight = 2d;
 
         private readonly BalanceValues _b;
         private readonly SaveDataV2 _save;
         private readonly GachaService _gacha;
+        private readonly SkillSummonService _summon;
         private readonly GachaTableValues _table;
         private readonly UpgradeService _upgrades;
-        private readonly SkillLevelService _skills;
+        private readonly SkillService _skills;
 
-        public SimSpender(BalanceValues balance, SaveDataV2 save, GachaService gacha)
+        public SimSpender(BalanceValues balance, SaveDataV2 save, GachaService gacha, SkillSummonService summon)
         {
             _b = balance ?? throw new ArgumentNullException(nameof(balance));
             _save = save ?? throw new ArgumentNullException(nameof(save));
             _gacha = gacha ?? throw new ArgumentNullException(nameof(gacha));
+            _summon = summon ?? throw new ArgumentNullException(nameof(summon));
             _table = GachaTableValues.FromBalance(balance);
             _upgrades = new UpgradeService(save, balance);
-            _skills = new SkillLevelService(save, balance);
+            _skills = new SkillService(save, balance);
         }
 
         public double SpentUpgrade { get; private set; }
         public double SpentGacha { get; private set; }
+
+        /// <summary>Skill level-ups and skill summons.</summary>
         public double SpentSkill { get; private set; }
         public double EarnedRefund { get; private set; }
         public int GoldPulls { get; private set; }
         public int GemPulls { get; private set; }
+        public int SkillPulls { get; private set; }
         public int Upgrades { get; private set; }
         public int TutorialPulls { get; private set; }
 
@@ -50,7 +56,7 @@ namespace SoloHero.Core.Balance
 
         public event Action<Grade> GradeObtained;
 
-        private enum Kind { None, Lane, Skill, Pull }
+        private enum Kind { None, Lane, Skill, Pull, SkillPull }
 
         /// <summary>Spends until the best option is unaffordable. Returns true when anything was bought.</summary>
         public bool Spend(int frontierG, int maxPurchases, double affordableShare = 1d)
@@ -66,21 +72,47 @@ namespace SoloHero.Core.Balance
                 bought = true;
             }
 
+            // New slots open with hero levels; the player fills them.
+            if (_skills.FirstEmptyUnlockedSlot() >= 0) _skills.AutoEquip();
+
             double enemyAtk = Formulas.EnemyAtk(_b, frontierG < 1 ? 1 : frontierG);
             RecordValueParity(enemyAtk);
             for (int n = 0; n < maxPurchases; n++)
             {
-                Snapshot now = Snapshot.From(_save);
+                Snapshot now = Snapshot.From(_b, _save);
                 double baseScore = Score(now, enemyAtk);
 
                 Kind bestKind = Kind.None;
+                string bestId = null;
                 int bestIndex = -1;
                 double bestRatio = 0d;
                 double bestCost = 0d;
                 Kind cheapKind = Kind.None;
+                string cheapId = null;
                 int cheapIndex = -1;
                 double cheapRatio = 0d;
                 double cheapCost = 0d;
+
+                void Consider(Kind kind, int index, string id, double ratio, double cost)
+                {
+                    if (ratio > bestRatio)
+                    {
+                        bestRatio = ratio;
+                        bestKind = kind;
+                        bestIndex = index;
+                        bestId = id;
+                        bestCost = cost;
+                    }
+
+                    if (cost <= _save.gold && ratio > cheapRatio)
+                    {
+                        cheapRatio = ratio;
+                        cheapKind = kind;
+                        cheapIndex = index;
+                        cheapId = id;
+                        cheapCost = cost;
+                    }
+                }
 
                 for (int lane = 0; lane < 4; lane++)
                 {
@@ -90,71 +122,30 @@ namespace SoloHero.Core.Balance
                     double cost = Formulas.UpgradeCost(_b, l, level);
                     Snapshot next = now;
                     next.AddLane(l);
-                    double ratio = (Score(next, enemyAtk) - baseScore) / cost;
-                    if (ratio > bestRatio)
-                    {
-                        bestRatio = ratio;
-                        bestKind = Kind.Lane;
-                        bestIndex = lane;
-                        bestCost = cost;
-                    }
-
-                    if (cost <= _save.gold && ratio > cheapRatio)
-                    {
-                        cheapRatio = ratio;
-                        cheapKind = Kind.Lane;
-                        cheapIndex = lane;
-                        cheapCost = cost;
-                    }
+                    Consider(Kind.Lane, lane, null, (Score(next, enemyAtk) - baseScore) / cost, cost);
                 }
 
-                for (int s = 0; s < 3; s++)
+                for (int i = 0; i < _save.ownedSkills.Count; i++)
                 {
-                    var slot = (SkillSlot)s;
-                    if (!SkillLevelService.IsUnlocked(_b, slot, _save.heroLevel)) continue;
-                    int level = SkillLevelService.EffectiveLevel(_skills.GetSavedLevel(slot));
+                    SkillDef def = SkillCatalog.Find(_save.ownedSkills[i]);
+                    if (def == null) continue;
+                    int level = SkillBook.GetLevel(_save, def.Id);
                     if (level >= _b.SKILL_MAX_LEVEL) continue;
-                    double cost = SkillLevelService.UpgradeCost(_b, slot, level);
+                    double cost = SkillService.UpgradeCost(_b, def, level);
                     Snapshot next = now;
-                    next.SetSkill(s, level + 1);
-                    double ratio = (Score(next, enemyAtk) - baseScore) / cost;
-                    if (ratio > bestRatio)
-                    {
-                        bestRatio = ratio;
-                        bestKind = Kind.Skill;
-                        bestIndex = s;
-                        bestCost = cost;
-                    }
-
-                    if (cost <= _save.gold && ratio > cheapRatio)
-                    {
-                        cheapRatio = ratio;
-                        cheapKind = Kind.Skill;
-                        cheapIndex = s;
-                        cheapCost = cost;
-                    }
+                    next.Skill = SimSkillModel.Compute(_b, _save, def.Id, level + 1);
+                    Consider(Kind.Skill, -1, def.Id, (Score(next, enemyAtk) - baseScore) / cost, cost);
                 }
 
-                double pullRatio = ExpectedPullRatio(now, baseScore, enemyAtk);
-                if (pullRatio > bestRatio)
-                {
-                    bestRatio = pullRatio;
-                    bestKind = Kind.Pull;
-                    bestCost = _b.GACHA_COST_SINGLE;
-                }
-
-                if (_b.GACHA_COST_SINGLE <= _save.gold && pullRatio > cheapRatio)
-                {
-                    cheapRatio = pullRatio;
-                    cheapKind = Kind.Pull;
-                    cheapCost = _b.GACHA_COST_SINGLE;
-                }
+                Consider(Kind.Pull, -1, null, ExpectedPullRatio(now, baseScore, enemyAtk), _b.GACHA_COST_SINGLE);
+                Consider(Kind.SkillPull, -1, null, ExpectedSkillPullRatio(now, baseScore, enemyAtk), _b.SKILL_SUMMON_COST_SINGLE);
 
                 if (bestKind != Kind.None && _save.gold < bestCost && cheapKind != Kind.None
                     && cheapRatio >= bestRatio * affordableShare)
                 {
                     bestKind = cheapKind;
                     bestIndex = cheapIndex;
+                    bestId = cheapId;
                     bestRatio = cheapRatio;
                     bestCost = cheapCost;
                 }
@@ -169,11 +160,14 @@ namespace SoloHero.Core.Balance
                         Upgrades++;
                         break;
                     case Kind.Skill:
-                        if (!_skills.TryLevelUp((SkillSlot)bestIndex).Ok) return bought;
+                        if (!_skills.TryLevelUp(bestId).Ok) return bought;
                         SpentSkill += bestCost;
                         break;
                     case Kind.Pull:
                         if (!PullGold()) return bought;
+                        break;
+                    case Kind.SkillPull:
+                        if (!SummonSkill()) return bought;
                         break;
                 }
 
@@ -185,7 +179,7 @@ namespace SoloHero.Core.Balance
 
         /// <summary>Power score of the current loadout against the frontier enemy.</summary>
         public double CurrentScore(int frontierG) =>
-            Score(Snapshot.From(_save), Formulas.EnemyAtk(_b, frontierG < 1 ? 1 : frontierG));
+            Score(Snapshot.From(_b, _save), Formulas.EnemyAtk(_b, frontierG < 1 ? 1 : frontierG));
 
         /// <summary>Records tutorial free pulls (made by TutorialService) without counting them as gold spent.</summary>
         public void CountTutorialPulls(GachaPullItem[] items)
@@ -198,33 +192,28 @@ namespace SoloHero.Core.Balance
             }
         }
 
-        /// <summary>2 ln(DPS) + ln(EHP) against the frontier enemy. DPS counts basic hits, crit and skills.</summary>
+        /// <summary>2 ln(DPS) + ln(EHP) against the frontier enemy. DPS counts basic hits, crit, skills and buffs.</summary>
         public double Score(Snapshot s, double enemyAtk)
         {
             EquipmentBonus eq = EquipmentBonus.FromGrades(_b, s.Sword, s.Helm, s.Armor, s.Boots,
                 s.SwordLevel, s.HelmLevel, s.ArmorLevel, s.BootsLevel);
             HeroStats st = StatAggregator.Compute(
                 _b, s.HeroLevel, s.UpgHp, s.UpgAtk, s.UpgDef, s.UpgSpd,
-                eq.SwordMult, eq.ArmorMult, eq.HelmMult, eq.BootsSpeedBonus, eq.BootsCritBonus);
+                eq.SwordMult, eq.ArmorMult, eq.HelmMult, eq.BootsSpeedBonus, eq.BootsCritBonus,
+                default, s.Skill.OwnedAtk);
 
-            double crit = Math.Min(1d, st.CritRate / 100d);
-            double hitsPerSecond = st.AtkSpd * (1d + crit * (_b.CRIT_MULT - 1d));
-            double skills = SkillLevelService.DamageMultiplier(_b, SkillSlot.Slot1, s.Skill1) / _b.SKILL_CD_1;
-            if (SkillLevelService.IsUnlocked(_b, SkillSlot.Slot2, s.HeroLevel))
-                skills += SkillLevelService.DamageMultiplier(_b, SkillSlot.Slot2, s.Skill2) * WhirlwindAssumedTargets / _b.SKILL_CD_2;
-            double buff = 1d;
-            if (SkillLevelService.IsUnlocked(_b, SkillSlot.Slot3, s.HeroLevel))
-                buff += SkillLevelService.BattleCryAtkBuffFraction(_b, s.Skill3) * Math.Min(1d, _b.BATTLECRY_DURATION / _b.SKILL_CD_3);
-
-            double dps = st.Atk * (hitsPerSecond + skills) * buff;
+            double crit = Math.Min(1d, (st.CritRate + s.Skill.CritBuff) / 100d);
+            double hitsPerSecond = st.AtkSpd * (1d + s.Skill.SpdBuff) * (1d + crit * (_b.CRIT_MULT - 1d));
+            double dps = st.Atk * (hitsPerSecond + s.Skill.Mult) * (1d + s.Skill.AtkBuff);
             double defRef = _b.DEF_REF_MULT * enemyAtk;
-            double ehp = st.Hp * (defRef + st.Def) / defRef;
+            double guard = Math.Min(0.9d, s.Skill.Guard);
+            double ehp = st.Hp * (defRef + st.Def) / defRef / (1d - guard);
             return DpsWeight * Math.Log(dps) + Math.Log(ehp);
         }
 
         private void RecordValueParity(double enemyAtk)
         {
-            Snapshot now = Snapshot.From(_save);
+            Snapshot now = Snapshot.From(_b, _save);
             double baseScore = Score(now, enemyAtk);
             double bestLane = 0d;
             for (int lane = 0; lane < 4; lane++)
@@ -250,6 +239,18 @@ namespace SoloHero.Core.Balance
             SpentGacha += ten ? _b.GACHA_COST_TEN : _b.GACHA_COST_SINGLE;
             GoldPulls += r.Items.Length;
             Collect(r);
+            return true;
+        }
+
+        private bool SummonSkill()
+        {
+            bool ten = _save.gold >= _b.SKILL_SUMMON_COST_TEN;
+            SkillSummonResult r = ten ? _summon.TryPullTen(_save) : _summon.TryPull(_save);
+            if (!r.Status.Ok) return false;
+            SpentSkill += ten ? _b.SKILL_SUMMON_COST_TEN : _b.SKILL_SUMMON_COST_SINGLE;
+            SkillPulls += r.Items.Length;
+            for (int i = 0; i < r.Items.Length; i++) EarnedRefund += r.Items[i].RefundGold;
+            _skills.AutoEquip();
             return true;
         }
 
@@ -308,6 +309,38 @@ namespace SoloHero.Core.Balance
             return gain / net;
         }
 
+        /// <summary>Expected score gain of one skill summon per net gold; a new or levelled skill is auto-equipped.</summary>
+        private double ExpectedSkillPullRatio(Snapshot now, double baseScore, double enemyAtk)
+        {
+            bool pityNext = _save.skillPityCount + 1 >= _table.PityCeiling;
+            double gain = 0d;
+            double refund = 0d;
+            for (int g = 0; g < GachaCatalog.GradeCount; g++)
+            {
+                var grade = (Grade)g;
+                SkillDef[] pool = SkillCatalog.OfGrade(grade);
+                double p = GradeProbability(grade, pityNext) / pool.Length;
+                if (p <= 0d) continue;
+                for (int i = 0; i < pool.Length; i++)
+                {
+                    int level = SkillBook.GetLevel(_save, pool[i].Id);
+                    if (level >= _b.SKILL_MAX_LEVEL)
+                    {
+                        refund += p * Formulas.SkillRefund(_b, grade);
+                        continue;
+                    }
+
+                    Snapshot next = now;
+                    next.Skill = SimSkillModel.Compute(_b, _save, pool[i].Id, level + 1, autoEquip: true);
+                    gain += p * (Score(next, enemyAtk) - baseScore);
+                }
+            }
+
+            double net = _b.SKILL_SUMMON_COST_SINGLE - refund;
+            if (net <= 0d) net = 1d;
+            return gain / net;
+        }
+
         private double GradeProbability(Grade grade, bool pityNext)
         {
             if (pityNext) return grade == Grade.Legendary ? 1d : 0d;
@@ -328,9 +361,7 @@ namespace SoloHero.Core.Balance
             public int UpgAtk;
             public int UpgDef;
             public int UpgSpd;
-            public int Skill1;
-            public int Skill2;
-            public int Skill3;
+            public SkillPower Skill;
             public int Sword;
             public int Helm;
             public int Armor;
@@ -340,7 +371,7 @@ namespace SoloHero.Core.Balance
             public int ArmorLevel;
             public int BootsLevel;
 
-            public static Snapshot From(SaveDataV2 d) => new Snapshot
+            public static Snapshot From(BalanceValues b, SaveDataV2 d) => new Snapshot
             {
                 SwordLevel = EquipmentLevels.Get(d, d.equippedSword),
                 HelmLevel = EquipmentLevels.Get(d, d.equippedHelm),
@@ -351,9 +382,7 @@ namespace SoloHero.Core.Balance
                 UpgAtk = d.upgradeAtk,
                 UpgDef = d.upgradeDef,
                 UpgSpd = d.upgradeSpd,
-                Skill1 = SkillLevelService.EffectiveLevel(d.skillLevel1),
-                Skill2 = SkillLevelService.EffectiveLevel(d.skillLevel2),
-                Skill3 = SkillLevelService.EffectiveLevel(d.skillLevel3),
+                Skill = SimSkillModel.Compute(b, d),
                 Sword = EquipmentBonus.GradeOrNone(d.equippedSword, EquipmentSlot.Sword),
                 Helm = EquipmentBonus.GradeOrNone(d.equippedHelm, EquipmentSlot.Helm),
                 Armor = EquipmentBonus.GradeOrNone(d.equippedArmor, EquipmentSlot.Armor),
@@ -369,13 +398,6 @@ namespace SoloHero.Core.Balance
                     case UpgradeLane.Def: UpgDef++; break;
                     case UpgradeLane.Spd: UpgSpd++; break;
                 }
-            }
-
-            public void SetSkill(int index, int level)
-            {
-                if (index == 0) Skill1 = level;
-                else if (index == 1) Skill2 = level;
-                else Skill3 = level;
             }
 
             public int Grade(int slot)

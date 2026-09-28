@@ -4,6 +4,7 @@ using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Skills;
 
 namespace SoloHero.Tests.EditMode
 {
@@ -196,13 +197,40 @@ namespace SoloHero.Tests.EditMode
 
             for (int i = 0; i < c.KILL_TARGET_NORMAL; i++)
             {
-                spawner.Tick(c.SPAWN_INTERVAL);
-                Assert.IsTrue(spawner.TryConsumeSpawn(0));
+                if (!spawner.TryConsumeSpawn(0))
+                {
+                    spawner.Tick(c.SPAWN_WAVE_GAP);
+                    Assert.IsTrue(spawner.TryConsumeSpawn(0));
+                }
             }
 
-            spawner.Tick(c.SPAWN_INTERVAL);
+            spawner.Tick(c.SPAWN_WAVE_GAP);
             Assert.IsFalse(spawner.TryConsumeSpawn(0));
             Assert.AreEqual(c.KILL_TARGET_NORMAL, spawner.Spawned);
+        }
+
+        [Test]
+        public void SpawnScheduler_WaveComesTogetherNextWaitsForClearAndGap()
+        {
+            var c = new BalanceValues();
+            var spawner = new SpawnScheduler(c);
+            spawner.Reset(c.KILL_TARGET_NORMAL, false);
+
+            for (int i = 0; i < c.SPAWN_WAVE_SIZE; i++)
+            {
+                Assert.IsTrue(spawner.TryConsumeSpawn(i), "whole wave at once");
+                Assert.AreEqual(i, spawner.WaveSlot);
+            }
+
+            Assert.IsFalse(spawner.TryConsumeSpawn(1), "next wave waits while enemies live");
+            spawner.Tick(10f);
+            Assert.IsFalse(spawner.TryConsumeSpawn(1));
+            Assert.IsFalse(spawner.TryConsumeSpawn(0), "clear starts the gap");
+            spawner.Tick(c.SPAWN_WAVE_GAP * 0.5f);
+            Assert.IsFalse(spawner.TryConsumeSpawn(0));
+            spawner.Tick(c.SPAWN_WAVE_GAP);
+            Assert.IsTrue(spawner.TryConsumeSpawn(0));
+            Assert.AreEqual(0, spawner.WaveSlot);
         }
 
         [Test]
@@ -249,6 +277,7 @@ namespace SoloHero.Tests.EditMode
         {
             var c = new BalanceValues();
             var skills = new SkillAutoCaster(c);
+            skills.SetSlot(0, SkillCatalog.Find(SkillCatalog.PowerStrike), 1);
             HeroBrain hero = CreateHero(c);
             var world = new CombatWorld(c);
             world.BindHero(hero);
@@ -256,8 +285,8 @@ namespace SoloHero.Tests.EditMode
             world.TryActivateSlot(out enemy);
             enemy.Reset(c, 1000d, 1d, 1f, c.ATTACK_RANGE * 0.5d, false);
 
-            Assert.IsTrue(skills.TryCast(SkillSlot.Slot1, hero, world).Ok);
-            Result second = skills.TryCast(SkillSlot.Slot1, hero, world);
+            Assert.IsTrue(skills.TryCast(0, hero, world).Ok);
+            Result second = skills.TryCast(0, hero, world);
             Assert.IsFalse(second.Ok);
             Assert.AreEqual(FailReason.OnCooldown, second.Reason);
         }

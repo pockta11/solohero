@@ -12,7 +12,7 @@ namespace SoloHero.Core.Balance
         public static string Stages(SimReport r)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("g,label,boss,day,play_min,wall_hours,attempts,fails,clear_s,stall_min,hero_level,upg_hp,upg_atk,upg_def,upg_spd,skill1,skill2,skill3,sword,helm,armor,boots,pulls,gold,earned_total,spent_total");
+            sb.AppendLine("g,label,boss,day,play_min,wall_hours,attempts,fails,clear_s,stall_min,hero_level,upg_hp,upg_atk,upg_def,upg_spd,skills_owned,skill_level_sum,skill_pulls,sword,helm,armor,boots,pulls,gold,earned_total,spent_total");
             for (int i = 0; i < r.Stages.Count; i++)
             {
                 SimStageRow s = r.Stages[i];
@@ -31,9 +31,9 @@ namespace SoloHero.Core.Balance
                     .Append(s.UpgradeAtk).Append(',')
                     .Append(s.UpgradeDef).Append(',')
                     .Append(s.UpgradeSpd).Append(',')
-                    .Append(s.SkillLevel1).Append(',')
-                    .Append(s.SkillLevel2).Append(',')
-                    .Append(s.SkillLevel3).Append(',')
+                    .Append(s.SkillsOwned).Append(',')
+                    .Append(s.SkillLevelSum).Append(',')
+                    .Append(s.SkillPulls).Append(',')
                     .Append(Grade(s.SwordGrade)).Append(',')
                     .Append(Grade(s.HelmGrade)).Append(',')
                     .Append(Grade(s.ArmorGrade)).Append(',')

@@ -33,6 +33,10 @@ namespace SoloHero.Editor
         private const string SafeAreaName = "SafeArea";
         private const string StageSelectName = "StageSelect";
         private const string BossIntroName = "BossIntro";
+        private const string FlashName = "ScreenFlash";
+        private const string SkillBarName = "SkillBar";
+        private const string SkillIconsPath = "Assets/SoloHero/Data/Art/SkillIcons.asset";
+        private const int SkillCellPixels = 112;
         private const string CardBackPath = "Assets/SoloHero/Art/UI/ui_card_back.png";
         private const string CardFacePath = "Assets/SoloHero/Art/UI/ui_card_face.png";
         private const string CirclePath = "Assets/SoloHero/Art/UI/ui_summon_circle.png";
@@ -40,7 +44,6 @@ namespace SoloHero.Editor
         private const int BurstParticles = 24;
         private static readonly string[] TabIcons = { "crown", "helm", "star", "book", "cog" };
         private static readonly string[] LaneIcons = { "heart", "atk", "def", "spd" };
-        private static readonly string[] SkillIcons = { "strike", "whirl", "cry" };
         private static readonly string[] SettingKeys = { "settings.bgm", "settings.sfx", "settings.low_effect", "settings.fps30" };
         private const float TabTop = 0.07f;
         private const float PanelTop = 0.40f;
@@ -212,7 +215,7 @@ namespace SoloHero.Editor
             UnwrapSafeArea(hud.transform);
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
-            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, QuitPopupName, StageSelectName, BossIntroName })
+            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, QuitPopupName, StageSelectName, BossIntroName, FlashName })
             {
                 Transform stale = hud.transform.Find(name);
                 if (stale != null) Object.DestroyImmediate(stale.gameObject);
@@ -253,11 +256,15 @@ namespace SoloHero.Editor
             StageSelectPresenter stageSelect = BuildStageSelect(hud.transform, session);
             BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>());
             BuildBossIntro(hud.transform, session);
+            ScreenFlash flash = BuildFlash(hud.transform);
             WrapSafeArea(hud.transform);
             // The boss banner sits right above the HUD controls and under numbers and popups.
             Transform bossIntro = hud.transform.Find(BossIntroName);
             if (bossIntro != null) bossIntro.SetSiblingIndex(1);
-            WireJuice(hud, toast);
+            // D-078 skill flash: over the battle and the HUD, under the damage numbers and popups.
+            Transform damageLayer = hud.transform.Find(DamageLayerName);
+            if (damageLayer != null) flash.transform.SetSiblingIndex(damageLayer.GetSiblingIndex());
+            WireJuice(hud, toast, flash);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -321,25 +328,154 @@ namespace SoloHero.Editor
             return panel.gameObject;
         }
 
+        /// <summary>
+        /// D-078 skill book: equipped slots + auto-equip on top, the owned-effect line, a scrolling grid of every catalog
+        /// skill, and the selected skill's detail with level-up and equip buttons.
+        /// </summary>
         private static GameObject BuildSkill(RectTransform area, CombatSession session, ToastQueue toast)
         {
             RectTransform panel = Panel("SkillPanel", area);
             var presenter = panel.gameObject.AddComponent<SkillPanelPresenter>();
-            var levels = new Text[3];
-            var costs = new Text[3];
-            var buttons = new TapGuardButton[3];
-            for (int i = 0; i < 3; i++)
+            var icons = AssetDatabase.LoadAssetAtPath<SoloHero.Game.View.SkillIconSet>(SkillIconsPath);
+            int slotCount = new SoloHero.Core.Config.BalanceValues().SKILL_SLOT_COUNT;
+
+            var slotFrames = new Image[slotCount];
+            var slotIcons = new Image[slotCount];
+            var slotTexts = new Text[slotCount];
+            for (int i = 0; i < slotCount; i++)
             {
-                float top = 0.95f - i * 0.3f;
-                Row(panel, "Skill" + i, top - 0.26f, top, out levels[i], out costs[i], out buttons[i], SkillIcons[i]);
-                UnityEventTools.AddIntPersistentListener(buttons[i].OnTap, presenter.LevelUp, i);
+                float x = 0.03f + i * 0.132f;
+                RectTransform slot = Rect("Slot" + i, panel, x, 0.8f, x + 0.12f, 0.97f);
+                slotFrames[i] = GradeFrame(slot.gameObject);
+                Button tap = slot.gameObject.AddComponent<Button>();
+                tap.transition = Selectable.Transition.None;
+                UnityEventTools.AddIntPersistentListener(tap.onClick, presenter.TapSlot, i);
+                RectTransform iconRect = Rect("Icon", slot, 0.1f, 0.1f, 0.9f, 0.9f);
+                slotIcons[i] = iconRect.gameObject.AddComponent<Image>();
+                slotIcons[i].preserveAspect = true;
+                slotIcons[i].raycastTarget = false;
+                slotTexts[i] = MakeText("Level", slot, 0f, 0f, 1f, 0.4f, "", 22, TextAnchor.LowerCenter);
             }
 
+            Button auto = MakeButton("AutoEquip", panel, 0.83f, 0.81f, 0.975f, 0.96f, "", 22, out Text autoLabel, Tone.Purple);
+            Localize(autoLabel, "skill.auto_equip");
+            autoLabel.horizontalOverflow = HorizontalWrapMode.Wrap;
+            UnityEventTools.AddPersistentListener(auto.onClick, presenter.AutoEquip);
+
+            Text bonus = MakeText("OwnedBonus", panel, 0.04f, 0.735f, 0.96f, 0.795f, "", 22, TextAnchor.MiddleLeft);
+            bonus.color = new Color(1f, 0.85f, 0.35f, 1f);
+
+            // Grid of every skill in catalog order, 8 per row, scrolling.
+            RectTransform viewport = Rect("Grid", panel, 0.03f, 0.3f, 0.97f, 0.735f);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            Image hit = viewport.gameObject.AddComponent<Image>();
+            hit.color = new Color(0f, 0f, 0f, 0.25f);
+            RectTransform content = Rect("Content", viewport, 0f, 1f, 1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            GridLayoutGroup grid = content.gameObject.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(SkillCellPixels, SkillCellPixels);
+            grid.spacing = new Vector2(10f, 10f);
+            grid.padding = new RectOffset(8, 8, 8, 8);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 8;
+            grid.childAlignment = TextAnchor.UpperCenter;
+            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            ScrollRect scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport;
+            scroll.content = content;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+
+            int count = SoloHero.Core.Skills.SkillCatalog.Count;
+            var cellFrames = new Image[count];
+            var cellIcons = new Image[count];
+            var cellLevels = new Text[count];
+            var cellMarks = new GameObject[count];
+            for (int i = 0; i < count; i++)
+            {
+                var cell = new GameObject("Cell" + i, typeof(RectTransform));
+                cell.layer = 5;
+                cell.transform.SetParent(content, false);
+                cellFrames[i] = GradeFrame(cell);
+                Button tap = cell.AddComponent<Button>();
+                tap.transition = Selectable.Transition.None;
+                UnityEventTools.AddIntPersistentListener(tap.onClick, presenter.SelectCell, i);
+                RectTransform iconRect = Rect("Icon", cell.transform, 0.1f, 0.1f, 0.9f, 0.9f);
+                cellIcons[i] = iconRect.gameObject.AddComponent<Image>();
+                cellIcons[i].preserveAspect = true;
+                cellIcons[i].raycastTarget = false;
+                cellLevels[i] = MakeText("Level", cell.transform, 0f, 0f, 0.96f, 0.4f, "", 22, TextAnchor.LowerRight);
+                RectTransform mark = Rect("Equipped", cell.transform, 0f, 0.66f, 0.62f, 1f);
+                Image markImage = mark.gameObject.AddComponent<Image>();
+                markImage.color = new Color(0.2f, 0.65f, 0.3f, 0.95f);
+                markImage.raycastTarget = false;
+                Localize(MakeText("Label", mark, 0f, 0f, 1f, 1f, "", 22, TextAnchor.MiddleCenter), "skill.equipped_mark");
+                cellMarks[i] = mark.gameObject;
+            }
+
+            // Selection: a bright 5 px outline the presenter moves onto the selected cell.
+            RectTransform selection = Rect("Selection", content, 0f, 0f, 1f, 1f);
+            selection.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            float[,] edges = { { 0f, 0f, 1f, 0f }, { 0f, 1f, 1f, 1f }, { 0f, 0f, 0f, 1f }, { 1f, 0f, 1f, 1f } };
+            for (int e = 0; e < 4; e++)
+            {
+                RectTransform edge = Rect("Edge" + e, selection, edges[e, 0], edges[e, 1], edges[e, 2], edges[e, 3]);
+                bool horizontal = e < 2;
+                edge.offsetMin = new Vector2(horizontal ? 0f : -3f, horizontal ? -3f : 0f);
+                edge.offsetMax = new Vector2(horizontal ? 0f : 3f, horizontal ? 3f : 0f);
+                Image edgeImage = edge.gameObject.AddComponent<Image>();
+                edgeImage.sprite = UiSkin.White;
+                edgeImage.color = new Color(1f, 0.95f, 0.4f, 1f);
+                edgeImage.raycastTarget = false;
+            }
+
+            // Detail of the selected skill.
+            RectTransform detail = Rect("Detail", panel, 0.03f, 0.03f, 0.97f, 0.29f);
+            UiSkin.Sliced(detail.gameObject.AddComponent<Image>(), UiSkin.Slot);
+            UiPunch punch = detail.gameObject.AddComponent<UiPunch>();
+            RectTransform detailFrameRect = Rect("IconFrame", detail, 0.015f, 0.12f, 0.155f, 0.88f);
+            Image detailFrame = GradeFrame(detailFrameRect.gameObject);
+            detailFrame.raycastTarget = false;
+            RectTransform detailIconRect = Rect("Icon", detailFrameRect, 0.1f, 0.1f, 0.9f, 0.9f);
+            Image detailIcon = detailIconRect.gameObject.AddComponent<Image>();
+            detailIcon.preserveAspect = true;
+            detailIcon.raycastTarget = false;
+            Text name = MakeText("Name", detail, 0.17f, 0.64f, 0.64f, 0.97f, "", 33, TextAnchor.MiddleLeft);
+            Text info = MakeText("Info", detail, 0.17f, 0.44f, 0.64f, 0.66f, "", 22, TextAnchor.MiddleLeft);
+            info.color = new Color(0.8f, 0.82f, 0.9f, 1f);
+            Text desc = MakeText("Desc", detail, 0.17f, 0.02f, 0.645f, 0.45f, "", 22, TextAnchor.UpperLeft);
+            desc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            desc.verticalOverflow = VerticalWrapMode.Overflow;
+
+            Button level = MakeButton("LevelUp", detail, 0.655f, 0.52f, 0.985f, 0.95f, "", 30, out Text levelCost, Tone.Gold);
+            IconButton(level, levelCost, "coin");
+            TapGuardButton levelGuard = level.gameObject.AddComponent<TapGuardButton>();
+            UnityEventTools.AddPersistentListener(levelGuard.OnTap, presenter.LevelUp);
+            Button equip = MakeButton("Equip", detail, 0.655f, 0.06f, 0.985f, 0.48f, "", 30, out Text equipLabel, Tone.Blue);
+            TapGuardButton equipGuard = equip.gameObject.AddComponent<TapGuardButton>();
+            UnityEventTools.AddPersistentListener(equipGuard.OnTap, presenter.ToggleEquip);
+
             var so = new SerializedObject(presenter);
-            SetArray(so, "_punches", RowPunches(levels));
-            SetArray(so, "_levelTexts", levels);
-            SetArray(so, "_costTexts", costs);
-            SetArray(so, "_buttons", buttons);
+            SetArray(so, "_slotFrames", slotFrames);
+            SetArray(so, "_slotIcons", slotIcons);
+            SetArray(so, "_slotTexts", slotTexts);
+            SetArray(so, "_cellFrames", cellFrames);
+            SetArray(so, "_cellIcons", cellIcons);
+            SetArray(so, "_cellLevels", cellLevels);
+            SetArray(so, "_cellMarks", cellMarks);
+            so.FindProperty("_selection").objectReferenceValue = selection;
+            so.FindProperty("_detailIcon").objectReferenceValue = detailIcon;
+            so.FindProperty("_detailFrame").objectReferenceValue = detailFrame;
+            so.FindProperty("_detailName").objectReferenceValue = name;
+            so.FindProperty("_detailInfo").objectReferenceValue = info;
+            so.FindProperty("_detailDesc").objectReferenceValue = desc;
+            so.FindProperty("_ownedBonus").objectReferenceValue = bonus;
+            so.FindProperty("_levelButton").objectReferenceValue = levelGuard;
+            so.FindProperty("_levelCost").objectReferenceValue = levelCost;
+            so.FindProperty("_equipButton").objectReferenceValue = equipGuard;
+            so.FindProperty("_equipLabel").objectReferenceValue = equipLabel;
+            so.FindProperty("_detailPunch").objectReferenceValue = punch;
+            so.FindProperty("_icons").objectReferenceValue = icons;
             so.FindProperty("_session").objectReferenceValue = session;
             so.FindProperty("_toast").objectReferenceValue = toast;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -388,8 +524,21 @@ namespace SoloHero.Editor
             RectTransform panel = Panel("GachaPanel", area);
             var presenter = panel.gameObject.AddComponent<GachaPanelPresenter>();
 
-            Text pity = MakeText("Pity", panel, 0.04f, 0.88f, 0.96f, 0.98f, "", 32, TextAnchor.MiddleCenter);
-            RectTransform gauge = Rect("PityGauge", panel, 0.06f, 0.825f, 0.94f, 0.875f);
+            // D-078: equipment / skill summon tabs.
+            var tabImages = new Image[2];
+            string[] modeKeys = { "gacha.mode_gear", "gacha.mode_skill" };
+            for (int i = 0; i < 2; i++)
+            {
+                Button tab = MakeButton("Mode" + i, panel, 0.04f + i * 0.465f, 0.885f, 0.495f + i * 0.465f, 0.98f, "", 30, out Text tabLabel);
+                tab.transition = Selectable.Transition.None;
+                tabImages[i] = tab.GetComponent<Image>();
+                UiSkin.Sliced(tabImages[i], UiSkin.Tab);
+                Localize(tabLabel, modeKeys[i]);
+                UnityEventTools.AddIntPersistentListener(tab.onClick, presenter.SetMode, i);
+            }
+
+            Text pity = MakeText("Pity", panel, 0.04f, 0.8f, 0.96f, 0.88f, "", 30, TextAnchor.MiddleCenter);
+            RectTransform gauge = Rect("PityGauge", panel, 0.06f, 0.755f, 0.94f, 0.8f);
             UiSkin.Sliced(gauge.gameObject.AddComponent<Image>(), UiSkin.Gauge);
             RectTransform fillArea = Rect("FillArea", gauge, 0f, 0f, 1f, 1f);
             fillArea.offsetMin = new Vector2(4f, 4f);
@@ -399,8 +548,8 @@ namespace SoloHero.Editor
             UiSkin.Sliced(fill, UiSkin.GaugeFill);
             fillRect.anchorMax = new Vector2(0f, 1f);
 
-            Text rates = MakeText("Rates", panel, 0.04f, 0.68f, 0.96f, 0.82f, "", 22, TextAnchor.MiddleCenter);
-            Text result = MakeText("Result", panel, 0.04f, 0.33f, 0.96f, 0.66f, "", 33, TextAnchor.MiddleCenter);
+            Text rates = MakeText("Rates", panel, 0.04f, 0.63f, 0.96f, 0.75f, "", 22, TextAnchor.MiddleCenter);
+            Text result = MakeText("Result", panel, 0.04f, 0.33f, 0.96f, 0.62f, "", 33, TextAnchor.MiddleCenter);
             result.supportRichText = true;
             result.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -430,6 +579,11 @@ namespace SoloHero.Editor
             so.FindProperty("_goldPackText").objectReferenceValue = packLabel;
             so.FindProperty("_session").objectReferenceValue = session;
             so.FindProperty("_toast").objectReferenceValue = toast;
+            SetArray(so, "_tabImages", tabImages);
+            so.FindProperty("_tabIdle").objectReferenceValue = UiSkin.Tab;
+            so.FindProperty("_tabActive").objectReferenceValue = UiSkin.TabActive;
+            so.FindProperty("_equipmentIcons").objectReferenceValue = AssetDatabase.LoadAssetAtPath<SoloHero.Game.View.EquipmentIconSet>(EquipmentIconsPath);
+            so.FindProperty("_skillIcons").objectReferenceValue = AssetDatabase.LoadAssetAtPath<SoloHero.Game.View.SkillIconSet>(SkillIconsPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             return panel.gameObject;
         }
@@ -441,8 +595,28 @@ namespace SoloHero.Editor
             return punches;
         }
 
-        /// <summary>E8-09 gold punch on the HUD gold label, and the level-up toast for CombatFx.</summary>
-        private static void WireJuice(GameObject hud, ToastQueue toast)
+        /// <summary>D-078: a flat square the presenter tints with the grade colour; the inset icon leaves a coloured border.</summary>
+        private static Image GradeFrame(GameObject go)
+        {
+            Image image = go.AddComponent<Image>();
+            image.sprite = UiSkin.White;
+            image.color = new Color(0.35f, 0.35f, 0.4f, 1f);
+            return image;
+        }
+
+        /// <summary>D-078: full-screen colour flash for Epic / Legendary skills (raycasts off).</summary>
+        private static ScreenFlash BuildFlash(Transform hud)
+        {
+            RectTransform rect = Rect(FlashName, hud, 0f, 0f, 1f, 1f);
+            Image image = rect.gameObject.AddComponent<Image>();
+            image.sprite = UiSkin.White;
+            image.raycastTarget = false;
+            image.enabled = false;
+            return rect.gameObject.AddComponent<ScreenFlash>();
+        }
+
+        /// <summary>E8-09 gold punch on the HUD gold label; toast, skill flash and skill-name labels for CombatFx.</summary>
+        private static void WireJuice(GameObject hud, ToastQueue toast, ScreenFlash flash)
         {
             BattleHud battleHud = Object.FindObjectOfType<BattleHud>();
             if (battleHud != null)
@@ -463,6 +637,8 @@ namespace SoloHero.Editor
             {
                 var so = new SerializedObject(fx);
                 so.FindProperty("_toast").objectReferenceValue = toast;
+                so.FindProperty("_flash").objectReferenceValue = flash;
+                so.FindProperty("_labels").objectReferenceValue = hud.GetComponentInChildren<DamageTextPool>(true);
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
         }
@@ -527,7 +703,6 @@ namespace SoloHero.Editor
             so.FindProperty("_burst").objectReferenceValue = burst;
             so.FindProperty("_skipButton").objectReferenceValue = skip.gameObject;
             so.FindProperty("_closeHint").objectReferenceValue = hint.gameObject;
-            so.FindProperty("_icons").objectReferenceValue = AssetDatabase.LoadAssetAtPath<SoloHero.Game.View.EquipmentIconSet>(EquipmentIconsPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             root.gameObject.SetActive(false);
 
@@ -665,7 +840,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void WrapSafeArea(Transform hud)
         {
-            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, QuitPopupName, StageSelectName, BossIntroName };
+            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, QuitPopupName, StageSelectName, BossIntroName, FlashName };
             RectTransform safe = Rect(SafeAreaName, hud, 0f, 0f, 1f, 1f);
             safe.gameObject.AddComponent<SafeAreaFitter>();
             var move = new System.Collections.Generic.List<Transform>();
@@ -933,9 +1108,6 @@ namespace SoloHero.Editor
         private static void MoveChallengeButton(Transform hud)
         {
             SetAnchors(hud, "Challenge", 0.3f, 0.80f, 0.7f, 0.845f);
-            SetAnchors(hud, "Skill1", 0.04f, 0.395f, 0.32f, 0.438f);
-            SetAnchors(hud, "Skill2", 0.36f, 0.395f, 0.64f, 0.438f);
-            SetAnchors(hud, "Skill3", 0.68f, 0.395f, 0.96f, 0.438f);
             SetAnchors(hud, "RetreatPrompt", 0.2f, 0.64f, 0.8f, 0.69f);
             Localize(FindLabel(hud, "FailPanel/Retry"), "hud.retry");
             Localize(FindLabel(hud, "FailPanel/Retreat"), "hud.retreat");
@@ -1013,13 +1185,76 @@ namespace SoloHero.Editor
             Transform fail = hud.Find("FailPanel");
             if (fail != null && fail.GetComponent<Image>() != null) UiSkin.Sliced(fail.GetComponent<Image>(), UiSkin.Frame);
 
-            var cooldowns = new Image[3];
-            for (int i = 0; i < 3; i++) cooldowns[i] = SkinSkillButton(hud, "Skill" + (i + 1), SkillIcons[i]);
-            if (so != null)
+            BuildSkillBar(hud, battleHud, so);
+            if (so != null) so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// D-078 skill bar under the ground line: one square per slot with the skill icon in a grade frame, a radial
+        /// cooldown with seconds, and a lock with the opening hero level. Tapping casts the slot now.
+        /// </summary>
+        private static void BuildSkillBar(Transform hud, BattleHud battleHud, SerializedObject so)
+        {
+            foreach (string stale in new[] { "Skill1", "Skill2", "Skill3", SkillBarName })
             {
-                SetArray(so, "_skillCooldowns", cooldowns);
-                so.ApplyModifiedPropertiesWithoutUndo();
+                Transform t = hud.Find(stale);
+                if (t != null) Object.DestroyImmediate(t.gameObject);
             }
+
+            int count = new SoloHero.Core.Config.BalanceValues().SKILL_SLOT_COUNT;
+            RectTransform bar = Rect(SkillBarName, hud, 0.02f, 0.393f, 0.98f, 0.455f);
+            var icons = new Image[count];
+            var frames = new Image[count];
+            var cooldowns = new Image[count];
+            var times = new Text[count];
+            var locks = new Text[count];
+            var punches = new UiPunch[count];
+            Sprite lockSprite = UiSkin.Icon("lock");
+            for (int i = 0; i < count; i++)
+            {
+                float cx = (i + 0.5f) / count;
+                RectTransform slot = Rect("Slot" + i, bar, cx, 0.5f, cx, 0.5f);
+                slot.sizeDelta = new Vector2(112f, 112f);
+                frames[i] = GradeFrame(slot.gameObject);
+                Button button = slot.gameObject.AddComponent<Button>();
+                button.transition = Selectable.Transition.None;
+                if (battleHud != null) UnityEventTools.AddIntPersistentListener(button.onClick, battleHud.CastSlot, i);
+                punches[i] = slot.gameObject.AddComponent<UiPunch>();
+
+                RectTransform iconRect = Rect("Icon", slot, 0.09f, 0.09f, 0.91f, 0.91f);
+                icons[i] = iconRect.gameObject.AddComponent<Image>();
+                icons[i].preserveAspect = true;
+                icons[i].raycastTarget = false;
+
+                RectTransform overlay = Rect("Cooldown", slot, 0.09f, 0.09f, 0.91f, 0.91f);
+                cooldowns[i] = overlay.gameObject.AddComponent<Image>();
+                cooldowns[i].sprite = UiSkin.White;
+                cooldowns[i].color = new Color(0f, 0f, 0.05f, 0.68f);
+                cooldowns[i].type = Image.Type.Filled;
+                cooldowns[i].fillMethod = Image.FillMethod.Radial360;
+                cooldowns[i].fillOrigin = (int)Image.Origin360.Top;
+                cooldowns[i].fillClockwise = false;
+                cooldowns[i].fillAmount = 0f;
+                cooldowns[i].raycastTarget = false;
+
+                times[i] = MakeText("Time", slot, 0f, 0f, 1f, 1f, "", 44, TextAnchor.MiddleCenter);
+
+                locks[i] = MakeText("Lock", slot, 0f, 0.02f, 1f, 0.45f, "", 22, TextAnchor.MiddleCenter);
+                RectTransform lockIcon = Rect("LockIcon", locks[i].transform, 0.3f, 1.05f, 0.7f, 2f);
+                Image lockImage = lockIcon.gameObject.AddComponent<Image>();
+                lockImage.sprite = lockSprite;
+                lockImage.preserveAspect = true;
+                lockImage.raycastTarget = false;
+            }
+
+            if (so == null) return;
+            so.FindProperty("_skillIconSet").objectReferenceValue = AssetDatabase.LoadAssetAtPath<SoloHero.Game.View.SkillIconSet>(SkillIconsPath);
+            SetArray(so, "_skillIcons", icons);
+            SetArray(so, "_skillFrames", frames);
+            SetArray(so, "_skillCooldowns", cooldowns);
+            SetArray(so, "_skillTimes", times);
+            SetArray(so, "_skillLocks", locks);
+            SetArray(so, "_skillPunches", punches);
         }
 
         private static void Pill(RectTransform bar, string name, float xMin, float xMax, string icon)
@@ -1054,42 +1289,6 @@ namespace SoloHero.Editor
             if (button == null) return;
             UiSkin.Button(button, tone);
             UiSkin.TextShadow(button.GetComponentInChildren<Text>(true));
-        }
-
-        private static Image SkinSkillButton(Transform hud, string name, string icon)
-        {
-            Transform t = hud.Find(name);
-            Button button = t != null ? t.GetComponent<Button>() : null;
-            if (button == null) return null;
-            UiSkin.Button(button, Tone.Blue);
-            Transform stale = t.Find("Cooldown");
-            if (stale != null) Object.DestroyImmediate(stale.gameObject);
-
-            Text label = t.GetComponentInChildren<Text>(true);
-            AddIcon(t, icon, 0.04f, 0.18f, 0.24f, 0.88f);
-            if (label != null)
-            {
-                label.rectTransform.anchorMin = new Vector2(0.24f, 0f);
-                label.rectTransform.anchorMax = new Vector2(1f, 1f);
-                label.rectTransform.offsetMin = new Vector2(0f, 10f);
-                label.rectTransform.offsetMax = new Vector2(-6f, -2f);
-                label.fontSize = 33;
-                label.horizontalOverflow = HorizontalWrapMode.Overflow;
-                UiSkin.TextShadow(label);
-            }
-
-            RectTransform overlay = Rect("Cooldown", t, 0f, 0f, 1f, 1f);
-            overlay.offsetMin = new Vector2(4f, 4f);
-            overlay.offsetMax = new Vector2(-4f, -4f);
-            Image image = overlay.gameObject.AddComponent<Image>();
-            image.sprite = UiSkin.White;
-            image.color = new Color(0f, 0f, 0.05f, 0.6f);
-            image.type = Image.Type.Filled;
-            image.fillMethod = Image.FillMethod.Horizontal;
-            image.fillOrigin = (int)Image.OriginHorizontal.Right;
-            image.fillAmount = 0f;
-            image.raycastTarget = false;
-            return image;
         }
 
         private static Text FindLabel(Transform parent, string path)

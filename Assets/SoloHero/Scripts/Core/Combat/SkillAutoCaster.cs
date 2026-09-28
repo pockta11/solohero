@@ -1,77 +1,110 @@
 using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
-using SoloHero.Core.Growth;
+using SoloHero.Core.Skills;
 
 namespace SoloHero.Core.Combat
 {
+    /// <summary>
+    /// Runs the equipped skills in combat (D-078): up to SKILL_SLOT_COUNT slots cast automatically in slot order
+    /// when off cooldown and their condition holds (enemy in reach, or HP under the heal threshold), with
+    /// SKILL_SEQUENCE_GAP between casts. A cast lands its first wave at once; later waves follow every
+    /// WaveInterval. Buffs last per slot and are summed into the hero every tick. Allocation free while ticking.
+    /// </summary>
     public sealed class SkillAutoCaster
     {
+        private const int MaxPending = 8;
+
         private readonly BalanceValues _balance;
-        private readonly float[] _cooldown;
+        private readonly SkillDef[] _defs;
         private readonly int[] _levels;
-        private readonly bool[] _unlocked;
+        private readonly float[] _cooldown;
+        private readonly float[] _buffRemaining;
+
+        private readonly SkillDef[] _pendingDef = new SkillDef[MaxPending];
+        private readonly double[] _pendingDamage = new double[MaxPending];
+        private readonly double[] _pendingDot = new double[MaxPending];
+        private readonly int[] _pendingWaves = new int[MaxPending];
+        private readonly float[] _pendingTimer = new float[MaxPending];
+
         private float _sequenceGap;
-        private double _atkBuffRemaining;
-        private double _atkBuffAmount;
 
         public SkillAutoCaster(BalanceValues balance)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
-            _cooldown = new float[3];
-            _levels = new int[] { 1, 1, 1 };
-            _unlocked = new bool[] { true, true, true };
-            _sequenceGap = 0f;
+            int slots = balance.SKILL_SLOT_COUNT < 1 ? 1 : balance.SKILL_SLOT_COUNT;
+            _defs = new SkillDef[slots];
+            _levels = new int[slots];
+            _cooldown = new float[slots];
+            _buffRemaining = new float[slots];
+            for (int i = 0; i < slots; i++) _levels[i] = 1;
         }
 
-        public double AtkBuffSum => _atkBuffRemaining > 0d ? _atkBuffAmount : 0d;
+        public int SlotCount => _defs.Length;
 
-        /// <summary>Raised after a skill is applied (auto or manual). Views play the skill VFX / SFX from it.</summary>
-        public event Action<SkillSlot> SkillCast;
+        /// <summary>Raised when a cast starts (auto or manual): slot, skill. Views play the cast effect and name.</summary>
+        public event Action<int, SkillDef> SkillCast;
 
-        public void SetLevel(SkillSlot slot, int level)
+        /// <summary>Raised for every impact the skill's VfxAt asks for: skill, world X.</summary>
+        public event Action<SkillDef, double> SkillImpact;
+
+        public double BuffAtk => BuffSum(SkillBuff.Atk) / 100d;
+        public double BuffAtkSpd => BuffSum(SkillBuff.AtkSpd) / 100d;
+        public double BuffCrit => BuffSum(SkillBuff.Crit);
+        public double BuffGuard => BuffSum(SkillBuff.Guard) / 100d;
+
+        /// <summary>Kept for the ATK-only callers: the summed ATK buff fraction.</summary>
+        public double AtkBuffSum => BuffAtk;
+
+        /// <summary>Puts a skill (or null for an empty / locked slot) into a slot and resets that slot's timers.</summary>
+        public void SetSlot(int slot, SkillDef def, int level)
         {
-            int i = (int)slot;
-            if (i < 0 || i >= _levels.Length) return;
+            if (slot < 0 || slot >= _defs.Length) return;
             if (level < 1) level = 1;
             if (level > _balance.SKILL_MAX_LEVEL) level = _balance.SKILL_MAX_LEVEL;
-            _levels[i] = level;
+            if (_defs[slot] != def)
+            {
+                _cooldown[slot] = 0f;
+                _buffRemaining[slot] = 0f;
+            }
+
+            _defs[slot] = def;
+            _levels[slot] = level;
         }
 
-        public void SetUnlocked(SkillSlot slot, bool unlocked)
+        public SkillDef DefAt(int slot) => slot >= 0 && slot < _defs.Length ? _defs[slot] : null;
+
+        public int LevelAt(int slot) => slot >= 0 && slot < _levels.Length ? _levels[slot] : 1;
+
+        public bool IsReady(int slot) => DefAt(slot) != null && _cooldown[slot] <= 0f;
+
+        public float CooldownRemaining(int slot) => slot >= 0 && slot < _cooldown.Length ? _cooldown[slot] : 0f;
+
+        public float CooldownTotal(int slot)
         {
-            int i = (int)slot;
-            if (i < 0 || i >= _unlocked.Length) return;
-            _unlocked[i] = unlocked;
+            SkillDef def = DefAt(slot);
+            return def != null ? def.Cooldown : 0f;
         }
 
-        public bool IsUnlocked(SkillSlot slot)
-        {
-            int i = (int)slot;
-            return i >= 0 && i < _unlocked.Length && _unlocked[i];
-        }
+        /// <summary>Seconds left on the buff this slot gave (0 when none is running).</summary>
+        public float BuffRemaining(int slot) => slot >= 0 && slot < _buffRemaining.Length ? _buffRemaining[slot] : 0f;
 
-        public void SetCooldown(SkillSlot slot, float seconds)
+        public void SetCooldown(int slot, float seconds)
         {
-            int i = (int)slot;
-            if (i < 0 || i >= _cooldown.Length) return;
-            _cooldown[i] = seconds < 0f ? 0f : seconds;
-        }
-
-        public float CooldownRemaining(SkillSlot slot)
-        {
-            int i = (int)slot;
-            if (i < 0 || i >= _cooldown.Length) return 0f;
-            return _cooldown[i];
+            if (slot < 0 || slot >= _cooldown.Length) return;
+            _cooldown[slot] = seconds < 0f ? 0f : seconds;
         }
 
         public void ResetCooldowns()
         {
             for (int i = 0; i < _cooldown.Length; i++)
+            {
                 _cooldown[i] = 0f;
+                _buffRemaining[i] = 0f;
+            }
+
+            for (int i = 0; i < MaxPending; i++) ClearPending(i);
             _sequenceGap = 0f;
-            _atkBuffRemaining = 0d;
-            _atkBuffAmount = 0d;
         }
 
         public void Tick(float dt, HeroBrain hero, ICombatWorld world, bool isBossFight)
@@ -79,123 +112,179 @@ namespace SoloHero.Core.Combat
             for (int i = 0; i < _cooldown.Length; i++)
             {
                 if (_cooldown[i] > 0f) _cooldown[i] -= dt;
+                if (_buffRemaining[i] > 0f)
+                {
+                    _buffRemaining[i] -= dt;
+                    if (_buffRemaining[i] < 0f) _buffRemaining[i] = 0f;
+                }
             }
 
             if (_sequenceGap > 0f) _sequenceGap -= dt;
-            if (_atkBuffRemaining > 0d)
+            if (hero == null || world == null) return;
+
+            if (hero.State == HeroState.Dead)
             {
-                _atkBuffRemaining -= dt;
-                if (_atkBuffRemaining < 0d) _atkBuffRemaining = 0d;
+                for (int i = 0; i < MaxPending; i++) ClearPending(i);
+                return;
             }
 
-            if (hero == null || world == null) return;
-            if (hero.State == HeroState.Dead || hero.State == HeroState.Skill) return;
+            TickPending(dt, world);
+
+            if (hero.State == HeroState.Skill) return;
             if (_sequenceGap > 0f) return;
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < _defs.Length; i++)
             {
-                if (!_unlocked[i]) continue;
-                if (_cooldown[i] > 0f) continue;
-                if (!MeetsAutoCondition((SkillSlot)i, hero, world, isBossFight)) continue;
-                // Condition already checked with the real boss flag; re-checking inside TryCast would drop it.
-                if (TryCast((SkillSlot)i, hero, world, skipCondition: true).Ok)
-                    return;
+                SkillDef def = _defs[i];
+                if (def == null || _cooldown[i] > 0f) continue;
+                if (!MeetsAutoCondition(def, hero, world, isBossFight)) continue;
+                if (TryCast(i, hero, world).Ok) return;
             }
         }
 
-        public Result TryCast(SkillSlot slot, HeroBrain hero, ICombatWorld world, bool skipCondition = true)
+        /// <summary>Manual tap on a HUD skill button: casts if ready, whatever the auto condition says.</summary>
+        public Result TryCast(int slot, HeroBrain hero, ICombatWorld world)
         {
             if (hero == null || world == null) return Result.Fail(FailReason.Busy);
-            if (hero.State == HeroState.Dead) return Result.Fail(FailReason.Busy);
-            if (hero.State == HeroState.Skill) return Result.Fail(FailReason.Busy);
+            if (hero.State == HeroState.Dead || hero.State == HeroState.Skill) return Result.Fail(FailReason.Busy);
 
-            int i = (int)slot;
-            if (i < 0 || i >= _cooldown.Length) return Result.Fail(FailReason.Locked);
-            if (!_unlocked[i]) return Result.Fail(FailReason.Locked);
-            if (_cooldown[i] > 0f) return Result.Fail(FailReason.OnCooldown);
-            if (!skipCondition && !MeetsAutoCondition(slot, hero, world, false))
-                return Result.Fail(FailReason.Busy);
+            SkillDef def = DefAt(slot);
+            if (def == null) return Result.Fail(FailReason.Locked);
+            if (_cooldown[slot] > 0f) return Result.Fail(FailReason.OnCooldown);
+            if (def.DealsDamage && !world.HasEnemyInRange(def.Range)) return Result.Fail(FailReason.Busy);
 
             Result begin = hero.TryBeginSkill();
             if (!begin.Ok) return begin;
 
-            ApplySkill(slot, hero, world);
-            _cooldown[i] = CooldownOf(slot);
+            SkillCast?.Invoke(slot, def);
+            Apply(slot, def, hero, world);
+            _cooldown[slot] = def.Cooldown;
             _sequenceGap = _balance.SKILL_SEQUENCE_GAP;
             hero.EndSkill(world);
-            SkillCast?.Invoke(slot);
             return Result.Success;
         }
 
-        private bool MeetsAutoCondition(SkillSlot slot, HeroBrain hero, ICombatWorld world, bool isBossFight)
+        private bool MeetsAutoCondition(SkillDef def, HeroBrain hero, ICombatWorld world, bool isBossFight)
         {
-            switch (slot)
+            if (def.HpThreshold > 0d) return hero.Hp <= hero.MaxHp * def.HpThreshold / 100d;
+            switch (def.Kind)
             {
-                case SkillSlot.Slot1:
-                    return world.HasEnemyInRange(_balance.ATTACK_RANGE);
-                case SkillSlot.Slot2:
-                    return world.CountEnemiesInRange(_balance.WHIRLWIND_RANGE) >= _balance.WHIRLWIND_MIN_TARGETS;
-                case SkillSlot.Slot3:
-                    double threshold = hero.MaxHp * (_balance.BATTLECRY_HP_THRESHOLD * 0.01d);
-                    return isBossFight || hero.Hp <= threshold;
+                case SkillKind.Strike:
+                case SkillKind.Area:
+                    return world.HasEnemyInRange(def.Range);
+                case SkillKind.Buff:
+                    return world.HasEnemyInRange(def.Range) || (isBossFight && world.AliveCount > 0);
+                case SkillKind.Heal:
+                    return hero.Hp < hero.MaxHp;
                 default:
                     return false;
             }
         }
 
-        private void ApplySkill(SkillSlot slot, HeroBrain hero, ICombatWorld world)
+        private void Apply(int slot, SkillDef def, HeroBrain hero, ICombatWorld world)
         {
-            int level = _levels[(int)slot];
-            // Battle Cry multiplies ATK, so an active buff also raises skill hits (GDD stat order: buffs last).
-            double buff = 1d + AtkBuffSum;
+            double scale = Formulas.SkillLevelScale(_balance, _levels[slot]);
 
-            switch (slot)
+            if (def.HealPercent > 0d) hero.Heal(hero.MaxHp * def.HealPercent / 100d * scale);
+            if (def.ShieldPercent > 0d) hero.AddShield(hero.MaxHp * def.ShieldPercent / 100d * scale, def.ShieldSeconds);
+            if (def.Buff != SkillBuff.None && def.BuffSeconds > 0f) _buffRemaining[slot] = def.BuffSeconds;
+
+            if (!def.DealsDamage) return;
+
+            // ATK buffs (this skill's own included) raise skill hits too (GDD stat order: buffs last).
+            double buff = 1d + BuffAtk;
+            double damage = DamageCalc.SkillHit(hero.Stats, def.DamageMult * scale) * buff;
+            double dot = def.DotPercent > 0d ? DamageCalc.SkillDot(hero.Stats, def.DotPercent, scale) * buff : 0d;
+            Wave(def, damage, dot, world);
+            if (def.Waves > 1) Enqueue(def, damage, dot, def.Waves - 1);
+        }
+
+        private void Enqueue(SkillDef def, double damage, double dot, int waves)
+        {
+            for (int i = 0; i < MaxPending; i++)
             {
-                case SkillSlot.Slot1:
-                {
-                    EnemyBrain target = world.NearestEnemyInRange(_balance.ATTACK_RANGE);
-                    if (target == null) return;
-                    double dmg = DamageCalc.SkillHit(hero.Stats, SkillLevelService.DamageMultiplier(_balance, SkillSlot.Slot1, level)) * buff;
-                    target.TakeDamage(dmg);
-                    world.ReportHit(target, dmg, false);
-                    break;
-                }
-                case SkillSlot.Slot2:
-                {
-                    double dmg = DamageCalc.SkillHit(hero.Stats, SkillLevelService.DamageMultiplier(_balance, SkillSlot.Slot2, level)) * buff;
-                    int slots = world.SlotCount;
-                    for (int s = 0; s < slots; s++)
-                    {
-                        EnemyBrain e = world.GetSlot(s);
-                        if (e == null || !e.IsAlive) continue;
-                        if (e.X < world.HeroX) continue;
-                        if (e.X - world.HeroX > _balance.WHIRLWIND_RANGE) continue;
-                        e.TakeDamage(dmg);
-                        world.ReportHit(e, dmg, false);
-                    }
-
-                    break;
-                }
-                case SkillSlot.Slot3:
-                {
-                    double heal = hero.MaxHp * (_balance.BATTLECRY_HEAL * 0.01d);
-                    hero.Heal(heal);
-                    _atkBuffAmount = SkillLevelService.BattleCryAtkBuffFraction(_balance, level);
-                    _atkBuffRemaining = _balance.BATTLECRY_DURATION;
-                    break;
-                }
+                if (_pendingWaves[i] > 0) continue;
+                _pendingDef[i] = def;
+                _pendingDamage[i] = damage;
+                _pendingDot[i] = dot;
+                _pendingWaves[i] = waves;
+                _pendingTimer[i] = def.WaveInterval;
+                return;
             }
         }
 
-        private float CooldownOf(SkillSlot slot)
+        private void TickPending(float dt, ICombatWorld world)
         {
-            switch (slot)
+            for (int i = 0; i < MaxPending; i++)
             {
-                case SkillSlot.Slot1: return _balance.SKILL_CD_1;
-                case SkillSlot.Slot2: return _balance.SKILL_CD_2;
-                case SkillSlot.Slot3: return _balance.SKILL_CD_3;
-                default: return 0f;
+                if (_pendingWaves[i] <= 0) continue;
+                _pendingTimer[i] -= dt;
+                while (_pendingWaves[i] > 0 && _pendingTimer[i] <= 0f)
+                {
+                    SkillDef def = _pendingDef[i];
+                    Wave(def, _pendingDamage[i], _pendingDot[i], world);
+                    _pendingWaves[i]--;
+                    _pendingTimer[i] += def.WaveInterval > 0f ? def.WaveInterval : 0.1f;
+                }
+
+                if (_pendingWaves[i] <= 0) ClearPending(i);
             }
+        }
+
+        private void ClearPending(int i)
+        {
+            _pendingDef[i] = null;
+            _pendingWaves[i] = 0;
+            _pendingTimer[i] = 0f;
+            _pendingDamage[i] = 0d;
+            _pendingDot[i] = 0d;
+        }
+
+        /// <summary>One wave: Strike hits the nearest enemy in range, Area every enemy from the hero to the range.</summary>
+        private void Wave(SkillDef def, double damage, double dot, ICombatWorld world)
+        {
+            if (def.Kind == SkillKind.Strike)
+            {
+                EnemyBrain target = world.NearestEnemyInRange(def.Range);
+                if (target == null) return;
+                Hit(def, target, damage, dot, world);
+                if (def.VfxAt == SkillVfxAt.Impact || def.VfxAt == SkillVfxAt.EachTarget) SkillImpact?.Invoke(def, target.X);
+                return;
+            }
+
+            bool first = true;
+            int slots = world.SlotCount;
+            for (int s = 0; s < slots; s++)
+            {
+                EnemyBrain e = world.GetSlot(s);
+                if (e == null || !e.IsAlive) continue;
+                if (e.X < world.HeroX || e.X - world.HeroX > def.Range) continue;
+                double x = e.X;
+                Hit(def, e, damage, dot, world);
+                if (def.VfxAt == SkillVfxAt.EachTarget || (first && def.VfxAt == SkillVfxAt.Impact)) SkillImpact?.Invoke(def, x);
+                first = false;
+            }
+        }
+
+        private void Hit(SkillDef def, EnemyBrain target, double damage, double dot, ICombatWorld world)
+        {
+            target.TakeDamage(damage);
+            world.ReportHit(target, damage, HitKind.Skill);
+            if (dot > 0d) target.ApplyDot(dot, def.DotSeconds);
+            if (def.StunSeconds > 0f) target.Stun(def.StunSeconds);
+        }
+
+        private double BuffSum(SkillBuff stat)
+        {
+            double sum = 0d;
+            for (int i = 0; i < _defs.Length; i++)
+            {
+                SkillDef def = _defs[i];
+                if (def == null || def.Buff != stat || _buffRemaining[i] <= 0f) continue;
+                sum += def.BuffAmount * Formulas.SkillLevelScale(_balance, _levels[i]);
+            }
+
+            return sum;
         }
     }
 }

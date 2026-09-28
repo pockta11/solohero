@@ -1,103 +1,347 @@
+using System.Globalization;
+using SoloHero.Core;
 using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
-using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
+using SoloHero.Core.Skills;
 using SoloHero.Game.Audio;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
+using SoloHero.Game.View;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace SoloHero.Game.UI.Panels
 {
-    /// <summary>Skill panel (E7-08): 3 fixed skills with unlock level, skill level and level-up cost.</summary>
+    /// <summary>
+    /// Skill panel (D-078, genre skill book): the equipped slots on top (locked ones show their hero level), every
+    /// catalog skill in a grid (owned ones bright with their level, equipped ones marked), and the selected skill's
+    /// detail with level-up and equip / unequip. Equipping into full slots enters a pick mode: tap the slot to
+    /// replace. Auto-equip fills the slots with the strongest skills.
+    /// </summary>
     public sealed class SkillPanelPresenter : MonoBehaviour
     {
-        private static readonly string[] SkillNameKeys = { "skill.name.1", "skill.name.2", "skill.name.3" };
+        private static readonly Color Dim = new Color(0.25f, 0.25f, 0.3f, 1f);
+        private static readonly Color PickPulse = new Color(0.4f, 1f, 0.5f, 1f);
 
-        [SerializeField] private Text[] _levelTexts = new Text[3];
-        [SerializeField] private Text[] _costTexts = new Text[3];
-        [SerializeField] private TapGuardButton[] _buttons = new TapGuardButton[3];
+        [Header("Equipped slots")]
+        [SerializeField] private Image[] _slotFrames = new Image[0];
+        [SerializeField] private Image[] _slotIcons = new Image[0];
+        [SerializeField] private Text[] _slotTexts = new Text[0];
+
+        [Header("Skill grid, catalog order")]
+        [SerializeField] private Image[] _cellFrames = new Image[0];
+        [SerializeField] private Image[] _cellIcons = new Image[0];
+        [SerializeField] private Text[] _cellLevels = new Text[0];
+        [SerializeField] private GameObject[] _cellMarks = new GameObject[0];
+        [SerializeField] private RectTransform _selection;
+
+        [Header("Detail")]
+        [SerializeField] private Image _detailIcon;
+        [SerializeField] private Image _detailFrame;
+        [SerializeField] private Text _detailName;
+        [SerializeField] private Text _detailInfo;
+        [SerializeField] private Text _detailDesc;
+        [SerializeField] private Text _ownedBonus;
+        [SerializeField] private TapGuardButton _levelButton;
+        [SerializeField] private Text _levelCost;
+        [SerializeField] private TapGuardButton _equipButton;
+        [SerializeField] private Text _equipLabel;
+        [SerializeField] private UiPunch _detailPunch;
+
+        [SerializeField] private SkillIconSet _icons;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
-        [SerializeField] private UiPunch[] _punches = new UiPunch[3];
 
-        private SkillLevelService _skills;
+        private SkillService _skills;
         private BalanceValues _balance;
         private SaveDataV2 _save;
         private AudioService _audio;
+        private string _selected = SkillCatalog.PowerStrike;
+        private bool _picking;
         private double _shownGold = -1d;
         private int _shownHeroLevel = -1;
+        private int _shownPulls = -1;
+        private readonly object[] _descArgs = new object[12];
 
         private void OnEnable()
         {
-            _skills = PanelServices.TryGet<SkillLevelService>();
+            _skills = PanelServices.TryGet<SkillService>();
             _balance = PanelServices.TryGet<BalanceValues>();
             _save = PanelServices.TryGet<SaveDataV2>();
             _audio = PanelServices.TryGet<AudioService>();
-            _shownGold = -1d;
+            _picking = false;
+            if (_skills != null) _skills.LoadoutChanged += OnLoadoutChanged;
             Refresh();
+        }
+
+        private void OnDisable()
+        {
+            if (_skills != null) _skills.LoadoutChanged -= OnLoadoutChanged;
+            _picking = false;
         }
 
         private void LateUpdate()
         {
             if (_save == null) return;
-            if (_save.gold == _shownGold && _save.heroLevel == _shownHeroLevel) return;
+            if (_picking) PulseSlots();
+            if (_save.gold == _shownGold && _save.heroLevel == _shownHeroLevel && _save.skillPullCount == _shownPulls) return;
             Refresh();
         }
 
-        public void LevelUp(int slot)
+        public void SelectCell(int index)
+        {
+            if (index < 0 || index >= SkillCatalog.All.Length) return;
+            _selected = SkillCatalog.All[index].Id;
+            _picking = false;
+            Play(SfxId.Tap);
+            Refresh();
+        }
+
+        public void TapSlot(int slot)
+        {
+            if (_skills == null || _save == null) return;
+            if (_picking)
+            {
+                _picking = false;
+                Result r = _skills.TryEquip(_selected, slot);
+                if (!r.Ok) Fail(r.Reason);
+                else Equipped();
+                Refresh();
+                return;
+            }
+
+            string id = SkillBook.EquippedAt(_save, slot);
+            if (!string.IsNullOrEmpty(id)) _selected = id;
+            Play(SfxId.Tap);
+            Refresh();
+        }
+
+        public void LevelUp()
         {
             if (_skills == null) return;
-            Result result = _skills.TryLevelUp((SkillSlot)slot);
-            if (!result.Ok)
+            Result r = _skills.TryLevelUp(_selected);
+            if (!r.Ok)
             {
-                if (_toast != null) _toast.ShowFailure(result.Reason);
+                Fail(r.Reason);
                 return;
             }
 
             if (_session != null) _session.RefreshLoadout();
             GameAnalytics.Log(AnalyticsEvents.SkillLevel,
-                AnalyticsParam.Of(AnalyticsEvents.PSlot, slot),
-                AnalyticsParam.Of(AnalyticsEvents.PLevel, SkillLevelService.EffectiveLevel(_skills.GetSavedLevel((SkillSlot)slot))));
-            Celebrate(slot);
+                AnalyticsParam.Of(AnalyticsEvents.PSkill, _selected),
+                AnalyticsParam.Of(AnalyticsEvents.PLevel, _skills.Level(_selected)));
+            if (_detailPunch != null) _detailPunch.Play();
+            Play(SfxId.Upgrade);
             Refresh();
+        }
+
+        public void ToggleEquip()
+        {
+            if (_skills == null || _save == null) return;
+            int slot = SkillBook.SlotOf(_save, _selected);
+            if (slot >= 0 && SkillService.IsSlotUnlocked(_balance, slot, _save.heroLevel))
+            {
+                Result off = _skills.TryUnequip(slot);
+                if (!off.Ok) Fail(off.Reason);
+                else if (_session != null) _session.RefreshLoadout();
+                Refresh();
+                return;
+            }
+
+            Result r = _skills.TryEquip(_selected);
+            if (r.Ok)
+            {
+                Equipped();
+            }
+            else if (r.Reason == FailReason.SlotsFull)
+            {
+                _picking = true;
+                if (_toast != null) _toast.Show(Strings.Get("skill.pick_slot"));
+            }
+            else
+            {
+                Fail(r.Reason);
+            }
+
+            Refresh();
+        }
+
+        public void AutoEquip()
+        {
+            if (_skills == null) return;
+            _picking = false;
+            _skills.AutoEquip();
+            if (_session != null) _session.RefreshLoadout();
+            Play(SfxId.Upgrade);
+            Refresh();
+        }
+
+        private void OnLoadoutChanged() => Refresh();
+
+        private void Equipped()
+        {
+            if (_session != null) _session.RefreshLoadout();
+            Play(SfxId.Upgrade);
+            if (_toast != null) _toast.Show(Strings.Format("toast.skill_equipped", Strings.Get(SkillCatalog.Find(_selected).NameKey)));
+        }
+
+        private void Fail(FailReason reason)
+        {
+            if (_toast != null) _toast.ShowFailure(reason);
         }
 
         private void Refresh()
         {
-            if (_skills == null || _balance == null || _save == null) return;
+            if (_balance == null || _save == null) return;
             _shownGold = _save.gold;
             _shownHeroLevel = _save.heroLevel;
+            _shownPulls = _save.skillPullCount;
+            DrawSlots();
+            DrawGrid();
+            DrawDetail();
+        }
 
-            for (int i = 0; i < 3; i++)
+        private void DrawSlots()
+        {
+            for (int i = 0; i < _slotFrames.Length; i++)
             {
-                var slot = (SkillSlot)i;
-                bool unlocked = SkillLevelService.IsUnlocked(_balance, slot, _save.heroLevel);
-                int level = SkillLevelService.EffectiveLevel(_skills.GetSavedLevel(slot));
-                bool max = level >= _balance.SKILL_MAX_LEVEL;
-                double cost = SkillLevelService.UpgradeCost(_balance, slot, level);
-
-                if (i < _levelTexts.Length && _levelTexts[i] != null)
+                bool unlocked = SkillService.IsSlotUnlocked(_balance, i, _save.heroLevel);
+                SkillDef def = unlocked ? SkillCatalog.Find(SkillBook.EquippedAt(_save, i)) : null;
+                Sprite sprite = def != null && _icons != null ? _icons.Get(def.Id) : null;
+                if (i < _slotIcons.Length && _slotIcons[i] != null)
                 {
-                    _levelTexts[i].text = unlocked
-                        ? Strings.Format("skill.level", Strings.Get(SkillNameKeys[i]), level, _balance.SKILL_MAX_LEVEL)
-                        : Strings.Format("skill.unlock_at", Strings.Get(SkillNameKeys[i]), SkillLevelService.UnlockHeroLevel(_balance, slot));
+                    _slotIcons[i].sprite = sprite;
+                    _slotIcons[i].enabled = sprite != null;
                 }
 
-                if (i < _costTexts.Length && _costTexts[i] != null)
-                    _costTexts[i].text = !unlocked ? Strings.Get("skill.locked") : max ? Strings.Get("char.max") : BigNumberFormat.Format(cost);
-                if (i < _buttons.Length && _buttons[i] != null)
-                    _buttons[i].SetAvailable(unlocked && !max && _save.gold >= cost);
+                if (_slotFrames[i] != null) _slotFrames[i].color = def != null ? PanelServices.GradeColor(def.Grade) : Dim;
+                if (i < _slotTexts.Length && _slotTexts[i] != null)
+                {
+                    _slotTexts[i].text = !unlocked
+                        ? Strings.Format("skill.slot_locked", SkillService.UnlockHeroLevel(_balance, i))
+                        : def != null ? "Lv " + SkillBook.GetLevel(_save, def.Id).ToString(CultureInfo.InvariantCulture) : "";
+                }
             }
         }
 
-        /// <summary>E8-11: every successful purchase punches its row and plays the upgrade chime.</summary>
-        private void Celebrate(int row)
+        private void DrawGrid()
         {
-            if (row >= 0 && row < _punches.Length && _punches[row] != null) _punches[row].Play();
-            if (_audio != null) _audio.Play(SfxId.Upgrade);
+            int owned = 0;
+            for (int i = 0; i < SkillCatalog.All.Length && i < _cellFrames.Length; i++)
+            {
+                SkillDef def = SkillCatalog.All[i];
+                int level = SkillBook.GetLevel(_save, def.Id);
+                bool has = level > 0;
+                if (has) owned++;
+                Color grade = PanelServices.GradeColor(def.Grade);
+                if (_cellFrames[i] != null) _cellFrames[i].color = has ? grade : Color.Lerp(grade, Dim, 0.7f);
+                if (i < _cellIcons.Length && _cellIcons[i] != null)
+                {
+                    _cellIcons[i].sprite = _icons != null ? _icons.Get(def.Id) : null;
+                    _cellIcons[i].color = has ? Color.white : new Color(0.2f, 0.2f, 0.25f, 0.9f);
+                }
+
+                if (i < _cellLevels.Length && _cellLevels[i] != null)
+                    _cellLevels[i].text = has ? "Lv" + level.ToString(CultureInfo.InvariantCulture) : "";
+                if (i < _cellMarks.Length && _cellMarks[i] != null)
+                    _cellMarks[i].SetActive(has && SkillBook.SlotOf(_save, def.Id) >= 0);
+                if (_selection != null && def.Id == _selected && i < _cellFrames.Length && _cellFrames[i] != null)
+                {
+                    _selection.SetParent(_cellFrames[i].transform, false);
+                    _selection.SetAsLastSibling();
+                    _selection.anchorMin = Vector2.zero;
+                    _selection.anchorMax = Vector2.one;
+                    _selection.offsetMin = new Vector2(-6f, -6f);
+                    _selection.offsetMax = new Vector2(6f, 6f);
+                }
+            }
+
+            if (_ownedBonus != null)
+            {
+                double bonus = SkillService.OwnedAtkBonus(_balance, _save) * 100d;
+                _ownedBonus.text = Strings.Format("skill.owned_bonus", bonus.ToString("0.#", CultureInfo.InvariantCulture), owned, SkillCatalog.Count);
+            }
+        }
+
+        private void DrawDetail()
+        {
+            SkillDef def = SkillCatalog.Find(_selected) ?? SkillCatalog.All[0];
+            int level = SkillBook.GetLevel(_save, def.Id);
+            bool owned = level > 0;
+            int shownLevel = owned ? level : 1;
+            Color grade = PanelServices.GradeColor(def.Grade);
+
+            if (_detailIcon != null)
+            {
+                _detailIcon.sprite = _icons != null ? _icons.Get(def.Id) : null;
+                _detailIcon.color = owned ? Color.white : new Color(0.45f, 0.45f, 0.5f, 1f);
+            }
+
+            if (_detailFrame != null) _detailFrame.color = grade;
+            if (_detailName != null)
+            {
+                _detailName.text = Strings.Get(def.NameKey);
+                _detailName.color = Color.Lerp(grade, Color.white, 0.4f);
+            }
+
+            if (_detailInfo != null)
+            {
+                _detailInfo.text = owned
+                    ? Strings.Format("skill.info", PanelServices.GradeName(def.Grade), level, _balance.SKILL_MAX_LEVEL, Num(def.Cooldown))
+                    : Strings.Format("skill.info_unowned", PanelServices.GradeName(def.Grade));
+            }
+
+            if (_detailDesc != null) _detailDesc.text = Strings.Format(def.DescKey, DescArgs(def, shownLevel));
+
+            bool max = level >= _balance.SKILL_MAX_LEVEL;
+            double cost = SkillService.UpgradeCost(_balance, def, shownLevel);
+            if (_levelCost != null) _levelCost.text = !owned ? Strings.Get("skill.not_owned") : max ? Strings.Get("char.max") : BigNumberFormat.Format(cost);
+            if (_levelButton != null) _levelButton.SetAvailable(owned && !max && _save.gold >= cost);
+
+            int slot = SkillBook.SlotOf(_save, def.Id);
+            bool equipped = slot >= 0 && SkillService.IsSlotUnlocked(_balance, slot, _save.heroLevel);
+            if (_equipLabel != null) _equipLabel.text = Strings.Get(equipped ? "skill.unequip" : "skill.equip");
+            if (_equipButton != null) _equipButton.SetAvailable(owned);
+        }
+
+        /// <summary>Description arguments at <paramref name="level"/>; see the arg list in strings_ko.txt.</summary>
+        private object[] DescArgs(SkillDef def, int level)
+        {
+            double scale = Formulas.SkillLevelScale(_balance, level);
+            _descArgs[0] = Num(def.DamageMult * 100d * scale);
+            _descArgs[1] = def.Waves;
+            _descArgs[2] = Num(def.DotPercent * scale);
+            _descArgs[3] = Num(def.DotSeconds);
+            _descArgs[4] = Num(def.StunSeconds);
+            _descArgs[5] = Num(def.BuffAmount * scale);
+            _descArgs[6] = Num(def.BuffSeconds);
+            _descArgs[7] = Num(def.HealPercent * scale);
+            _descArgs[8] = Num(def.ShieldPercent * scale);
+            _descArgs[9] = Num(def.ShieldSeconds);
+            _descArgs[10] = Num(def.HpThreshold);
+            _descArgs[11] = Num(def.Cooldown);
+            return _descArgs;
+        }
+
+        private static string Num(double value) => value.ToString("0.#", CultureInfo.InvariantCulture);
+
+        private void PulseSlots()
+        {
+            float k = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8f);
+            for (int i = 0; i < _slotFrames.Length; i++)
+            {
+                if (_slotFrames[i] == null || !SkillService.IsSlotUnlocked(_balance, i, _save.heroLevel)) continue;
+                SkillDef def = SkillCatalog.Find(SkillBook.EquippedAt(_save, i));
+                Color baseColor = def != null ? PanelServices.GradeColor(def.Grade) : Dim;
+                _slotFrames[i].color = Color.Lerp(baseColor, PickPulse, k);
+            }
+        }
+
+        private void Play(SfxId id)
+        {
+            if (_audio != null) _audio.Play(id);
         }
     }
 }

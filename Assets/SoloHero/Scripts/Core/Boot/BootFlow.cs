@@ -4,6 +4,7 @@ using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Economy;
 using SoloHero.Core.Save;
+using SoloHero.Core.Skills;
 
 namespace SoloHero.Core.Boot
 {
@@ -65,6 +66,9 @@ namespace SoloHero.Core.Boot
                     loadFailed = true;
                 }
             }
+
+            // D-078: every save carries the skill collection (starters for new and pre-D-078 saves).
+            if (SkillBook.EnsureStarters(data, balance)) save?.RequestSave(data);
 
             OfflineReward offline;
             try

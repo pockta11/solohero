@@ -41,24 +41,28 @@ namespace SoloHero.Editor
         private const float FarthestFollow = 0.97f;
 
         /// <summary>
-        /// Chapter looks (E8-03..05, D-068): background folder, 2-3 enemy looks mixed per stage, boss look and music.
-        /// 8 enemy looks = 5 Kings and Pigs pigs + 3 recolours; 3 bosses = King Pig in 3 colours, 2 with a dark variant.
+        /// Chapter looks (E8-03..05, D-082): background folder, 2-3 enemy looks mixed per stage, boss look and music.
+        /// 8 enemy looks = LuizMelo Monsters Creatures Fantasy (goblin, skeleton, mushroom, flying eye) + 4 recolours;
+        /// 5 bosses from LuizMelo hero packs (all CC0). Sheets are made by the character conversion script.
         /// </summary>
         private static readonly (string folder, string label, string[] enemies, string boss, string bgm)[] Chapters =
         {
-            ("Ch1_Meadow", "Meadow", new[] { "pig", "matchpig" }, "kingpig", "bgm_ch1"),
-            ("Ch2_Snowpeak", "Snowpeak", new[] { "pig", "boxpig", "hidepig" }, "kingpigb", "bgm_ch2"),
-            ("Ch3_Forest", "Forest", new[] { "boxpig", "bombpig", "matchpig" }, "kingpigd", "bgm_ch3"),
-            ("Ch4_Dusk", "Dusk", new[] { "pigr", "hidepig", "boxpigv" }, "kingpign", "bgm_ch4"),
-            ("Ch5_Sunset", "Sunset", new[] { "bombpigr", "pigr", "boxpigv" }, "kingpigr", "bgm_ch5"),
+            ("Ch1_Meadow", "Meadow", new[] { "goblin", "mushroom" }, "ronin", "bgm_ch1"),
+            ("Ch2_Snowpeak", "Snowpeak", new[] { "skeleton", "goblin", "flyeye" }, "necro", "bgm_ch2"),
+            ("Ch3_Forest", "Forest", new[] { "mushroom", "flyeye", "goblinr" }, "ranger", "bgm_ch3"),
+            ("Ch4_Dusk", "Dusk", new[] { "skeletonv", "flyeyer", "mushroomb" }, "shadowmage", "bgm_ch4"),
+            ("Ch5_Sunset", "Sunset", new[] { "goblinr", "skeletonv", "flyeyer" }, "firemage", "bgm_ch5"),
         };
 
-        private static readonly Dictionary<string, string> LookNames = new Dictionary<string, string>
+        /// <summary>Look key -> (asset name, integer pixel scale). Enemies stand at 1x like the hero; bosses at 2x.</summary>
+        private static readonly Dictionary<string, (string asset, int scale)> LookNames = new Dictionary<string, (string, int)>
         {
-            { "pig", "Enemy_Pig" }, { "pigr", "Enemy_PigRed" }, { "boxpig", "Enemy_BoxPig" }, { "boxpigv", "Enemy_BoxPigViolet" },
-            { "bombpig", "Enemy_BombPig" }, { "bombpigr", "Enemy_BombPigRed" }, { "hidepig", "Enemy_HidePig" }, { "matchpig", "Enemy_MatchPig" },
-            { "kingpig", "Boss_KingPig" }, { "kingpigb", "Boss_KingPigBlue" }, { "kingpigd", "Boss_KingPigDark" },
-            { "kingpign", "Boss_KingPigNavy" }, { "kingpigr", "Boss_KingPigRed" },
+            { "goblin", ("Enemy_Goblin", 1) }, { "goblinr", ("Enemy_GoblinRed", 1) },
+            { "skeleton", ("Enemy_Skeleton", 1) }, { "skeletonv", ("Enemy_SkeletonViolet", 1) },
+            { "mushroom", ("Enemy_Mushroom", 1) }, { "mushroomb", ("Enemy_MushroomBlue", 1) },
+            { "flyeye", ("Enemy_FlyingEye", 1) }, { "flyeyer", ("Enemy_FlyingEyeRed", 1) },
+            { "ronin", ("Boss_Ronin", 2) }, { "necro", ("Boss_Necromancer", 2) }, { "ranger", ("Boss_Ranger", 2) },
+            { "shadowmage", ("Boss_ShadowMage", 1) }, { "firemage", ("Boss_FireMage", 2) },
         };
 
         [MenuItem("Tools/Setup/Build Art")]
@@ -71,19 +75,20 @@ namespace SoloHero.Editor
         public static void BuildBatch()
         {
             ReimportArt();
-            CharacterArt hero = BuildCharacter("Hero", "king", "Hero_King", 2);
+            CharacterArt hero = BuildCharacter("Hero", "knight", "Hero_Knight", 1);
             var looks = new Dictionary<string, CharacterArt>();
-            foreach (KeyValuePair<string, string> look in LookNames)
+            foreach (KeyValuePair<string, (string asset, int scale)> look in LookNames)
             {
-                bool boss = look.Value.StartsWith("Boss_");
-                looks[look.Key] = BuildCharacter(boss ? "Bosses" : "Enemies", look.Key, look.Value, boss ? 3 : 2);
+                bool boss = look.Value.asset.StartsWith("Boss_");
+                looks[look.Key] = BuildCharacter(boss ? "Bosses" : "Enemies", look.Key, look.Value.asset, look.Value.scale);
             }
 
             ChapterThemeSet themes = BuildThemes(looks);
             VfxSet vfx = BuildVfx();
             BuildEquipmentIcons();
+            BuildSkillIcons();
             SoundBank bank = BuildSoundBank();
-            WireGameScene(hero, looks["pig"], looks["kingpig"], themes, vfx);
+            WireGameScene(hero, looks["goblin"], looks["ronin"], themes, vfx);
             WireBootAudio(bank);
 
             GameUiBuilder.BuildBatch();
@@ -233,9 +238,61 @@ namespace SoloHero.Editor
             set.ring = Clip(dir, "vfxring", "play", true);
             set.boom = Clip(dir, "vfxboom", "play", true);
             set.spark = Clip(dir, "vfxspark", "play", true);
+            var clips = new List<VfxClip>();
+            foreach ((string name, bool ground, float fps) in SkillClips)
+            {
+                Sprite[] frames = Clip(dir, "vfx" + name, "play", true);
+                if (frames == null || frames.Length == 0) continue;
+                clips.Add(new VfxClip
+                {
+                    name = name,
+                    frames = frames,
+                    fps = fps,
+                    ground = ground,
+                    halfHeight = frames[0].rect.height * 0.5f / frames[0].pixelsPerUnit
+                });
+            }
+
+            set.clips = clips.ToArray();
             EditorUtility.SetDirty(set);
             AssetDatabase.SaveAssets();
             return set;
+        }
+
+        /// <summary>D-078 coloured skill clips: name (SkillDef.Vfx), stands on the ground, frames per second.</summary>
+        private static readonly (string, bool, float)[] SkillClips =
+        {
+            ("fire", false, 16f), ("bolt", true, 14f), ("ice", true, 14f), ("poison", true, 12f),
+            ("meteor", true, 16f), ("holy", true, 14f), ("tornado", true, 14f), ("swords", true, 16f),
+            ("heal", true, 12f), ("shield", false, 12f), ("aura", true, 14f), ("vortex", false, 14f),
+            ("breath", true, 14f), ("phoenix", true, 12f)
+        };
+
+        /// <summary>D-078: Art/Icons/Skills/skill_{id}.png for every catalog skill, plus the lock icon.</summary>
+        private static void BuildSkillIcons()
+        {
+            string path = DataArt + "/SkillIcons.asset";
+            var set = AssetDatabase.LoadAssetAtPath<SkillIconSet>(path);
+            if (set == null)
+            {
+                set = ScriptableObject.CreateInstance<SkillIconSet>();
+                AssetDatabase.CreateAsset(set, path);
+            }
+
+            SoloHero.Core.Skills.SkillDef[] all = SoloHero.Core.Skills.SkillCatalog.All;
+            set.ids = new string[all.Length];
+            set.icons = new Sprite[all.Length];
+            for (int i = 0; i < all.Length; i++)
+            {
+                string file = ArtRoot + "/Icons/Skills/skill_" + all[i].Id + ".png";
+                set.ids[i] = all[i].Id;
+                set.icons[i] = AssetDatabase.LoadAssetAtPath<Sprite>(file);
+                if (set.icons[i] == null) Debug.LogWarning("[Art] missing icon " + file);
+            }
+
+            set.locked = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/Icons/icon_lock.png");
+            EditorUtility.SetDirty(set);
+            AssetDatabase.SaveAssets();
         }
 
         /// <summary>E8-07: Art/Icons/Equipment/equip_{slot}_{grade}.png into the 16-slot icon set.</summary>
@@ -409,6 +466,7 @@ namespace SoloHero.Editor
 
             WireVfx(session, view, vfxSet, shake, themes);
             WireHpBars(view);
+            WireShadows(view);
 
             var heroRenderer = (SpriteRenderer)viewSo.FindProperty("_heroRenderer").objectReferenceValue;
             PrepareActor(heroRenderer, hero, 10);
@@ -446,6 +504,23 @@ namespace SoloHero.Editor
                 f.GetArrayElementAtIndex(i).objectReferenceValue = fills[i];
             }
 
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>D-082 ground shadows: one under the hero and one per enemy slot, above the ground, under bodies.</summary>
+        private static void WireShadows(CombatWorldView view)
+        {
+            GameObject old = GameObject.Find("Shadows");
+            if (old != null) Object.DestroyImmediate(old);
+            var root = new GameObject("Shadows");
+            Sprite blob = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/Tiles/shadow_blob.png");
+            var shadows = new SpriteRenderer[5];
+            for (int i = 0; i < shadows.Length; i++)
+                shadows[i] = BarPart(root.transform, "Shadow" + i, blob, Color.white, 1);
+            var so = new SerializedObject(view);
+            SerializedProperty prop = so.FindProperty("_shadows");
+            prop.arraySize = shadows.Length;
+            for (int i = 0; i < shadows.Length; i++) prop.GetArrayElementAtIndex(i).objectReferenceValue = shadows[i];
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

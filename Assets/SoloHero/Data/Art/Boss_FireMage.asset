@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 934de9d630de4cc3b81407134a6797ef, type: 3}
+  m_Name: Boss_FireMage
+  m_EditorClassIdentifier: 
+  idle:
+  - {fileID: -7361342077731162295, guid: cc9c99a3bcaeec84ba1cf79002c0d583, type: 3}
+  - {fileID: -6553843790401508697, guid: cc9c99a3bcaeec84ba1cf79002c0d583, type: 3}
+  - {fileID: 3869584445763410089, guid: cc9c99a3bcaeec84ba1cf79002c0d583, type: 3}
+  - {fileID: 8128741156900780359, guid: cc9c99a3bcaeec84ba1cf79002c0d583, type: 3}
+  - {fileID: 4477848178222421840, guid: cc9c99a3bcaeec84ba1cf79002c0d583, type: 3}
+  - {fileID: 604947312554561745, guid: cc9c99a3bcaeec84ba1cf79002c0d583, type: 3}
+  - {fileID: 2158988797658712044, guid: cc9c99a3bcaeec84ba1cf79002c0d583, type: 3}
+  - {fileID: 7669979335300851139, guid: cc9c99a3bcaeec84ba1cf79002c0d583, type: 3}
+  run:
+  - {fileID: -8145438560205856303, guid: e00f35d0ef535bc40a33f3108459e3fe, type: 3}
+  - {fileID: 1549766587330890703, guid: e00f35d0ef535bc40a33f3108459e3fe, type: 3}
+  - {fileID: 2124042627075339293, guid: e00f35d0ef535bc40a33f3108459e3fe, type: 3}
+  - {fileID: -5170475167779251094, guid: e00f35d0ef535bc40a33f3108459e3fe, type: 3}
+  - {fileID: 3583623158807790997, guid: e00f35d0ef535bc40a33f3108459e3fe, type: 3}
+  - {fileID: -1936409454082602698, guid: e00f35d0ef535bc40a33f3108459e3fe, type: 3}
+  - {fileID: -890029016326832469, guid: e00f35d0ef535bc40a33f3108459e3fe, type: 3}
+  - {fileID: -7350081975275502935, guid: e00f35d0ef535bc40a33f3108459e3fe, type: 3}
+  attack:
+  - {fileID: 7066893488718435380, guid: bd667f7aa8d810645b7a69b7d7f719c4, type: 3}
+  - {fileID: 4416281243016182358, guid: bd667f7aa8d810645b7a69b7d7f719c4, type: 3}
+  - {fileID: -586113773087616887, guid: bd667f7aa8d810645b7a69b7d7f719c4, type: 3}
+  - {fileID: 1654877146757133361, guid: bd667f7aa8d810645b7a69b7d7f719c4, type: 3}
+  - {fileID: -8416051188124150830, guid: bd667f7aa8d810645b7a69b7d7f719c4, type: 3}
+  - {fileID: -1952986024136500859, guid: bd667f7aa8d810645b7a69b7d7f719c4, type: 3}
+  - {fileID: -3905022803295502953, guid: bd667f7aa8d810645b7a69b7d7f719c4, type: 3}
+  - {fileID: 3449811037249126318, guid: bd667f7aa8d810645b7a69b7d7f719c4, type: 3}
+  hit:
+  - {fileID: 7263810890435573268, guid: c8635b2c84d1c5c4682d291130f3f742, type: 3}
+  - {fileID: 7453333211498325252, guid: c8635b2c84d1c5c4682d291130f3f742, type: 3}
+  - {fileID: 4101137969064886800, guid: c8635b2c84d1c5c4682d291130f3f742, type: 3}
+  - {fileID: 2256125070397374960, guid: c8635b2c84d1c5c4682d291130f3f742, type: 3}
+  dead:
+  - {fileID: -8032105388504221555, guid: 01927d27e50a9fd44acc94172b20ed98, type: 3}
+  - {fileID: -81939587385848773, guid: 01927d27e50a9fd44acc94172b20ed98, type: 3}
+  - {fileID: 6434879665147396217, guid: 01927d27e50a9fd44acc94172b20ed98, type: 3}
+  - {fileID: -4985153458408145565, guid: 01927d27e50a9fd44acc94172b20ed98, type: 3}
+  - {fileID: -7717874252351103941, guid: 01927d27e50a9fd44acc94172b20ed98, type: 3}
+  fps: 10
+  pixelScale: 2
+  headHeight: 1.71875

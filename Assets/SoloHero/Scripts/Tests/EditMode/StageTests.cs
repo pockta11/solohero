@@ -129,7 +129,7 @@ namespace SoloHero.Tests.EditMode
             {
                 if (runner.World.AliveCount == 0)
                 {
-                    runner.Tick(guard == 1 ? 0f : c.SPAWN_INTERVAL);
+                    runner.Tick(guard == 1 ? 0f : c.SPAWN_WAVE_GAP);
                     continue;
                 }
 
@@ -142,7 +142,7 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(c.KILL_TARGET_NORMAL - 1, runner.Kills);
 
             if (runner.World.AliveCount == 0)
-                runner.Tick(c.SPAWN_INTERVAL);
+                runner.Tick(c.SPAWN_WAVE_GAP);
 
             EnemyBrain last = runner.World.NearestEnemyToTheRight();
             Assert.IsNotNull(last);
@@ -218,7 +218,7 @@ namespace SoloHero.Tests.EditMode
 
                 runner.Tick(0f);
                 if (runner.State == StageState.Running)
-                    runner.Tick(c.SPAWN_INTERVAL);
+                    runner.Tick(c.SPAWN_WAVE_GAP);
             }
 
             Assert.AreEqual(StageState.Clearing, runner.State);
@@ -300,11 +300,11 @@ namespace SoloHero.Tests.EditMode
             var stats = new HeroStats(1_000_000d, 0d, 10_000d, 0d, 0d);
             StageRunner runner = CreateRunner(c, stats);
             runner.Begin(1);
-            runner.Skills.SetCooldown(SkillSlot.Slot1, 999f);
-            runner.Skills.SetCooldown(SkillSlot.Slot2, 999f);
-            runner.Skills.SetCooldown(SkillSlot.Slot3, 999f);
+            runner.Skills.SetCooldown(0, 999f);
+            runner.Skills.SetCooldown(1, 999f);
+            runner.Skills.SetCooldown(2, 999f);
 
-            float step = c.SPAWN_INTERVAL + 0.05f;
+            float step = c.SPAWN_WAVE_GAP + 0.05f;
             for (int i = 0; i < c.SPAWN_MAX_ALIVE; i++)
                 runner.Tick(i == 0 ? 0f : step);
 
@@ -331,7 +331,7 @@ namespace SoloHero.Tests.EditMode
 
                 runner.Tick(0f);
                 if (runner.State == StageState.Running)
-                    runner.Tick(c.SPAWN_INTERVAL);
+                    runner.Tick(c.SPAWN_WAVE_GAP);
             }
 
             Assert.AreEqual(StageState.Clearing, runner.State);
@@ -359,7 +359,7 @@ namespace SoloHero.Tests.EditMode
 
                 runner.Tick(0f);
                 if (runner.State == StageState.Running)
-                    runner.Tick(c.SPAWN_INTERVAL);
+                    runner.Tick(c.SPAWN_WAVE_GAP);
             }
 
             Assert.AreEqual(StageState.Clearing, runner.State);

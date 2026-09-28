@@ -10,6 +10,7 @@ namespace SoloHero.Core.Common
         Locked,
         Busy,
         DailyLimit,
-        AdUnavailable
+        AdUnavailable,
+        SlotsFull
     }
 }

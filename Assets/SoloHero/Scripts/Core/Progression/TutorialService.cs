@@ -3,6 +3,7 @@ using SoloHero.Core.Config;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
+using SoloHero.Core.Skills;
 
 namespace SoloHero.Core.Progression
 {
@@ -71,7 +72,7 @@ namespace SoloHero.Core.Progression
                     return TutorialEvent.HintUpgrade;
 
                 case StepSkill:
-                    if (!SkillLevelService.IsUnlocked(_balance, SkillSlot.Slot2, data.heroLevel)) return TutorialEvent.None;
+                    if (!SkillService.IsSlotUnlocked(_balance, 1, data.heroLevel)) return TutorialEvent.None;
                     data.tutorialStep = StepDone;
                     return TutorialEvent.HintSkill;
 

@@ -68,6 +68,8 @@ namespace SoloHero.Tests.EditMode
                     foreach (Match m in rx.Matches(code))
                     {
                         string key = m.Groups[1].Value;
+                        // "skill.name." style prefixes get a data-driven suffix; Table_HasEverySkillNameAndDescription covers them.
+                        if (key.EndsWith(".")) continue;
                         if (!table.ContainsKey(key) && !missing.Contains(key)) missing.Add(key + " (" + Path.GetFileName(file) + ")");
                     }
                 }
@@ -81,6 +83,17 @@ namespace SoloHero.Tests.EditMode
         {
             Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));
             for (int i = 1; i <= 5; i++) Assert.IsTrue(table.ContainsKey("boss.name." + i), "boss.name." + i);
+        }
+
+        [Test]
+        public void Table_HasEverySkillNameAndDescription()
+        {
+            Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));
+            foreach (SoloHero.Core.Skills.SkillDef def in SoloHero.Core.Skills.SkillCatalog.All)
+            {
+                Assert.IsTrue(table.ContainsKey(def.NameKey), def.NameKey);
+                Assert.IsTrue(table.ContainsKey(def.DescKey), def.DescKey);
+            }
         }
 
         [Test]

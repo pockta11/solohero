@@ -10,6 +10,7 @@ using SoloHero.Core.Progression;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Settings;
+using SoloHero.Core.Skills;
 using SoloHero.Game.Audio;
 using SoloHero.Game.Config;
 using SoloHero.Game.Infrastructure;
@@ -117,7 +118,7 @@ namespace SoloHero.Game.Boot
         private void RegisterGrowth(BalanceValues balance, ISaveRequester requester)
         {
             Services.Register(new UpgradeService(_data, balance, requester));
-            Services.Register(new SkillLevelService(_data, balance, requester));
+            Services.Register(new SkillService(_data, balance, requester));
             Services.Register(new EquipService(requester));
             var gacha = new GachaService(
                 balance,
@@ -125,6 +126,7 @@ namespace SoloHero.Game.Boot
                 Services.Get<IRandom>(),
                 GachaCatalog.Standard(balance));
             Services.Register(gacha);
+            Services.Register(new SkillSummonService(balance, GachaTableValues.FromBalance(balance), Services.Get<IRandom>()));
             Services.Register(new TutorialService(balance, gacha, requester));
         }
 

@@ -13,6 +13,10 @@ namespace SoloHero.Core.Combat
         private float _attackTimer;
         private bool _attackPending;
         private double _atkBuffFraction;
+        private double _atkSpdBuffFraction;
+        private double _critBuffPoints;
+        private double _guardFraction;
+        private float _shieldTimer;
 
         public HeroBrain(BalanceValues balance, IRandom random, HeroStats stats)
         {
@@ -28,6 +32,11 @@ namespace SoloHero.Core.Combat
         public double Def => _stats.Def;
         public HeroStats Stats => _stats;
 
+        /// <summary>Damage the active skill shield still absorbs before HP.</summary>
+        public double Shield { get; private set; }
+
+        public bool HasGuard => _guardFraction > 0d;
+
         public event Action<HeroState> StateChanged;
         public event Action AttackRequested;
         public event Action<double, bool> DealtDamage;
@@ -39,6 +48,8 @@ namespace SoloHero.Core.Combat
             X = 0d;
             _attackTimer = 0f;
             _attackPending = false;
+            Shield = 0d;
+            _shieldTimer = 0f;
             SetState(HeroState.Advance);
         }
 
@@ -52,6 +63,16 @@ namespace SoloHero.Core.Combat
         public void Tick(float dt, ICombatWorld world)
         {
             if (world == null) throw new ArgumentNullException(nameof(world));
+
+            if (_shieldTimer > 0f)
+            {
+                _shieldTimer -= dt;
+                if (_shieldTimer <= 0f)
+                {
+                    _shieldTimer = 0f;
+                    Shield = 0d;
+                }
+            }
 
             switch (State)
             {
@@ -81,10 +102,10 @@ namespace SoloHero.Core.Combat
             EnemyBrain target = world.NearestEnemyInRange(_balance.ATTACK_RANGE);
             if (target == null) return;
 
-            bool crit = DamageCalc.RollCrit(_stats, _random);
+            bool crit = DamageCalc.RollCrit(_stats, _random, _critBuffPoints);
             double dmg = DamageCalc.HeroHit(_stats, crit, _balance) * (1d + _atkBuffFraction);
             target.TakeDamage(dmg);
-            world.ReportHit(target, dmg, crit);
+            world.ReportHit(target, dmg, crit ? HitKind.Crit : HitKind.Normal);
             DealtDamage?.Invoke(dmg, crit);
         }
 
@@ -94,10 +115,42 @@ namespace SoloHero.Core.Combat
             _atkBuffFraction = fraction;
         }
 
+        /// <summary>Skill buffs, set by the owner every tick (D-078): ATK / attack speed fractions, crit points, guard.</summary>
+        public void SetSkillBuffs(double atk, double atkSpd, double critPoints, double guard)
+        {
+            _atkBuffFraction = atk < 0d ? 0d : atk;
+            _atkSpdBuffFraction = atkSpd < 0d ? 0d : atkSpd;
+            _critBuffPoints = critPoints < 0d ? 0d : critPoints;
+            _guardFraction = guard < 0d ? 0d : guard;
+        }
+
+        /// <summary>Adds a shield on top of the current one; it lasts until absorbed or the longer timer ends.</summary>
+        public void AddShield(double amount, float seconds)
+        {
+            if (State == HeroState.Dead || amount <= 0d || seconds <= 0f) return;
+            Shield += amount;
+            if (seconds > _shieldTimer) _shieldTimer = seconds;
+        }
+
         public void ApplyDamage(double amount)
         {
             if (State == HeroState.Dead) return;
             if (amount < 0d) amount = 0d;
+            amount = DamageCalc.Guarded(amount, _guardFraction);
+            if (Shield > 0d)
+            {
+                double absorbed = Math.Min(Shield, amount);
+                Shield -= absorbed;
+                amount -= absorbed;
+                if (Shield <= 0d)
+                {
+                    Shield = 0d;
+                    _shieldTimer = 0f;
+                }
+
+                if (amount <= 0d) return;
+            }
+
             Hp -= amount;
             if (Hp <= 0d)
             {
@@ -171,7 +224,7 @@ namespace SoloHero.Core.Combat
             _attackTimer -= dt;
             if (_attackTimer > 0f) return;
 
-            double spd = _stats.AtkSpd;
+            double spd = _stats.AtkSpd * (1d + _atkSpdBuffFraction);
             _attackTimer = spd > 0d ? (float)(1d / spd) : float.MaxValue;
             _attackPending = true;
             AttackRequested?.Invoke();

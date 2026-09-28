@@ -18,7 +18,8 @@ namespace SoloHero.Core.Growth
             double helmMult = 1d,
             double bootsSpeedBonus = 0d,
             double bootsCritBonus = 0d,
-            BuffSet buffs = default)
+            BuffSet buffs = default,
+            double skillOwnedAtk = 0d)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
 
@@ -33,6 +34,7 @@ namespace SoloHero.Core.Growth
             double atk = (balance.ATK_BASE + balance.LEVEL_ATK_GAIN * levelBonus)
                 * Math.Pow(upg, upgradeAtk)
                 * swordMult
+                * (1d + skillOwnedAtk)
                 * buffAtk;
 
             double def = balance.DEF_BASE

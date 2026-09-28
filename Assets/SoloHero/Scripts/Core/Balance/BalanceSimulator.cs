@@ -7,6 +7,7 @@ using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Progression;
 using SoloHero.Core.Save;
+using SoloHero.Core.Skills;
 using SoloHero.Core.Stage;
 
 namespace SoloHero.Core.Balance
@@ -77,7 +78,10 @@ namespace SoloHero.Core.Balance
                 IRandom combatRng = new SystemRandom(new Random(settings.Seed));
                 IRandom gachaRng = new SystemRandom(new Random(unchecked(settings.Seed * 7919 + 17)));
                 var gacha = new GachaService(balance, GachaTableValues.FromBalance(balance), gachaRng, GachaCatalog.Standard(balance));
-                _spender = new SimSpender(balance, _save, gacha);
+                IRandom skillRng = new SystemRandom(new Random(unchecked(settings.Seed * 104729 + 31)));
+                var summon = new SkillSummonService(balance, GachaTableValues.FromBalance(balance), skillRng);
+                SkillBook.EnsureStarters(_save, balance);
+                _spender = new SimSpender(balance, _save, gacha, summon);
                 _ads = new AdSlotPolicy(balance, _save, _clock);
                 _tutorial = new TutorialService(balance, gacha);
                 _spender.GradeObtained += OnGradeObtained;
@@ -392,9 +396,9 @@ namespace SoloHero.Core.Balance
                     UpgradeAtk = _save.upgradeAtk,
                     UpgradeDef = _save.upgradeDef,
                     UpgradeSpd = _save.upgradeSpd,
-                    SkillLevel1 = _save.skillLevel1,
-                    SkillLevel2 = _save.skillLevel2,
-                    SkillLevel3 = _save.skillLevel3,
+                    SkillsOwned = _save.ownedSkills.Count,
+                    SkillLevelSum = SkillLevelSum(),
+                    SkillPulls = _save.skillPullCount,
                     SwordGrade = EquipmentBonus.GradeOrNone(_save.equippedSword, EquipmentSlot.Sword),
                     HelmGrade = EquipmentBonus.GradeOrNone(_save.equippedHelm, EquipmentSlot.Helm),
                     ArmorGrade = EquipmentBonus.GradeOrNone(_save.equippedArmor, EquipmentSlot.Armor),
@@ -404,6 +408,13 @@ namespace SoloHero.Core.Balance
                     EarnedTotal = _earnedTotal + _spender.EarnedRefund,
                     SpentTotal = _spender.SpentUpgrade + _spender.SpentGacha + _spender.SpentSkill
                 };
+            }
+
+            private int SkillLevelSum()
+            {
+                int sum = 0;
+                for (int i = 0; i < _save.ownedSkills.Count; i++) sum += SkillBook.GetLevel(_save, _save.ownedSkills[i]);
+                return sum;
             }
 
             private static double Median(List<double> values)

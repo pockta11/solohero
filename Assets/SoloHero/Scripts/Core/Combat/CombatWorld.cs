@@ -51,15 +51,15 @@ namespace SoloHero.Core.Combat
             }
         }
 
-        /// <summary>Every hero hit (basic or skill) on an enemy: target, damage, crit.</summary>
-        public event Action<EnemyBrain, double, bool> HitLanded;
+        /// <summary>Every hero hit on an enemy (basic, crit, skill, burn tick): target, damage, kind.</summary>
+        public event Action<EnemyBrain, double, HitKind> HitLanded;
 
         public void BindHero(HeroBrain hero) => _hero = hero;
 
-        public void ReportHit(EnemyBrain target, double amount, bool crit)
+        public void ReportHit(EnemyBrain target, double amount, HitKind kind)
         {
             if (target == null) return;
-            HitLanded?.Invoke(target, amount, crit);
+            HitLanded?.Invoke(target, amount, kind);
         }
 
         public EnemyBrain GetSlot(int index) => _slots[index];
@@ -113,7 +113,12 @@ namespace SoloHero.Core.Combat
         {
             if (_hero == null) return;
             for (int i = 0; i < _slots.Length; i++)
-                _slots[i].Tick(dt, _hero);
+            {
+                EnemyBrain e = _slots[i];
+                double dot = e.TickStatus(dt);
+                if (dot > 0d) ReportHit(e, dot, HitKind.Dot);
+                e.Tick(dt, _hero);
+            }
         }
 
         public int ResolveDeaths()

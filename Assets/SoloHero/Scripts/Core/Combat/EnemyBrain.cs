@@ -9,6 +9,10 @@ namespace SoloHero.Core.Combat
         private float _atkTimer;
         private float _atkInterval;
         private bool _active;
+        private float _stunTimer;
+        private float _dotTimer;
+        private float _dotTickTimer;
+        private double _dotDps;
 
         public EnemyState State { get; private set; }
         public double Hp { get; private set; }
@@ -25,6 +29,11 @@ namespace SoloHero.Core.Combat
 
         /// <summary>Increments on every attack swing; views watch it to play the attack animation.</summary>
         public int AttackCount { get; private set; }
+
+        public bool IsStunned => _stunTimer > 0f && IsAlive;
+
+        /// <summary>Burning or poisoned (a skill damage-over-time is running).</summary>
+        public bool HasDot => _dotTimer > 0f && IsAlive;
 
         public bool IsActive => _active;
         public bool IsAlive => _active && State != EnemyState.Dead && Hp > 0d;
@@ -43,10 +52,12 @@ namespace SoloHero.Core.Combat
             Generation++;
             State = EnemyState.Idle;
             _active = true;
+            ClearStatus();
         }
 
         public void Deactivate()
         {
+            ClearStatus();
             _active = false;
             State = EnemyState.Dead;
             Hp = 0d;
@@ -64,10 +75,81 @@ namespace SoloHero.Core.Combat
             }
         }
 
+        /// <summary>Stops attacks for <paramref name="seconds"/> (bosses: x SKILL_BOSS_STUN_MULT); never shortens a stun.</summary>
+        public void Stun(float seconds)
+        {
+            if (!IsAlive || seconds <= 0f || _balance == null) return;
+            if (IsBoss) seconds *= (float)_balance.SKILL_BOSS_STUN_MULT;
+            if (seconds > _stunTimer) _stunTimer = seconds;
+            if (State == EnemyState.Attacking) State = EnemyState.Idle;
+        }
+
+        /// <summary>Burn / poison: the stronger damage wins, the longer time wins.</summary>
+        public void ApplyDot(double damagePerSecond, float seconds)
+        {
+            if (!IsAlive || damagePerSecond <= 0d || seconds <= 0f || _balance == null) return;
+            if (_dotTimer <= 0f)
+            {
+                _dotTickTimer = _balance.SKILL_DOT_TICK;
+                _dotDps = damagePerSecond;
+            }
+            else if (damagePerSecond > _dotDps)
+            {
+                _dotDps = damagePerSecond;
+            }
+
+            if (seconds > _dotTimer) _dotTimer = seconds;
+        }
+
+        /// <summary>Runs stun and burn timers; returns the burn damage dealt this tick (0 when none).</summary>
+        public double TickStatus(float dt)
+        {
+            if (!IsAlive)
+            {
+                if (_stunTimer > 0f || _dotTimer > 0f) ClearStatus();
+                return 0d;
+            }
+
+            if (_stunTimer > 0f)
+            {
+                _stunTimer -= dt;
+                if (_stunTimer < 0f) _stunTimer = 0f;
+            }
+
+            if (_dotTimer <= 0f) return 0d;
+            _dotTickTimer -= dt;
+            _dotTimer -= dt;
+            double dealt = 0d;
+            if (_dotTickTimer <= 0f)
+            {
+                float tick = _balance.SKILL_DOT_TICK > 0f ? _balance.SKILL_DOT_TICK : 0.5f;
+                _dotTickTimer += tick;
+                dealt = _dotDps * tick;
+                TakeDamage(dealt);
+            }
+
+            if (_dotTimer <= 0f)
+            {
+                _dotTimer = 0f;
+                _dotDps = 0d;
+            }
+
+            return dealt;
+        }
+
+        private void ClearStatus()
+        {
+            _stunTimer = 0f;
+            _dotTimer = 0f;
+            _dotTickTimer = 0f;
+            _dotDps = 0d;
+        }
+
         public void Tick(float dt, HeroBrain hero)
         {
             if (!IsAlive || hero == null || hero.State == HeroState.Dead) return;
             if (_balance == null) return;
+            if (_stunTimer > 0f) return;
 
             double dist = X - hero.X;
             if (dist < 0d) dist = -dist;

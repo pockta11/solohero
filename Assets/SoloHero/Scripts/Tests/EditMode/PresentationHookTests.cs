@@ -6,6 +6,7 @@ using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Settings;
+using SoloHero.Core.Skills;
 using SoloHero.Core.Stage;
 
 namespace SoloHero.Tests.EditMode
@@ -58,13 +59,14 @@ namespace SoloHero.Tests.EditMode
             Assert.IsTrue(world.TryActivateSlot(out EnemyBrain e));
             e.Reset(b, 1e6, 1d, 99f, 1d, false);
             var skills = new SkillAutoCaster(b);
-            var cast = new List<SkillSlot>();
-            skills.SkillCast += cast.Add;
+            skills.SetSlot(0, SkillCatalog.Find(SkillCatalog.PowerStrike), 1);
+            var cast = new List<int>();
+            skills.SkillCast += (slot, def) => cast.Add(slot);
 
-            Assert.IsTrue(skills.TryCast(SkillSlot.Slot1, hero, world).Ok);
-            Assert.IsFalse(skills.TryCast(SkillSlot.Slot1, hero, world).Ok);
+            Assert.IsTrue(skills.TryCast(0, hero, world).Ok);
+            Assert.IsFalse(skills.TryCast(0, hero, world).Ok);
 
-            CollectionAssert.AreEqual(new[] { SkillSlot.Slot1 }, cast);
+            CollectionAssert.AreEqual(new[] { 0 }, cast);
         }
 
         [Test]

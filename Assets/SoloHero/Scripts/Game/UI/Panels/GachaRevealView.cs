@@ -4,7 +4,6 @@ using SoloHero.Core.Gacha;
 using SoloHero.Core.Settings;
 using SoloHero.Game.Audio;
 using SoloHero.Game.UI.Common;
-using SoloHero.Game.View;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,6 +14,7 @@ namespace SoloHero.Game.UI.Panels
     /// flip (one card 0.4 s; ten cards 0.15 s apart), an Epic+ result gets grade particles, a shake and a fanfare
     /// (ten-pull: only the best card), then a tap closes the overlay. `Skip all` jumps to the end. The pull is
     /// already settled and saved before this runs, so closing early loses nothing. Runs on unscaled time.
+    /// Equipment and skill summons (D-078) both hand in ready-made <see cref="RevealCard"/>s.
     /// </summary>
     public sealed class GachaRevealView : MonoBehaviour
     {
@@ -34,10 +34,9 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private UiBurst _burst;
         [SerializeField] private GameObject _skipButton;
         [SerializeField] private GameObject _closeHint;
-        [SerializeField] private EquipmentIconSet _icons;
 
         private readonly List<Coroutine> _flips = new List<Coroutine>();
-        private GachaPullItem[] _items;
+        private RevealCard[] _items;
         private Coroutine _running;
         private bool _celebrated;
         private bool _skip;
@@ -52,7 +51,7 @@ namespace SoloHero.Game.UI.Panels
             if (_root != null) _root.SetActive(false);
         }
 
-        public void Show(GachaPullItem[] items)
+        public void Show(RevealCard[] items)
         {
             if (items == null || items.Length == 0 || _root == null) return;
             _audio = PanelServices.TryGet<AudioService>();
@@ -144,7 +143,7 @@ namespace SoloHero.Game.UI.Panels
             _running = null;
         }
 
-        private IEnumerator Flip(GachaCard card, GachaPullItem item, float seconds)
+        private IEnumerator Flip(GachaCard card, RevealCard item, float seconds)
         {
             Sound(SfxId.CardFlip);
             float half = seconds * 0.5f;
@@ -174,18 +173,17 @@ namespace SoloHero.Game.UI.Panels
             _flips.Clear();
         }
 
-        private void Face(GachaCard card, GachaPullItem item)
+        private void Face(GachaCard card, RevealCard item)
         {
             card.Rect.localScale = Vector3.one;
-            Sprite icon = _icons != null ? _icons.Get(item.Slot, item.Grade) : null;
-            card.ShowFace(PanelServices.GradeColor(item.Grade), PanelServices.GradeName(item.Grade), PanelServices.SlotName(item.Slot), PanelServices.PullNote(item), icon);
+            card.ShowFace(PanelServices.GradeColor(item.Grade), PanelServices.GradeName(item.Grade), item.Title, item.Note, item.Icon);
         }
 
         private void Celebrate(int index)
         {
             if (_celebrated) return;
             _celebrated = true;
-            GachaPullItem item = _items[index];
+            RevealCard item = _items[index];
             Sound(item.Grade == Grade.Legendary ? SfxId.GradeLegendary : SfxId.GradeEpic);
             UiPunch punch = _cards[index].GetComponent<UiPunch>();
             if (punch != null) punch.Play(2f);

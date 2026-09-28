@@ -31,6 +31,11 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 3e32dd14d35520d47a0f1d6424c8e97f, type: 3}
   - {fileID: 8300000, guid: 10e1ac1ffa768724abcdff775c307ee8, type: 3}
   - {fileID: 8300000, guid: a2d2aa97b73de4048b95878d4a6c89e6, type: 3}
+  - {fileID: 8300000, guid: 0f8afd9199063d144970d63cf7e3dcff, type: 3}
+  - {fileID: 8300000, guid: 9bba736c15c14d9489e554ec177000eb, type: 3}
+  - {fileID: 8300000, guid: a0451520a5f019d4d99e48f8bdc7d04b, type: 3}
+  - {fileID: 8300000, guid: 31e1c50381765d54283b33791a7866ab, type: 3}
+  - {fileID: 8300000, guid: 13eb9d50e5d19de46b340ed78df5cdd1, type: 3}
   bossBgm: {fileID: 8300000, guid: f47b3004419c02d41a6b30c4585859c4, type: 3}
   bgmVolume: 0.55
   sfxVolume: 0.8

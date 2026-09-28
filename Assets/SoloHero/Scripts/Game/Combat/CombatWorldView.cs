@@ -19,13 +19,24 @@ namespace SoloHero.Game.Combat
     {
         private const int EnemySlotVisualCount = 4;
         private const float HitFlashSeconds = 0.08f;
+
+        /// <summary>Bosses are drawn this far behind their Core position so the 2x body does not cover the hero (view only).</summary>
+        private const float BossDrawOffset = 0.7f;
         private static readonly Color HitFlash = new Color(1f, 0.55f, 0.55f, 1f);
+        private static readonly Color FrozenTint = new Color(0.55f, 0.8f, 1f, 1f);
+        private static readonly Color BurnTint = new Color(1f, 0.62f, 0.38f, 1f);
+        private static readonly Color ShieldTint = new Color(0.78f, 0.92f, 1f, 1f);
+        private const float BurnPulseSpeed = 9f;
 
         [SerializeField] private CombatSession _session;
         [SerializeField] private Camera _camera;
         [SerializeField] private CameraShake _shake;
         [SerializeField] private SpriteRenderer _heroRenderer;
         [SerializeField] private SpriteRenderer[] _enemyRenderers = new SpriteRenderer[EnemySlotVisualCount];
+
+        [Header("Ground shadows (D-082): index 0 hero, 1.. enemy slots")]
+        [SerializeField] private SpriteRenderer[] _shadows = new SpriteRenderer[0];
+        [SerializeField] private float _shadowWidth = 1.1f;
         [SerializeField] private CharacterArt _heroArt;
         [SerializeField] private CharacterArt _enemyArt;
         [SerializeField] private CharacterArt _bossArt;
@@ -120,7 +131,24 @@ namespace SoloHero.Game.Combat
                 EnemyBrain enemy = i < world.SlotCount ? world.GetSlot(i) : null;
                 DrawEnemy(i, enemy, theme, ref newKills);
                 DrawHpBar(i, enemy);
+                DrawShadow(i + 1, i < _enemyRenderers.Length ? _enemyRenderers[i] : null, _slots[i].Boss ? 2f : 1f);
             }
+
+            DrawShadow(0, _heroRenderer, 1f);
+        }
+
+        /// <summary>A soft blob on the ground line under a drawn character, sized in world units.</summary>
+        private void DrawShadow(int index, SpriteRenderer body, float size)
+        {
+            SpriteRenderer shadow = index < _shadows.Length ? _shadows[index] : null;
+            if (shadow == null) return;
+            bool show = body != null && body.enabled;
+            if (shadow.enabled != show) shadow.enabled = show;
+            if (!show || shadow.sprite == null) return;
+            float unit = shadow.sprite.bounds.size.x;
+            float width = _shadowWidth * size;
+            shadow.transform.position = new Vector3(body.transform.position.x, -0.1f * size, 0f);
+            shadow.transform.localScale = new Vector3(width / unit, width / unit, 1f);
         }
 
         /// <summary>World HP bar over a hurt normal enemy, sized in world units whatever the sprite scale.</summary>
@@ -198,7 +226,7 @@ namespace SoloHero.Game.Combat
             }
 
             _heroFlash -= Time.deltaTime;
-            _heroRenderer.color = _heroFlash > 0f ? HitFlash : Color.white;
+            _heroRenderer.color = _heroFlash > 0f ? HitFlash : hero.Shield > 0d ? ShieldTint : Color.white;
         }
 
         private bool IsLoop(Sprite[] clip) =>
@@ -224,7 +252,7 @@ namespace SoloHero.Game.Combat
                 slot.Dying = false;
                 slot.Boss = enemy.IsBoss;
                 slot.Generation = enemy.Generation;
-                slot.X = (float)enemy.X;
+                slot.X = (float)enemy.X + (enemy.IsBoss ? BossDrawOffset : 0f);
                 renderer.enabled = true;
                 renderer.transform.position = new Vector3(slot.X, 0f, 0f);
 
@@ -259,7 +287,17 @@ namespace SoloHero.Game.Combat
             }
 
             slot.Flash -= Time.deltaTime;
-            renderer.color = slot.Flash > 0f ? HitFlash : Color.white;
+            renderer.color = slot.Flash > 0f ? HitFlash : StatusTint(enemy);
+        }
+
+        /// <summary>D-078 status on the body: frozen / stunned blue, burning or poisoned pulses orange.</summary>
+        private static Color StatusTint(EnemyBrain enemy)
+        {
+            if (enemy == null || !enemy.IsAlive) return Color.white;
+            if (enemy.IsStunned) return FrozenTint;
+            if (!enemy.HasDot) return Color.white;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * BurnPulseSpeed);
+            return Color.Lerp(Color.white, BurnTint, pulse);
         }
 
         private void BeginDeath(EnemySlotState slot, SpriteRenderer renderer, SpriteFlipbook book, ref int newKills)

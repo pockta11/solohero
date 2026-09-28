@@ -36,9 +36,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **9-02 튜닝** D-053~D-061 반영 — 무광고 1일 2-8 · 3일 3-9~4-2 · 7일 5-7. 남은 FAIL은 경계값 V-6a·V-7뿐. 중복 강화(D-062)·V-3a 가치 균형(D-063)·광고 부스터 1회(D-064)
 - **성장 패널** 하단 탭바 + 캐릭터·장비·소환·스킬 패널. `Tools > Setup > Build Growth UI`로 씬 재생성
 - Core 규칙 누락 수정: 보스 골드·EXP ×5, 스킬 해금 레벨, 기본 공격 히트 연결, 클리어 저장, 재실행 후 후퇴 유지, v1 장비 id 변환
-- **E8 연출·오디오·적 다양화** (D-068~D-071): 적 8종·보스 3종(돼지 5종 + 색 변형, 외형만 다름), 풀 VFX·카메라 셰이크·크리티컬 숫자·골드 카운트업·강화 펀치·레벨업 링, 가챠 카드 연출, BGM 6 + SFX 18(CC0), 설정 팝업(BGM/SFX/이펙트 축소/30fps). `Tools > Setup > Build Art`가 전부 재생성. 보스 공격 배율 1.1(D-069) — 무광고 남은 FAIL은 V-7(플레이어 모델 의존)뿐
+- **E8 연출·오디오·적 다양화** (D-068~D-071): 적 8종·보스 3종(당시 돼지 5종 + 색 변형 — D-082로 교체), 풀 VFX·카메라 셰이크·크리티컬 숫자·골드 카운트업·강화 펀치·레벨업 링, 가챠 카드 연출, BGM 6 + SFX 18(CC0), 설정 팝업(BGM/SFX/이펙트 축소/30fps). `Tools > Setup > Build Art`가 전부 재생성. 보스 공격 배율 1.1(D-069) — 무광고 남은 FAIL은 V-7(플레이어 모델 의존)뿐
 - **2026-09-28 출시 준비·QA** (D-072~D-076): 분석 이벤트(`GameplayTelemetry` + Firebase Analytics), 스토어 자료 `_bmad-output/implementation-artifacts/store/`, 저장 리비전(강제 종료 유실 방지), 스테이지 선택·뒤로가기·세이프 영역·보스 등장 배너·젬 골드 패키지·장비 아이콘, Legacy 폴더 삭제. QA 보고서 `implementation-artifacts/qa/`
 - **에뮬레이터 QA**: `pwsh tools/qa/Qa.ps1 smoke|forcekill|idle|coldstart|scenarios|firstsession` (adb root로 저장 판독). 광고 WebView가 에뮬레이터에서 약 85초 후 앱을 죽이므로 QA는 `SOLOHERO_NO_ADS=1` 빌드로 (실기기 확인 필요, release-gate B-001)
+- **2026-09-28 스킬 확장** (D-078~D-080): 스킬 3종 고정 → 24종 도감·스킬 소환(소환 탭의 장비/스킬 전환)·6슬롯·보유 효과. 컬러 스킬 VFX 14종·아이콘 24종·SFX 5종(절차 생성, `Art/Vfx`, `Art/Icons/Skills`), 화면 플래시·스킬명 팝업·적 상태 색. 스킬 패널 = 장착 슬롯 + 도감 그리드 + 상세(강화/장착). 무광고 곡선 유지(7일차 5-7~5-8)
+- **2026-09-28 몹 무리·캐릭터 교체** (D-081~D-082): 몹 4마리씩 무리 등장(`SPAWN_WAVE_SIZE/GAP/SPACING`), 캐릭터 아트 Kings and Pigs → LuizMelo CC0(영웅 Hero Knight, 적 4종+색 변형, 보스 5종), 발밑 그림자. 변환 규칙: 여백 자르고 발 바닥 중앙, 적·보스 좌우 반전
 - 빌드는 `libFirebaseCppApp` 포함을 자동 검사하고, EDM4U가 pom을 `srcaar`로 바꾸면 빌드 전에 되돌린다
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 
@@ -95,6 +97,7 @@ E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트는 `Scripts/Legacy
 - 강화: HP·ATK·DEF **승산 ×1.16/레벨·상한 없음**, 공격속도 가산 +0.02·최대 100. 비용 `baseCost × 1.12^level` (base 300/450/450/600)
 - 방어: `DEF_REF = 3 × 적ATK`, `피격 = max(1, 적ATK × DEF_REF / (DEF_REF + DEF))`
 - 가챠: 500골드 / 10연 4,500. 확률 **C 55 / R 33 / E 10 / L 2 %**, 100회 천장, Legendary 획득 시 pity 리셋. 중복 = 장비 강화 +1(최대 10, ×1.10/레벨), 최대 레벨만 환급 (D-062)
+- 스킬 (D-078~D-080): **24종 도감(등급별 6)** + 스킬 소환(장비 확률표·천장 공유, 카운터 별도, 5,000 / 10연 45,000 / 젬 200) + **6슬롯**(해금 Lv 1/5/12/20/30/45) 슬롯 순 자동 발동. 중복 = 레벨 +1(최대 10, ×1.9), 골드 레벨업 병행, 보유 효과 ATK +0.25/0.5/1/2 %×레벨 배율. 스킬 수치 원본은 `Core/Skills/SkillCatalog`. 화상/중독·기절(보스 ½)·버프 4종·보호막
 - 오프라인: `파밍스테이지_골드 / 3000` 초당 (D-055), 상한 21,600초, 60초 미만 팝업 없음, 음수·상한 2배 초과 → 0. 광고 2배
 - 이동 속도 상수 2.0 u/s — 스탯 아님. SP 없음(쿨다운만). 콤보 없음
 

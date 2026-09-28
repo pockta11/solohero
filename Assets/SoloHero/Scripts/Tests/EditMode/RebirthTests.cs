@@ -4,6 +4,7 @@ using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Progression;
 using SoloHero.Core.Save;
+using SoloHero.Core.Skills;
 
 namespace SoloHero.Tests.EditMode
 {
@@ -71,9 +72,8 @@ namespace SoloHero.Tests.EditMode
             data.upgradeAtk = 6;
             data.upgradeDef = 7;
             data.upgradeSpd = 8;
-            data.skillLevel1 = 3;
-            data.skillLevel2 = 2;
-            data.skillLevel3 = 1;
+            SkillBook.EnsureStarters(data, new BalanceValues());
+            SkillBook.SetLevel(data, SkillCatalog.PowerStrike, 3);
             data.soul = 2d;
             data.rebirthCount = 0;
             data.permGoldLevel = 1;
@@ -100,9 +100,7 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(0, data.upgradeAtk);
             Assert.AreEqual(0, data.upgradeDef);
             Assert.AreEqual(0, data.upgradeSpd);
-            Assert.AreEqual(0, data.skillLevel1);
-            Assert.AreEqual(0, data.skillLevel2);
-            Assert.AreEqual(0, data.skillLevel3);
+            Assert.AreEqual(3, SkillBook.GetLevel(data, SkillCatalog.PowerStrike), "skills survive rebirth (D-078)");
             Assert.AreEqual(1, data.highestStage);
             Assert.AreEqual(1, data.farmingStage);
 

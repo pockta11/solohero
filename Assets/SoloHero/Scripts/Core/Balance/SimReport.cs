@@ -19,9 +19,9 @@ namespace SoloHero.Core.Balance
         public int UpgradeAtk;
         public int UpgradeDef;
         public int UpgradeSpd;
-        public int SkillLevel1;
-        public int SkillLevel2;
-        public int SkillLevel3;
+        public int SkillsOwned;
+        public int SkillLevelSum;
+        public int SkillPulls;
         public int SwordGrade;
         public int HelmGrade;
         public int ArmorGrade;

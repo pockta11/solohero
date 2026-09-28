@@ -27,7 +27,7 @@ MonoBehaviour:
   pixelScale: 1
   sky: {r: 0.28627452, g: 0.33333334, b: 0.53333336, a: 1}
   enemies:
-  - {fileID: 11400000, guid: b65f53e8a25e37e4597b87952639dff4, type: 2}
-  - {fileID: 11400000, guid: 249aa29b9874a254788f9ff732bc7195, type: 2}
-  boss: {fileID: 11400000, guid: 31f88168e89f9254a9b8d88689d3a6ed, type: 2}
+  - {fileID: 11400000, guid: 3be2c010c2c4db84db10e5194c3e885e, type: 2}
+  - {fileID: 11400000, guid: b8dbe4864e07caf4cac69484ee6df0bd, type: 2}
+  boss: {fileID: 11400000, guid: 8f93ea413090f664db441ea6ecfcaaa1, type: 2}
   bgm: {fileID: 8300000, guid: 9eac5ef080ed69f4ea5e91e34ba3dd1a, type: 3}

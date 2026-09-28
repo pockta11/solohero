@@ -6,20 +6,25 @@ using SoloHero.Core.Economy;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
+using SoloHero.Core.Skills;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
+using SoloHero.Game.View;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace SoloHero.Game.UI.Panels
 {
     /// <summary>
-    /// Gacha panel (E7-07): single / 10 / gem 10 pulls, pity gauge, rate disclosure and the last result.
-    /// Order is confirm -> save -> show: the service settles gold and items, then the save is requested,
-    /// then the card reveal (E5-11) plays and the result list is drawn.
+    /// Summon panel (E7-07, D-078): an equipment / skill tab on top (genre summon screen), then single / 10 / gem 10
+    /// pulls, the pity gauge of the shown tab, rate disclosure and the last result. Order is confirm -> save -> show:
+    /// the service settles gold and items, then the save is requested, then the card reveal (E5-11) plays.
     /// </summary>
     public sealed class GachaPanelPresenter : MonoBehaviour
     {
+        public const int ModeGear = 0;
+        public const int ModeSkill = 1;
+
         [SerializeField] private Text _pityText;
         [SerializeField] private Image _pityFill;
         [SerializeField] private Text _rateText;
@@ -36,8 +41,16 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private TapGuardButton _goldPackButton;
         [SerializeField] private Text _goldPackText;
 
+        [Header("Tabs (D-078)")]
+        [SerializeField] private Image[] _tabImages = new Image[2];
+        [SerializeField] private Sprite _tabIdle;
+        [SerializeField] private Sprite _tabActive;
+        [SerializeField] private EquipmentIconSet _equipmentIcons;
+        [SerializeField] private SkillIconSet _skillIcons;
+
         private readonly StringBuilder _sb = new StringBuilder();
         private GachaService _gacha;
+        private SkillSummonService _skillSummon;
         private GemShop _shop;
         private int _shownFarmingStage = -1;
         private BalanceValues _balance;
@@ -45,10 +58,12 @@ namespace SoloHero.Game.UI.Panels
         private ISaveRequester _requester;
         private double _shownGold = -1d;
         private double _shownGem = -1d;
+        private int _mode = ModeGear;
 
         private void OnEnable()
         {
             _gacha = PanelServices.TryGet<GachaService>();
+            _skillSummon = PanelServices.TryGet<SkillSummonService>();
             _shop = PanelServices.TryGet<GemShop>();
             _balance = PanelServices.TryGet<BalanceValues>();
             _save = PanelServices.TryGet<SaveDataV2>();
@@ -65,11 +80,32 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
-        public void PullSingle() => Apply(_gacha != null && _save != null ? _gacha.TryPull(_save) : default, "gold_single");
+        public void SetMode(int mode)
+        {
+            if (mode != ModeGear && mode != ModeSkill) return;
+            if (_mode != mode && _resultText != null) _resultText.text = "";
+            _mode = mode;
+            DrawStatic();
+            Refresh();
+        }
 
-        public void PullTen() => Apply(_gacha != null && _save != null ? _gacha.TryPullTen(_save) : default, "gold_ten");
+        public void PullSingle()
+        {
+            if (_mode == ModeSkill) ApplySkill(_skillSummon != null && _save != null ? _skillSummon.TryPull(_save) : default, "skill_gold_single");
+            else Apply(_gacha != null && _save != null ? _gacha.TryPull(_save) : default, "gold_single");
+        }
 
-        public void PullTenWithGem() => Apply(_gacha != null && _save != null ? _gacha.TryPullTenWithGem(_save) : default, "gem_ten");
+        public void PullTen()
+        {
+            if (_mode == ModeSkill) ApplySkill(_skillSummon != null && _save != null ? _skillSummon.TryPullTen(_save) : default, "skill_gold_ten");
+            else Apply(_gacha != null && _save != null ? _gacha.TryPullTen(_save) : default, "gold_ten");
+        }
+
+        public void PullTenWithGem()
+        {
+            if (_mode == ModeSkill) ApplySkill(_skillSummon != null && _save != null ? _skillSummon.TryPullTenWithGem(_save) : default, "skill_gem_ten");
+            else Apply(_gacha != null && _save != null ? _gacha.TryPullTenWithGem(_save) : default, "gem_ten");
+        }
 
         /// <summary>E6-02: gems for an instant gold package worth 100 clears of the farming stage.</summary>
         public void BuyGoldPack()
@@ -96,10 +132,66 @@ namespace SoloHero.Game.UI.Panels
 
             if (_requester != null) _requester.RequestSave();
             if (_session != null) _session.RefreshLoadout();
-            LogPull(result.Items, kind);
+            LogPull(AnalyticsEvents.GachaPull, BestGrade(result.Items), result.Items.Length, kind, _save.pityCount);
             DrawResult(result.Items);
-            if (_reveal != null) _reveal.Show(result.Items);
+            if (_reveal != null) _reveal.Show(Cards(result.Items));
             Refresh();
+        }
+
+        private void ApplySkill(SkillSummonResult result, string kind)
+        {
+            if (!result.Status.Ok || result.Items == null)
+            {
+                if (_toast != null && result.Status.Reason != FailReason.None) _toast.ShowFailure(result.Status.Reason);
+                return;
+            }
+
+            if (_requester != null) _requester.RequestSave();
+            if (_session != null) _session.RefreshLoadout();
+            Grade best = Grade.Common;
+            for (int i = 0; i < result.Items.Length; i++)
+            {
+                if (result.Items[i].Grade > best) best = result.Items[i].Grade;
+            }
+
+            LogPull(AnalyticsEvents.SkillSummon, best, result.Items.Length, kind, _save.skillPityCount);
+            DrawSkillResult(result.Items);
+            if (_reveal != null) _reveal.Show(Cards(result.Items));
+            Refresh();
+        }
+
+        private RevealCard[] Cards(GachaPullItem[] items)
+        {
+            var cards = new RevealCard[items.Length];
+            for (int i = 0; i < items.Length; i++)
+            {
+                GachaPullItem item = items[i];
+                Sprite icon = _equipmentIcons != null ? _equipmentIcons.Get(item.Slot, item.Grade) : null;
+                cards[i] = new RevealCard(item.Grade, PanelServices.SlotName(item.Slot), PanelServices.PullNote(item), icon);
+            }
+
+            return cards;
+        }
+
+        private RevealCard[] Cards(SkillPullItem[] items)
+        {
+            var cards = new RevealCard[items.Length];
+            for (int i = 0; i < items.Length; i++)
+            {
+                SkillPullItem item = items[i];
+                SkillDef def = SkillCatalog.Find(item.Id);
+                Sprite icon = _skillIcons != null ? _skillIcons.Get(item.Id) : null;
+                cards[i] = new RevealCard(item.Grade, def != null ? Strings.Get(def.NameKey) : item.Id, SkillNote(item), icon);
+            }
+
+            return cards;
+        }
+
+        private static string SkillNote(SkillPullItem item)
+        {
+            if (item.WasNew) return Strings.Get("gacha.skill_new");
+            if (item.RefundGold > 0d) return Strings.Format("gacha.refund", BigNumberFormat.Format(item.RefundGold));
+            return Strings.Format("gacha.skill_up", item.Level);
         }
 
         private void DrawStatic()
@@ -107,14 +199,25 @@ namespace SoloHero.Game.UI.Panels
             if (_balance == null) return;
             if (_rateText != null)
             {
-                // The disclosure is drawn from the same table the draw uses (GDD rate disclosure rule).
+                // The disclosure is drawn from the same table the draw uses (GDD rate disclosure rule); skills share it.
                 _rateText.text = Strings.Format("gacha.rates",
                     _balance.GACHA_RATE_C, _balance.GACHA_RATE_R, _balance.GACHA_RATE_E, _balance.GACHA_RATE_L, _balance.GACHA_PITY);
             }
 
-            if (_singleCostText != null) _singleCostText.text = Strings.Format("gacha.cost_single", BigNumberFormat.Format(_balance.GACHA_COST_SINGLE));
-            if (_tenCostText != null) _tenCostText.text = Strings.Format("gacha.cost_ten", BigNumberFormat.Format(_balance.GACHA_COST_TEN));
-            if (_gemCostText != null) _gemCostText.text = Strings.Format("gacha.cost_gem", _balance.GACHA_COST_TEN_GEM);
+            bool skill = _mode == ModeSkill;
+            if (_singleCostText != null)
+                _singleCostText.text = Strings.Format("gacha.cost_single", BigNumberFormat.Format(skill ? _balance.SKILL_SUMMON_COST_SINGLE : _balance.GACHA_COST_SINGLE));
+            if (_tenCostText != null)
+                _tenCostText.text = Strings.Format("gacha.cost_ten", BigNumberFormat.Format(skill ? _balance.SKILL_SUMMON_COST_TEN : _balance.GACHA_COST_TEN));
+            if (_gemCostText != null)
+                _gemCostText.text = Strings.Format("gacha.cost_gem", skill ? _balance.SKILL_SUMMON_COST_TEN_GEM : _balance.GACHA_COST_TEN_GEM);
+            for (int i = 0; i < _tabImages.Length; i++)
+            {
+                if (_tabImages[i] == null) continue;
+                Sprite sprite = i == _mode ? _tabActive : _tabIdle;
+                if (sprite != null) _tabImages[i].sprite = sprite;
+                _tabImages[i].color = i == _mode ? Color.white : new Color(0.55f, 0.55f, 0.62f, 1f);
+            }
         }
 
         private void Refresh()
@@ -122,27 +225,32 @@ namespace SoloHero.Game.UI.Panels
             if (_balance == null || _save == null) return;
             _shownGold = _save.gold;
             _shownGem = _save.gem;
+            bool skill = _mode == ModeSkill;
 
             int pity = _balance.GACHA_PITY;
-            int left = pity - _save.pityCount;
-            if (_pityText != null) _pityText.text = Strings.Format("gacha.pity", left, _save.pityCount, pity);
+            int count = skill ? _save.skillPityCount : _save.pityCount;
+            int left = pity - count;
+            if (_pityText != null) _pityText.text = Strings.Format("gacha.pity", left, count, pity);
             if (_pityFill != null)
             {
                 // Width by anchor: a Filled image without a sprite ignores fillAmount.
-                float ratio = pity > 0 ? Mathf.Clamp01((float)_save.pityCount / pity) : 0f;
+                float ratio = pity > 0 ? Mathf.Clamp01((float)count / pity) : 0f;
                 _pityFill.rectTransform.anchorMax = new Vector2(ratio, 1f);
             }
 
-            if (_singleButton != null) _singleButton.SetAvailable(_save.gold >= _balance.GACHA_COST_SINGLE);
-            if (_tenButton != null) _tenButton.SetAvailable(_save.gold >= _balance.GACHA_COST_TEN);
-            if (_gemButton != null) _gemButton.SetAvailable(_save.gem >= _balance.GACHA_COST_TEN_GEM);
+            double single = skill ? _balance.SKILL_SUMMON_COST_SINGLE : _balance.GACHA_COST_SINGLE;
+            double ten = skill ? _balance.SKILL_SUMMON_COST_TEN : _balance.GACHA_COST_TEN;
+            int gem = skill ? _balance.SKILL_SUMMON_COST_TEN_GEM : _balance.GACHA_COST_TEN_GEM;
+            if (_singleButton != null) _singleButton.SetAvailable(_save.gold >= single);
+            if (_tenButton != null) _tenButton.SetAvailable(_save.gold >= ten);
+            if (_gemButton != null) _gemButton.SetAvailable(_save.gem >= gem);
             _shownFarmingStage = _save.farmingStage;
             if (_shop != null && _goldPackText != null)
                 _goldPackText.text = Strings.Format("gacha.gold_pack", _balance.GEM_GOLD_PACK_COST, BigNumberFormat.Format(_shop.GoldPackAmount(_save)));
             if (_goldPackButton != null) _goldPackButton.SetAvailable(_save.gem >= _balance.GEM_GOLD_PACK_COST);
         }
 
-        private void LogPull(GachaPullItem[] items, string kind)
+        private static Grade BestGrade(GachaPullItem[] items)
         {
             Grade best = Grade.Common;
             for (int i = 0; i < items.Length; i++)
@@ -150,11 +258,16 @@ namespace SoloHero.Game.UI.Panels
                 if (items[i].Grade > best) best = items[i].Grade;
             }
 
-            GameAnalytics.Log(AnalyticsEvents.GachaPull,
+            return best;
+        }
+
+        private static void LogPull(string eventName, Grade best, int count, string kind, int pity)
+        {
+            GameAnalytics.Log(eventName,
                 AnalyticsParam.Of(AnalyticsEvents.PKind, kind),
-                AnalyticsParam.Of(AnalyticsEvents.PCount, items.Length),
+                AnalyticsParam.Of(AnalyticsEvents.PCount, count),
                 AnalyticsParam.Of(AnalyticsEvents.PBestGrade, (long)best),
-                AnalyticsParam.Of(AnalyticsEvents.PPity, _save != null ? _save.pityCount : 0));
+                AnalyticsParam.Of(AnalyticsEvents.PPity, pity));
         }
 
         /// <summary>
@@ -176,6 +289,31 @@ namespace SoloHero.Game.UI.Panels
                 else stored++;
             }
 
+            AppendGradeCounts(counts);
+            _sb.Append('\n').Append(Strings.Format("gacha.summary", equipped, enhanced, stored, refunded));
+            _resultText.text = _sb.ToString();
+        }
+
+        private void DrawSkillResult(SkillPullItem[] items)
+        {
+            if (_resultText == null) return;
+            var counts = new int[GachaCatalog.GradeCount];
+            int fresh = 0, up = 0, refunded = 0;
+            for (int i = 0; i < items.Length; i++)
+            {
+                counts[(int)items[i].Grade]++;
+                if (items[i].WasNew) fresh++;
+                else if (items[i].RefundGold > 0d) refunded++;
+                else up++;
+            }
+
+            AppendGradeCounts(counts);
+            _sb.Append('\n').Append(Strings.Format("gacha.skill_summary", fresh, up, refunded));
+            _resultText.text = _sb.ToString();
+        }
+
+        private void AppendGradeCounts(int[] counts)
+        {
             _sb.Clear();
             for (int g = GachaCatalog.GradeCount - 1; g >= 0; g--)
             {
@@ -184,9 +322,6 @@ namespace SoloHero.Game.UI.Panels
                 _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(PanelServices.GradeColor((Grade)g))).Append('>')
                     .Append(PanelServices.GradeName((Grade)g)).Append(' ').Append(counts[g]).Append("</color>");
             }
-
-            _sb.Append('\n').Append(Strings.Format("gacha.summary", equipped, enhanced, stored, refunded));
-            _resultText.text = _sb.ToString();
         }
     }
 }

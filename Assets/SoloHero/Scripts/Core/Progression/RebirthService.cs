@@ -60,9 +60,7 @@ namespace SoloHero.Core.Progression
             save.heroExp = 0d;
             save.highestStage = 1;
             save.farmingStage = 1;
-            save.skillLevel1 = 0;
-            save.skillLevel2 = 0;
-            save.skillLevel3 = 0;
+            // Skills are a summon collection like equipment (D-078) and survive rebirth.
 
             _save?.RequestSave();
             return Result.Success;

@@ -38,9 +38,20 @@ namespace SoloHero.Core.Save
         public int pityCount;
         public int totalPullCount;
 
+        /// <summary>Levels of the three fixed skills before D-078. Read once by SkillBook.EnsureStarters, then unused.</summary>
         public int skillLevel1;
         public int skillLevel2;
         public int skillLevel3;
+
+        /// <summary>Skill collection (D-078): owned ids and their levels, index-aligned.</summary>
+        public List<string> ownedSkills = new List<string>();
+        public List<int> ownedSkillLevels = new List<int>();
+
+        /// <summary>One entry per skill slot in cast order; "" is an empty slot.</summary>
+        public List<string> equippedSkills = new List<string>();
+
+        public int skillPityCount;
+        public int skillPullCount;
 
         public long lastQuitTimeUtc;
 

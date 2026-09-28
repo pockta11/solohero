@@ -146,43 +146,6 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void Apply_HeroLevelBelowUnlock_LocksSlotsTwoAndThree()
-        {
-            var balance = new BalanceValues();
-            var save = SaveDataV2.CreateNew();
-            var runner = new StageRunner(balance, new SystemRandom(new System.Random(1)), CombatLoadout.ComputeStats(balance, save), save);
-
-            CombatLoadout.Apply(runner, balance, save);
-
-            Assert.IsTrue(runner.Skills.IsUnlocked(SkillSlot.Slot1));
-            Assert.IsFalse(runner.Skills.IsUnlocked(SkillSlot.Slot2));
-            Assert.IsFalse(runner.Skills.IsUnlocked(SkillSlot.Slot3));
-
-            save.heroLevel = balance.SKILL_UNLOCK_LV_3;
-            CombatLoadout.Apply(runner, balance, save);
-
-            Assert.IsTrue(runner.Skills.IsUnlocked(SkillSlot.Slot2));
-            Assert.IsTrue(runner.Skills.IsUnlocked(SkillSlot.Slot3));
-        }
-
-        [Test]
-        public void TryCast_LockedSlot_ReturnsLocked()
-        {
-            var balance = new BalanceValues();
-            var skills = new SkillAutoCaster(balance);
-            var hero = new HeroBrain(balance, new SystemRandom(new System.Random(1)),
-                new HeroStats(balance.HP_BASE, balance.ATK_BASE, balance.DEF_BASE, balance.ATKSPD_BASE, balance.CRIT_RATE_BASE));
-            var world = new CombatWorld(balance);
-            world.BindHero(hero);
-            skills.SetUnlocked(SkillSlot.Slot3, false);
-
-            Result result = skills.TryCast(SkillSlot.Slot3, hero, world);
-
-            Assert.IsFalse(result.Ok);
-            Assert.AreEqual(FailReason.Locked, result.Reason);
-        }
-
-        [Test]
         public void Grant_BossKill_MultipliesExp()
         {
             var balance = new BalanceValues();

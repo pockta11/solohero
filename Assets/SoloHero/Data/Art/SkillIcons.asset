@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4a5c8c5e0f52c4a8b18f5a53173126, type: 3}
+  m_Name: SkillIcons
+  m_EditorClassIdentifier: 
+  ids:
+  - power_strike
+  - whirlwind
+  - battle_cry
+  - quick_slash
+  - iron_skin
+  - first_aid
+  - fireball
+  - frost_nova
+  - thunder
+  - berserk
+  - poison_cloud
+  - eagle_eye
+  - meteor
+  - chain_lightning
+  - blade_storm
+  - holy_light
+  - glacier_spear
+  - war_god
+  - dragon_breath
+  - judgement
+  - time_stop
+  - sword_rain
+  - phoenix
+  - black_hole
+  icons:
+  - {fileID: 21300000, guid: befc4d65995647f4388a4c7a2fa16023, type: 3}
+  - {fileID: 21300000, guid: 515f35ce00cefb441803e1d373ca646e, type: 3}
+  - {fileID: 21300000, guid: 729b32c9e1fe1164784cf12a141ea059, type: 3}
+  - {fileID: 21300000, guid: 0257544a608f90342bf01b8dd5bfdf42, type: 3}
+  - {fileID: 21300000, guid: c5442340c11631240b97ef546b7348e3, type: 3}
+  - {fileID: 21300000, guid: 4a80c6709d36d6f428bf375c8c764335, type: 3}
+  - {fileID: 21300000, guid: e6747cd696cc52844b8cbf10b7b22857, type: 3}
+  - {fileID: 21300000, guid: b8ec36ace4fe1f1429419af803363495, type: 3}
+  - {fileID: 21300000, guid: 5075e846bb5cad54888fb888be001acd, type: 3}
+  - {fileID: 21300000, guid: b0b6d6fb30bc91b4e9eb171bbb11bb06, type: 3}
+  - {fileID: 21300000, guid: ea7a454b6eb321e4b82738b4ee631683, type: 3}
+  - {fileID: 21300000, guid: 81180f3a3e83e604c9a137483ca002fb, type: 3}
+  - {fileID: 21300000, guid: 6d8470f29bf146f4ead07c41a0fc905e, type: 3}
+  - {fileID: 21300000, guid: 56ca49d063d63d54d8dbbff9ca858586, type: 3}
+  - {fileID: 21300000, guid: da631de597206914eab6700076d9f3c8, type: 3}
+  - {fileID: 21300000, guid: b40e7878bd3e7734e971cb386fa04e2b, type: 3}
+  - {fileID: 21300000, guid: 8c538094367c9ae45a4f632acea7311a, type: 3}
+  - {fileID: 21300000, guid: 0d85cbf4ddb49c24fba4fd0674d91706, type: 3}
+  - {fileID: 21300000, guid: 2b1672cc7c0a23145a82701294878844, type: 3}
+  - {fileID: 21300000, guid: 48aef8fdebd03aa408155ac7da3830c6, type: 3}
+  - {fileID: 21300000, guid: 882e38703d41f974c81754cc5fd76ce3, type: 3}
+  - {fileID: 21300000, guid: 9f6cca1bded991f4aaf3c5438ddc075b, type: 3}
+  - {fileID: 21300000, guid: 358f5efddab75ef41ba0b5b6699ac802, type: 3}
+  - {fileID: 21300000, guid: 7e7761d4ce97f844ba989893f5d9388b, type: 3}
+  locked: {fileID: 21300000, guid: a2287f54e90469e4198445007f6ec9c2, type: 3}
+  empty: {fileID: 0}

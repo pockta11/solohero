@@ -14,11 +14,23 @@ namespace SoloHero.Core.Combat
             return Math.Max(1d, stats.Atk * mult);
         }
 
-        public static bool RollCrit(HeroStats stats, IRandom random)
+        public static bool RollCrit(HeroStats stats, IRandom random, double bonusPoints = 0d)
         {
             if (random == null) throw new ArgumentNullException(nameof(random));
-            return random.NextDouble() < stats.CritRate * 0.01d;
+            return random.NextDouble() < (stats.CritRate + bonusPoints) * 0.01d;
         }
+
+        /// <summary>Damage taken after a Guard buff (fraction) and before the shield.</summary>
+        public static double Guarded(double damage, double guardFraction)
+        {
+            if (guardFraction <= 0d) return damage;
+            if (guardFraction > 0.9d) guardFraction = 0.9d;
+            return damage * (1d - guardFraction);
+        }
+
+        /// <summary>Burn / poison damage per second: ATK x percent x level scale.</summary>
+        public static double SkillDot(HeroStats stats, double percent, double levelScale) =>
+            Math.Max(1d, stats.Atk * percent / 100d * levelScale);
 
         public static double EnemyHit(BalanceValues balance, double enemyAtk, double heroDef) =>
             Formulas.HitDamage(balance, enemyAtk, heroDef);

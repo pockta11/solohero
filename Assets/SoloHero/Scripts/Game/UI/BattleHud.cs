@@ -1,11 +1,13 @@
 using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
-using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
+using SoloHero.Core.Skills;
 using SoloHero.Core.Stage;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
+using SoloHero.Game.UI.Panels;
+using SoloHero.Game.View;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,13 +23,18 @@ namespace SoloHero.Game.UI
         [SerializeField] private GameObject _failPanel;
         [SerializeField] private GameObject _retreatButton;
         [SerializeField] private GameObject _challengeButton;
-        [SerializeField] private Text _slot1Text;
-        [SerializeField] private Text _slot2Text;
-        [SerializeField] private Text _slot3Text;
         [SerializeField] private Text _retreatPrompt;
         [SerializeField] private UiPunch _goldPunch;
         [SerializeField] private Text _gemText;
-        [SerializeField] private Image[] _skillCooldowns = new Image[3];
+
+        [Header("Skill bar (D-078): one entry per slot")]
+        [SerializeField] private SkillIconSet _skillIconSet;
+        [SerializeField] private Image[] _skillIcons = new Image[0];
+        [SerializeField] private Image[] _skillFrames = new Image[0];
+        [SerializeField] private Image[] _skillCooldowns = new Image[0];
+        [SerializeField] private Text[] _skillTimes = new Text[0];
+        [SerializeField] private Text[] _skillLocks = new Text[0];
+        [SerializeField] private UiPunch[] _skillPunches = new UiPunch[0];
         [SerializeField] private GameObject _bossBar;
         [SerializeField] private RectTransform _bossFill;
         [SerializeField] private Text _bossName;
@@ -57,9 +64,11 @@ namespace SoloHero.Game.UI
         private bool _retreatVisible;
         private bool _challengeVisible;
         private bool _retreatPromptVisible;
-        private int _shownSlot1Seconds = -1;
-        private int _shownSlot2Seconds = -1;
-        private int _shownSlot3Seconds = -1;
+        private SkillDef[] _shownDefs = new SkillDef[0];
+        private int[] _shownSeconds = new int[0];
+        private bool[] _shownLocked = new bool[0];
+        private int _shownSkillLevel = -1;
+        private StageRunner _skillRunner;
 
         private void Awake()
         {
@@ -136,19 +145,13 @@ namespace SoloHero.Game.UI
             runner.ChallengeBoss();
         }
 
-        public void CastSlot1()
+        /// <summary>Skill bar tap: casts that slot now if it is ready (auto-cast keeps running either way).</summary>
+        public void CastSlot(int slot)
         {
-            Cast(SkillSlot.Slot1);
-        }
-
-        public void CastSlot2()
-        {
-            Cast(SkillSlot.Slot2);
-        }
-
-        public void CastSlot3()
-        {
-            Cast(SkillSlot.Slot3);
+            StageRunner runner = CurrentRunner();
+            if (runner == null) return;
+            if (runner.Skills.TryCast(slot, runner.Hero, runner.World).Ok && slot < _skillPunches.Length && _skillPunches[slot] != null)
+                _skillPunches[slot].Play();
         }
 
         private StageRunner CurrentRunner()
@@ -284,42 +287,78 @@ namespace SoloHero.Game.UI
             SetShown(_retreatPrompt != null ? _retreatPrompt.gameObject : null, false, ref _retreatPromptVisible);
         }
 
-        private void Cast(SkillSlot slot)
-        {
-            StageRunner runner = CurrentRunner();
-            if (runner == null) return;
-            runner.Skills.TryCast(slot, runner.Hero, runner.World);
-        }
-
+        /// <summary>
+        /// D-078 skill bar: each slot shows its skill icon in a grade-coloured frame, a radial cooldown with seconds,
+        /// or a lock with the hero level that opens it. Texts and sprites change only when their value changes.
+        /// </summary>
         private void RefreshSkills(StageRunner runner)
         {
-            RefreshSkillLabel(_slot1Text, Strings.Get("skill.name.1"), runner.Skills.CooldownRemaining(SkillSlot.Slot1), ref _shownSlot1Seconds);
-            RefreshSkillLabel(_slot2Text, Strings.Get("skill.name.2"), runner.Skills.CooldownRemaining(SkillSlot.Slot2), ref _shownSlot2Seconds);
-            RefreshSkillLabel(_slot3Text, Strings.Get("skill.name.3"), runner.Skills.CooldownRemaining(SkillSlot.Slot3), ref _shownSlot3Seconds);
-            RefreshCooldown(0, runner.Skills.CooldownRemaining(SkillSlot.Slot1), _balance.SKILL_CD_1);
-            RefreshCooldown(1, runner.Skills.CooldownRemaining(SkillSlot.Slot2), _balance.SKILL_CD_2);
-            RefreshCooldown(2, runner.Skills.CooldownRemaining(SkillSlot.Slot3), _balance.SKILL_CD_3);
+            int count = _skillIcons.Length;
+            if (_shownDefs.Length != count || _skillRunner != runner)
+            {
+                _skillRunner = runner;
+                _shownDefs = new SkillDef[count];
+                _shownSeconds = new int[count];
+                _shownLocked = new bool[count];
+                for (int i = 0; i < count; i++)
+                {
+                    _shownSeconds[i] = -1;
+                    _shownLocked[i] = true;
+                }
+
+                _shownSkillLevel = -1;
+                for (int i = 0; i < count; i++) DrawSkillSlot(i, null, true);
+            }
+
+            bool levelChanged = _save != null && _save.heroLevel != _shownSkillLevel;
+            if (levelChanged) _shownSkillLevel = _save.heroLevel;
+            for (int i = 0; i < count; i++)
+            {
+                SkillDef def = runner.Skills.DefAt(i);
+                bool locked = _save != null && _balance != null && !SkillService.IsSlotUnlocked(_balance, i, _save.heroLevel);
+                if (def != _shownDefs[i] || locked != _shownLocked[i] || levelChanged)
+                {
+                    _shownDefs[i] = def;
+                    _shownLocked[i] = locked;
+                    DrawSkillSlot(i, def, locked);
+                    _shownSeconds[i] = -1;
+                }
+
+                float remaining = def != null ? runner.Skills.CooldownRemaining(i) : 0f;
+                float total = def != null ? def.Cooldown : 0f;
+                Image overlay = i < _skillCooldowns.Length ? _skillCooldowns[i] : null;
+                if (overlay != null)
+                {
+                    float fill = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
+                    if (Mathf.Abs(overlay.fillAmount - fill) > 0.005f || (fill == 0f && overlay.fillAmount != 0f)) overlay.fillAmount = fill;
+                }
+
+                int seconds = remaining > 0f ? Mathf.CeilToInt(remaining) : 0;
+                if (seconds == _shownSeconds[i]) continue;
+                _shownSeconds[i] = seconds;
+                Text time = i < _skillTimes.Length ? _skillTimes[i] : null;
+                if (time != null) time.text = seconds > 0 ? seconds.ToString() : "";
+            }
         }
 
-        /// <summary>Dark overlay that shrinks as the skill recovers (filled image, horizontal).</summary>
-        private void RefreshCooldown(int index, float remaining, float total)
+        private void DrawSkillSlot(int i, SkillDef def, bool locked)
         {
-            if (index >= _skillCooldowns.Length || _skillCooldowns[index] == null) return;
-            float fill = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
-            if (Mathf.Abs(_skillCooldowns[index].fillAmount - fill) > 0.005f || (fill == 0f && _skillCooldowns[index].fillAmount != 0f))
-                _skillCooldowns[index].fillAmount = fill;
-        }
+            Image icon = i < _skillIcons.Length ? _skillIcons[i] : null;
+            Image frame = i < _skillFrames.Length ? _skillFrames[i] : null;
+            Text lockText = i < _skillLocks.Length ? _skillLocks[i] : null;
+            Sprite sprite = def != null && _skillIconSet != null ? _skillIconSet.Get(def.Id) : null;
+            if (icon != null)
+            {
+                icon.sprite = sprite;
+                icon.enabled = sprite != null && !locked;
+            }
 
-        private static void RefreshSkillLabel(Text label, string readyName, float remaining, ref int shownSeconds)
-        {
-            if (label == null) return;
-
-            int seconds = remaining > 0f ? Mathf.CeilToInt(remaining) : 0;
-            if (seconds < 0) seconds = 0;
-            if (shownSeconds == seconds) return;
-
-            shownSeconds = seconds;
-            label.text = seconds > 0 ? Strings.Format("hud.skill_cooldown", readyName, seconds) : readyName;
+            if (frame != null)
+                frame.color = def != null && !locked ? PanelServices.GradeColor(def.Grade) : new Color(0.35f, 0.35f, 0.4f, 1f);
+            if (lockText == null) return;
+            lockText.gameObject.SetActive(locked);
+            if (locked && _balance != null && i < SkillService.SlotCount(_balance))
+                lockText.text = Strings.Format("skill.slot_locked", SkillService.UnlockHeroLevel(_balance, i));
         }
 
         private void RefreshRetreatPrompt(StageRunner runner)

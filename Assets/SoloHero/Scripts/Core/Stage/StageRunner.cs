@@ -204,7 +204,7 @@ namespace SoloHero.Core.Stage
             _world.TickEnemies(dt);
             bool bossFight = State == StageState.BossTimer;
             _skills.Tick(dt, _hero, _world, bossFight);
-            _hero.SetAtkBuffFraction(_skills.AtkBuffSum);
+            _hero.SetSkillBuffs(_skills.BuffAtk, _skills.BuffAtkSpd, _skills.BuffCrit, _skills.BuffGuard);
             _hero.Tick(dt, _world);
 
             // Simultaneous resolution order (GDD):
@@ -321,7 +321,8 @@ namespace SoloHero.Core.Stage
                 interval = _balance.BOSS_ATK_INTERVAL;
             }
 
-            double x = _world.SpawnXAheadOfHero();
+            // D-081: a wave stands in a line, front enemy first.
+            double x = _world.SpawnXAheadOfHero() + (isBoss ? 0 : _spawner.WaveSlot) * _balance.SPAWN_WAVE_SPACING;
             // SpawnIndex only picks the look (E8-03); every enemy of a stage has the same stats.
             brain.Reset(_balance, hp, atk, interval, x, isBoss, isBoss ? 0 : _spawner.Spawned - 1);
             return true;

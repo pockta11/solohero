@@ -3,7 +3,8 @@
 개발: SoloSoft
 
 ■ 그래픽
-- 캐릭터·적·보스·지형: Kings and Pigs — Pixel Frog (CC0)
+- 캐릭터·적·보스: Hero Knight · Monsters Creatures Fantasy · Martial Hero · Evil Wizard · Fantasy Warrior — LuizMelo (CC0)
+- 지형: Kings and Pigs — Pixel Frog (CC0)
 - 배경: MatiasVME, Yevhen Babiichuk (DustDFG), ansimuz, FabinhoSC — OpenGameArt (CC0)
 - 이펙트·UI·아이콘: SoloSoft
 

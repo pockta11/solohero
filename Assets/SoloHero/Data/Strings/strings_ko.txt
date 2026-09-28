@@ -41,7 +41,7 @@ offline.ad_failed	광고를 불러올 수 없습니다
 # Tutorial
 tutorial.upgrade_tip	팁: 캐릭터 탭에서 능력치를 강화하세요
 tutorial.welcome	환영 선물: 골드와 무료 소환
-tutorial.skill_unlocked	회전베기 해금! 스킬 탭에서 레벨을 올리세요
+tutorial.skill_unlocked	스킬 슬롯 2 해금! 소환 탭에서 새 스킬을 모으세요
 
 # Stats and character panel
 stat.hp	체력
@@ -52,13 +52,70 @@ char.lane	{0}  Lv {1}
 char.max	최대
 char.summary	Lv {0}   체력 {1}   공격력 {2}   방어력 {3}\n공격속도 {4}/초   치명타 {5}%
 
-# Skills
-skill.name.1	강타
-skill.name.2	회전베기
-skill.name.3	전투 함성
+# Skills (D-078). Description args: {0} damage % per hit, {1} hits, {2} burn %/s, {3} burn s, {4} stun s,
+# {5} buff amount, {6} buff s, {7} heal %, {8} shield %, {9} shield s, {10} HP threshold %, {11} cooldown s
 skill.level	{0}  Lv {1}/{2}
-skill.unlock_at	{0}  (캐릭터 Lv {1} 해금)
-skill.locked	잠김
+skill.slot_locked	Lv {0}
+skill.info	{0} · Lv {1}/{2} · 쿨타임 {3}초
+skill.owned_bonus	보유 효과: 공격력 +{0}%  ({1}/{2}종)
+skill.not_owned	미보유
+skill.info_unowned	{0} · 미보유
+skill.equip	장착
+skill.unequip	해제
+skill.auto_equip	자동 장착
+skill.pick_slot	교체할 슬롯을 누르세요
+skill.equipped_mark	장착
+skill.select_hint	스킬을 눌러 정보를 보세요
+toast.slots_full	빈 슬롯이 없습니다. 교체할 슬롯을 고르세요
+toast.skill_equipped	{0} 장착!
+skill.name.power_strike	강타
+skill.desc.power_strike	앞의 적 하나에게 공격력의 {0}% 피해
+skill.name.whirlwind	회전베기
+skill.desc.whirlwind	주변 적 모두에게 공격력의 {0}% 피해 {1}회
+skill.name.battle_cry	전투의 함성
+skill.desc.battle_cry	{6}초 동안 공격력 +{5}%, 체력 {7}% 회복
+skill.name.quick_slash	연속 베기
+skill.desc.quick_slash	앞의 적에게 공격력의 {0}% 피해 {1}회
+skill.name.iron_skin	강철 피부
+skill.desc.iron_skin	{6}초 동안 받는 피해 -{5}%
+skill.name.first_aid	응급 처치
+skill.desc.first_aid	체력이 {10}% 이하일 때 체력 {7}% 회복
+skill.name.fireball	화염구
+skill.desc.fireball	먼 적에게 공격력의 {0}% 피해, {3}초 동안 초당 {2}% 화상
+skill.name.frost_nova	서리 폭발
+skill.desc.frost_nova	주변 적 모두에게 {0}% 피해, {4}초 빙결
+skill.name.thunder	낙뢰
+skill.desc.thunder	먼 적 하나에게 벼락, 공격력의 {0}% 피해
+skill.name.berserk	광폭화
+skill.desc.berserk	{6}초 동안 공격속도 +{5}%
+skill.name.poison_cloud	독안개
+skill.desc.poison_cloud	넓은 범위에 {0}% 피해, {3}초 동안 초당 {2}% 중독
+skill.name.eagle_eye	매의 눈
+skill.desc.eagle_eye	{6}초 동안 치명타 확률 +{5}%
+skill.name.meteor	메테오
+skill.desc.meteor	넓은 범위에 운석, 공격력의 {0}% 피해
+skill.name.chain_lightning	연쇄 번개
+skill.desc.chain_lightning	범위 안 모든 적에게 번개 {0}% 피해 {1}회
+skill.name.blade_storm	칼날 폭풍
+skill.desc.blade_storm	주변 적 모두에게 {0}% 피해 {1}회
+skill.name.holy_light	성스러운 빛
+skill.desc.holy_light	체력이 {10}% 이하일 때 체력 {7}% 회복, {9}초 동안 보호막 {8}%
+skill.name.glacier_spear	빙하의 창
+skill.desc.glacier_spear	먼 적 하나에게 {0}% 피해, {4}초 빙결
+skill.name.war_god	군신의 가호
+skill.desc.war_god	{6}초 동안 공격력 +{5}%, 보호막 {8}%
+skill.name.dragon_breath	용의 숨결
+skill.desc.dragon_breath	넓은 범위에 화염 {0}% 피해 {1}회, {3}초 동안 초당 {2}% 화상
+skill.name.judgement	심판
+skill.desc.judgement	범위 안 모든 적에게 하늘의 빛, 공격력의 {0}% 피해
+skill.name.time_stop	시간 정지
+skill.desc.time_stop	모든 적을 {4}초 멈추고 {0}% 피해, {6}초 동안 공격력 +{5}%
+skill.name.sword_rain	검의 비
+skill.desc.sword_rain	넓은 범위에 검을 쏟아 {0}% 피해 {1}회
+skill.name.phoenix	불사조
+skill.desc.phoenix	체력이 {10}% 이하일 때 체력 {7}% 회복, {6}초 동안 공격력 +{5}%
+skill.name.black_hole	블랙홀
+skill.desc.black_hole	적을 빨아들여 {0}% 피해 {1}회, {4}초 기절
 
 # Grades and slots
 grade.common	일반
@@ -80,8 +137,8 @@ equip.swap	교체
 # Summon panel
 gacha.pity	전설까지 {0}회   ({1}/{2})
 gacha.rates	일반 {0}%  희귀 {1}%  영웅 {2}%  전설 {3}%\n{4}회째는 전설 확정. 전설을 얻으면 횟수가 초기화됩니다.
-gacha.cost_single	1회  {0} G
-gacha.cost_ten	10회  {0} G
+gacha.cost_single	1회  {0}
+gacha.cost_ten	10회  {0}
 gacha.cost_gem	10회  {0} 젬
 gacha.enhanced	중복 -> +{0} 강화
 gacha.refund	최대 강화, +{0} G
@@ -121,13 +178,18 @@ stage.boss	보스
 stage.close	닫기
 
 # gem shop (E6-02)
+gacha.mode_gear	장비 소환
+gacha.mode_skill	스킬 소환
+gacha.skill_new	NEW!
+gacha.skill_up	Lv {0}
+gacha.skill_summary	새 스킬 {0} · 레벨업 {1} · 환급 {2}
 gacha.gold_pack	젬 {0} → 골드 {1}
 toast.gold_pack	골드 {0} 획득!
 
-# boss intro (E7-11, D-068 boss looks)
+# boss intro (E7-11, D-082 boss looks)
 boss.banner	{0}장 보스
-boss.name.1	돼지 왕
-boss.name.2	푸른 돼지 왕
-boss.name.3	그늘 돼지 왕
-boss.name.4	심연의 돼지 왕
-boss.name.5	불꽃 돼지 왕
+boss.name.1	떠돌이 검귀
+boss.name.2	해골 주술사
+boss.name.3	숲의 추적자
+boss.name.4	그림자 마도사
+boss.name.5	화염 마법사

@@ -43,3 +43,191 @@ MonoBehaviour:
   - {fileID: -6163379150325527223, guid: 801b6f27fbf38ad489814afb20543e3f, type: 3}
   - {fileID: 5288872640271736492, guid: 801b6f27fbf38ad489814afb20543e3f, type: 3}
   fps: 18
+  clips:
+  - name: fire
+    frames:
+    - {fileID: -7350040113818907466, guid: 5eaaa8afcace15842828d0b5d58cb276, type: 3}
+    - {fileID: -1306546701259897012, guid: 5eaaa8afcace15842828d0b5d58cb276, type: 3}
+    - {fileID: -5907221579560495701, guid: 5eaaa8afcace15842828d0b5d58cb276, type: 3}
+    - {fileID: -5329037458241938700, guid: 5eaaa8afcace15842828d0b5d58cb276, type: 3}
+    - {fileID: -3661241217936994460, guid: 5eaaa8afcace15842828d0b5d58cb276, type: 3}
+    - {fileID: -2908848371437424772, guid: 5eaaa8afcace15842828d0b5d58cb276, type: 3}
+    - {fileID: -1415204096662866148, guid: 5eaaa8afcace15842828d0b5d58cb276, type: 3}
+    - {fileID: -6879482013422039468, guid: 5eaaa8afcace15842828d0b5d58cb276, type: 3}
+    fps: 16
+    ground: 0
+    halfHeight: 0.75
+  - name: bolt
+    frames:
+    - {fileID: 2611208979241039503, guid: 9a8776b6b170b58459a6efcbd520c9b4, type: 3}
+    - {fileID: -4128424443369739731, guid: 9a8776b6b170b58459a6efcbd520c9b4, type: 3}
+    - {fileID: 2219674644327557492, guid: 9a8776b6b170b58459a6efcbd520c9b4, type: 3}
+    - {fileID: 8980216010157128778, guid: 9a8776b6b170b58459a6efcbd520c9b4, type: 3}
+    - {fileID: 5006397221764723418, guid: 9a8776b6b170b58459a6efcbd520c9b4, type: 3}
+    - {fileID: -6493506424647320038, guid: 9a8776b6b170b58459a6efcbd520c9b4, type: 3}
+    - {fileID: -9003326192089659780, guid: 9a8776b6b170b58459a6efcbd520c9b4, type: 3}
+    fps: 14
+    ground: 1
+    halfHeight: 1.875
+  - name: ice
+    frames:
+    - {fileID: -4932882810106998199, guid: 51a4bd61ac0439441bba028f82a3b9ea, type: 3}
+    - {fileID: -2555890230308565202, guid: 51a4bd61ac0439441bba028f82a3b9ea, type: 3}
+    - {fileID: 5492651840733024732, guid: 51a4bd61ac0439441bba028f82a3b9ea, type: 3}
+    - {fileID: 8708884701166236748, guid: 51a4bd61ac0439441bba028f82a3b9ea, type: 3}
+    - {fileID: -7088973104666529233, guid: 51a4bd61ac0439441bba028f82a3b9ea, type: 3}
+    - {fileID: -3109793433425093122, guid: 51a4bd61ac0439441bba028f82a3b9ea, type: 3}
+    - {fileID: -2421980975742957307, guid: 51a4bd61ac0439441bba028f82a3b9ea, type: 3}
+    fps: 14
+    ground: 1
+    halfHeight: 0.875
+  - name: poison
+    frames:
+    - {fileID: 7879209614922893359, guid: b135cd6dc6761d0488b2dbd7589b17a9, type: 3}
+    - {fileID: 6985664414841131218, guid: b135cd6dc6761d0488b2dbd7589b17a9, type: 3}
+    - {fileID: 5145781850379475039, guid: b135cd6dc6761d0488b2dbd7589b17a9, type: 3}
+    - {fileID: 978069736274837540, guid: b135cd6dc6761d0488b2dbd7589b17a9, type: 3}
+    - {fileID: -5286902241864091245, guid: b135cd6dc6761d0488b2dbd7589b17a9, type: 3}
+    - {fileID: 6886399434826293194, guid: b135cd6dc6761d0488b2dbd7589b17a9, type: 3}
+    - {fileID: -6930184958305952907, guid: b135cd6dc6761d0488b2dbd7589b17a9, type: 3}
+    - {fileID: 671751641871284418, guid: b135cd6dc6761d0488b2dbd7589b17a9, type: 3}
+    fps: 12
+    ground: 1
+    halfHeight: 0.8125
+  - name: meteor
+    frames:
+    - {fileID: 2258231615186970433, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: -8138939450216934256, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: 5542485966903872800, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: -6057681013377482777, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: -978840980131015859, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: 479902425070090482, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: -6778509056442671157, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: 3749095154057687613, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: -4527672375881003231, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: -2288570948083451202, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    - {fileID: 8381355552379688644, guid: 67ed182b611cca242bc106f3522552a9, type: 3}
+    fps: 16
+    ground: 1
+    halfHeight: 2.125
+  - name: holy
+    frames:
+    - {fileID: -6827752597664618897, guid: 3fb7817e5234d164b9440c54d4ded926, type: 3}
+    - {fileID: -2834250539376260532, guid: 3fb7817e5234d164b9440c54d4ded926, type: 3}
+    - {fileID: -5965709335886353014, guid: 3fb7817e5234d164b9440c54d4ded926, type: 3}
+    - {fileID: 5165866685271633609, guid: 3fb7817e5234d164b9440c54d4ded926, type: 3}
+    - {fileID: 9173854190398397386, guid: 3fb7817e5234d164b9440c54d4ded926, type: 3}
+    - {fileID: 3948621998310665973, guid: 3fb7817e5234d164b9440c54d4ded926, type: 3}
+    - {fileID: 6827909937297595810, guid: 3fb7817e5234d164b9440c54d4ded926, type: 3}
+    - {fileID: -5697476807847060746, guid: 3fb7817e5234d164b9440c54d4ded926, type: 3}
+    fps: 14
+    ground: 1
+    halfHeight: 2.125
+  - name: tornado
+    frames:
+    - {fileID: -2589360304506104121, guid: e9e5868a99b263d4aba5f154f4c40637, type: 3}
+    - {fileID: 1713044934147877230, guid: e9e5868a99b263d4aba5f154f4c40637, type: 3}
+    - {fileID: 7639223562423036281, guid: e9e5868a99b263d4aba5f154f4c40637, type: 3}
+    - {fileID: 16123812215093451, guid: e9e5868a99b263d4aba5f154f4c40637, type: 3}
+    - {fileID: 7693173406379051498, guid: e9e5868a99b263d4aba5f154f4c40637, type: 3}
+    - {fileID: 8742384605833236946, guid: e9e5868a99b263d4aba5f154f4c40637, type: 3}
+    - {fileID: -779023170082368060, guid: e9e5868a99b263d4aba5f154f4c40637, type: 3}
+    - {fileID: -4479385155515127340, guid: e9e5868a99b263d4aba5f154f4c40637, type: 3}
+    fps: 14
+    ground: 1
+    halfHeight: 1.3125
+  - name: swords
+    frames:
+    - {fileID: -7883097827777904432, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: -1576321409044429012, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: -8692620741098574452, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: 3128550333727700110, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: -5673453643499776412, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: 7761971508410537147, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: -1790025341064662683, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: 6186591903489160717, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: 4089946005940027674, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: 5491399783831132269, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    - {fileID: -6860322734662779620, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
+    fps: 16
+    ground: 1
+    halfHeight: 1.875
+  - name: heal
+    frames:
+    - {fileID: 263270198645085436, guid: b453a8997bfbfa14a922b16e67ef43d2, type: 3}
+    - {fileID: 4244482224520206911, guid: b453a8997bfbfa14a922b16e67ef43d2, type: 3}
+    - {fileID: 5270783913851634100, guid: b453a8997bfbfa14a922b16e67ef43d2, type: 3}
+    - {fileID: -6587021838734504963, guid: b453a8997bfbfa14a922b16e67ef43d2, type: 3}
+    - {fileID: 2767229671659491812, guid: b453a8997bfbfa14a922b16e67ef43d2, type: 3}
+    - {fileID: 2532178492972694263, guid: b453a8997bfbfa14a922b16e67ef43d2, type: 3}
+    - {fileID: -6969504332997713696, guid: b453a8997bfbfa14a922b16e67ef43d2, type: 3}
+    - {fileID: -1870024889104559935, guid: b453a8997bfbfa14a922b16e67ef43d2, type: 3}
+    fps: 12
+    ground: 1
+    halfHeight: 1
+  - name: shield
+    frames:
+    - {fileID: -3285856063702317683, guid: 2e18074675d98224c890efcaed334c2f, type: 3}
+    - {fileID: 3411364502326970621, guid: 2e18074675d98224c890efcaed334c2f, type: 3}
+    - {fileID: 5545892886777851541, guid: 2e18074675d98224c890efcaed334c2f, type: 3}
+    - {fileID: 8164162579365638411, guid: 2e18074675d98224c890efcaed334c2f, type: 3}
+    - {fileID: 1170356734763756827, guid: 2e18074675d98224c890efcaed334c2f, type: 3}
+    - {fileID: 1896565287159775380, guid: 2e18074675d98224c890efcaed334c2f, type: 3}
+    fps: 12
+    ground: 0
+    halfHeight: 0.8125
+  - name: aura
+    frames:
+    - {fileID: 1892919768891569542, guid: b9159069df1bcc54091670275f7978a5, type: 3}
+    - {fileID: 5028101908670166638, guid: b9159069df1bcc54091670275f7978a5, type: 3}
+    - {fileID: -4758252888582457700, guid: b9159069df1bcc54091670275f7978a5, type: 3}
+    - {fileID: 9178060049380593766, guid: b9159069df1bcc54091670275f7978a5, type: 3}
+    - {fileID: 8714990424284878454, guid: b9159069df1bcc54091670275f7978a5, type: 3}
+    - {fileID: 5576396799179939172, guid: b9159069df1bcc54091670275f7978a5, type: 3}
+    - {fileID: -1537837157242632981, guid: b9159069df1bcc54091670275f7978a5, type: 3}
+    - {fileID: 8969417754059845943, guid: b9159069df1bcc54091670275f7978a5, type: 3}
+    fps: 14
+    ground: 1
+    halfHeight: 1.125
+  - name: vortex
+    frames:
+    - {fileID: -6360580939751832297, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    - {fileID: 6976230768296407465, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    - {fileID: -3244050596089922279, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    - {fileID: -4617851377822949839, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    - {fileID: 552763255850281964, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    - {fileID: 6393545210749029192, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    - {fileID: -678132173661376894, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    - {fileID: -8769097796157420208, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    - {fileID: 3242055116090808736, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    - {fileID: -4609454730963182757, guid: 5c3cdc2398dc6594f832269d71e6e677, type: 3}
+    fps: 14
+    ground: 0
+    halfHeight: 1.3125
+  - name: breath
+    frames:
+    - {fileID: -8142708198759551946, guid: 26cb10c9b4b87fc419ae374b5ee78622, type: 3}
+    - {fileID: 1620943515730787581, guid: 26cb10c9b4b87fc419ae374b5ee78622, type: 3}
+    - {fileID: -8992065946183492453, guid: 26cb10c9b4b87fc419ae374b5ee78622, type: 3}
+    - {fileID: 4611925225013512302, guid: 26cb10c9b4b87fc419ae374b5ee78622, type: 3}
+    - {fileID: 656023466773291922, guid: 26cb10c9b4b87fc419ae374b5ee78622, type: 3}
+    - {fileID: -6524260879757205196, guid: 26cb10c9b4b87fc419ae374b5ee78622, type: 3}
+    - {fileID: -205541035333608792, guid: 26cb10c9b4b87fc419ae374b5ee78622, type: 3}
+    - {fileID: -974457091090718614, guid: 26cb10c9b4b87fc419ae374b5ee78622, type: 3}
+    fps: 14
+    ground: 1
+    halfHeight: 0.9375
+  - name: phoenix
+    frames:
+    - {fileID: 3513386751892625771, guid: b419c8147b0d1444ab09266cd6a253cc, type: 3}
+    - {fileID: -8906986928611168359, guid: b419c8147b0d1444ab09266cd6a253cc, type: 3}
+    - {fileID: 4125825280294733634, guid: b419c8147b0d1444ab09266cd6a253cc, type: 3}
+    - {fileID: 3279583933710934238, guid: b419c8147b0d1444ab09266cd6a253cc, type: 3}
+    - {fileID: -8986920562945002889, guid: b419c8147b0d1444ab09266cd6a253cc, type: 3}
+    - {fileID: -8671934538232769610, guid: b419c8147b0d1444ab09266cd6a253cc, type: 3}
+    - {fileID: 5020910180527123690, guid: b419c8147b0d1444ab09266cd6a253cc, type: 3}
+    - {fileID: 2071147024727424942, guid: b419c8147b0d1444ab09266cd6a253cc, type: 3}
+    - {fileID: -5381606978200739034, guid: b419c8147b0d1444ab09266cd6a253cc, type: 3}
+    fps: 12
+    ground: 1
+    halfHeight: 1.125

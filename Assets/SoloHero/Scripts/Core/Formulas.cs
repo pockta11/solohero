@@ -1,5 +1,6 @@
 using System;
 using SoloHero.Core.Config;
+using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 
 namespace SoloHero.Core
@@ -41,6 +42,54 @@ namespace SoloHero.Core
             }
 
             return baseCost * Math.Pow(c.UPG_COST_GROWTH, level);
+        }
+
+        /// <summary>Skill level scaling (D-078): every percent value of a skill x (1 + SKILL_LEVEL_GAIN% x (level - 1)).</summary>
+        public static double SkillLevelScale(BalanceValues c, int level) =>
+            1d + c.SKILL_LEVEL_GAIN / 100d * ((level < 1 ? 1 : level) - 1);
+
+        /// <summary>Gold to raise a skill of <paramref name="grade"/> from <paramref name="level"/> to the next.</summary>
+        public static double SkillUpgradeCost(BalanceValues c, Grade grade, int level)
+        {
+            double baseCost;
+            switch (grade)
+            {
+                case Grade.Common: baseCost = c.SKILL_UPG_BASE_C; break;
+                case Grade.Rare: baseCost = c.SKILL_UPG_BASE_R; break;
+                case Grade.Epic: baseCost = c.SKILL_UPG_BASE_E; break;
+                case Grade.Legendary: baseCost = c.SKILL_UPG_BASE_L; break;
+                default: throw new ArgumentOutOfRangeException(nameof(grade));
+            }
+
+            return baseCost * Math.Pow(c.SKILL_UPG_COST_GROWTH, (level < 1 ? 1 : level) - 1);
+        }
+
+        /// <summary>Owned effect of one skill (genre "collection bonus"): ATK +grade% x level scale, as a fraction.</summary>
+        public static double SkillOwnedAtk(BalanceValues c, Grade grade, int level)
+        {
+            double percent;
+            switch (grade)
+            {
+                case Grade.Common: percent = c.SKILL_OWNED_ATK_C; break;
+                case Grade.Rare: percent = c.SKILL_OWNED_ATK_R; break;
+                case Grade.Epic: percent = c.SKILL_OWNED_ATK_E; break;
+                case Grade.Legendary: percent = c.SKILL_OWNED_ATK_L; break;
+                default: throw new ArgumentOutOfRangeException(nameof(grade));
+            }
+
+            return percent / 100d * SkillLevelScale(c, level);
+        }
+
+        public static double SkillRefund(BalanceValues c, Grade grade)
+        {
+            switch (grade)
+            {
+                case Grade.Common: return c.SKILL_REFUND_C;
+                case Grade.Rare: return c.SKILL_REFUND_R;
+                case Grade.Epic: return c.SKILL_REFUND_E;
+                case Grade.Legendary: return c.SKILL_REFUND_L;
+                default: throw new ArgumentOutOfRangeException(nameof(grade));
+            }
         }
 
         public static double HitDamage(BalanceValues c, double enemyAtk, double def)

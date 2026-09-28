@@ -26,24 +26,11 @@ namespace SoloHero.Editor
         /// <summary>UI art is drawn at 1/4 of the 1080 reference width: 1 art pixel = 4 canvas units (100 / 25).</summary>
         private const int UiPpu = 25;
 
-        /// <summary>Foot pivot per entity in frame pixels from the bottom-left (measured from the idle frame).</summary>
-        private static readonly Dictionary<string, Vector2> FootPivotPx = new Dictionary<string, Vector2>
-        {
-            { "king", new Vector2(32f, 14f) },
-            { "pig", new Vector2(20f, 0f) },
-            { "pigr", new Vector2(20f, 0f) },
-            { "boxpig", new Vector2(15f, 0f) },
-            { "boxpigv", new Vector2(15f, 0f) },
-            { "bombpig", new Vector2(11f, 0f) },
-            { "bombpigr", new Vector2(11f, 0f) },
-            { "hidepig", new Vector2(13f, 0f) },
-            { "matchpig", new Vector2(14f, 0f) },
-            { "kingpig", new Vector2(20f, 0f) },
-            { "kingpigb", new Vector2(20f, 0f) },
-            { "kingpigd", new Vector2(20f, 0f) },
-            { "kingpign", new Vector2(20f, 0f) },
-            { "kingpigr", new Vector2(20f, 0f) },
-        };
+        /// <summary>
+        /// Foot pivot per entity in frame pixels from the bottom-left, for sheets whose feet are not on the bottom-centre.
+        /// The D-082 character sheets are cropped with the feet on the bottom row, centred, so none need an entry.
+        /// </summary>
+        private static readonly Dictionary<string, Vector2> FootPivotPx = new Dictionary<string, Vector2>();
 
         private void OnPreprocessTexture()
         {

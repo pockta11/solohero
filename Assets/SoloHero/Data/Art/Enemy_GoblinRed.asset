@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 934de9d630de4cc3b81407134a6797ef, type: 3}
+  m_Name: Enemy_GoblinRed
+  m_EditorClassIdentifier: 
+  idle:
+  - {fileID: 5936811344933548302, guid: 4c613dd5d66d1534f825ccf7f7e17e37, type: 3}
+  - {fileID: 3777293064705258393, guid: 4c613dd5d66d1534f825ccf7f7e17e37, type: 3}
+  - {fileID: 5437438891126300022, guid: 4c613dd5d66d1534f825ccf7f7e17e37, type: 3}
+  - {fileID: 4628305678355710910, guid: 4c613dd5d66d1534f825ccf7f7e17e37, type: 3}
+  run:
+  - {fileID: 1365276328415377419, guid: c6d2f534a5aea79439ad3031e85d27f1, type: 3}
+  - {fileID: -3291456652710492065, guid: c6d2f534a5aea79439ad3031e85d27f1, type: 3}
+  - {fileID: -769157326816695066, guid: c6d2f534a5aea79439ad3031e85d27f1, type: 3}
+  - {fileID: 3672152536776881286, guid: c6d2f534a5aea79439ad3031e85d27f1, type: 3}
+  - {fileID: 2981923636454571953, guid: c6d2f534a5aea79439ad3031e85d27f1, type: 3}
+  - {fileID: 3277852489822811906, guid: c6d2f534a5aea79439ad3031e85d27f1, type: 3}
+  - {fileID: 8455015870400007590, guid: c6d2f534a5aea79439ad3031e85d27f1, type: 3}
+  - {fileID: -2185527326045877590, guid: c6d2f534a5aea79439ad3031e85d27f1, type: 3}
+  attack:
+  - {fileID: 2019026619212967455, guid: 578976020e9b2574ebfdf46aebf580a1, type: 3}
+  - {fileID: -5489675401962121179, guid: 578976020e9b2574ebfdf46aebf580a1, type: 3}
+  - {fileID: -6809561597216154897, guid: 578976020e9b2574ebfdf46aebf580a1, type: 3}
+  - {fileID: -8220640353651565971, guid: 578976020e9b2574ebfdf46aebf580a1, type: 3}
+  - {fileID: 2101770914675319888, guid: 578976020e9b2574ebfdf46aebf580a1, type: 3}
+  - {fileID: 170945455279128640, guid: 578976020e9b2574ebfdf46aebf580a1, type: 3}
+  - {fileID: 2862067009265442829, guid: 578976020e9b2574ebfdf46aebf580a1, type: 3}
+  - {fileID: 92853618395523810, guid: 578976020e9b2574ebfdf46aebf580a1, type: 3}
+  hit:
+  - {fileID: -862421979867766373, guid: ce5e5c050223bfc4f9c32358be0bea83, type: 3}
+  - {fileID: -6720750200565651733, guid: ce5e5c050223bfc4f9c32358be0bea83, type: 3}
+  - {fileID: -1364709360572352586, guid: ce5e5c050223bfc4f9c32358be0bea83, type: 3}
+  - {fileID: 3878997279765771972, guid: ce5e5c050223bfc4f9c32358be0bea83, type: 3}
+  dead:
+  - {fileID: 6152466327880662067, guid: bdcb42f74548d6d4f8d4a61fbdb27259, type: 3}
+  - {fileID: -3174272780707881346, guid: bdcb42f74548d6d4f8d4a61fbdb27259, type: 3}
+  - {fileID: 957076645175230366, guid: bdcb42f74548d6d4f8d4a61fbdb27259, type: 3}
+  - {fileID: -2461914260601400, guid: bdcb42f74548d6d4f8d4a61fbdb27259, type: 3}
+  fps: 10
+  pixelScale: 1
+  headHeight: 1.125

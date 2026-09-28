@@ -44,6 +44,7 @@ namespace SoloHero.Game.UI.Common
                 case FailReason.OnCooldown: return "toast.on_cooldown";
                 case FailReason.Locked: return "toast.locked";
                 case FailReason.Busy: return "toast.busy";
+                case FailReason.SlotsFull: return "toast.slots_full";
                 case FailReason.DailyLimit: return "toast.daily_limit";
                 case FailReason.AdUnavailable: return "toast.ad_unavailable";
                 default: return null;
