@@ -20,6 +20,12 @@ namespace SoloHero.Editor
 
         private static readonly Regex SheetName = new Regex(@"^([a-z0-9]+)_([a-z0-9]+)_(\d+)$");
 
+        /// <summary>UI 9-slice sprites: ui9_{name}_{border px}.png.</summary>
+        private static readonly Regex NineSlice = new Regex(@"^ui9_[a-z0-9]+_(\d+)$");
+
+        /// <summary>UI art is drawn at 1/4 of the 1080 reference width: 1 art pixel = 4 canvas units (100 / 25).</summary>
+        private const int UiPpu = 25;
+
         /// <summary>Foot pivot per entity in frame pixels from the bottom-left (measured from the idle frame).</summary>
         private static readonly Dictionary<string, Vector2> FootPivotPx = new Dictionary<string, Vector2>
         {
@@ -65,6 +71,15 @@ namespace SoloHero.Editor
             {
                 importer.spriteImportMode = SpriteImportMode.Single;
                 settings.spriteAlignment = (int)(ui ? SpriteAlignment.Center : SpriteAlignment.BottomCenter);
+                if (ui)
+                {
+                    importer.spritePixelsPerUnit = UiPpu;
+                    settings.spritePixelsPerUnit = UiPpu;
+                    Match nine = NineSlice.Match(name);
+                    float border = nine.Success ? int.Parse(nine.Groups[1].Value) : 0f;
+                    settings.spriteBorder = new Vector4(border, border, border, border);
+                }
+
                 importer.wrapMode = repeating ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
                 importer.SetTextureSettings(settings);
                 return;

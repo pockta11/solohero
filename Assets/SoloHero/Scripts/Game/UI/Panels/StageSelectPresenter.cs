@@ -15,9 +15,10 @@ namespace SoloHero.Game.UI.Panels
     /// </summary>
     public sealed class StageSelectPresenter : MonoBehaviour
     {
-        private static readonly Color Selectable = new Color(0.25f, 0.45f, 0.3f, 1f);
-        private static readonly Color Current = new Color(0.95f, 0.77f, 0.19f, 1f);
-        private static readonly Color Disabled = new Color(0.2f, 0.2f, 0.24f, 1f);
+        // Tints over the skinned button sprite: white keeps its colour, the current stage glows gold.
+        private static readonly Color Selectable = Color.white;
+        private static readonly Color Current = new Color(1f, 0.85f, 0.35f, 1f);
+        private static readonly Color Disabled = new Color(0.55f, 0.55f, 0.6f, 1f);
 
         [SerializeField] private GameObject _popup;
         [SerializeField] private Text _chapterText;

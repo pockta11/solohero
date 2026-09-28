@@ -26,6 +26,8 @@ namespace SoloHero.Game.UI
         [SerializeField] private Text _slot3Text;
         [SerializeField] private Text _retreatPrompt;
         [SerializeField] private UiPunch _goldPunch;
+        [SerializeField] private Text _gemText;
+        [SerializeField] private Image[] _skillCooldowns = new Image[3];
 
         private const string FarmingKey = "hud.farming";
         private const string AutoRetreatKey = "hud.auto_retreat";
@@ -35,6 +37,7 @@ namespace SoloHero.Game.UI
         private SaveDataV2 _save;
         private bool _goldShown;
         private double _shownGold;
+        private double _shownGem = -1d;
         private double _goldFrom;
         private double _goldTo;
         private float _goldT = 1f;
@@ -80,6 +83,7 @@ namespace SoloHero.Game.UI
         private void LateUpdate()
         {
             RefreshGold();
+            RefreshGem();
 
             StageRunner runner = CurrentRunner();
             if (runner == null)
@@ -183,6 +187,13 @@ namespace SoloHero.Game.UI
             _goldText.text = BigNumberFormat.Format(_shownGold);
         }
 
+        private void RefreshGem()
+        {
+            if (_gemText == null || _save == null || _save.gem == _shownGem) return;
+            _shownGem = _save.gem;
+            _gemText.text = BigNumberFormat.Format(_shownGem);
+        }
+
         private void RefreshStage(StageRunner runner)
         {
             if (_stageText == null || _balance == null) return;
@@ -249,6 +260,18 @@ namespace SoloHero.Game.UI
             RefreshSkillLabel(_slot1Text, Strings.Get("skill.name.1"), runner.Skills.CooldownRemaining(SkillSlot.Slot1), ref _shownSlot1Seconds);
             RefreshSkillLabel(_slot2Text, Strings.Get("skill.name.2"), runner.Skills.CooldownRemaining(SkillSlot.Slot2), ref _shownSlot2Seconds);
             RefreshSkillLabel(_slot3Text, Strings.Get("skill.name.3"), runner.Skills.CooldownRemaining(SkillSlot.Slot3), ref _shownSlot3Seconds);
+            RefreshCooldown(0, runner.Skills.CooldownRemaining(SkillSlot.Slot1), _balance.SKILL_CD_1);
+            RefreshCooldown(1, runner.Skills.CooldownRemaining(SkillSlot.Slot2), _balance.SKILL_CD_2);
+            RefreshCooldown(2, runner.Skills.CooldownRemaining(SkillSlot.Slot3), _balance.SKILL_CD_3);
+        }
+
+        /// <summary>Dark overlay that shrinks as the skill recovers (filled image, horizontal).</summary>
+        private void RefreshCooldown(int index, float remaining, float total)
+        {
+            if (index >= _skillCooldowns.Length || _skillCooldowns[index] == null) return;
+            float fill = total > 0f ? Mathf.Clamp01(remaining / total) : 0f;
+            if (Mathf.Abs(_skillCooldowns[index].fillAmount - fill) > 0.005f || (fill == 0f && _skillCooldowns[index].fillAmount != 0f))
+                _skillCooldowns[index].fillAmount = fill;
         }
 
         private static void RefreshSkillLabel(Text label, string readyName, float remaining, ref int shownSeconds)

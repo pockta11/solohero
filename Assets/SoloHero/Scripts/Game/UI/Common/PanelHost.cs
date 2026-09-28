@@ -15,6 +15,10 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private Image[] _tabBackgrounds = new Image[0];
         [SerializeField] private Color _tabIdle = new Color(0.16f, 0.16f, 0.2f, 0.95f);
         [SerializeField] private Color _tabActive = new Color(0.32f, 0.3f, 0.45f, 1f);
+        [SerializeField] private Sprite _tabIdleSprite;
+        [SerializeField] private Sprite _tabActiveSprite;
+        [Tooltip("Panel opened when the game starts (-1 = none). Idle RPGs start with the growth panel open.")]
+        [SerializeField] private int _openOnStart = 0;
 
         private int _open = -1;
 
@@ -27,6 +31,19 @@ namespace SoloHero.Game.UI.Common
                 if (_panels[i] != null) _panels[i].SetActive(false);
             }
 
+            RefreshTabs();
+        }
+
+        private void Start()
+        {
+            if (_openOnStart >= 0 && _openOnStart < _panels.Length && _open < 0) OpenQuiet(_openOnStart);
+        }
+
+        /// <summary>Opens without the panel sound (start of the game).</summary>
+        private void OpenQuiet(int index)
+        {
+            _open = index;
+            if (_panels[_open] != null) _panels[_open].SetActive(true);
             RefreshTabs();
         }
 
@@ -66,7 +83,17 @@ namespace SoloHero.Game.UI.Common
         {
             for (int i = 0; i < _tabBackgrounds.Length; i++)
             {
-                if (_tabBackgrounds[i] != null) _tabBackgrounds[i].color = i == _open ? _tabActive : _tabIdle;
+                Image tab = _tabBackgrounds[i];
+                if (tab == null) continue;
+                if (_tabIdleSprite != null && _tabActiveSprite != null)
+                {
+                    tab.sprite = i == _open ? _tabActiveSprite : _tabIdleSprite;
+                    tab.color = Color.white;
+                }
+                else
+                {
+                    tab.color = i == _open ? _tabActive : _tabIdle;
+                }
             }
         }
     }

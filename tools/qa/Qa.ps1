@@ -136,7 +136,7 @@ switch ($Cmd) {
             Boot
             $before = Read-Save
             $gacha = ($i % 2 -eq 0)
-            if ($gacha) { Tap 540 1853; Start-Sleep 1.5; Tap 205 1710 } else { Tap 108 1853; Start-Sleep 1.5; Tap 865 1345 }
+            if ($gacha) { Tap 540 1853; Start-Sleep 1.5; Tap 205 1710 } else { Tap 756 1853; Start-Sleep 1; Tap 108 1853; Start-Sleep 1.5; Tap 865 1345 }
             $delay = $delays[$i % $delays.Count]
             Start-Sleep -Milliseconds ([int]($delay * 1000))
             Stop-App
@@ -205,15 +205,15 @@ switch ($Cmd) {
         $pulled = $false
         while (((Get-Date) - $start).TotalSeconds -lt 300) {
             Start-Sleep 15
+            # The character panel opens on start; go through the skill tab so the next tap always opens it.
+            Tap 756 1853; Start-Sleep 1
             Tap 108 1853; Start-Sleep 1
             Tap 865 1345; Start-Sleep 0.5
             Tap 865 1465; Start-Sleep 0.5
-            Tap 108 1853; Start-Sleep 0.5
             if (-not $pulled -and ((Get-Date) - $start).TotalSeconds -gt 90) {
                 Tap 540 1853; Start-Sleep 1
                 Tap 205 1710; Start-Sleep 3
                 Tap 540 1300; Start-Sleep 1
-                Tap 540 1853
                 $pulled = $true
             }
         }

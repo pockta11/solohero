@@ -12,7 +12,7 @@ below allow that. Retrieved 2026-09-27.
 | `Backgrounds/Ch3_Forest/*` | Forest Background — https://opengameart.org/content/forest-background | ansimuz | CC0 1.0 | Not required |
 | `Backgrounds/Ch4_Dusk/*` | Mountain at Dusk Background — https://opengameart.org/content/mountain-at-dusk-background | ansimuz | CC0 1.0 | Not required |
 | `Backgrounds/Ch5_Sunset/*` | Background Clouds And Mountains Parallax — https://opengameart.org/content/background-clouds-and-mountains-parallax | FabinhoSC | CC0 1.0 | Not required |
-| `Vfx/vfxslash_*`, `Vfx/vfxwhirl_*`, `Vfx/vfxring_*`, `Vfx/vfxspark_*`, `UI/ui_card_back.png`, `UI/ui_card_face.png`, `UI/ui_summon_circle.png` | Drawn for this project (procedural pixel art, 2026-09-27) | SoloHero | Project-owned | - |
+| `Vfx/vfxslash_*`, `Vfx/vfxwhirl_*`, `Vfx/vfxring_*`, `Vfx/vfxspark_*`, `UI/ui_card_back.png`, `UI/ui_card_face.png`, `UI/ui_summon_circle.png`, `UI/ui9_*.png` (UI skin), `UI/ui_white.png`, `UI/Icons/icon_*.png`, `Icons/Equipment/*`, `Icons/app_icon_*` | Drawn for this project (procedural pixel art, 2026-09-27) | SoloHero | Project-owned | - |
 | `Fonts/Galmuri11.ttf` | Galmuri v2.40.4 — https://github.com/quiple/galmuri | Lee Minseo (quiple) | SIL Open Font License 1.1 (`Fonts/Galmuri-OFL.md`) | Keep the OFL text with the font; the font may be embedded in the app, not sold on its own |
 
 Rules

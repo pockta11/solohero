@@ -20,6 +20,8 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private GameObject _creditsPopup;
         [SerializeField] private Text _creditsText;
         [SerializeField] private TextAsset _credits;
+        [SerializeField] private Sprite _onSprite;
+        [SerializeField] private Sprite _offSprite;
 
         private SettingsService _settings;
 
@@ -77,7 +79,16 @@ namespace SoloHero.Game.UI.Panels
         private void SetRow(int row, bool on)
         {
             if (row < _stateTexts.Length && _stateTexts[row] != null) _stateTexts[row].text = Strings.Get(on ? "settings.on" : "settings.off");
-            if (row < _stateImages.Length && _stateImages[row] != null) _stateImages[row].color = on ? OnColor : OffColor;
+            if (row >= _stateImages.Length || _stateImages[row] == null) return;
+            if (_onSprite != null && _offSprite != null)
+            {
+                _stateImages[row].sprite = on ? _onSprite : _offSprite;
+                _stateImages[row].color = Color.white;
+            }
+            else
+            {
+                _stateImages[row].color = on ? OnColor : OffColor;
+            }
         }
     }
 }
