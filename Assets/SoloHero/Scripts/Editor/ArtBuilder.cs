@@ -124,9 +124,36 @@ namespace SoloHero.Editor
             art.hit = Clip(dir, entity, "hit", false);
             art.dead = Clip(dir, entity, "dead", false);
             art.pixelScale = pixelScale;
+            art.headHeight = HeadHeight(art.idle.Length > 0 ? art.idle[0] : null);
             EditorUtility.SetDirty(art);
             AssetDatabase.SaveAssets();
             return art;
+        }
+
+        /// <summary>Highest opaque row of a frame above its pivot, in sprite units (read from the PNG file).</summary>
+        private static float HeadHeight(Sprite frame)
+        {
+            if (frame == null) return 0f;
+            string file = AssetDatabase.GetAssetPath(frame.texture);
+            var texture = new Texture2D(2, 2);
+            try
+            {
+                if (!texture.LoadImage(File.ReadAllBytes(file))) return 0f;
+                Rect r = frame.rect;
+                for (int y = (int)r.yMax - 1; y >= (int)r.yMin; y--)
+                {
+                    for (int x = (int)r.xMin; x < (int)r.xMax; x++)
+                    {
+                        if (texture.GetPixel(x, y).a > 0.1f) return (y + 1 - r.yMin - frame.pivot.y) / frame.pixelsPerUnit;
+                    }
+                }
+
+                return 0f;
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+            }
         }
 
         private static Sprite[] Clip(string dir, string entity, string clip, bool required)
@@ -381,6 +408,7 @@ namespace SoloHero.Editor
             viewSo.ApplyModifiedPropertiesWithoutUndo();
 
             WireVfx(session, view, vfxSet, shake, themes);
+            WireHpBars(view);
 
             var heroRenderer = (SpriteRenderer)viewSo.FindProperty("_heroRenderer").objectReferenceValue;
             PrepareActor(heroRenderer, hero, 10);
@@ -390,6 +418,47 @@ namespace SoloHero.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>World HP bars for the 4 enemy slots (back + fill), drawn above enemies and under VFX.</summary>
+        private static void WireHpBars(CombatWorldView view)
+        {
+            GameObject old = GameObject.Find("EnemyHpBars");
+            if (old != null) Object.DestroyImmediate(old);
+            var root = new GameObject("EnemyHpBars");
+            Sprite white = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/ui_white.png");
+            var backs = new SpriteRenderer[4];
+            var fills = new SpriteRenderer[4];
+            for (int i = 0; i < 4; i++)
+            {
+                backs[i] = BarPart(root.transform, "Back" + i, white, new Color(0.08f, 0.06f, 0.12f, 0.9f), 15);
+                fills[i] = BarPart(root.transform, "Fill" + i, white, new Color(0.9f, 0.27f, 0.25f, 1f), 16);
+            }
+
+            var so = new SerializedObject(view);
+            SerializedProperty b = so.FindProperty("_hpBacks");
+            SerializedProperty f = so.FindProperty("_hpFills");
+            b.arraySize = 4;
+            f.arraySize = 4;
+            for (int i = 0; i < 4; i++)
+            {
+                b.GetArrayElementAtIndex(i).objectReferenceValue = backs[i];
+                f.GetArrayElementAtIndex(i).objectReferenceValue = fills[i];
+            }
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static SpriteRenderer BarPart(Transform parent, string name, Sprite sprite, Color color, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            SpriteRenderer r = go.AddComponent<SpriteRenderer>();
+            r.sprite = sprite;
+            r.color = color;
+            r.sortingOrder = order;
+            r.enabled = false;
+            return r;
         }
 
         /// <summary>"Vfx" object: the world VFX pool (template + pre-warm at runtime) and CombatFx.</summary>

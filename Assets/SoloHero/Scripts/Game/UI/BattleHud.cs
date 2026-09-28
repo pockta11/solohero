@@ -28,6 +28,9 @@ namespace SoloHero.Game.UI
         [SerializeField] private UiPunch _goldPunch;
         [SerializeField] private Text _gemText;
         [SerializeField] private Image[] _skillCooldowns = new Image[3];
+        [SerializeField] private GameObject _bossBar;
+        [SerializeField] private RectTransform _bossFill;
+        [SerializeField] private Text _bossName;
 
         private const string FarmingKey = "hud.farming";
         private const string AutoRetreatKey = "hud.auto_retreat";
@@ -37,7 +40,11 @@ namespace SoloHero.Game.UI
         private SaveDataV2 _save;
         private bool _goldShown;
         private double _shownGold;
+        private static readonly string[] BossNameKeys = { "boss.name.1", "boss.name.2", "boss.name.3", "boss.name.4", "boss.name.5" };
         private double _shownGem = -1d;
+        private bool _bossBarVisible;
+        private int _bossBarStage = -1;
+        private float _bossRatio = -1f;
         private double _goldFrom;
         private double _goldTo;
         private float _goldT = 1f;
@@ -95,6 +102,7 @@ namespace SoloHero.Game.UI
             RefreshStage(runner);
             RefreshKills(runner);
             RefreshBossTimer(runner);
+            RefreshBossBar(runner);
             RefreshChoices(runner);
             RefreshSkills(runner);
             RefreshRetreatPrompt(runner);
@@ -185,6 +193,34 @@ namespace SoloHero.Game.UI
             if (value == _shownGold) return;
             _shownGold = value;
             _goldText.text = BigNumberFormat.Format(_shownGold);
+        }
+
+        /// <summary>Boss fight: name and a big HP bar under the ad row (GDD boss rule 12).</summary>
+        private void RefreshBossBar(StageRunner runner)
+        {
+            bool show = runner.IsBoss && (runner.State == StageState.BossIntro || runner.State == StageState.BossTimer);
+            SetShown(_bossBar, show, ref _bossBarVisible);
+            if (!show) return;
+
+            if (_bossBarStage != runner.GlobalStage && _bossName != null && _balance != null)
+            {
+                _bossBarStage = runner.GlobalStage;
+                StageIndex.FromGlobal(runner.GlobalStage, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
+                _bossName.text = Strings.Get(BossNameKeys[(chapter - 1) % BossNameKeys.Length]);
+            }
+
+            float ratio = 1f;
+            for (int i = 0; i < runner.World.SlotCount; i++)
+            {
+                Core.Combat.EnemyBrain e = runner.World.GetSlot(i);
+                if (e == null || !e.IsActive || !e.IsBoss) continue;
+                ratio = e.MaxHp > 0d ? Mathf.Clamp01((float)(e.Hp / e.MaxHp)) : 0f;
+                break;
+            }
+
+            if (_bossFill == null || Mathf.Abs(ratio - _bossRatio) < 0.002f) return;
+            _bossRatio = ratio;
+            _bossFill.anchorMax = new Vector2(ratio, 1f);
         }
 
         private void RefreshGem()

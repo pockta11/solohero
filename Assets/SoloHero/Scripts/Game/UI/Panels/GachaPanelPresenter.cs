@@ -157,19 +157,35 @@ namespace SoloHero.Game.UI.Panels
                 AnalyticsParam.Of(AnalyticsEvents.PPity, _save != null ? _save.pityCount : 0));
         }
 
+        /// <summary>
+        /// The last pull at a glance (the card reveal shows each item): grade counts in grade colours, then what
+        /// happened to the items - equipped, enhanced, stored, refunded.
+        /// </summary>
         private void DrawResult(GachaPullItem[] items)
         {
             if (_resultText == null) return;
-            _sb.Clear();
+            var counts = new int[GachaCatalog.GradeCount];
+            int equipped = 0, enhanced = 0, stored = 0, refunded = 0;
             for (int i = 0; i < items.Length; i++)
             {
                 GachaPullItem item = items[i];
-                if (i > 0) _sb.Append('\n');
-                _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(PanelServices.GradeColor(item.Grade))).Append('>')
-                    .Append(PanelServices.GradeName(item.Grade)).Append(' ').Append(PanelServices.SlotName(item.Slot)).Append("</color>  ");
-                _sb.Append(PanelServices.PullNote(item));
+                counts[(int)item.Grade]++;
+                if (item.EnhancedLevel > 0) enhanced++;
+                else if (item.WasDuplicate) refunded++;
+                else if (item.AutoEquipped) equipped++;
+                else stored++;
             }
 
+            _sb.Clear();
+            for (int g = GachaCatalog.GradeCount - 1; g >= 0; g--)
+            {
+                if (counts[g] == 0) continue;
+                if (_sb.Length > 0) _sb.Append("   ");
+                _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(PanelServices.GradeColor((Grade)g))).Append('>')
+                    .Append(PanelServices.GradeName((Grade)g)).Append(' ').Append(counts[g]).Append("</color>");
+            }
+
+            _sb.Append('\n').Append(Strings.Format("gacha.summary", equipped, enhanced, stored, refunded));
             _resultText.text = _sb.ToString();
         }
     }

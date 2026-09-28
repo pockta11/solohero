@@ -28,3 +28,4 @@ MonoBehaviour:
   dead: []
   fps: 10
   pixelScale: 2
+  headHeight: 0.53125

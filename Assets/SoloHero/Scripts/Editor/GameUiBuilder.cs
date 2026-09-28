@@ -138,10 +138,20 @@ namespace SoloHero.Editor
                 IconButton(doubleButton, doubleLabel, "tv");
                 UiSkin.Sliced(panel.GetComponent<Image>(), UiSkin.Frame);
                 Button claimButton = claim != null ? claim.GetComponent<Button>() : null;
-                if (claimButton != null) UiSkin.Button(claimButton, Tone.Green);
+                if (claimButton != null)
+                {
+                    UiSkin.Button(claimButton, Tone.Green);
+                    Text claimLabel = claimButton.GetComponentInChildren<Text>(true);
+                    if (claimLabel != null)
+                    {
+                        claimLabel.fontSize = 44;
+                        UiSkin.TextShadow(claimLabel);
+                    }
+                }
                 Text amountText = panel.Find("Amount") != null ? panel.Find("Amount").GetComponent<Text>() : null;
                 if (amountText != null)
                 {
+                    amountText.fontSize = 66;
                     amountText.color = new Color(1f, 0.85f, 0.35f, 1f);
                     UiSkin.TextShadow(amountText);
                 }
@@ -389,9 +399,8 @@ namespace SoloHero.Editor
             UiSkin.Sliced(fill, UiSkin.GaugeFill);
             fillRect.anchorMax = new Vector2(0f, 1f);
 
-            Text rates = MakeText("Rates", panel, 0.04f, 0.68f, 0.96f, 0.82f, "", 26, TextAnchor.MiddleCenter);
-            Text result = MakeText("Result", panel, 0.04f, 0.31f, 0.96f, 0.67f, "", 19, TextAnchor.UpperCenter);
-            result.lineSpacing = 0.92f;
+            Text rates = MakeText("Rates", panel, 0.04f, 0.68f, 0.96f, 0.82f, "", 22, TextAnchor.MiddleCenter);
+            Text result = MakeText("Result", panel, 0.04f, 0.33f, 0.96f, 0.66f, "", 33, TextAnchor.MiddleCenter);
             result.supportRichText = true;
             result.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -401,7 +410,7 @@ namespace SoloHero.Editor
             UnityEventTools.AddPersistentListener(single.OnTap, presenter.PullSingle);
             UnityEventTools.AddPersistentListener(ten.OnTap, presenter.PullTen);
             UnityEventTools.AddPersistentListener(gem.OnTap, presenter.PullTenWithGem);
-            Button pack = MakeButton("GoldPack", panel, 0.52f, 0.225f, 0.96f, 0.305f, "", 24, out Text packLabel, Tone.Purple);
+            Button pack = MakeButton("GoldPack", panel, 0.5f, 0.225f, 0.96f, 0.31f, "", 22, out Text packLabel, Tone.Purple);
             IconButton(pack, packLabel, "gem");
             TapGuardButton packGuard = pack.gameObject.AddComponent<TapGuardButton>();
             UnityEventTools.AddPersistentListener(packGuard.OnTap, presenter.BuyGoldPack);
@@ -848,7 +857,7 @@ namespace SoloHero.Editor
             templateRect.sizeDelta = new Vector2(360f, 70f);
             Text label = templateRect.gameObject.AddComponent<Text>();
             label.font = _font;
-            label.fontSize = 34;
+            label.fontSize = 33;
             label.alignment = TextAnchor.MiddleCenter;
             label.horizontalOverflow = HorizontalWrapMode.Overflow;
             label.raycastTarget = false;
@@ -864,6 +873,8 @@ namespace SoloHero.Editor
             so.FindProperty("_template").objectReferenceValue = template;
             so.FindProperty("_session").objectReferenceValue = session;
             so.FindProperty("_layer").objectReferenceValue = layer;
+            so.FindProperty("_normalSize").intValue = 33;
+            so.FindProperty("_critSize").intValue = 55;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -958,6 +969,27 @@ namespace SoloHero.Editor
 
             Transform oldGem = hud.Find("GemCount");
             if (oldGem != null) Object.DestroyImmediate(oldGem.gameObject);
+            Transform oldBoss = hud.Find("BossBar");
+            if (oldBoss != null) Object.DestroyImmediate(oldBoss.gameObject);
+
+            // Boss HP bar: name on the left inside a red gauge, under the ad row; the timer sits above it.
+            RectTransform bossBar = Rect("BossBar", hud, 0.06f, 0.762f, 0.94f, 0.8f);
+            UiSkin.Sliced(bossBar.gameObject.AddComponent<Image>(), UiSkin.Gauge);
+            RectTransform bossArea = Rect("FillArea", bossBar, 0f, 0f, 1f, 1f);
+            bossArea.offsetMin = new Vector2(4f, 4f);
+            bossArea.offsetMax = new Vector2(-4f, -4f);
+            RectTransform bossFill = Rect("Fill", bossArea, 0f, 0f, 1f, 1f);
+            UiSkin.Sliced(bossFill.gameObject.AddComponent<Image>(), UiSkin.GaugeRed);
+            Text bossName = MakeText("Name", bossBar, 0.03f, 0f, 0.97f, 1f, "", 33, TextAnchor.MiddleLeft);
+            foreach (Graphic g in bossBar.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
+            UiSkin.TextShadow(bossName);
+            bossBar.gameObject.SetActive(false);
+            if (so != null)
+            {
+                so.FindProperty("_bossBar").objectReferenceValue = bossBar.gameObject;
+                so.FindProperty("_bossFill").objectReferenceValue = bossFill;
+                so.FindProperty("_bossName").objectReferenceValue = bossName;
+            }
             Text gem = MakeText("GemCount", hud, 0.355f, 0.925f, 0.475f, 0.99f, "0", 38, TextAnchor.MiddleLeft);
             gem.color = new Color(0.72f, 0.88f, 1f, 1f);
             if (so != null) so.FindProperty("_gemText").objectReferenceValue = gem;
@@ -966,7 +998,7 @@ namespace SoloHero.Editor
             if (timer != null)
             {
                 SetAnchors(hud, "BossTimer", 0.35f, 0.80f, 0.65f, 0.85f);
-                timer.fontSize = 56;
+                timer.fontSize = 55;
                 timer.color = new Color(1f, 0.55f, 0.45f, 1f);
                 timer.alignment = TextAnchor.MiddleCenter;
                 UiSkin.TextShadow(timer);
@@ -1010,7 +1042,7 @@ namespace SoloHero.Editor
             Text text = t.GetComponent<Text>();
             if (text == null) return;
             text.alignment = anchor;
-            text.fontSize = 38;
+            text.fontSize = 44;
             text.color = color;
             UiSkin.TextShadow(text);
         }
@@ -1041,7 +1073,8 @@ namespace SoloHero.Editor
                 label.rectTransform.anchorMax = new Vector2(1f, 1f);
                 label.rectTransform.offsetMin = new Vector2(0f, 10f);
                 label.rectTransform.offsetMax = new Vector2(-6f, -2f);
-                label.fontSize = 30;
+                label.fontSize = 33;
+                label.horizontalOverflow = HorizontalWrapMode.Overflow;
                 UiSkin.TextShadow(label);
             }
 
@@ -1133,7 +1166,7 @@ namespace SoloHero.Editor
             RectTransform rect = Rect(name, parent, xMin, yMin, xMax, yMax);
             Text label = rect.gameObject.AddComponent<Text>();
             label.font = _font;
-            label.fontSize = size;
+            label.fontSize = PixelSize(size);
             label.alignment = anchor;
             label.color = Color.white;
             label.text = text;
@@ -1141,6 +1174,12 @@ namespace SoloHero.Editor
             UiSkin.TextShadow(label);
             return label;
         }
+
+        /// <summary>
+        /// Galmuri11 is drawn on an 11 px grid: sizes that are multiples of 11 keep every glyph pixel sharp. Requested
+        /// sizes snap to 22 / 33 / 44 / 55 (rounding up from 3 over the step, so 26-34 -> 33, 36-44 -> 44).
+        /// </summary>
+        private static int PixelSize(int size) => Mathf.Max(22, Mathf.CeilToInt((size - 2) / 11f) * 11);
 
         private static RectTransform Rect(string name, Transform parent, float xMin, float yMin, float xMax, float yMax)
         {

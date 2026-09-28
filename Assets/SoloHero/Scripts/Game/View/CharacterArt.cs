@@ -15,5 +15,9 @@ namespace SoloHero.Game.View
 
         /// <summary>Integer world scale so the pixel grid stays aligned with the Pixel Perfect Camera.</summary>
         public int pixelScale = 2;
+
+        /// <summary>Top of the idle frame's opaque pixels above the foot pivot, in sprite units before pixelScale
+        /// (measured by the art builder; frames carry transparent headroom, so bounds would float the HP bar).</summary>
+        public float headHeight;
     }
 }

@@ -87,6 +87,7 @@ gacha.enhanced	중복 -> +{0} 강화
 gacha.refund	최대 강화, +{0} G
 gacha.equipped	장착
 gacha.stored	보관
+gacha.summary	장착 {0} · 강화 {1} · 보관 {2} · 환급 {3}
 
 # settings (E7-09, E8-13, E8-15)
 settings.button	설정

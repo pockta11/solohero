@@ -31,6 +31,12 @@ namespace SoloHero.Game.Combat
         [SerializeField] private CharacterArt _bossArt;
         [SerializeField] private ChapterThemeSet _themes;
 
+        [Header("Enemy HP bars (shown once hurt; bosses use the HUD bar)")]
+        [SerializeField] private SpriteRenderer[] _hpBacks = new SpriteRenderer[EnemySlotVisualCount];
+        [SerializeField] private SpriteRenderer[] _hpFills = new SpriteRenderer[EnemySlotVisualCount];
+        [SerializeField] private float _hpBarWidth = 1.1f;
+        [SerializeField] private float _hpBarHeight = 0.12f;
+
         private BalanceValues _balance;
         private StageRunner _hooked;
         private bool _heroAttackPending;
@@ -110,7 +116,37 @@ namespace SoloHero.Game.Combat
             DrawHero(runner.Hero);
             FollowCamera((float)runner.Hero.X);
             for (int i = 0; i < EnemySlotVisualCount; i++)
-                DrawEnemy(i, i < world.SlotCount ? world.GetSlot(i) : null, theme, ref newKills);
+            {
+                EnemyBrain enemy = i < world.SlotCount ? world.GetSlot(i) : null;
+                DrawEnemy(i, enemy, theme, ref newKills);
+                DrawHpBar(i, enemy);
+            }
+        }
+
+        /// <summary>World HP bar over a hurt normal enemy, sized in world units whatever the sprite scale.</summary>
+        private void DrawHpBar(int index, EnemyBrain enemy)
+        {
+            SpriteRenderer back = index < _hpBacks.Length ? _hpBacks[index] : null;
+            SpriteRenderer fill = index < _hpFills.Length ? _hpFills[index] : null;
+            if (back == null || fill == null) return;
+            SpriteRenderer body = index < _enemyRenderers.Length ? _enemyRenderers[index] : null;
+            bool show = enemy != null && enemy.IsAlive && !enemy.IsBoss && enemy.Hp < enemy.MaxHp && body != null && body.enabled;
+            if (back.enabled != show) back.enabled = show;
+            if (fill.enabled != show) fill.enabled = show;
+            if (!show || back.sprite == null) return;
+
+            float unit = back.sprite.bounds.size.x;
+            float ratio = enemy.MaxHp > 0d ? Mathf.Clamp01((float)(enemy.Hp / enemy.MaxHp)) : 0f;
+            CharacterArt art = _slots[index].Art;
+            float top = art != null && art.headHeight > 0f
+                ? body.transform.position.y + art.headHeight * body.transform.lossyScale.y + 0.14f
+                : body.bounds.max.y + 0.12f;
+            float left = (float)enemy.X - _hpBarWidth * 0.5f;
+            back.transform.position = new Vector3((float)enemy.X, top, 0f);
+            back.transform.localScale = new Vector3(_hpBarWidth / unit, _hpBarHeight / unit, 1f);
+            float inner = _hpBarWidth - 0.04f;
+            fill.transform.position = new Vector3(left + 0.02f + inner * ratio * 0.5f, top, 0f);
+            fill.transform.localScale = new Vector3(inner * ratio / unit, (_hpBarHeight - 0.04f) / unit, 1f);
         }
 
         private void OnHeroAttack() => _heroAttackPending = true;
@@ -282,6 +318,12 @@ namespace SoloHero.Game.Combat
         {
             if (_heroRenderer != null)
                 _heroRenderer.enabled = false;
+
+            for (int i = 0; i < _hpBacks.Length; i++)
+            {
+                if (_hpBacks[i] != null) _hpBacks[i].enabled = false;
+                if (i < _hpFills.Length && _hpFills[i] != null) _hpFills[i].enabled = false;
+            }
 
             if (_enemyRenderers == null) return;
             for (int i = 0; i < _enemyRenderers.Length; i++)

@@ -48,3 +48,4 @@ MonoBehaviour:
   - {fileID: -2527236344631649966, guid: a661074cdeea9b54981cfe619cf7e2b5, type: 3}
   fps: 10
   pixelScale: 3
+  headHeight: 0.625

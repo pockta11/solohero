@@ -37,6 +37,7 @@ namespace SoloHero.Editor
         public static Sprite TabActive => Get("ui9_taba_5");
         public static Sprite Gauge => Get("ui9_gauge_3");
         public static Sprite GaugeFill => Get("ui9_gaugefill_2");
+        public static Sprite GaugeRed => Get("ui9_gaugered_2");
         public static Sprite Banner => Get("ui9_banner_5");
         public static Sprite White => Get("ui_white");
         public static Sprite Stone => Get("ui_stone");
