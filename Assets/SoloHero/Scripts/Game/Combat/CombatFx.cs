@@ -128,14 +128,14 @@ namespace SoloHero.Game.Combat
             // Skill hits bring their own clip and sound; burn ticks stay quiet.
             if (kind == HitKind.Dot || kind == HitKind.Skill)
             {
-                if (kind == HitKind.Skill && !LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 2f, Color.white);
+                if (kind == HitKind.Skill && !LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 2f, Color.white, EffectY + DepthLanes.For(target));
                 return;
             }
 
             bool crit = kind == HitKind.Crit;
             Play(crit ? SfxId.Crit : SfxId.Hit);
             if (LowEffect) return;
-            PlayVfx(_set != null ? _set.slash : null, (float)target.X, crit ? 2.5f : 1.5f, crit ? CritTint : Color.white);
+            PlayVfx(_set != null ? _set.slash : null, (float)target.X, crit ? 2.5f : 1.5f, crit ? CritTint : Color.white, EffectY + DepthLanes.For(target));
             if (crit) Shake(CritShake, CritShakeSeconds);
         }
 
@@ -206,7 +206,7 @@ namespace SoloHero.Game.Combat
             if (LowEffect || _set == null) return;
             // Looks without a death clip vanish into a puff; the others get a small puff over their own clip.
             float scale = boss ? 2f : hasDeathClip ? 0.6f : 1f;
-            PlayVfx(_set.boom, position.x, scale, Color.white, 0.2f);
+            PlayVfx(_set.boom, position.x, scale, Color.white, 0.2f + position.y);
             if (boss) Shake(BossShake, 0.4f);
         }
 

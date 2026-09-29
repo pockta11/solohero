@@ -7,12 +7,14 @@ tab.gear	장비
 tab.summon	소환
 tab.skill	스킬
 tab.settings	설정
+hero.name	기사
 hud.retry	재도전
 hud.retreat	후퇴
 hud.challenge	도전
 hud.farming	파밍으로 돌아갑니다...
 hud.auto_retreat	{0}초 후 자동 후퇴
 hud.skill_cooldown	{0} {1}
+hud.skill_auto	AUTO
 
 # Failure toasts (FailReason)
 toast.not_enough_gold	골드가 부족합니다
@@ -25,9 +27,9 @@ toast.daily_limit	오늘은 더 볼 수 없습니다
 toast.ad_unavailable	지금은 광고를 불러올 수 없습니다
 
 # Rewarded ads
-ad.gem_button	광고: 젬 +{0} ({1})
-ad.booster_button	광고: 골드 2배 ({0})
-ad.booster_active	골드 2배 {0}:{1}
+ad.gem_button	젬 +{0} ({1})
+ad.booster_button	골드 2배 ({0})
+ad.booster_active	2배 {0}:{1}
 ad.gem_received	젬을 받았습니다
 ad.booster_started	10분 동안 골드 2배!
 
@@ -48,24 +50,29 @@ stat.hp	체력
 stat.atk	공격력
 stat.def	방어력
 stat.atkspd	공격속도
-char.lane	{0}  Lv {1}
+stat.crit	치명타
+stat.critdmg	치명 피해
 char.max	최대
-char.summary	Lv {0}   체력 {1}   공격력 {2}   방어력 {3}\n공격속도 {4}/초   치명타 {5}%
+char.lv	Lv {0}
+char.preview	{0} <color=#8CFF6E>▶ {1}</color>
+char.preview_max	{0}  (최대)
+char.atkspd_value	{0}/초
+char.percent	{0}%
+char.exp	EXP
 
 # Skills (D-078). Description args: {0} damage % per hit, {1} hits, {2} burn %/s, {3} burn s, {4} stun s,
 # {5} buff amount, {6} buff s, {7} heal %, {8} shield %, {9} shield s, {10} HP threshold %, {11} cooldown s
-skill.level	{0}  Lv {1}/{2}
 skill.slot_locked	Lv {0}
-skill.info	{0} · Lv {1}/{2} · 쿨타임 {3}초
-skill.owned_bonus	보유 효과: 공격력 +{0}%  ({1}/{2}종)
+skill.lv	Lv{0}
+skill.info	Lv {0}/{1} · 쿨타임 {2}초
+skill.owned_bonus	보유 효과  공격력 +{0}%
+skill.collection	도감 {0}/{1}
 skill.not_owned	미보유
-skill.info_unowned	{0} · 미보유
+skill.info_unowned	미보유 · 쿨타임 {0}초
 skill.equip	장착
 skill.unequip	해제
 skill.auto_equip	자동 장착
 skill.pick_slot	교체할 슬롯을 누르세요
-skill.equipped_mark	장착
-skill.select_hint	스킬을 눌러 정보를 보세요
 toast.slots_full	빈 슬롯이 없습니다. 교체할 슬롯을 고르세요
 toast.skill_equipped	{0} 장착!
 skill.name.power_strike	강타
@@ -193,3 +200,58 @@ boss.name.2	해골 주술사
 boss.name.3	숲의 추적자
 boss.name.4	그림자 마도사
 boss.name.5	화염 마법사
+toast.no_talent_points	특성 포인트가 부족합니다
+toast.talent_reset	특성을 초기화했습니다
+talent.points	특성 포인트 {0}
+talent.reset	초기화 {0}
+talent.learn	배우기
+talent.maxed	최대
+talent.rank	{0}/{1}
+talent.branch.0	공격
+talent.branch.1	수호
+talent.branch.2	비전
+talent.branch_spent	{0} {1}
+talent.need	{0} 특성에 {1}포인트를 쓰면 열립니다
+talent.current	현재 {0}
+talent.current_next	현재 {0}\n다음 {1}
+talent.none	없음
+talent.name.sharpness	예리함
+talent.desc.sharpness	공격력 +{0}%
+talent.name.precision	정밀
+talent.desc.precision	치명타 확률 +{0}%
+talent.name.ferocity	흉포
+talent.desc.ferocity	치명 피해 +{0}%
+talent.name.swiftness	신속
+talent.desc.swiftness	공격속도 +{0}%
+talent.name.giant_slayer	거인 사냥꾼
+talent.desc.giant_slayer	보스에게 주는 피해 +{0}%
+talent.name.execute	처형
+talent.desc.execute	체력이 30% 미만인 적에게 주는 피해 +50%
+talent.name.vitality	활력
+talent.desc.vitality	체력 +{0}%
+talent.name.iron_hide	강철 피부
+talent.desc.iron_hide	방어력 +{0}%
+talent.name.endurance	인내
+talent.desc.endurance	받는 피해 -{0}%
+talent.name.mending	치유술
+talent.desc.mending	회복·보호막 효과 +{0}%
+talent.name.fortitude	강인함
+talent.desc.fortitude	체력 +{0}%
+talent.name.last_stand	최후의 저항
+talent.desc.last_stand	스테이지마다 한 번, 쓰러질 피해를 받으면 체력 30%로 버팁니다
+talent.name.focus	집중
+talent.desc.focus	스킬 피해 +{0}%
+talent.name.haste	가속
+talent.desc.haste	스킬 쿨타임 -{0}%
+talent.name.persistence	지속
+talent.desc.persistence	버프 지속시간 +{0}%
+talent.name.venom	맹독
+talent.desc.venom	화상·중독 피해 +{0}%
+talent.name.mastery	숙련
+talent.desc.mastery	스킬 피해 +{0}%
+talent.name.overload	과부하
+talent.desc.overload	피해를 주는 스킬이 4번째로 발동할 때마다 피해 2배
+tab.talent	특성
+rail.settings	설정
+rail.stage	스테이지
+rail.credits	크레딧

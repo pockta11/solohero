@@ -6,8 +6,8 @@ using UnityEngine.UI;
 namespace SoloHero.Game.UI.Panels
 {
     /// <summary>
-    /// Settings panel, the 5th bottom tab (E7-09, GDD tab bar): BGM / SFX mute, low-effect mode and 30 fps mode as
-    /// on/off rows, plus credits with the font's SIL OFL text. The tab host shows / hides the panel; changes apply at
+    /// Settings window (E7-09; D-089 moved it from the 5th bottom tab to the right menu rail): BGM / SFX mute,
+    /// low-effect mode and 30 fps mode as on/off rows, plus credits with the font's SIL OFL text. Changes apply at
     /// once through <see cref="SettingsService"/> and are saved with the next pause / quit save.
     /// </summary>
     public sealed class SettingsPresenter : MonoBehaviour
@@ -17,6 +17,7 @@ namespace SoloHero.Game.UI.Panels
 
         [SerializeField] private Text[] _stateTexts = new Text[4];
         [SerializeField] private Image[] _stateImages = new Image[4];
+        [SerializeField] private GameObject _window;
         [SerializeField] private GameObject _creditsPopup;
         [SerializeField] private Text _creditsText;
         [SerializeField] private TextAsset _credits;
@@ -25,8 +26,7 @@ namespace SoloHero.Game.UI.Panels
 
         private SettingsService _settings;
 
-        /// <summary>Only the credits overlay; the panel itself belongs to the tab host.</summary>
-        public bool IsOpen => _creditsPopup != null && _creditsPopup.activeSelf;
+        public bool IsOpen => (_creditsPopup != null && _creditsPopup.activeSelf) || (_window != null && _window.activeSelf);
 
         private void OnEnable()
         {
@@ -35,6 +35,19 @@ namespace SoloHero.Game.UI.Panels
         }
 
         private void OnDisable() => CloseCredits();
+
+        public void Open()
+        {
+            if (_settings == null) _settings = PanelServices.TryGet<SettingsService>();
+            if (_window != null) _window.SetActive(true);
+            Refresh();
+        }
+
+        public void CloseWindow()
+        {
+            CloseCredits();
+            if (_window != null) _window.SetActive(false);
+        }
 
         /// <summary>Credits and the font's SIL OFL text (the OFL asks for the license to travel with the font).</summary>
         public void OpenCredits()
@@ -48,8 +61,17 @@ namespace SoloHero.Game.UI.Panels
             if (_creditsPopup != null) _creditsPopup.SetActive(false);
         }
 
-        /// <summary>Back key: closes the credits overlay (the tab host closes the panel).</summary>
-        public void Close() => CloseCredits();
+        /// <summary>Back key: the credits overlay first, then the window.</summary>
+        public void Close()
+        {
+            if (_creditsPopup != null && _creditsPopup.activeSelf)
+            {
+                CloseCredits();
+                return;
+            }
+
+            if (_window != null) _window.SetActive(false);
+        }
 
         /// <summary>Row order: 0 BGM, 1 SFX, 2 low effect, 3 30 fps. BGM / SFX rows show "on" while sound plays.</summary>
         public void Toggle(int row)

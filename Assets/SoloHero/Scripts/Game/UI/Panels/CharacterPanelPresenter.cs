@@ -1,3 +1,4 @@
+using System.Globalization;
 using SoloHero.Core;
 using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
@@ -13,24 +14,37 @@ using UnityEngine.UI;
 
 namespace SoloHero.Game.UI.Panels
 {
-    /// <summary>Character panel (E7-05): 4 upgrade lanes with level, cost and MAX state, plus the stat summary.</summary>
+    /// <summary>
+    /// Character panel (E7-05): gold portrait window (idle flipbook, nameplate with level), EXP + 6 stat chips, and
+    /// 4 upgrade tiles with level, current -> next value, cost and MAX state. Upgrade buttons repeat while held.
+    /// </summary>
     public sealed class CharacterPanelPresenter : MonoBehaviour
     {
-        private static readonly string[] LaneKeys = { "stat.hp", "stat.atk", "stat.def", "stat.atkspd" };
-
+        [Header("Upgrade tiles: HP, ATK, DEF, attack speed")]
         [SerializeField] private Text[] _levelTexts = new Text[4];
+        [SerializeField] private Text[] _valueTexts = new Text[4];
         [SerializeField] private Text[] _costTexts = new Text[4];
         [SerializeField] private TapGuardButton[] _buttons = new TapGuardButton[4];
-        [SerializeField] private Text _summaryText;
+        [SerializeField] private UiPunch[] _punches = new UiPunch[4];
+
+        [Header("Hero card")]
+        [SerializeField] private Text _heroLevelText;
+        [SerializeField] private RectTransform _expFill;
+        [SerializeField] private Text _expText;
+        [Tooltip("HP, ATK, DEF, attack speed, crit rate, crit damage.")]
+        [SerializeField] private Text[] _statTexts = new Text[6];
+        [SerializeField] private UiPunch _levelPunch;
+
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
-        [SerializeField] private UiPunch[] _punches = new UiPunch[4];
 
         private UpgradeService _upgrade;
         private BalanceValues _balance;
         private SaveDataV2 _save;
         private AudioService _audio;
         private double _shownGold = -1d;
+        private double _shownExp = -1d;
+        private int _shownLevel = -1;
 
         private void OnEnable()
         {
@@ -39,13 +53,23 @@ namespace SoloHero.Game.UI.Panels
             _save = PanelServices.TryGet<SaveDataV2>();
             _audio = PanelServices.TryGet<AudioService>();
             _shownGold = -1d;
+            _shownLevel = -1;
             Refresh();
         }
 
         private void LateUpdate()
         {
-            if (_save == null || _save.gold == _shownGold) return;
-            Refresh();
+            if (_save == null) return;
+            if (_save.heroLevel != _shownLevel)
+            {
+                bool leveled = _shownLevel > 0;
+                Refresh();
+                if (leveled && _levelPunch != null) _levelPunch.Play();
+                return;
+            }
+
+            if (_save.gold != _shownGold) Refresh();
+            else if (_save.heroExp != _shownExp) DrawExp();
         }
 
         public void Upgrade(int lane)
@@ -70,7 +94,9 @@ namespace SoloHero.Game.UI.Panels
         {
             if (_upgrade == null || _balance == null || _save == null) return;
             _shownGold = _save.gold;
+            _shownLevel = _save.heroLevel;
 
+            HeroStats now = CombatLoadout.ComputeStats(_balance, _save);
             for (int i = 0; i < 4; i++)
             {
                 var lane = (UpgradeLane)i;
@@ -79,28 +105,60 @@ namespace SoloHero.Game.UI.Panels
                 double cost = max ? 0d : Formulas.UpgradeCost(_balance, lane, level);
 
                 if (i < _levelTexts.Length && _levelTexts[i] != null)
-                    _levelTexts[i].text = Strings.Format("char.lane", Strings.Get(LaneKeys[i]), level);
+                    _levelTexts[i].text = Strings.Format("char.lv", level);
+                if (i < _valueTexts.Length && _valueTexts[i] != null)
+                {
+                    string current = LaneValue(lane, now);
+                    _valueTexts[i].text = max
+                        ? Strings.Format("char.preview_max", current)
+                        : Strings.Format("char.preview", current, LaneValue(lane, CombatLoadout.ComputeStatsAfterUpgrade(_balance, _save, lane)));
+                }
+
                 if (i < _costTexts.Length && _costTexts[i] != null)
                     _costTexts[i].text = max ? Strings.Get("char.max") : BigNumberFormat.Format(cost);
                 if (i < _buttons.Length && _buttons[i] != null)
                     _buttons[i].SetAvailable(!max && _save.gold >= cost);
             }
 
-            if (_summaryText == null) return;
-            HeroStats s = CombatLoadout.ComputeStats(_balance, _save);
-            _summaryText.text = Strings.Format("char.summary",
-                _save.heroLevel,
-                BigNumberFormat.Format(s.Hp),
-                BigNumberFormat.Format(s.Atk),
-                BigNumberFormat.Format(s.Def),
-                s.AtkSpd.ToString("0.00"),
-                s.CritRate.ToString("0"));
+            if (_heroLevelText != null) _heroLevelText.text = Strings.Format("char.lv", _save.heroLevel);
+            SetStat(0, BigNumberFormat.Format(now.Hp));
+            SetStat(1, BigNumberFormat.Format(now.Atk));
+            SetStat(2, BigNumberFormat.Format(now.Def));
+            SetStat(3, Strings.Format("char.atkspd_value", now.AtkSpd.ToString("0.00", CultureInfo.InvariantCulture)));
+            SetStat(4, Strings.Format("char.percent", now.CritRate.ToString("0.#", CultureInfo.InvariantCulture)));
+            SetStat(5, Strings.Format("char.percent", ((_balance.CRIT_MULT + now.CritDamageBonus) * 100d).ToString("0", CultureInfo.InvariantCulture)));
+            DrawExp();
         }
 
-        /// <summary>E8-11: every successful purchase punches its row and plays the upgrade chime.</summary>
+        private void DrawExp()
+        {
+            _shownExp = _save.heroExp;
+            double need = HeroLevelService.ExpRequired(_balance, _save.heroLevel);
+            float ratio = need > 0d ? Mathf.Clamp01((float)(_save.heroExp / need)) : 0f;
+            if (_expFill != null) _expFill.anchorMax = new Vector2(ratio, 1f);
+            if (_expText != null) _expText.text = Strings.Format("char.percent", (ratio * 100f).ToString("0.0", CultureInfo.InvariantCulture));
+        }
+
+        private static string LaneValue(UpgradeLane lane, HeroStats stats)
+        {
+            switch (lane)
+            {
+                case UpgradeLane.Hp: return BigNumberFormat.Format(stats.Hp);
+                case UpgradeLane.Atk: return BigNumberFormat.Format(stats.Atk);
+                case UpgradeLane.Def: return BigNumberFormat.Format(stats.Def);
+                default: return stats.AtkSpd.ToString("0.00", CultureInfo.InvariantCulture);
+            }
+        }
+
+        private void SetStat(int index, string value)
+        {
+            if (index < _statTexts.Length && _statTexts[index] != null) _statTexts[index].text = value;
+        }
+
+        /// <summary>E8-11: every successful purchase punches its tile and plays the upgrade chime.</summary>
         private void Celebrate(int row)
         {
-            if (row >= 0 && row < _punches.Length && _punches[row] != null) _punches[row].Play();
+            if (row >= 0 && row < _punches.Length && _punches[row] != null) _punches[row].Play(0.5f);
             if (_audio != null) _audio.Play(SfxId.Upgrade);
         }
     }

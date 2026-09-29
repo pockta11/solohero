@@ -42,6 +42,22 @@ namespace SoloHero.Editor
         public static Sprite White => Get("ui_white");
         public static Sprite Stone => Get("ui_stone");
 
+        // Skin v2 (tools/art/uigen.py): grade frames, cards, badges and portrait props.
+        public static Sprite GradeFrame(SoloHero.Core.Gacha.Grade grade) => Get("ui9_grade" + "crel"[(int)grade] + "_3");
+        public static Sprite GradeNone => Get("ui9_gradenone_3");
+        public static Sprite Selection => Get("ui9_select_6");
+        public static Sprite Badge => Get("ui9_badge_3");
+        public static Sprite Tag => Get("ui9_tag_3");
+        public static Sprite Inset => Get("ui9_inset_4");
+        public static Sprite Card => Get("ui9_card_4");
+        public static Sprite Chip => Get("ui9_chip_3");
+        public static Sprite ChipWhite => Get("ui9_chipw_3");
+        public static Sprite GaugeBlue => Get("ui9_gaugeblue_2");
+        public static Sprite Glow => Get("ui_glow");
+        public static Sprite Pedestal => Get("ui_pedestal");
+        public static Sprite Portrait => Get("ui9_portrait_4");
+        public static Sprite Plate => Get("ui9_plate_3");
+
         public static void Sliced(Image image, Sprite sprite)
         {
             if (image == null || sprite == null) return;

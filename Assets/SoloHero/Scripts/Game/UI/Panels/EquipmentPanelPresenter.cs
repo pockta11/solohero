@@ -22,7 +22,9 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
         [SerializeField] private Image[] _slotIcons = new Image[4];
+        [SerializeField] private Image[] _slotFrames = new Image[4];
         [SerializeField] private EquipmentIconSet _icons;
+        [SerializeField] private GradeFrameSet _frames;
 
         private EquipService _equip;
         private SaveDataV2 _save;
@@ -118,6 +120,9 @@ namespace SoloHero.Game.UI.Panels
                     _slotIcons[s].sprite = _icons.Get(slot, grade < 0 ? Grade.Common : (Grade)grade);
                     _slotIcons[s].color = grade < 0 ? new Color(0f, 0f, 0f, 0.45f) : Color.white;
                 }
+
+                if (s < _slotFrames.Length && _slotFrames[s] != null && _frames != null)
+                    _slotFrames[s].sprite = grade < 0 ? _frames.empty : _frames.Get((Grade)grade);
 
                 if (s < _ownedTexts.Length && _ownedTexts[s] != null)
                     _ownedTexts[s].text = owned == 0 ? Strings.Get("equip.none") : Strings.Format("equip.owned", ownedList);

@@ -21,7 +21,7 @@ namespace SoloHero.Game.Combat
         private const float HitFlashSeconds = 0.08f;
 
         /// <summary>Bosses are drawn this far behind their Core position so the 2x body does not cover the hero (view only).</summary>
-        private const float BossDrawOffset = 0.7f;
+        private const float BossDrawOffset = 0.4f;
         private static readonly Color HitFlash = new Color(1f, 0.55f, 0.55f, 1f);
         private static readonly Color FrozenTint = new Color(0.55f, 0.8f, 1f, 1f);
         private static readonly Color BurnTint = new Color(1f, 0.62f, 0.38f, 1f);
@@ -73,6 +73,7 @@ namespace SoloHero.Game.Combat
             public int LastAttacks;
             public float Flash;
             public float X;
+            public float Y;
             public CharacterArt Art;
         }
 
@@ -131,7 +132,7 @@ namespace SoloHero.Game.Combat
                 EnemyBrain enemy = i < world.SlotCount ? world.GetSlot(i) : null;
                 DrawEnemy(i, enemy, theme, ref newKills);
                 DrawHpBar(i, enemy);
-                DrawShadow(i + 1, i < _enemyRenderers.Length ? _enemyRenderers[i] : null, _slots[i].Boss ? 2f : 1f);
+                DrawShadow(i + 1, i < _enemyRenderers.Length ? _enemyRenderers[i] : null, (_slots[i].Boss ? 1.6f : 1f) * DepthLanes.Scale(_slots[i].Y));
             }
 
             DrawShadow(0, _heroRenderer, 1f);
@@ -147,7 +148,8 @@ namespace SoloHero.Game.Combat
             if (!show || shadow.sprite == null) return;
             float unit = shadow.sprite.bounds.size.x;
             float width = _shadowWidth * size;
-            shadow.transform.position = new Vector3(body.transform.position.x, -0.1f * size, 0f);
+            Vector3 feet = body.transform.position;
+            shadow.transform.position = new Vector3(feet.x, feet.y - 0.1f * size, 0f);
             shadow.transform.localScale = new Vector3(width / unit, width / unit, 1f);
         }
 
@@ -191,6 +193,7 @@ namespace SoloHero.Game.Combat
             if (_heroRenderer == null) return;
             _heroRenderer.enabled = true;
             _heroRenderer.transform.position = new Vector3((float)hero.X, 0f, 0f);
+            SetOrder(_heroRenderer, 0f);
             SpriteFlipbook book = Book(_heroRenderer);
             bool tookHit = hero.Hp < _heroLastHp;
             _heroLastHp = hero.Hp;
@@ -253,8 +256,10 @@ namespace SoloHero.Game.Combat
                 slot.Boss = enemy.IsBoss;
                 slot.Generation = enemy.Generation;
                 slot.X = (float)enemy.X + (enemy.IsBoss ? BossDrawOffset : 0f);
+                slot.Y = DepthLanes.For(enemy);
                 renderer.enabled = true;
-                renderer.transform.position = new Vector3(slot.X, 0f, 0f);
+                renderer.transform.position = new Vector3(slot.X, slot.Y, 0f);
+                SetOrder(renderer, slot.Y);
 
                 bool attacked = enemy.AttackCount != slot.LastAttacks;
                 bool hurt = !fresh && enemy.Hp < slot.LastHp;
@@ -264,7 +269,7 @@ namespace SoloHero.Game.Combat
 
                 if (art != null && book != null)
                 {
-                    SetScale(renderer, art.pixelScale);
+                    SetScale(renderer, art.pixelScale * DepthLanes.Scale(slot.Y));
                     if (fresh) book.Play(art.idle, art.fps, loop: true, restart: true);
                     else if (attacked) book.Play(art.attack, art.fps, loop: false, restart: true);
                     else if (hurt && art.hit.Length > 0 && (book.Current != art.attack || book.Finished)) book.Play(art.hit, art.fps, loop: false, restart: true);
@@ -318,7 +323,7 @@ namespace SoloHero.Game.Combat
 
             if (newKills <= 0) return;
             newKills--;
-            EnemyDied?.Invoke(new Vector3(slot.X, 0f, 0f), slot.Boss, hasClip);
+            EnemyDied?.Invoke(new Vector3(slot.X, slot.Y, 0f), slot.Boss, hasClip);
         }
 
         private CharacterArt ArtFor(EnemyBrain enemy, ChapterTheme theme)
@@ -331,9 +336,16 @@ namespace SoloHero.Game.Combat
         private static SpriteFlipbook Book(SpriteRenderer renderer) =>
             renderer != null ? renderer.GetComponent<SpriteFlipbook>() : null;
 
-        private static void SetScale(SpriteRenderer renderer, int scale)
+        /// <summary>D-091: characters sort by depth lane (shadows stay under everyone).</summary>
+        private static void SetOrder(SpriteRenderer renderer, float y)
         {
-            float s = scale < 1 ? 1f : scale;
+            int order = DepthLanes.Order(y);
+            if (renderer.sortingOrder != order) renderer.sortingOrder = order;
+        }
+
+        private static void SetScale(SpriteRenderer renderer, float scale)
+        {
+            float s = scale <= 0f ? 1f : scale;
             Transform t = renderer.transform;
             if (t.localScale.x != s) t.localScale = new Vector3(s, s, 1f);
         }

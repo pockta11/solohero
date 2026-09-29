@@ -12,6 +12,9 @@ namespace SoloHero.Game.View
     {
         public Sprite[] layers = new Sprite[0];
         public float[] follow = new float[0];
+
+        /// <summary>D-091 floor plane under the battle, tiled horizontally.</summary>
+        public Sprite floor;
         public int pixelScale = 1;
         public Color sky = Color.black;
         public CharacterArt[] enemies = new CharacterArt[0];

@@ -176,7 +176,7 @@ switch ($Cmd) {
         # 2. Ad failure (QA build has no ad SDK): tapping the gem ad keeps gems and the daily count, app stays up.
         Boot
         $before = Read-Save
-        Tap 792 215; Start-Sleep 2
+        Tap 96 399; Start-Sleep 2   # D-089 gem ad: second square of the left rail
         Shot 'scenario-ad-fail.png'
         Pause-Save
         $after = Read-Save

@@ -16,34 +16,44 @@ namespace SoloHero.Game.UI.Panels
 {
     /// <summary>
     /// Skill panel (D-078, genre skill book): the equipped slots on top (locked ones show their hero level), every
-    /// catalog skill in a grid (owned ones bright with their level, equipped ones marked), and the selected skill's
-    /// detail with level-up and equip / unequip. Equipping into full slots enters a pick mode: tap the slot to
-    /// replace. Auto-equip fills the slots with the strongest skills.
+    /// catalog skill in a 6-column grid (grade frame, level badge, slot number when equipped, dark with a lock when not owned), and
+    /// the selected skill's detail with level-up and equip / unequip. Equipping into full slots enters a pick mode:
+    /// tap the slot to replace. Auto-equip fills the slots with the strongest skills.
     /// </summary>
     public sealed class SkillPanelPresenter : MonoBehaviour
     {
-        private static readonly Color Dim = new Color(0.25f, 0.25f, 0.3f, 1f);
         private static readonly Color PickPulse = new Color(0.4f, 1f, 0.5f, 1f);
+        private static readonly Color UnownedFrame = new Color(0.5f, 0.5f, 0.56f, 1f);
+        private static readonly Color UnownedIcon = new Color(0.16f, 0.15f, 0.22f, 1f);
 
         [Header("Equipped slots")]
         [SerializeField] private Image[] _slotFrames = new Image[0];
         [SerializeField] private Image[] _slotIcons = new Image[0];
-        [SerializeField] private Text[] _slotTexts = new Text[0];
+        [SerializeField] private Text[] _slotLevels = new Text[0];
+        [SerializeField] private GameObject[] _slotBadges = new GameObject[0];
+        [SerializeField] private GameObject[] _slotLocks = new GameObject[0];
+        [SerializeField] private Text[] _slotLockTexts = new Text[0];
 
         [Header("Skill grid, catalog order")]
         [SerializeField] private Image[] _cellFrames = new Image[0];
         [SerializeField] private Image[] _cellIcons = new Image[0];
         [SerializeField] private Text[] _cellLevels = new Text[0];
+        [SerializeField] private GameObject[] _cellBadges = new GameObject[0];
         [SerializeField] private GameObject[] _cellMarks = new GameObject[0];
+        [SerializeField] private Text[] _cellMarkTexts = new Text[0];
+        [SerializeField] private GameObject[] _cellLocks = new GameObject[0];
         [SerializeField] private RectTransform _selection;
 
         [Header("Detail")]
         [SerializeField] private Image _detailIcon;
         [SerializeField] private Image _detailFrame;
+        [SerializeField] private Image _detailGradeChip;
+        [SerializeField] private Text _detailGrade;
         [SerializeField] private Text _detailName;
         [SerializeField] private Text _detailInfo;
         [SerializeField] private Text _detailDesc;
         [SerializeField] private Text _ownedBonus;
+        [SerializeField] private Text _ownedCount;
         [SerializeField] private TapGuardButton _levelButton;
         [SerializeField] private Text _levelCost;
         [SerializeField] private TapGuardButton _equipButton;
@@ -51,6 +61,7 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private UiPunch _detailPunch;
 
         [SerializeField] private SkillIconSet _icons;
+        [SerializeField] private GradeFrameSet _frames;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
 
@@ -132,7 +143,7 @@ namespace SoloHero.Game.UI.Panels
             GameAnalytics.Log(AnalyticsEvents.SkillLevel,
                 AnalyticsParam.Of(AnalyticsEvents.PSkill, _selected),
                 AnalyticsParam.Of(AnalyticsEvents.PLevel, _skills.Level(_selected)));
-            if (_detailPunch != null) _detailPunch.Play();
+            if (_detailPunch != null) _detailPunch.Play(0.4f);
             Play(SfxId.Upgrade);
             Refresh();
         }
@@ -216,13 +227,13 @@ namespace SoloHero.Game.UI.Panels
                     _slotIcons[i].enabled = sprite != null;
                 }
 
-                if (_slotFrames[i] != null) _slotFrames[i].color = def != null ? PanelServices.GradeColor(def.Grade) : Dim;
-                if (i < _slotTexts.Length && _slotTexts[i] != null)
-                {
-                    _slotTexts[i].text = !unlocked
-                        ? Strings.Format("skill.slot_locked", SkillService.UnlockHeroLevel(_balance, i))
-                        : def != null ? "Lv " + SkillBook.GetLevel(_save, def.Id).ToString(CultureInfo.InvariantCulture) : "";
-                }
+                SetFrame(_slotFrames[i], def, true);
+                Set(_slotBadges, i, def != null);
+                Set(_slotLocks, i, !unlocked);
+                if (def != null && i < _slotLevels.Length && _slotLevels[i] != null)
+                    _slotLevels[i].text = Strings.Format("skill.lv", SkillBook.GetLevel(_save, def.Id));
+                if (!unlocked && i < _slotLockTexts.Length && _slotLockTexts[i] != null)
+                    _slotLockTexts[i].text = Strings.Format("skill.slot_locked", SkillService.UnlockHeroLevel(_balance, i));
             }
         }
 
@@ -235,34 +246,42 @@ namespace SoloHero.Game.UI.Panels
                 int level = SkillBook.GetLevel(_save, def.Id);
                 bool has = level > 0;
                 if (has) owned++;
-                Color grade = PanelServices.GradeColor(def.Grade);
-                if (_cellFrames[i] != null) _cellFrames[i].color = has ? grade : Color.Lerp(grade, Dim, 0.7f);
+                SetFrame(_cellFrames[i], def, has);
                 if (i < _cellIcons.Length && _cellIcons[i] != null)
                 {
                     _cellIcons[i].sprite = _icons != null ? _icons.Get(def.Id) : null;
-                    _cellIcons[i].color = has ? Color.white : new Color(0.2f, 0.2f, 0.25f, 0.9f);
+                    _cellIcons[i].color = has ? Color.white : UnownedIcon;
                 }
 
-                if (i < _cellLevels.Length && _cellLevels[i] != null)
-                    _cellLevels[i].text = has ? "Lv" + level.ToString(CultureInfo.InvariantCulture) : "";
-                if (i < _cellMarks.Length && _cellMarks[i] != null)
-                    _cellMarks[i].SetActive(has && SkillBook.SlotOf(_save, def.Id) >= 0);
-                if (_selection != null && def.Id == _selected && i < _cellFrames.Length && _cellFrames[i] != null)
+                Set(_cellBadges, i, has);
+                Set(_cellLocks, i, !has);
+                if (has && i < _cellLevels.Length && _cellLevels[i] != null)
+                    _cellLevels[i].text = Strings.Format("skill.lv", level);
+
+                int slot = has ? SkillBook.SlotOf(_save, def.Id) : -1;
+                bool equipped = slot >= 0 && SkillService.IsSlotUnlocked(_balance, slot, _save.heroLevel);
+                Set(_cellMarks, i, equipped);
+                if (equipped && i < _cellMarkTexts.Length && _cellMarkTexts[i] != null)
+                    _cellMarkTexts[i].text = (slot + 1).ToString(CultureInfo.InvariantCulture);
+
+                if (_selection != null && def.Id == _selected && _cellFrames[i] != null && _selection.parent != _cellFrames[i].transform)
                 {
                     _selection.SetParent(_cellFrames[i].transform, false);
                     _selection.SetAsLastSibling();
                     _selection.anchorMin = Vector2.zero;
                     _selection.anchorMax = Vector2.one;
-                    _selection.offsetMin = new Vector2(-6f, -6f);
-                    _selection.offsetMax = new Vector2(6f, 6f);
+                    _selection.offsetMin = new Vector2(-10f, -10f);
+                    _selection.offsetMax = new Vector2(10f, 10f);
                 }
             }
 
             if (_ownedBonus != null)
             {
                 double bonus = SkillService.OwnedAtkBonus(_balance, _save) * 100d;
-                _ownedBonus.text = Strings.Format("skill.owned_bonus", bonus.ToString("0.#", CultureInfo.InvariantCulture), owned, SkillCatalog.Count);
+                _ownedBonus.text = Strings.Format("skill.owned_bonus", bonus.ToString("0.#", CultureInfo.InvariantCulture));
             }
+
+            if (_ownedCount != null) _ownedCount.text = Strings.Format("skill.collection", owned, SkillCatalog.Count);
         }
 
         private void DrawDetail()
@@ -279,18 +298,20 @@ namespace SoloHero.Game.UI.Panels
                 _detailIcon.color = owned ? Color.white : new Color(0.45f, 0.45f, 0.5f, 1f);
             }
 
-            if (_detailFrame != null) _detailFrame.color = grade;
+            SetFrame(_detailFrame, def, true);
+            if (_detailGradeChip != null) _detailGradeChip.color = grade;
+            if (_detailGrade != null) _detailGrade.text = PanelServices.GradeName(def.Grade);
             if (_detailName != null)
             {
                 _detailName.text = Strings.Get(def.NameKey);
-                _detailName.color = Color.Lerp(grade, Color.white, 0.4f);
+                _detailName.color = Color.Lerp(grade, Color.white, 0.45f);
             }
 
             if (_detailInfo != null)
             {
                 _detailInfo.text = owned
-                    ? Strings.Format("skill.info", PanelServices.GradeName(def.Grade), level, _balance.SKILL_MAX_LEVEL, Num(def.Cooldown))
-                    : Strings.Format("skill.info_unowned", PanelServices.GradeName(def.Grade));
+                    ? Strings.Format("skill.info", level, _balance.SKILL_MAX_LEVEL, Num(def.Cooldown))
+                    : Strings.Format("skill.info_unowned", Num(def.Cooldown));
             }
 
             if (_detailDesc != null) _detailDesc.text = Strings.Format(def.DescKey, DescArgs(def, shownLevel));
@@ -304,6 +325,25 @@ namespace SoloHero.Game.UI.Panels
             bool equipped = slot >= 0 && SkillService.IsSlotUnlocked(_balance, slot, _save.heroLevel);
             if (_equipLabel != null) _equipLabel.text = Strings.Get(equipped ? "skill.unequip" : "skill.equip");
             if (_equipButton != null) _equipButton.SetAvailable(owned);
+        }
+
+        /// <summary>Grade frame sprite for a skill (empty frame when none); <paramref name="bright"/> false dims it.</summary>
+        private void SetFrame(Image frame, SkillDef def, bool bright)
+        {
+            if (frame == null) return;
+            if (_frames != null)
+            {
+                frame.sprite = def != null ? _frames.Get(def.Grade) : _frames.empty;
+                frame.color = bright ? Color.white : UnownedFrame;
+                return;
+            }
+
+            frame.color = def != null ? PanelServices.GradeColor(def.Grade) : UnownedFrame;
+        }
+
+        private static void Set(GameObject[] items, int index, bool active)
+        {
+            if (index < items.Length && items[index] != null && items[index].activeSelf != active) items[index].SetActive(active);
         }
 
         /// <summary>Description arguments at <paramref name="level"/>; see the arg list in strings_ko.txt.</summary>
@@ -330,12 +370,11 @@ namespace SoloHero.Game.UI.Panels
         private void PulseSlots()
         {
             float k = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8f);
+            Color pulse = Color.Lerp(Color.white, PickPulse, k);
             for (int i = 0; i < _slotFrames.Length; i++)
             {
                 if (_slotFrames[i] == null || !SkillService.IsSlotUnlocked(_balance, i, _save.heroLevel)) continue;
-                SkillDef def = SkillCatalog.Find(SkillBook.EquippedAt(_save, i));
-                Color baseColor = def != null ? PanelServices.GradeColor(def.Grade) : Dim;
-                _slotFrames[i].color = Color.Lerp(baseColor, PickPulse, k);
+                _slotFrames[i].color = pulse;
             }
         }
 

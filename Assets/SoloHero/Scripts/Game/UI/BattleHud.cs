@@ -2,6 +2,7 @@ using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Save;
+using SoloHero.Core.Settings;
 using SoloHero.Core.Skills;
 using SoloHero.Core.Stage;
 using SoloHero.Game.Combat;
@@ -29,12 +30,19 @@ namespace SoloHero.Game.UI
 
         [Header("Skill bar (D-078): one entry per slot")]
         [SerializeField] private SkillIconSet _skillIconSet;
+        [SerializeField] private GradeFrameSet _gradeFrames;
         [SerializeField] private Image[] _skillIcons = new Image[0];
         [SerializeField] private Image[] _skillFrames = new Image[0];
         [SerializeField] private Image[] _skillCooldowns = new Image[0];
         [SerializeField] private Text[] _skillTimes = new Text[0];
         [SerializeField] private Text[] _skillLocks = new Text[0];
         [SerializeField] private UiPunch[] _skillPunches = new UiPunch[0];
+        [Header("Skill auto / manual toggle (D-085)")]
+        [SerializeField] private Image _autoImage;
+        [SerializeField] private Text _autoLabel;
+        [SerializeField] private Sprite _autoOnSprite;
+        [SerializeField] private Sprite _autoOffSprite;
+        [SerializeField] private GameObject[] _skillReadyMarks = new GameObject[0];
         [SerializeField] private GameObject _bossBar;
         [SerializeField] private RectTransform _bossFill;
         [SerializeField] private Text _bossName;
@@ -69,6 +77,9 @@ namespace SoloHero.Game.UI
         private bool[] _shownLocked = new bool[0];
         private int _shownSkillLevel = -1;
         private StageRunner _skillRunner;
+        private SettingsService _settings;
+        private int _shownAuto = -1;
+        private bool[] _shownReady = new bool[0];
 
         private void Awake()
         {
@@ -93,6 +104,15 @@ namespace SoloHero.Game.UI
             catch (Exception)
             {
                 _save = null;
+            }
+
+            try
+            {
+                _settings = Services.Get<SettingsService>();
+            }
+            catch (Exception)
+            {
+                _settings = null;
             }
         }
 
@@ -143,6 +163,13 @@ namespace SoloHero.Game.UI
             StageRunner runner = CurrentRunner();
             if (runner == null) return;
             runner.ChallengeBoss();
+        }
+
+        /// <summary>D-085: AUTO button. Manual mode leaves casting to the skill bar taps.</summary>
+        public void ToggleSkillAuto()
+        {
+            if (_settings == null) return;
+            _settings.SetSkillManual(!_settings.SkillManual);
         }
 
         /// <summary>Skill bar tap: casts that slot now if it is ready (auto-cast keeps running either way).</summary>
@@ -291,8 +318,36 @@ namespace SoloHero.Game.UI
         /// D-078 skill bar: each slot shows its skill icon in a grade-coloured frame, a radial cooldown with seconds,
         /// or a lock with the hero level that opens it. Texts and sprites change only when their value changes.
         /// </summary>
+        private void RefreshAuto(StageRunner runner)
+        {
+            bool auto = _settings == null || !_settings.SkillManual;
+            runner.Skills.AutoEnabled = auto;
+            int state = auto ? 1 : 0;
+            if (state == _shownAuto) return;
+            _shownAuto = state;
+            if (_autoImage != null) _autoImage.sprite = auto ? _autoOnSprite : _autoOffSprite;
+            if (_autoLabel != null) _autoLabel.color = auto ? Color.white : new Color(0.75f, 0.75f, 0.8f, 1f);
+        }
+
+        /// <summary>Manual mode: a pulsing mark on every slot that can be tapped now.</summary>
+        private void RefreshReadyMarks(StageRunner runner)
+        {
+            int count = _skillReadyMarks.Length;
+            if (_shownReady.Length != count) _shownReady = new bool[count];
+            bool manual = !runner.Skills.AutoEnabled;
+            for (int i = 0; i < count; i++)
+            {
+                bool locked = i < _shownLocked.Length && _shownLocked[i];
+                bool ready = manual && !locked && runner.Skills.IsReady(i);
+                if (ready == _shownReady[i] || _skillReadyMarks[i] == null) continue;
+                _shownReady[i] = ready;
+                _skillReadyMarks[i].SetActive(ready);
+            }
+        }
+
         private void RefreshSkills(StageRunner runner)
         {
+            RefreshAuto(runner);
             int count = _skillIcons.Length;
             if (_shownDefs.Length != count || _skillRunner != runner)
             {
@@ -325,7 +380,7 @@ namespace SoloHero.Game.UI
                 }
 
                 float remaining = def != null ? runner.Skills.CooldownRemaining(i) : 0f;
-                float total = def != null ? def.Cooldown : 0f;
+                float total = def != null ? runner.Skills.CooldownTotal(i) : 0f;
                 Image overlay = i < _skillCooldowns.Length ? _skillCooldowns[i] : null;
                 if (overlay != null)
                 {
@@ -339,6 +394,8 @@ namespace SoloHero.Game.UI
                 Text time = i < _skillTimes.Length ? _skillTimes[i] : null;
                 if (time != null) time.text = seconds > 0 ? seconds.ToString() : "";
             }
+
+            RefreshReadyMarks(runner);
         }
 
         private void DrawSkillSlot(int i, SkillDef def, bool locked)
@@ -353,8 +410,15 @@ namespace SoloHero.Game.UI
                 icon.enabled = sprite != null && !locked;
             }
 
-            if (frame != null)
+            if (frame != null && _gradeFrames != null)
+            {
+                frame.sprite = def != null && !locked ? _gradeFrames.Get(def.Grade) : _gradeFrames.empty;
+                frame.color = Color.white;
+            }
+            else if (frame != null)
+            {
                 frame.color = def != null && !locked ? PanelServices.GradeColor(def.Grade) : new Color(0.35f, 0.35f, 0.4f, 1f);
+            }
             if (lockText == null) return;
             lockText.gameObject.SetActive(locked);
             if (locked && _balance != null && i < SkillService.SlotCount(_balance))

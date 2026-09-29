@@ -62,13 +62,13 @@ namespace SoloHero.Game.Pooling
 
         public void Return(DamageText text) => _pool.Release(text);
 
-        /// <summary>A short text over a world point (a skill name over the hero); pops like a crit, no drift.</summary>
+        /// <summary>A short text on a dark plate over a world point (a skill name over the hero); holds, then fades.</summary>
         public void ShowLabel(Vector3 world, string label, Color color, int size)
         {
             if (_pool == null || _camera == null || string.IsNullOrEmpty(label) || !_pool.TryGet(out DamageText text)) return;
             Vector3 screen = _camera.WorldToScreenPoint(world);
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_layer, screen, null, out Vector2 local);
-            text.Show(this, local, label, color, size, true, 0f);
+            text.Show(this, local, label, color, size, false, 0f, true);
         }
 
         private void OnHitLanded(EnemyBrain target, double amount, HitKind kind)
@@ -76,7 +76,7 @@ namespace SoloHero.Game.Pooling
             if (_pool == null || _camera == null || !_pool.TryGet(out DamageText text)) return;
 
             bool crit = kind == HitKind.Crit;
-            Vector3 screen = _camera.WorldToScreenPoint(new Vector3((float)target.X, EnemyHeadOffset, 0f));
+            Vector3 screen = _camera.WorldToScreenPoint(new Vector3((float)target.X, EnemyHeadOffset + DepthLanes.For(target), 0f));
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_layer, screen, null, out Vector2 local);
             // Small sideways jitter keeps numbers from stacking on one spot; crits alternate their arc direction.
             if (!crit) local.x += Random.Range(-NormalJitterPixels, NormalJitterPixels);

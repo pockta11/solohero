@@ -14,6 +14,10 @@ namespace SoloHero.Game.Combat
     {
         private const float TileCopies = 4f;
         private const int LayerSortingBase = -40;
+        private const float GroundCopies = 8f;
+
+        /// <summary>D-091: world Y of the floor's far edge (the characters' ground line is 0).</summary>
+        public const float FloorTop = 1.25f;
 
         [SerializeField] private Camera _camera;
         [SerializeField] private CombatSession _session;
@@ -75,6 +79,20 @@ namespace SoloHero.Game.Combat
             }
         }
 
+        /// <summary>The chapter's floor plane: far edge at FloorTop, tiled wide enough to cover the view.</summary>
+        private void ApplyFloor(Sprite floor)
+        {
+            if (_ground == null || floor == null) return;
+            _ground.sprite = floor;
+            _ground.drawMode = SpriteDrawMode.Tiled;
+            Vector2 size = floor.bounds.size;
+            _ground.size = new Vector2(size.x * GroundCopies, size.y);
+            _groundWidth = size.x * _ground.transform.localScale.x;
+            Vector3 p = _ground.transform.position;
+            p.y = FloorTop - size.y * _ground.transform.localScale.y;
+            _ground.transform.position = p;
+        }
+
         private ChapterTheme ThemeFor(int chapter)
         {
             if (_themes == null || _themes.themes.Length == 0) return null;
@@ -86,6 +104,7 @@ namespace SoloHero.Game.Combat
             _shown = theme;
             if (theme == null) return;
             if (_camera != null) _camera.backgroundColor = _belowGround;
+            ApplyFloor(theme.floor);
 
             for (int i = 0; i < _layers.Length; i++)
             {

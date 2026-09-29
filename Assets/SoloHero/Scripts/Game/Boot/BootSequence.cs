@@ -119,6 +119,7 @@ namespace SoloHero.Game.Boot
         {
             Services.Register(new UpgradeService(_data, balance, requester));
             Services.Register(new SkillService(_data, balance, requester));
+            Services.Register(new SoloHero.Core.Talents.TalentService(_data, balance, requester));
             Services.Register(new EquipService(requester));
             var gacha = new GachaService(
                 balance,

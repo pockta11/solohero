@@ -9,7 +9,7 @@ namespace SoloHero.Game.Pooling
     public sealed class VfxPool : MonoBehaviour
     {
         public const int Capacity = 24;
-        private const int SortingOrder = 20;
+        private const int SortingOrder = 250;
 
         [SerializeField] private VfxItem _template;
 
