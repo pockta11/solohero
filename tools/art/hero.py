@@ -1,7 +1,8 @@
-"""SoloHero hero sprite (D-090): a cute chibi swordsman in the Lucky Defense look, native 1x1 pixels, faces right.
+"""SoloHero hero sprite (D-090, D-095): a cute chibi knight in the Lucky Defense look, native 1x1 pixels, faces right.
 
 Style rules: a big round head over a tiny round body, one dark outline colour around every part, two-tone cel
-shading with a small highlight, sparkling eyes, blush, soft scalloped bangs with one cowlick, a chunky toy sword.
+shading with a small highlight, sparkling eyes and blush in the opening of a round steel helmet with a red plume,
+a shoulder guard, a red cape, a chunky sword in the front hand and a round gold-rimmed shield in the back hand.
 
 Run: python tools/art/hero.py [--preview out.png]
 Writes Assets/SoloHero/Art/Hero/knight_{clip}_{frames}.png and removes older knight sheets with other frame counts.
@@ -29,6 +30,9 @@ PANTS = ramp("#3d3769", "#5a5394", "#8078bf")
 BOOTS = ramp("#8c4f2c", "#bb7342", "#e7a868")
 GOLD = ramp("#d68a1c", "#ffc434", "#fff2a4")
 BLADE = ramp("#8aa6cf", "#e2eeff", "#ffffff")
+HELM = ramp("#7a88b0", "#c4d2ea", "#f4f8ff")
+PLUME = ramp("#b8283c", "#ee4454", "#ff8a86")
+SHIELD = ramp("#2e4fb0", "#4c7ae6", "#90b8ff")
 GRIP = ramp("#6b3a28", "#8f5236", "#b8744a")
 EYE = hexc("#2b1d3a")
 EYE_HI = hexc("#ffffff")
@@ -132,6 +136,11 @@ def build(p):
     cv.paint(part("barm", cap(sh_back, be, 2.2, 2.0), TUNIC))
     cv.paint(part("barm2", cap(be, bh, 2.0), TUNIC))
     cv.paint(part("bhand", ell(bh, 2.5, 2.5), SKIN))
+    # Round shield on the back hand: gold rim, blue face, a gold boss in the middle.
+    shield_c = (bh[0] - 0.5, bh[1] + 0.5)
+    cv.paint(part("shield_rim", ell(shield_c, 5.2, 5.8, 0.0, 1.4), GOLD))
+    cv.paint(part("shield", ell(shield_c, 3.9, 4.5, 0.0, 1.6), SHIELD))
+    cv.paint(part("shield_boss", ell(shield_c, 1.3, 1.3), GOLD))
     cv.paint(part("bleg", cap((hip[0] - 2.4, hip[1]), bk, 2.6, 2.4), PANTS))
     cv.paint(part("bleg2", cap(bk, bf, 2.4), PANTS))
     cv.paint(part("bboot", ell((bf[0] + 1.0, bf[1] + 1.4), 3.2, 2.2), BOOTS))
@@ -162,31 +171,33 @@ def build(p):
     # The face stays almost one flat tone: only its far rim falls into shadow.
     cv.paint(part("face", ellipse(HC[0], HC[1], R, R - 1.0, tilt, 3.2), SKIN, thresholds=(0.16, 0.97)))
 
-    def fringe(lx):
-        # Three soft locks across the forehead; the tips dip toward the eyes.
-        phase = (lx - R * 0.1) / (R * 0.36) * math.pi
-        return R * 0.36 - 2.6 * max(0.0, math.cos(phase)) ** 0.8
-
-    def hair_shape(x, y):
+    # Round steel helmet: a dome a little larger than the head, open over the face.
+    def helmet_shape(x, y):
         lx, ly = local(x, y)
-        u = (lx + 0.6) / (R + 1.2)
-        v = (ly - 1.2) / (R + 0.8)
+        u = (lx + 0.4) / (R + 1.4)
+        v = (ly - 0.8) / (R + 0.9)
         if u * u + v * v > 1.0:
             return None
-        # Behind the ear the hair falls lower along a slanted edge, framing the cheek.
-        back = lx < -R * 0.34 + ly * 0.4 and ly > -R * 0.55
-        if ly < fringe(lx) and not back:
+        ou = (lx - R * 0.32) / (R * 0.98)
+        ov = (ly + R * 0.34) / (R * 0.74)
+        if ou * ou + ov * ov < 1.0:
             return None
         z = math.sqrt(max(0.0, 1.0 - u * u - v * v))
         c, s = math.cos(tilt), math.sin(tilt)
-        return _norm(u * c - v * s, u * s + v * c, z * 1.6)
+        return _norm(u * c - v * s, u * s + v * c, z * 1.5)
 
-    cv.paint(part("hair", hair_shape, HAIR))
-    tip = to_world(R * 0.1, R + 3.2)
-    root = to_world(-R * 0.1, R + 0.2)
-    bend = to_world(R * 0.35, R + 1.2)
-    cv.paint(part("cowlick", union_shapes(capsule(root[0], root[1], bend[0], bend[1], 1.3),
-                                          capsule(bend[0], bend[1], tip[0], tip[1], 1.2, 0.8)), HAIR))
+    cv.paint(part("helmet", helmet_shape, HELM))
+    # A small tuft of hair shows under the brim, and a ridge runs over the crown.
+    for lx, ly in ((R * 0.05, R * 0.34), (R * 0.3, R * 0.36), (R * 0.55, R * 0.3)):
+        c0 = to_world(lx, ly)
+        cv.paint(part("bang", ellipse(c0[0], c0[1], R * 0.14, R * 0.11, tilt), HAIR))
+    sway = p["cape"]
+    # Plume: a slim red brush standing up over the crown and sweeping back, swaying with the cape.
+    front = to_world(R * 0.25, R + 1.2)
+    top = to_world(-R * 0.2, R + 3.8)
+    back = to_world(-R * 0.85 - sway * 0.3, R + 2.4 + sway * 0.2)
+    cv.paint(part("plume", union_shapes(capsule(front[0], front[1], top[0], top[1], 1.7, 2.2),
+                                        capsule(top[0], top[1], back[0], back[1], 2.2, 1.3)), PLUME))
 
     # 6. Front arm with the sword.
     sa = rad(p["sword"])
@@ -257,7 +268,8 @@ def draw_face(cv, to_world, p):
     """Big sparkling eyes set low and wide, blush under them, a tiny mouth."""
     skin = set(SKIN)
     eyes = p["eyes"]
-    for ex, rx in ((R * 0.36, 2.1), (-R * 0.2, 1.8)):
+    # Centred in the helmet opening (its centre is R * 0.32 in front of the head centre).
+    for ex, rx in ((R * 0.6, 2.1), (R * 0.06, 1.9)):
         cx, cy = to_world(ex, -R * 0.26)
         if eyes == "open":
             fill_ellipse(cv, cx, cy, rx, 3.4, EYE, skin)
@@ -273,10 +285,10 @@ def draw_face(cv, to_world, p):
         else:  # hurt: > <
             for dx, dy in ((-1.2, 1.2), (0.0, 0.0), (-1.2, -1.2), (1.2, 1.2), (1.2, -1.2)):
                 set_px(cv, cx + dx, cy + dy, EYE)
-    for ex in (R * 0.66, -R * 0.44):
+    for ex in (R * 0.86, -R * 0.14):
         bx, by = to_world(ex, -R * 0.52)
         fill_ellipse(cv, bx, by, 1.8, 0.9, BLUSH, skin)
-    mx, my = to_world(R * 0.1, -R * 0.58)
+    mx, my = to_world(R * 0.34, -R * 0.58)
     if p["mouth"] == "open":
         fill_ellipse(cv, mx, my - 0.3, 1.3, 1.3, MOUTH, skin)
     elif p["mouth"] == "grit":
