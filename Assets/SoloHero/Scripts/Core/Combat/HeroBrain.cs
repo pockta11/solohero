@@ -6,8 +6,15 @@ using SoloHero.Core.Talents;
 
 namespace SoloHero.Core.Combat
 {
+    /// <summary>
+    /// The hero (E2). D-093: there is no plain attack; every swing is the basic skill - it fires on the attack-speed
+    /// timer (near-zero cooldown, like a MapleStory main skill) and hits up to BASIC_SKILL_TARGETS enemies within
+    /// BASIC_SKILL_RANGE, nearest first, each for ATK x BASIC_SKILL_MULT with its own crit roll.
+    /// </summary>
     public sealed class HeroBrain
     {
+        private const int MaxSwingTargets = 8;
+
         private readonly BalanceValues _balance;
         private readonly IRandom _random;
         private HeroStats _stats;
@@ -20,6 +27,7 @@ namespace SoloHero.Core.Combat
         private float _shieldTimer;
         private TalentEffects _talents = TalentEffects.None;
         private bool _lastStandUsed;
+        private readonly EnemyBrain[] _swing = new EnemyBrain[MaxSwingTargets];
 
         public HeroBrain(BalanceValues balance, IRandom random, HeroStats stats)
         {
@@ -106,14 +114,70 @@ namespace SoloHero.Core.Combat
             if (!_attackPending) return;
 
             _attackPending = false;
-            EnemyBrain target = world.NearestEnemyInRange(_balance.ATTACK_RANGE);
-            if (target == null) return;
+            int count = PickSwingTargets(world);
+            for (int i = 0; i < count; i++)
+            {
+                EnemyBrain target = _swing[i];
+                _swing[i] = null;
+                bool crit = DamageCalc.RollCrit(_stats, _random, _critBuffPoints);
+                double dmg = DamageCalc.HeroHit(_stats, crit, _balance, _balance.BASIC_SKILL_MULT)
+                    * (1d + _atkBuffFraction) * TalentHitMult(target);
+                target.TakeDamage(dmg);
+                world.ReportHit(target, dmg, crit ? HitKind.Crit : HitKind.Normal);
+                DealtDamage?.Invoke(dmg, crit);
+            }
+        }
 
-            bool crit = DamageCalc.RollCrit(_stats, _random, _critBuffPoints);
-            double dmg = DamageCalc.HeroHit(_stats, crit, _balance) * (1d + _atkBuffFraction) * TalentHitMult(target);
-            target.TakeDamage(dmg);
-            world.ReportHit(target, dmg, crit ? HitKind.Crit : HitKind.Normal);
-            DealtDamage?.Invoke(dmg, crit);
+        /// <summary>Seconds until the next basic skill swing (0 while advancing).</summary>
+        public float SwingCooldown => _attackTimer > 0f ? _attackTimer : 0f;
+
+        /// <summary>Seconds between basic skill swings at the current attack speed.</summary>
+        public float SwingInterval
+        {
+            get
+            {
+                double spd = _stats.AtkSpd * (1d + _atkSpdBuffFraction);
+                return spd > 0d ? (float)(1d / spd) : 0f;
+            }
+        }
+
+        /// <summary>Nearest enemies in front of the hero within the basic skill range, up to its target count.</summary>
+        private int PickSwingTargets(ICombatWorld world)
+        {
+            int max = _balance.BASIC_SKILL_TARGETS < 1 ? 1 : Math.Min(MaxSwingTargets, _balance.BASIC_SKILL_TARGETS);
+            double range = Math.Max(_balance.BASIC_SKILL_RANGE, _balance.ATTACK_RANGE);
+            double heroX = world.HeroX;
+            int count = 0;
+            while (count < max)
+            {
+                EnemyBrain best = null;
+                double bestDistance = double.MaxValue;
+                int slots = world.SlotCount;
+                for (int s = 0; s < slots; s++)
+                {
+                    EnemyBrain e = world.GetSlot(s);
+                    if (e == null || !e.IsAlive || e.X < heroX) continue;
+                    double d = e.X - heroX;
+                    if (d > range || d >= bestDistance || Picked(e, count)) continue;
+                    best = e;
+                    bestDistance = d;
+                }
+
+                if (best == null) break;
+                _swing[count++] = best;
+            }
+
+            return count;
+        }
+
+        private bool Picked(EnemyBrain e, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (_swing[i] == e) return true;
+            }
+
+            return false;
         }
 
         public void SetTalents(TalentEffects talents) => _talents = talents ?? TalentEffects.None;

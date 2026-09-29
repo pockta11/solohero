@@ -12,6 +12,9 @@ namespace SoloHero.Game.Config
         public double ATKSPD_BASE = 1.0;
         public double MOVE_SPEED = 2.0;
         public double ATTACK_RANGE = 1.6;
+        public double BASIC_SKILL_MULT = 3.0;
+        public int BASIC_SKILL_TARGETS = 3;
+        public double BASIC_SKILL_RANGE = 2.4;
         public double CRIT_RATE_BASE = 5;
         public double CRIT_MULT = 1.5;
         public double DEF_REF_MULT = 3;
@@ -28,7 +31,7 @@ namespace SoloHero.Game.Config
         public double UPG_GAIN_SPD = 0.02;
         public int UPG_MAX_LEVEL_SPD = 100;
         public double UPG_FARM_EXPONENT = 1.31;
-        public double ENEMY_HP_BASE = 30;
+        public double ENEMY_HP_BASE = 90;
         public double ENEMY_HP_GROWTH = 1.14;
         public double ENEMY_ATK_BASE = 5;
         public double ENEMY_ATK_GROWTH = 1.14;
@@ -157,6 +160,9 @@ namespace SoloHero.Game.Config
                 ATKSPD_BASE = ATKSPD_BASE,
                 MOVE_SPEED = MOVE_SPEED,
                 ATTACK_RANGE = ATTACK_RANGE,
+                BASIC_SKILL_MULT = BASIC_SKILL_MULT,
+                BASIC_SKILL_TARGETS = BASIC_SKILL_TARGETS,
+                BASIC_SKILL_RANGE = BASIC_SKILL_RANGE,
                 CRIT_RATE_BASE = CRIT_RATE_BASE,
                 CRIT_MULT = CRIT_MULT,
                 DEF_REF_MULT = DEF_REF_MULT,

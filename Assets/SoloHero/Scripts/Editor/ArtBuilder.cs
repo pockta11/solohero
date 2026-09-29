@@ -287,7 +287,7 @@ namespace SoloHero.Editor
             ("fire", false, 16f), ("bolt", true, 14f), ("ice", true, 14f), ("poison", true, 12f),
             ("meteor", true, 16f), ("holy", true, 14f), ("tornado", true, 14f), ("swords", true, 16f),
             ("heal", true, 12f), ("shield", false, 12f), ("aura", true, 14f), ("vortex", false, 14f),
-            ("breath", true, 14f), ("phoenix", true, 12f)
+            ("breath", true, 14f), ("phoenix", true, 12f), ("wave", false, 20f)
         };
 
         /// <summary>D-078: Art/Icons/Skills/skill_{id}.png for every catalog skill, plus the lock icon.</summary>

@@ -25,6 +25,8 @@ namespace SoloHero.Game.Combat
     public sealed class CombatFx : MonoBehaviour
     {
         private const float EffectY = 0.7f;
+        private const string BasicWaveClip = "wave";
+        private const float BasicWaveOffset = 1.1f;
         private const float CritShake = 0.06f;
         private const float CritShakeSeconds = 0.12f;
         private const float BossShake = 0.18f;
@@ -105,6 +107,7 @@ namespace SoloHero.Game.Combat
             _hooked = runner;
             if (runner == null) return;
             runner.World.HitLanded += OnHitLanded;
+            runner.Hero.AttackRequested += OnBasicSwing;
             runner.Skills.SkillCast += OnSkillCast;
             runner.Skills.SkillImpact += OnSkillImpact;
             runner.StateChanged += OnStateChanged;
@@ -116,11 +119,21 @@ namespace SoloHero.Game.Combat
         {
             if (_hooked == null) return;
             _hooked.World.HitLanded -= OnHitLanded;
+            _hooked.Hero.AttackRequested -= OnBasicSwing;
             _hooked.Skills.SkillCast -= OnSkillCast;
             _hooked.Skills.SkillImpact -= OnSkillImpact;
             _hooked.StateChanged -= OnStateChanged;
             _hooked.StageCleared -= OnStageCleared;
             _hooked = null;
+        }
+
+        /// <summary>D-093 basic skill: a sword wave sweeps forward from the hero on every swing.</summary>
+        private void OnBasicSwing()
+        {
+            if (_hooked == null || LowEffect || _set == null || _vfx == null) return;
+            VfxClip wave = _set.Find(BasicWaveClip);
+            if (wave == null) return;
+            _vfx.Play(wave.frames, wave.fps, new Vector3((float)_hooked.Hero.X + BasicWaveOffset, EffectY, 0f), 1f, Color.white);
         }
 
         private void OnHitLanded(EnemyBrain target, double amount, HitKind kind)

@@ -569,6 +569,9 @@ DEF_total      = DEF_기본(20)                          × 1.16^upgradeDefLevel
 | | ATKSPD_BASE | 1.0 | 회/초 | |
 | | MOVE_SPEED | 2.0 | units/s | **고정 상수, 성장 불가** |
 | | ATTACK_RANGE | 1.6 | units | 히어로·적 공용 |
+| | BASIC_SKILL_MULT | 3.0 | 배 | 기본 스킬(평타 대체, D-093) 대상당 ATK 배율 |
+| | BASIC_SKILL_TARGETS | 3 | 명 | 기본 스킬 동시 타격 수 (가까운 순) |
+| | BASIC_SKILL_RANGE | 2.4 | units | 기본 스킬 사거리 |
 | | CRIT_RATE_BASE | 5 | % | |
 | | CRIT_MULT | 1.5 | 배 | v1.0에서 성장 불가 |
 | | DEF_REF_MULT | 3.0 | 배 | `DEF_REF = 3 × 적_공격력`. 방어력 비율 감쇄 기준값 (D-054) |
@@ -583,7 +586,7 @@ DEF_total      = DEF_기본(20)                          × 1.16^upgradeDefLevel
 | | UPG_MAX_LEVEL_SPD | 100 | 레벨 | 공격속도 전용 상한 (→ 3.0회/초) |
 | | UPG_MAX_LEVEL_OTHER | 없음 | — | HP·ATK·DEF는 상한 없음 |
 | | UPG_FARM_EXPONENT | 1.31 | — | 파밍 시간 k배 → 파워 `k^1.31`배 (`ln1.16 / ln1.12`) |
-| 적 | ENEMY_HP_BASE | 30 | HP | g=1 기준 |
+| 적 | ENEMY_HP_BASE | 90 | HP | g=1 기준 (D-094: 30 → 90) |
 | | ENEMY_HP_GROWTH | 1.14 | — | `30 × 1.14^(g−1)` (D-053, D-059) |
 | | ENEMY_ATK_BASE | 5 | 공격력 | |
 | | ENEMY_ATK_GROWTH | 1.14 | — | `5 × 1.14^(g−1)`. HP와 같은 성장률 — 플레이어 HP도 승산으로 자라므로 생존 압력을 유지하려면 동률이어야 한다 |

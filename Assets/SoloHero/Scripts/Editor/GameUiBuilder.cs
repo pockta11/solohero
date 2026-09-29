@@ -39,6 +39,7 @@ namespace SoloHero.Editor
         private const string FlashName = "ScreenFlash";
         private const string SkillBarName = "SkillBar";
         private const string SkillAutoName = "SkillAuto";
+        private const string BasicSkillName = "BasicSkill";
         private const string SkillIconsPath = "Assets/SoloHero/Data/Art/SkillIcons.asset";
         private const string GradeFramesPath = "Assets/SoloHero/Data/Art/GradeFrames.asset";
         private const string HeroArtPath = "Assets/SoloHero/Data/Art/Hero_Knight.asset";
@@ -1616,7 +1617,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void BuildSkillBar(Transform hud, BattleHud battleHud, SerializedObject so)
         {
-            foreach (string stale in new[] { "Skill1", "Skill2", "Skill3", SkillBarName, SkillAutoName })
+            foreach (string stale in new[] { "Skill1", "Skill2", "Skill3", SkillBarName, SkillAutoName, BasicSkillName })
             {
                 Transform t = hud.Find(stale);
                 if (t != null) Object.DestroyImmediate(t.gameObject);
@@ -1676,10 +1677,32 @@ namespace SoloHero.Editor
 
             // D-085: AUTO toggle on the ground line above the last slots; green = auto, gray = manual.
             Button auto = MakeButton(SkillAutoName, hud, 0.8f, 0.46f, 0.98f, 0.495f, "", 28, out Text autoLabel, Tone.Green);
+
+            // D-093 basic skill: always-on main attack, shown on the same row as AUTO with its swing timer.
+            Transform staleBasic = hud.Find(BasicSkillName);
+            if (staleBasic != null) Object.DestroyImmediate(staleBasic.gameObject);
+            RectTransform basic = Rect(BasicSkillName, hud, 0.02f, 0.458f, 0.02f, 0.458f);
+            basic.pivot = new Vector2(0f, 0f);
+            basic.sizeDelta = new Vector2(96f, 96f);
+            UiSkin.Sliced(Plain(basic, null), UiSkin.GradeFrame(SoloHero.Core.Gacha.Grade.Rare));
+            FixedIcon(basic, "basic", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, 64f);
+            Image basicCooldown = Box("Cooldown", basic, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(76f, 76f)).gameObject.AddComponent<Image>();
+            basicCooldown.sprite = UiSkin.White;
+            basicCooldown.color = new Color(0f, 0f, 0.05f, 0.6f);
+            basicCooldown.type = Image.Type.Filled;
+            basicCooldown.fillMethod = Image.FillMethod.Radial360;
+            basicCooldown.fillOrigin = (int)Image.Origin360.Top;
+            basicCooldown.fillClockwise = false;
+            basicCooldown.raycastTarget = false;
+            Text basicTag = AddText(BottomBand("Tag", basic, -18f, 30f, -24f, -24f), 22, TextAnchor.MiddleCenter);
+            basicTag.verticalOverflow = VerticalWrapMode.Overflow;
+            basicTag.color = new Color(1f, 0.9f, 0.55f, 1f);
+            Localize(basicTag, "hud.basic_skill");
             Localize(autoLabel, "hud.skill_auto");
             if (battleHud != null) UnityEventTools.AddPersistentListener(auto.onClick, battleHud.ToggleSkillAuto);
 
             if (so == null) return;
+            so.FindProperty("_basicCooldown").objectReferenceValue = basicCooldown;
             so.FindProperty("_autoImage").objectReferenceValue = auto.GetComponent<Image>();
             so.FindProperty("_autoLabel").objectReferenceValue = autoLabel;
             so.FindProperty("_autoOnSprite").objectReferenceValue = UiSkin.ButtonSprite(Tone.Green);

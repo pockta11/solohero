@@ -255,3 +255,4 @@ tab.talent	특성
 rail.settings	설정
 rail.stage	스테이지
 rail.credits	크레딧
+hud.basic_skill	섬광 베기

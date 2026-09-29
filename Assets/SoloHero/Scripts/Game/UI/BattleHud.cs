@@ -43,6 +43,8 @@ namespace SoloHero.Game.UI
         [SerializeField] private Sprite _autoOnSprite;
         [SerializeField] private Sprite _autoOffSprite;
         [SerializeField] private GameObject[] _skillReadyMarks = new GameObject[0];
+        [Tooltip("D-093 basic skill: cooldown sweep over its icon (the attack-speed timer).")]
+        [SerializeField] private Image _basicCooldown;
         [SerializeField] private GameObject _bossBar;
         [SerializeField] private RectTransform _bossFill;
         [SerializeField] private Text _bossName;
@@ -318,6 +320,14 @@ namespace SoloHero.Game.UI
         /// D-078 skill bar: each slot shows its skill icon in a grade-coloured frame, a radial cooldown with seconds,
         /// or a lock with the hero level that opens it. Texts and sprites change only when their value changes.
         /// </summary>
+        private void RefreshBasic(StageRunner runner)
+        {
+            if (_basicCooldown == null) return;
+            float interval = runner.Hero.SwingInterval;
+            float fill = interval > 0f ? Mathf.Clamp01(runner.Hero.SwingCooldown / interval) : 0f;
+            if (Mathf.Abs(_basicCooldown.fillAmount - fill) > 0.01f) _basicCooldown.fillAmount = fill;
+        }
+
         private void RefreshAuto(StageRunner runner)
         {
             bool auto = _settings == null || !_settings.SkillManual;
@@ -348,6 +358,7 @@ namespace SoloHero.Game.UI
         private void RefreshSkills(StageRunner runner)
         {
             RefreshAuto(runner);
+            RefreshBasic(runner);
             int count = _skillIcons.Length;
             if (_shownDefs.Length != count || _skillRunner != runner)
             {

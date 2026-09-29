@@ -231,3 +231,14 @@ MonoBehaviour:
     fps: 12
     ground: 1
     halfHeight: 1.125
+  - name: wave
+    frames:
+    - {fileID: -3449371538797187861, guid: ea2675f5181acbd43bdc63924624d185, type: 3}
+    - {fileID: 2189018072775220166, guid: ea2675f5181acbd43bdc63924624d185, type: 3}
+    - {fileID: 5790859731096297722, guid: ea2675f5181acbd43bdc63924624d185, type: 3}
+    - {fileID: -7056692871424333224, guid: ea2675f5181acbd43bdc63924624d185, type: 3}
+    - {fileID: 1934983246301703187, guid: ea2675f5181acbd43bdc63924624d185, type: 3}
+    - {fileID: -3904721716560536391, guid: ea2675f5181acbd43bdc63924624d185, type: 3}
+    fps: 20
+    ground: 0
+    halfHeight: 0.875

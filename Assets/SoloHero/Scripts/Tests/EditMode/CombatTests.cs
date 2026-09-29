@@ -48,7 +48,7 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void OnHitFrame_InRange_DealsHeroHitDamage()
+        public void OnHitFrame_InRange_DealsBasicSkillDamage()
         {
             var c = new BalanceValues();
             var rng = new FixedRandom(0.99d);
@@ -67,7 +67,7 @@ namespace SoloHero.Tests.EditMode
 
             hero.OnHitFrame(world);
 
-            double expected = DamageCalc.HeroHit(BaseStats(c), false, c);
+            double expected = DamageCalc.HeroHit(BaseStats(c), false, c, c.BASIC_SKILL_MULT);
             Assert.AreEqual(100d - expected, enemy.Hp, 1e-9);
         }
 
@@ -89,7 +89,7 @@ namespace SoloHero.Tests.EditMode
 
             hero.OnHitFrame(world);
 
-            double unbuffed = DamageCalc.HeroHit(BaseStats(c), false, c);
+            double unbuffed = DamageCalc.HeroHit(BaseStats(c), false, c, c.BASIC_SKILL_MULT);
             Assert.AreEqual(1000d - unbuffed * 1.3d, enemy.Hp, 1e-9);
         }
 
@@ -111,7 +111,7 @@ namespace SoloHero.Tests.EditMode
 
             hero.OnHitFrame(world);
 
-            double unbuffed = DamageCalc.HeroHit(BaseStats(c), false, c);
+            double unbuffed = DamageCalc.HeroHit(BaseStats(c), false, c, c.BASIC_SKILL_MULT);
             Assert.AreEqual(1000d - unbuffed, enemy.Hp, 1e-9);
         }
 
