@@ -99,7 +99,7 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 
 ### Critical Don't-Miss Rules
 
-- **Mutation order is always: mutate `PlayerState` → raise event → `RequestSave()`.** Only the seven GDD save triggers call `RequestSave` (stage clear, gacha result, equip change, upgrade success, skill level-up, offline claim, pause/quit flush), plus the other currency-changing player decisions that follow the same rule: ad rewards (`AdSlotPolicy`), the gem gold pack (`GemShop`) and the farming stage choice (`FarmingStageService`). UI, views, and event handlers never call it.
+- **Mutation order is always: mutate `PlayerState` → raise event → `RequestSave()`.** Only the seven GDD save triggers call `RequestSave` (stage clear, gacha result, equip change, upgrade success, skill level-up, offline claim, pause/quit flush), plus the other currency-changing player decisions that follow the same rule: ad rewards (`AdSlotPolicy`), the gem gold pack (`GemShop`), the farming stage choice (`FarmingStageService`) and talent learn / reset (`TalentService`, D-087). UI, views, and event handlers never call it.
 - Expected failures (not enough gold, max level, on cooldown, locked, busy) return `Result.Fail(reason)` — never throw, never `Debug.LogError`. Exceptions are for programmer errors only.
 - External I/O failure is a fallback, not an error state: remote load fails → local backup; ad fails → normal claim stays enabled; auth fails → `local` mode. Nothing ever calls `Application.Quit` or blocks boot.
 - Gacha: **confirm result → save → then animate.** Skipping or quitting mid-animation must not lose or duplicate a pull. 10-pull deducts the full price up front; pity counts per pull.

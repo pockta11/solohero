@@ -11,6 +11,7 @@ namespace SoloHero.Core.Common
         Busy,
         DailyLimit,
         AdUnavailable,
-        SlotsFull
+        SlotsFull,
+        NoTalentPoints
     }
 }

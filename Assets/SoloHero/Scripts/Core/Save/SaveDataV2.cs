@@ -50,6 +50,9 @@ namespace SoloHero.Core.Save
         /// <summary>One entry per skill slot in cast order; "" is an empty slot.</summary>
         public List<string> equippedSkills = new List<string>();
 
+        public List<string> talentIds = new List<string>();
+        public List<int> talentRanks = new List<int>();
+
         public int skillPityCount;
         public int skillPullCount;
 
@@ -68,6 +71,7 @@ namespace SoloHero.Core.Save
         public bool sfxMuted;
         public bool lowEffectMode;
         public bool fps30Mode;
+        public bool skillManualMode;
 
         public int rebirthCount;
         public double soul;

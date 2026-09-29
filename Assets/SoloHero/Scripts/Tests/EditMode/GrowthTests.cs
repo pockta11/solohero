@@ -5,6 +5,7 @@ using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
+using SoloHero.Core.Stage;
 
 namespace SoloHero.Tests.EditMode
 {
@@ -189,5 +190,36 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(balance.EXP_REQ_BASE, HeroLevelService.ExpRequired(balance, 1), 1e-9);
         }
 
+        [Test]
+        public void ComputeStatsAfterUpgrade_Hp_MatchesStatsAfterRealUpgrade()
+        {
+            var balance = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            save.upgradeHp = 4;
+            save.upgradeAtk = 2;
+
+            HeroStats preview = CombatLoadout.ComputeStatsAfterUpgrade(balance, save, UpgradeLane.Hp);
+            HeroStats now = CombatLoadout.ComputeStats(balance, save);
+            save.upgradeHp = 5;
+            HeroStats after = CombatLoadout.ComputeStats(balance, save);
+
+            Assert.AreEqual(after.Hp, preview.Hp, 1e-9);
+            Assert.AreEqual(now.Hp * balance.UPG_STAT_MULT, preview.Hp, 1e-9);
+            Assert.AreEqual(now.Atk, preview.Atk, 1e-9);
+            Assert.AreEqual(now.Def, preview.Def, 1e-9);
+        }
+
+        [Test]
+        public void ComputeStatsAfterUpgrade_Spd_AddsOneGainAndLeavesSaveUntouched()
+        {
+            var balance = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+
+            HeroStats preview = CombatLoadout.ComputeStatsAfterUpgrade(balance, save, UpgradeLane.Spd);
+
+            Assert.AreEqual(balance.ATKSPD_BASE + balance.UPG_GAIN_SPD, preview.AtkSpd, 1e-9);
+            Assert.AreEqual(0, save.upgradeSpd);
+            Assert.AreEqual(balance.ATKSPD_BASE, CombatLoadout.ComputeStats(balance, save).AtkSpd, 1e-9);
+        }
     }
 }

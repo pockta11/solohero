@@ -4,16 +4,22 @@ using SoloHero.Core.Equipment;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Skills;
+using SoloHero.Core.Talents;
 
 namespace SoloHero.Core.Stage
 {
     /// <summary>
-    /// Pushes the saved growth state (level, upgrades, equipment, skill collection and slots) into a running stage.
+    /// Pushes the saved growth state (level, upgrades, equipment, skill collection and slots, talents) into a running stage.
     /// Call after boot and after every growth change so combat always uses the current loadout.
     /// </summary>
     public static class CombatLoadout
     {
-        public static HeroStats ComputeStats(BalanceValues balance, SaveDataV2 save)
+        public static HeroStats ComputeStats(BalanceValues balance, SaveDataV2 save) => Compute(balance, save, (UpgradeLane)(-1));
+
+        /// <summary>Upgrade preview: the stats <see cref="ComputeStats"/> would return with one more level in <paramref name="lane"/>.</summary>
+        public static HeroStats ComputeStatsAfterUpgrade(BalanceValues balance, SaveDataV2 save, UpgradeLane lane) => Compute(balance, save, lane);
+
+        private static HeroStats Compute(BalanceValues balance, SaveDataV2 save, UpgradeLane raised)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             if (save == null) throw new ArgumentNullException(nameof(save));
@@ -22,17 +28,18 @@ namespace SoloHero.Core.Stage
             return StatAggregator.Compute(
                 balance,
                 save.heroLevel,
-                save.upgradeHp,
-                save.upgradeAtk,
-                save.upgradeDef,
-                save.upgradeSpd,
+                save.upgradeHp + (raised == UpgradeLane.Hp ? 1 : 0),
+                save.upgradeAtk + (raised == UpgradeLane.Atk ? 1 : 0),
+                save.upgradeDef + (raised == UpgradeLane.Def ? 1 : 0),
+                save.upgradeSpd + (raised == UpgradeLane.Spd ? 1 : 0),
                 bonus.SwordMult,
                 bonus.ArmorMult,
                 bonus.HelmMult,
                 bonus.BootsSpeedBonus,
                 bonus.BootsCritBonus,
                 default,
-                SkillService.OwnedAtkBonus(balance, save));
+                SkillService.OwnedAtkBonus(balance, save),
+                TalentService.Effects(save));
         }
 
         public static void Apply(StageRunner runner, BalanceValues balance, SaveDataV2 save)
@@ -40,6 +47,7 @@ namespace SoloHero.Core.Stage
             if (runner == null) throw new ArgumentNullException(nameof(runner));
 
             runner.SetHeroStats(ComputeStats(balance, save));
+            runner.SetTalents(TalentService.Effects(save));
             for (int slot = 0; slot < runner.Skills.SlotCount; slot++)
             {
                 SkillDef def = SkillService.IsSlotUnlocked(balance, slot, save.heroLevel)

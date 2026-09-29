@@ -13,8 +13,8 @@ namespace SoloHero.Core.Config
         public double DEF_REF_MULT = 3;
         public double LEVEL_HP_GAIN = 5;
         public double LEVEL_ATK_GAIN = 0.5;
-        public double EXP_REQ_BASE = 50;
-        public double EXP_REQ_GROWTH = 1.12;
+        public double EXP_REQ_BASE = 200;
+        public double EXP_REQ_GROWTH = 1.18;
         public double UPG_COST_GROWTH = 1.12;
         public double UPG_BASE_HP = 300;
         public double UPG_BASE_ATK = 450;
@@ -126,6 +126,9 @@ namespace SoloHero.Core.Config
         public double SKILL_OWNED_ATK_L = 2;
         public double SKILL_BOSS_STUN_MULT = 0.5;
         public float SKILL_DOT_TICK = 0.5f;
+        public int TALENT_POINTS_PER_LEVEL = 1;
+        public int TALENT_TIER_STEP = 5;
+        public int TALENT_RESET_GEM = 100;
         public int STAGES_PER_CHAPTER = 10;
         public int MVP_CHAPTERS = 5;
         public float STAGE_CLEAR_DELAY = 2f;

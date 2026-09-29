@@ -6,6 +6,7 @@ using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Skills;
+using SoloHero.Core.Talents;
 
 namespace SoloHero.Core.Balance
 {
@@ -14,6 +15,7 @@ namespace SoloHero.Core.Balance
     /// skill summon) is scored by expected gain in 2 ln(DPS) + ln(EHP) per gold, and the best one is bought when
     /// affordable. When the best option is not affordable the player saves for it instead of buying a worse one.
     /// After a skill summon the player auto-equips the strongest skills (the panel's auto-equip button).
+    /// Talent points (D-087) are spent as soon as they arrive, following <see cref="TalentPlan"/>.
     /// </summary>
     public sealed class SimSpender
     {
@@ -27,6 +29,15 @@ namespace SoloHero.Core.Balance
         private readonly GachaTableValues _table;
         private readonly UpgradeService _upgrades;
         private readonly SkillService _skills;
+        private readonly TalentService _talents;
+
+        /// <summary>A typical first build: damage and survival first, then skills, then the deeper tiers.</summary>
+        public static readonly string[] TalentPlan =
+        {
+            "sharpness", "vitality", "precision", "focus", "ferocity", "iron_hide", "haste", "swiftness",
+            "giant_slayer", "endurance", "persistence", "mastery", "execute", "mending", "fortitude",
+            "last_stand", "venom", "overload"
+        };
 
         public SimSpender(BalanceValues balance, SaveDataV2 save, GachaService gacha, SkillSummonService summon)
         {
@@ -37,6 +48,7 @@ namespace SoloHero.Core.Balance
             _table = GachaTableValues.FromBalance(balance);
             _upgrades = new UpgradeService(save, balance);
             _skills = new SkillService(save, balance);
+            _talents = new TalentService(save, balance);
         }
 
         public double SpentUpgrade { get; private set; }
@@ -71,6 +83,8 @@ namespace SoloHero.Core.Balance
                 Collect(r);
                 bought = true;
             }
+
+            AllocateTalents();
 
             // New slots open with hero levels; the player fills them.
             if (_skills.FirstEmptyUnlockedSlot() >= 0) _skills.AutoEquip();
@@ -193,6 +207,27 @@ namespace SoloHero.Core.Balance
         }
 
         /// <summary>2 ln(DPS) + ln(EHP) against the frontier enemy. DPS counts basic hits, crit, skills and buffs.</summary>
+        /// <summary>Spends every free talent point on the first plan entry that can take a rank.</summary>
+        public int AllocateTalents()
+        {
+            int learned = 0;
+            while (_talents.AvailablePoints > 0)
+            {
+                bool any = false;
+                for (int i = 0; i < TalentPlan.Length; i++)
+                {
+                    if (!_talents.TryLearn(TalentPlan[i]).Ok) continue;
+                    learned++;
+                    any = true;
+                    break;
+                }
+
+                if (!any) break;
+            }
+
+            return learned;
+        }
+
         public double Score(Snapshot s, double enemyAtk)
         {
             EquipmentBonus eq = EquipmentBonus.FromGrades(_b, s.Sword, s.Helm, s.Armor, s.Boots,

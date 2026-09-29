@@ -2,6 +2,7 @@ using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Talents;
 
 namespace SoloHero.Core.Combat
 {
@@ -17,6 +18,8 @@ namespace SoloHero.Core.Combat
         private double _critBuffPoints;
         private double _guardFraction;
         private float _shieldTimer;
+        private TalentEffects _talents = TalentEffects.None;
+        private bool _lastStandUsed;
 
         public HeroBrain(BalanceValues balance, IRandom random, HeroStats stats)
         {
@@ -41,6 +44,9 @@ namespace SoloHero.Core.Combat
         public event Action AttackRequested;
         public event Action<double, bool> DealtDamage;
 
+        /// <summary>D-087 Last Stand fired: a lethal hit left the hero alive.</summary>
+        public event Action LastStandTriggered;
+
         public void Reset(HeroStats stats)
         {
             _stats = stats;
@@ -50,6 +56,7 @@ namespace SoloHero.Core.Combat
             _attackPending = false;
             Shield = 0d;
             _shieldTimer = 0f;
+            _lastStandUsed = false;
             SetState(HeroState.Advance);
         }
 
@@ -103,10 +110,23 @@ namespace SoloHero.Core.Combat
             if (target == null) return;
 
             bool crit = DamageCalc.RollCrit(_stats, _random, _critBuffPoints);
-            double dmg = DamageCalc.HeroHit(_stats, crit, _balance) * (1d + _atkBuffFraction);
+            double dmg = DamageCalc.HeroHit(_stats, crit, _balance) * (1d + _atkBuffFraction) * TalentHitMult(target);
             target.TakeDamage(dmg);
             world.ReportHit(target, dmg, crit ? HitKind.Crit : HitKind.Normal);
             DealtDamage?.Invoke(dmg, crit);
+        }
+
+        public void SetTalents(TalentEffects talents) => _talents = talents ?? TalentEffects.None;
+
+        /// <summary>Talent damage factor against one target: boss damage, and Execute under its HP threshold.</summary>
+        public double TalentHitMult(EnemyBrain target)
+        {
+            if (target == null) return 1d;
+            double mult = 1d;
+            if (target.IsBoss) mult *= 1d + _talents.BossDamagePct;
+            if (_talents.Execute && target.MaxHp > 0d && target.Hp < target.MaxHp * TalentCatalog.ExecuteThreshold)
+                mult *= 1d + TalentCatalog.ExecuteBonus;
+            return mult;
         }
 
         public void SetAtkBuffFraction(double fraction)
@@ -137,6 +157,7 @@ namespace SoloHero.Core.Combat
             if (State == HeroState.Dead) return;
             if (amount < 0d) amount = 0d;
             amount = DamageCalc.Guarded(amount, _guardFraction);
+            if (_talents.DamageTakenPct > 0d) amount *= 1d - Math.Min(0.5d, _talents.DamageTakenPct);
             if (Shield > 0d)
             {
                 double absorbed = Math.Min(Shield, amount);
@@ -152,6 +173,14 @@ namespace SoloHero.Core.Combat
             }
 
             Hp -= amount;
+            if (Hp <= 0d && _talents.LastStand && !_lastStandUsed)
+            {
+                _lastStandUsed = true;
+                Hp = MaxHp * TalentCatalog.LastStandHealPct;
+                LastStandTriggered?.Invoke();
+                return;
+            }
+
             if (Hp <= 0d)
             {
                 Hp = 0d;

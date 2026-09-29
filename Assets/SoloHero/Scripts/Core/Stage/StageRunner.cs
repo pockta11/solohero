@@ -136,6 +136,13 @@ namespace SoloHero.Core.Stage
         /// <summary>The stage a challenge from farming goes to: the first stage not yet cleared.</summary>
         public int FrontierStage => _save.highestStage + 1;
 
+        /// <summary>D-087: combat-side talent effects (boss / execute damage, damage taken, last stand, skill talents).</summary>
+        public void SetTalents(SoloHero.Core.Talents.TalentEffects talents)
+        {
+            _hero.SetTalents(talents);
+            _skills.SetTalents(talents);
+        }
+
         public void SetHeroStats(HeroStats stats)
         {
             _stats = stats;

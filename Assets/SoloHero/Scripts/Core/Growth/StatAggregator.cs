@@ -1,6 +1,7 @@
 using System;
 using SoloHero.Core.Config;
 using SoloHero.Core.Save;
+using SoloHero.Core.Talents;
 
 namespace SoloHero.Core.Growth
 {
@@ -19,9 +20,11 @@ namespace SoloHero.Core.Growth
             double bootsSpeedBonus = 0d,
             double bootsCritBonus = 0d,
             BuffSet buffs = default,
-            double skillOwnedAtk = 0d)
+            double skillOwnedAtk = 0d,
+            TalentEffects talents = null)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
+            TalentEffects t = talents ?? TalentEffects.None;
 
             double levelBonus = heroLevel - 1;
             double upg = balance.UPG_STAT_MULT;
@@ -29,26 +32,29 @@ namespace SoloHero.Core.Growth
 
             double hp = (balance.HP_BASE + balance.LEVEL_HP_GAIN * levelBonus)
                 * Math.Pow(upg, upgradeHp)
-                * armorMult;
+                * armorMult
+                * (1d + t.HpPct);
 
             double atk = (balance.ATK_BASE + balance.LEVEL_ATK_GAIN * levelBonus)
                 * Math.Pow(upg, upgradeAtk)
                 * swordMult
                 * (1d + skillOwnedAtk)
+                * (1d + t.AtkPct)
                 * buffAtk;
 
             double def = balance.DEF_BASE
                 * Math.Pow(upg, upgradeDef)
-                * helmMult;
+                * helmMult
+                * (1d + t.DefPct);
 
             double atkSpdMax = balance.ATKSPD_BASE + balance.UPG_GAIN_SPD * balance.UPG_MAX_LEVEL_SPD;
             double spd = Math.Min(
                 atkSpdMax,
-                (balance.ATKSPD_BASE + balance.UPG_GAIN_SPD * upgradeSpd) * (1d + bootsSpeedBonus));
+                (balance.ATKSPD_BASE + balance.UPG_GAIN_SPD * upgradeSpd) * (1d + bootsSpeedBonus) * (1d + t.AtkSpdPct));
 
-            double crit = balance.CRIT_RATE_BASE + bootsCritBonus;
+            double crit = balance.CRIT_RATE_BASE + bootsCritBonus + t.CritPoints;
 
-            return new HeroStats(hp, atk, def, spd, crit);
+            return new HeroStats(hp, atk, def, spd, crit, t.CritDamage);
         }
 
         public static HeroStats Compute(BalanceValues balance, SaveDataV2 data, BuffSet buffs = default)

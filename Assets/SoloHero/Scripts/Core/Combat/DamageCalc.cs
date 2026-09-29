@@ -10,7 +10,7 @@ namespace SoloHero.Core.Combat
         public static double HeroHit(HeroStats stats, bool isCrit, BalanceValues balance, double skillMult = 1d)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
-            double mult = skillMult * (isCrit ? balance.CRIT_MULT : 1d);
+            double mult = skillMult * (isCrit ? balance.CRIT_MULT + stats.CritDamageBonus : 1d);
             return Math.Max(1d, stats.Atk * mult);
         }
 

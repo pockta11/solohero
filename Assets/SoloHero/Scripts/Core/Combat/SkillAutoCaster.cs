@@ -2,6 +2,7 @@ using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Skills;
+using SoloHero.Core.Talents;
 
 namespace SoloHero.Core.Combat
 {
@@ -10,6 +11,8 @@ namespace SoloHero.Core.Combat
     /// when off cooldown and their condition holds (enemy in reach, or HP under the heal threshold), with
     /// SKILL_SEQUENCE_GAP between casts. A cast lands its first wave at once; later waves follow every
     /// WaveInterval. Buffs last per slot and are summed into the hero every tick. Allocation free while ticking.
+    /// With <see cref="AutoEnabled"/> off (D-085 manual mode) only <see cref="TryCast"/> starts casts; cooldowns, buffs
+    /// and pending waves keep running.
     /// </summary>
     public sealed class SkillAutoCaster
     {
@@ -28,6 +31,9 @@ namespace SoloHero.Core.Combat
         private readonly float[] _pendingTimer = new float[MaxPending];
 
         private float _sequenceGap;
+        private TalentEffects _talents = TalentEffects.None;
+        private int _damageCasts;
+        private HeroBrain _castHero;
 
         public SkillAutoCaster(BalanceValues balance)
         {
@@ -41,6 +47,9 @@ namespace SoloHero.Core.Combat
         }
 
         public int SlotCount => _defs.Length;
+
+        /// <summary>D-085: false in manual mode, where slots cast only when tapped.</summary>
+        public bool AutoEnabled { get; set; } = true;
 
         /// <summary>Raised when a cast starts (auto or manual): slot, skill. Views play the cast effect and name.</summary>
         public event Action<int, SkillDef> SkillCast;
@@ -83,8 +92,14 @@ namespace SoloHero.Core.Combat
         public float CooldownTotal(int slot)
         {
             SkillDef def = DefAt(slot);
-            return def != null ? def.Cooldown : 0f;
+            return def != null ? Cooldown(def) : 0f;
         }
+
+        /// <summary>D-087 skill talents: damage, cooldown, buff duration, DoT, heal, Overload.</summary>
+        public void SetTalents(TalentEffects talents) => _talents = talents ?? TalentEffects.None;
+
+        /// <summary>Cooldown after the Haste talent (at most -50%).</summary>
+        public float Cooldown(SkillDef def) => (float)(def.Cooldown * (1d - Math.Min(0.5d, _talents.CooldownPct)));
 
         /// <summary>Seconds left on the buff this slot gave (0 when none is running).</summary>
         public float BuffRemaining(int slot) => slot >= 0 && slot < _buffRemaining.Length ? _buffRemaining[slot] : 0f;
@@ -105,6 +120,7 @@ namespace SoloHero.Core.Combat
 
             for (int i = 0; i < MaxPending; i++) ClearPending(i);
             _sequenceGap = 0f;
+            _damageCasts = 0;
         }
 
         public void Tick(float dt, HeroBrain hero, ICombatWorld world, bool isBossFight)
@@ -130,7 +146,7 @@ namespace SoloHero.Core.Combat
 
             TickPending(dt, world);
 
-            if (hero.State == HeroState.Skill) return;
+            if (!AutoEnabled || hero.State == HeroState.Skill) return;
             if (_sequenceGap > 0f) return;
 
             for (int i = 0; i < _defs.Length; i++)
@@ -158,7 +174,7 @@ namespace SoloHero.Core.Combat
 
             SkillCast?.Invoke(slot, def);
             Apply(slot, def, hero, world);
-            _cooldown[slot] = def.Cooldown;
+            _cooldown[slot] = Cooldown(def);
             _sequenceGap = _balance.SKILL_SEQUENCE_GAP;
             hero.EndSkill(world);
             return Result.Success;
@@ -185,16 +201,22 @@ namespace SoloHero.Core.Combat
         {
             double scale = Formulas.SkillLevelScale(_balance, _levels[slot]);
 
-            if (def.HealPercent > 0d) hero.Heal(hero.MaxHp * def.HealPercent / 100d * scale);
-            if (def.ShieldPercent > 0d) hero.AddShield(hero.MaxHp * def.ShieldPercent / 100d * scale, def.ShieldSeconds);
-            if (def.Buff != SkillBuff.None && def.BuffSeconds > 0f) _buffRemaining[slot] = def.BuffSeconds;
+            double heal = 1d + _talents.HealPct;
+            if (def.HealPercent > 0d) hero.Heal(hero.MaxHp * def.HealPercent / 100d * scale * heal);
+            if (def.ShieldPercent > 0d) hero.AddShield(hero.MaxHp * def.ShieldPercent / 100d * scale * heal, def.ShieldSeconds);
+            if (def.Buff != SkillBuff.None && def.BuffSeconds > 0f)
+                _buffRemaining[slot] = (float)(def.BuffSeconds * (1d + _talents.BuffDurationPct));
 
             if (!def.DealsDamage) return;
 
             // ATK buffs (this skill's own included) raise skill hits too (GDD stat order: buffs last).
-            double buff = 1d + BuffAtk;
+            // Talents: skill damage for hits and DoT, DoT bonus, Overload doubles every Nth damaging cast.
+            _damageCasts++;
+            double overload = _talents.Overload && _damageCasts % TalentCatalog.OverloadEvery == 0 ? TalentCatalog.OverloadMult : 1d;
+            double buff = (1d + BuffAtk) * (1d + _talents.SkillDamagePct) * overload;
             double damage = DamageCalc.SkillHit(hero.Stats, def.DamageMult * scale) * buff;
-            double dot = def.DotPercent > 0d ? DamageCalc.SkillDot(hero.Stats, def.DotPercent, scale) * buff : 0d;
+            double dot = def.DotPercent > 0d ? DamageCalc.SkillDot(hero.Stats, def.DotPercent, scale) * buff * (1d + _talents.DotPct) : 0d;
+            _castHero = hero;
             Wave(def, damage, dot, world);
             if (def.Waves > 1) Enqueue(def, damage, dot, def.Waves - 1);
         }
@@ -268,6 +290,7 @@ namespace SoloHero.Core.Combat
 
         private void Hit(SkillDef def, EnemyBrain target, double damage, double dot, ICombatWorld world)
         {
+            if (_castHero != null) damage *= _castHero.TalentHitMult(target);
             target.TakeDamage(damage);
             world.ReportHit(target, damage, HitKind.Skill);
             if (dot > 0d) target.ApplyDot(dot, def.DotSeconds);
