@@ -6,7 +6,9 @@ below allow that. Retrieved 2026-09-27.
 
 | Project files | Source | Author | License | Attribution |
 |---|---|---|---|---|
-| `Hero/knight_*.png` (Hero Knight), `Enemies/{goblin,skeleton,mushroom,flyeye}_*.png` and the recolours goblinr / skeletonv / mushroomb / flyeyer (Monsters Creatures Fantasy), `Bosses/ronin_*` (Martial Hero), `Bosses/necro_*` (Evil Wizard 3), `Bosses/ranger_*` (Fantasy Warrior), `Bosses/shadowmage_*` (Evil Wizard 2), `Bosses/firemage_*` (Evil Wizard) — cropped, mirrored and recoloured for the game (D-082) | https://luizmelo.itch.io (Hero Knight, Monsters Creatures Fantasy, Martial Hero, Evil Wizard 1-3, Fantasy Warrior) | LuizMelo | CC0 1.0 (License.txt in each pack: "Creative Commons Zero (CC-0). Can be used in commercial and non-commercial projects.") | Not required; credited in-game as courtesy |
+| `Hero/knight_*.png` | Drawn for this project (`tools/art/hero.py` + `charkit.py`, 2026-09-28, D-090) | SoloHero | Project-owned | - |
+| `Enemies/{goblin,goblinr,skeleton,skeletonv,mushroom,mushroomb,flyeye,flyeyer}_*.png`, `Bosses/{ronin,necro,ranger,shadowmage,firemage}_*.png` | Drawn for this project (`tools/art/cast.py`, 2026-09-29, D-092) | SoloHero | Project-owned | - |
+| `Tiles/floor_{1..5}.png` | Drawn for this project (`tools/art/floorgen.py`, 2026-09-29, D-091) | SoloHero | Project-owned | - |
 | `Vfx/vfxboom_play_6.png`, `Tiles/ground_beam.png` | Kings and Pigs — https://pixelfrog-assets.itch.io/kings-and-pigs (mirror: https://opengameart.org/content/kings-and-pigs) | Pixel Frog | CC0 1.0 (stated by the author on itch.io; the OGA mirror page lists CC-BY 4.0 — the author's own statement governs) | Not required; credited in-game credits as courtesy |
 | `Tiles/shadow_blob.png` | Drawn for this project (2026-09-28, D-082) | SoloHero | Project-owned | - |
 | `Backgrounds/Ch1_Meadow/*` | Parallax Background Forest Pixel Art — https://opengameart.org/content/parallax-background-forest-pixel-art | MatiasVME | CC0 1.0 | Not required |

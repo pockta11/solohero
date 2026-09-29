@@ -41,6 +41,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **에뮬레이터 QA**: `pwsh tools/qa/Qa.ps1 smoke|forcekill|idle|coldstart|scenarios|firstsession` (adb root로 저장 판독). 광고 WebView가 에뮬레이터에서 약 85초 후 앱을 죽이므로 QA는 `SOLOHERO_NO_ADS=1` 빌드로 (실기기 확인 필요, release-gate B-001)
 - **2026-09-28 스킬 확장** (D-078~D-080): 스킬 3종 고정 → 24종 도감·스킬 소환(소환 탭의 장비/스킬 전환)·6슬롯·보유 효과. 컬러 스킬 VFX 14종·아이콘 24종·SFX 5종(절차 생성, `Art/Vfx`, `Art/Icons/Skills`), 화면 플래시·스킬명 팝업·적 상태 색. 스킬 패널 = 장착 슬롯 + 도감 그리드 + 상세(강화/장착). 무광고 곡선 유지(7일차 5-7~5-8)
 - **2026-09-28 몹 무리·캐릭터 교체** (D-081~D-082): 몹 4마리씩 무리 등장(`SPAWN_WAVE_SIZE/GAP/SPACING`), 캐릭터 아트 Kings and Pigs → LuizMelo CC0(영웅 Hero Knight, 적 4종+색 변형, 보스 5종), 발밑 그림자. 변환 규칙: 여백 자르고 발 바닥 중앙, 적·보스 좌우 반전
+- **2026-09-28 특성 트리·스킬 수동 발동·2등신 영웅** (D-085~D-088): 스킬 패널을 "스킬 / 특성" 두 페이지로 나누고 특성 트리(공격·수호·비전 3갈래 × 4단계, 레벨당 1포인트, 초기화 100젬, `Core/Talents`)를 추가. 스킬바 위 AUTO 토글(수동이면 슬롯 탭 발동). 시뮬 무광고 7일차 5-6~5-8. 탭 = 캐릭터·장비·소환·스킬·특성, 설정은 오른쪽 메뉴 레일, 광고 보상은 왼쪽 레일(D-089)
+- **2026-09-29 귀여운 캐릭터·2.5D 전투** (D-090~D-092): 영웅·적 8종·보스 5종을 운빨존많겜식 절차 생성 도트로(`tools/art/charkit.py` + `hero.py` + `cast.py`, 보스도 1배). 전투는 원근 바닥(`floorgen.py`) + 몹 깊이 레인·레인별 크기·정렬(`Game/Combat/DepthLanes`), 카메라 y -0.6. 판정은 X축 그대로. 에뮬레이터 설치가 멈추면 `bundletool build-apks` 후 `adb install-multiple`
 - 빌드는 `libFirebaseCppApp` 포함을 자동 검사하고, EDM4U가 pom을 `srcaar`로 바꾸면 빌드 전에 되돌린다
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 

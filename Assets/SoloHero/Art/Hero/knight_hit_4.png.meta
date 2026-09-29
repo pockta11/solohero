@@ -115,7 +115,7 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 116
+        width: 96
         height: 72
       alignment: 9
       pivot: {x: 0.5, y: 0}
@@ -134,9 +134,9 @@ TextureImporter:
       name: knight_hit_4_1
       rect:
         serializedVersion: 2
-        x: 116
+        x: 96
         y: 0
-        width: 116
+        width: 96
         height: 72
       alignment: 9
       pivot: {x: 0.5, y: 0}
@@ -155,9 +155,9 @@ TextureImporter:
       name: knight_hit_4_2
       rect:
         serializedVersion: 2
-        x: 232
+        x: 192
         y: 0
-        width: 116
+        width: 96
         height: 72
       alignment: 9
       pivot: {x: 0.5, y: 0}
@@ -176,9 +176,9 @@ TextureImporter:
       name: knight_hit_4_3
       rect:
         serializedVersion: 2
-        x: 348
+        x: 288
         y: 0
-        width: 116
+        width: 96
         height: 72
       alignment: 9
       pivot: {x: 0.5, y: 0}

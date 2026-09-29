@@ -30,6 +30,9 @@ namespace SoloHero.Editor
         private const string ArtRoot = "Assets/SoloHero/Art";
         private const string DataArt = "Assets/SoloHero/Data/Art";
         private const string DataChapters = "Assets/SoloHero/Data/Chapters";
+
+        /// <summary>D-091 camera height: the ground line (y = 0) shows at about 54% of the screen, mid-floor.</summary>
+        private const float CameraY = -0.6f;
         private const string DataAudio = "Assets/SoloHero/Data/Audio";
         private const string AudioRoot = "Assets/SoloHero/Audio";
         private const int SfxSources = 6;
@@ -54,15 +57,18 @@ namespace SoloHero.Editor
             ("Ch5_Sunset", "Sunset", new[] { "goblinr", "skeletonv", "flyeyer" }, "firemage", "bgm_ch5"),
         };
 
-        /// <summary>Look key -> (asset name, integer pixel scale). Enemies stand at 1x like the hero; bosses at 2x.</summary>
+        /// <summary>
+        /// Look key -> (asset name, integer pixel scale). D-092: every look is drawn at 1x on the same pixel grid as
+        /// the hero; bosses get a larger head in the art instead of a 2x scale.
+        /// </summary>
         private static readonly Dictionary<string, (string asset, int scale)> LookNames = new Dictionary<string, (string, int)>
         {
             { "goblin", ("Enemy_Goblin", 1) }, { "goblinr", ("Enemy_GoblinRed", 1) },
             { "skeleton", ("Enemy_Skeleton", 1) }, { "skeletonv", ("Enemy_SkeletonViolet", 1) },
             { "mushroom", ("Enemy_Mushroom", 1) }, { "mushroomb", ("Enemy_MushroomBlue", 1) },
             { "flyeye", ("Enemy_FlyingEye", 1) }, { "flyeyer", ("Enemy_FlyingEyeRed", 1) },
-            { "ronin", ("Boss_Ronin", 2) }, { "necro", ("Boss_Necromancer", 2) }, { "ranger", ("Boss_Ranger", 2) },
-            { "shadowmage", ("Boss_ShadowMage", 1) }, { "firemage", ("Boss_FireMage", 2) },
+            { "ronin", ("Boss_Ronin", 1) }, { "necro", ("Boss_Necromancer", 1) }, { "ranger", ("Boss_Ranger", 1) },
+            { "shadowmage", ("Boss_ShadowMage", 1) }, { "firemage", ("Boss_FireMage", 1) },
         };
 
         [MenuItem("Tools/Setup/Build Art")]
@@ -70,6 +76,20 @@ namespace SoloHero.Editor
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             BuildBatch();
+        }
+
+        /// <summary>Batch: reimport character sheets so changed PNGs replace the cached textures.</summary>
+        public static void ReimportCharactersBatch()
+        {
+            AssetDatabase.Refresh();
+            foreach (string folder in new[] { "Hero", "Enemies", "Bosses" })
+            {
+                foreach (string guid in AssetDatabase.FindAssets("t:Texture2D", new[] { ArtRoot + "/" + folder }))
+                    AssetDatabase.ImportAsset(AssetDatabase.GUIDToAssetPath(guid), ImportAssetOptions.ForceUpdate);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Art] characters reimported");
         }
 
         public static void BuildBatch()
@@ -203,6 +223,8 @@ namespace SoloHero.Editor
                 theme.enemies = Chapters[c].enemies.Select(e => looks[e]).ToArray();
                 theme.boss = looks[Chapters[c].boss];
                 theme.bgm = AssetDatabase.LoadAssetAtPath<AudioClip>(AudioRoot + "/Bgm/" + Chapters[c].bgm + ".ogg");
+                theme.floor = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/Tiles/floor_" + (c + 1) + ".png");
+                if (theme.floor == null) Debug.LogWarning("[Art] missing floor for chapter " + (c + 1));
                 if (theme.bgm == null) Debug.LogWarning("[Art] missing music " + Chapters[c].bgm);
                 EditorUtility.SetDirty(theme);
                 list.Add(theme);
@@ -437,11 +459,14 @@ namespace SoloHero.Editor
             var groundGo = new GameObject("Ground");
             groundGo.transform.SetParent(root.transform, false);
             var ground = groundGo.AddComponent<SpriteRenderer>();
-            ground.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/Tiles/ground_beam.png");
+            // D-091 floor plane: the chapter floor replaces it at runtime (ParallaxRig.ApplyFloor).
+            ground.sprite = themes != null && themes.themes.Length > 0 && themes.themes[0].floor != null
+                ? themes.themes[0].floor
+                : AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/Tiles/ground_beam.png");
             ground.drawMode = SpriteDrawMode.Tiled;
-            ground.size = new Vector2(32f, 1f);
+            ground.size = new Vector2(ground.sprite.bounds.size.x * 8f, ground.sprite.bounds.size.y);
             ground.sortingOrder = -5;
-            groundGo.transform.position = new Vector3(0f, -1f, 0f);
+            groundGo.transform.position = new Vector3(0f, ParallaxRig.FloorTop - ground.sprite.bounds.size.y, 0f);
 
             var rigSo = new SerializedObject(rig);
             rigSo.FindProperty("_session").objectReferenceValue = session;
@@ -453,6 +478,9 @@ namespace SoloHero.Editor
             rigSo.ApplyModifiedPropertiesWithoutUndo();
 
             Camera camera = Object.FindObjectOfType<Camera>();
+            // D-091: the camera sits lower so the floor plane fills the band above the skill bar and the
+            // characters stand in the middle of it (about 54% of the screen height).
+            if (camera != null) camera.transform.position = new Vector3(camera.transform.position.x, CameraY, camera.transform.position.z);
             CameraShake shake = camera != null ? camera.GetComponent<CameraShake>() : null;
             if (camera != null && shake == null) shake = camera.gameObject.AddComponent<CameraShake>();
 
@@ -489,8 +517,8 @@ namespace SoloHero.Editor
             var fills = new SpriteRenderer[4];
             for (int i = 0; i < 4; i++)
             {
-                backs[i] = BarPart(root.transform, "Back" + i, white, new Color(0.08f, 0.06f, 0.12f, 0.9f), 15);
-                fills[i] = BarPart(root.transform, "Fill" + i, white, new Color(0.9f, 0.27f, 0.25f, 1f), 16);
+                backs[i] = BarPart(root.transform, "Back" + i, white, new Color(0.08f, 0.06f, 0.12f, 0.9f), 300);
+                fills[i] = BarPart(root.transform, "Fill" + i, white, new Color(0.9f, 0.27f, 0.25f, 1f), 301);
             }
 
             var so = new SerializedObject(view);

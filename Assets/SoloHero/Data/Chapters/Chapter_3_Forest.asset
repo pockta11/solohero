@@ -22,6 +22,7 @@ MonoBehaviour:
   - 0.74666667
   - 0.5233333
   - 0.3
+  floor: {fileID: 21300000, guid: 650f2882e08ff86458a7e59f305efb68, type: 3}
   pixelScale: 2
   sky: {r: 0.6901961, g: 0.4392157, b: 0.1882353, a: 1}
   enemies:
