@@ -23,11 +23,12 @@ def hexc(s):
 
 # (far, dark band, light band, near highlight, speckle colours, tuft colour, lip)
 THEMES = [
+    # D-097: floors re-coloured to sit under the generated backgrounds (bggen.py).
     ("meadow", "#2f5a36", "#4f8a3f", "#62a04a", "#86c35e", ["#a6d86a", "#ffe066", "#ff9fb0", "#3b6e34"], "#3f7a38", "#1f3a2a"),
-    ("snowpeak", "#3d5a36", "#5c8448", "#6e9655", "#e8f0f6", ["#ffffff", "#c8d8e8", "#8aa060", "#4a6a3a"], "#4d7040", "#253828"),
-    ("forest", "#35261f", "#5a4030", "#6c4c36", "#8c6444", ["#a87848", "#c85a3a", "#6a8a3a", "#3a2a20"], "#4a5a2c", "#1e1612"),
+    ("snowpeak", "#8a9cbc", "#bccce2", "#ccdaec", "#eef4fc", ["#ffffff", "#a8bcd8", "#7a90b0", "#4a6e66"], "#52807a", "#5a6a8a"),
+    ("forest", "#24402c", "#38603c", "#447046", "#5e8c52", ["#86b866", "#c8a050", "#ff9fb0", "#2a4428"], "#3a6a3e", "#16261a"),
     ("dusk", "#2a1a2e", "#46304e", "#523a5c", "#6e5078", ["#8a6a96", "#b08ac0", "#2e1e34", "#ffcf7a"], "#3a2a44", "#140c18"),
-    ("sunset", "#3a1e3e", "#6a3a5a", "#7a4866", "#a0607a", ["#c8849a", "#ffc070", "#4a2a4a", "#e8a0b0"], "#5a3050", "#1c0e1e"),
+    ("sunset", "#5a3036", "#8a5048", "#9a5e50", "#b87a62", ["#d8a07a", "#ffd090", "#5a3036", "#f0b8a0"], "#6a4048", "#24121a"),
 ]
 
 

@@ -95,6 +95,7 @@ namespace SoloHero.Game.Boot
             Services.Register<IAdGateway>(ads != null ? ads : new NoAdGateway());
             Services.Register(new AdSlotPolicy(balance, _data, clock, requester));
             Services.Register(new GemShop(balance, requester));
+            Services.Register(new SoloHero.Core.Daily.DailyService(balance, _data, clock, requester));
         }
 
         private void RegisterSettingsAndAudio()

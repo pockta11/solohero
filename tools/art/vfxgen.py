@@ -564,7 +564,120 @@ def make_phoenix():
     return strip(frames, 'phoenix')
 
 
+
+
+# ---------------------------------------------------------------- D-098 unique clips
+
+ICE = [rgba(0xFFFFFF), rgba(0xDCF8FF), rgba(0x8AD8FF), rgba(0x3A8AE0), rgba(0x1E4A9A)]
+
+
+def make_spear():
+    """Glacier spear: an ice lance flies in from the left, hits, and bursts into shards."""
+    W, H = 96, 40
+    frames = []
+    for i in range(9):
+        img = new(W, H)
+        cy = H // 2
+        if i < 4:
+            tip = 30 + i * 18
+            for x in range(max(0, tip - 34), tip):
+                t = (x - (tip - 34)) / 34.0
+                half = 1 + int(3 * math.sin(t * math.pi) ** 0.6)
+                for dy in range(-half, half + 1):
+                    c = ICE[0] if dy == -half + 1 else ICE[1] if abs(dy) < half else ICE[3]
+                    over(img, x, cy + dy, c)
+            for k in range(3):
+                line(img, tip - 34 - k * 6, cy - 1 + k, tip - 44 - k * 9, cy - 1 + k, rgba(0x8AD8FF, 150))
+        else:
+            k = i - 4
+            rnd = random.Random(40 + k)
+            blob(img, 84, cy, 4 + k * 2, [(0.4, ICE[0]), (0.75, ICE[2]), (1.0, rgba(0x3A8AE0, 170))], seed=k, amp=0.35)
+            for n in range(10):
+                a = rnd.uniform(0, math.tau)
+                d = 5 + k * 4 + rnd.uniform(0, 4)
+                x, y = 84 + math.cos(a) * d, cy + math.sin(a) * d * 0.8
+                tri(img, x, y + 2, 3, 4, ICE[1], ICE[3], ICE[0])
+        frames.append(img)
+    return strip(frames, 'spear')
+
+
+def make_judge():
+    """Judgement: a giant golden sword drops from the sky into the ground and flashes."""
+    W, H = 56, 160
+    frames = []
+    for i in range(9):
+        img = new(W, H)
+        cx = 28
+        drop = min(1.0, i / 3.0)
+        tip = int(10 + drop * (H - 16))
+        blade_top = tip - 96
+        for y in range(max(0, blade_top), tip):
+            t = (y - blade_top) / 96.0
+            half = 6 if t < 0.85 else max(1, int(6 * (1 - (t - 0.85) / 0.15)))
+            for x in range(cx - half, cx + half + 1):
+                c = rgba(0xFFFFFF) if x == cx - half + 1 else rgba(0xFFF3A0) if x < cx else rgba(0xFFC531)
+                over(img, x, y, c)
+        gy = blade_top - 4
+        line(img, cx - 16, gy, cx + 16, gy, rgba(0xD68A1C), 4)
+        line(img, cx, gy - 18, cx, gy, rgba(0x8F5236), 4)
+        blob(img, cx, gy - 20, 4, [(0.5, rgba(0xFFFFFF)), (1.0, rgba(0xFFC531))], seed=i)
+        if i >= 3:
+            k = i - 3
+            fade = k / 6.0
+            blob(img, cx, H - 4, 8 + k * 4, [(0.4, WHITE), (0.7, rgba(0xFFF3A0)), (1.0, rgba(0xFFC531, 160))], seed=k, squash=0.3, amp=0.2, dither=fade)
+            rnd = random.Random(90 + k)
+            for n in range(8):
+                spark(img, cx + rnd.uniform(-24, 24), H - 6 - rnd.uniform(0, 30) - k * 3, WHITE if n % 2 else rgba(0xFFF3A0), 1)
+        frames.append(img)
+    return strip(frames, 'judge')
+
+
+def make_cross():
+    """Quick slash: two fast diagonal cuts that cross, then fade."""
+    W, H = 64, 64
+    frames = []
+    for i in range(7):
+        img = new(W, H)
+        for cut in range(2):
+            start = cut * 2
+            t = (i - start) / 3.0
+            if t <= 0:
+                continue
+            reach = min(1.0, t)
+            fade = max(0.0, t - 1.0)
+            x0, y0, x1, y1 = (8, 8, 56, 56) if cut == 0 else (56, 8, 8, 56)
+            xe, ye = x0 + (x1 - x0) * reach, y0 + (y1 - y0) * reach
+            a = int(255 * (1 - fade * 0.8))
+            line(img, x0, y0, xe, ye, rgba(0x8CC4FF, a), 5)
+            line(img, x0, y0, xe, ye, rgba(0xFFFFFF, a), 2)
+        frames.append(img)
+    return strip(frames, 'cross')
+
+
+def make_clock():
+    """Time stop: a violet clock face spreads out, its hand sweeps a full turn, then it fades."""
+    W, H = 96, 96
+    frames = []
+    cx, cy = 48, 48
+    for i in range(10):
+        img = new(W, H)
+        r = min(44, 12 + i * 8)
+        fade = max(0.0, (i - 6) / 4.0)
+        for a in range(0, 360, 2):
+            x, y = cx + math.cos(math.radians(a)) * r, cy + math.sin(math.radians(a)) * r
+            over(img, x, y, rgba(0xE0C8FF, int(255 * (1 - fade))))
+            over(img, cx + math.cos(math.radians(a)) * (r - 2), cy + math.sin(math.radians(a)) * (r - 2), rgba(0x8050D0, int(200 * (1 - fade))))
+        for h in range(12):
+            a = math.radians(h * 30)
+            line(img, cx + math.cos(a) * (r - 7), cy + math.sin(a) * (r - 7), cx + math.cos(a) * (r - 3), cy + math.sin(a) * (r - 3), rgba(0xFFFFFF, int(255 * (1 - fade))), 2)
+        hand = math.radians(-90 + i * 40)
+        line(img, cx, cy, cx + math.cos(hand) * (r - 8), cy + math.sin(hand) * (r - 8), rgba(0xFFF3A0, int(255 * (1 - fade))), 3)
+        blob(img, cx, cy, 3, [(1.0, rgba(0xFFFFFF))], seed=i, amp=0.0)
+        frames.append(img)
+    return strip(frames, 'clock')
+
 makers = [make_fire, make_bolt, make_ice, make_poison, make_meteor, make_holy, make_tornado, make_swords,
-          make_heal, make_shield, make_aura, make_vortex, make_breath, make_phoenix]
+          make_heal, make_shield, make_aura, make_vortex, make_breath, make_phoenix,
+          make_spear, make_judge, make_cross, make_clock]
 for m in makers:
     print(m())

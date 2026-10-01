@@ -3,10 +3,8 @@
 개발: SoloSoft
 
 ■ 그래픽
-- 캐릭터·적·보스: Hero Knight · Monsters Creatures Fantasy · Martial Hero · Evil Wizard · Fantasy Warrior — LuizMelo (CC0)
-- 지형: Kings and Pigs — Pixel Frog (CC0)
-- 배경: MatiasVME, Yevhen Babiichuk (DustDFG), ansimuz, FabinhoSC — OpenGameArt (CC0)
-- 이펙트·UI·아이콘: SoloSoft
+- 캐릭터·적·보스·배경·이펙트·UI·아이콘: SoloSoft
+- 폭발 이펙트 일부: Kings and Pigs — Pixel Frog (CC0)
 
 ■ 사운드
 - 배경음·효과음: Juhani Junkala — Retro Game Music Pack, Chiptune Adventures, The Essential Retro Video Game Sound Effects Collection (CC0)

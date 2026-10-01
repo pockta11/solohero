@@ -18,6 +18,9 @@ namespace SoloHero.Game.UI
     {
         [SerializeField] private CombatSession _session;
         [SerializeField] private Text _goldText;
+
+        /// <summary>Where kill coins fly to (D-096).</summary>
+        public RectTransform GoldAnchor => _goldText != null ? _goldText.rectTransform : null;
         [SerializeField] private Text _stageText;
         [SerializeField] private Text _killsText;
         [SerializeField] private Text _bossTimerText;

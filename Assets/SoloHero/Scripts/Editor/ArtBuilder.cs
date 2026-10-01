@@ -38,6 +38,13 @@ namespace SoloHero.Editor
         private const int SfxSources = 6;
         private const string GameScene = "Assets/SoloHero/Scenes/Game.unity";
         private const string BootScene = "Assets/SoloHero/Scenes/Boot.unity";
+        private const string FlashShader = "SoloHero/SpriteFlash";
+        private const string FlashMaterialPath = "Assets/SoloHero/Art/Materials/SpriteFlash.mat";
+
+        /// <summary>D-096: character clips have twice the frames of the 10 fps era, so they play at 20 fps.</summary>
+        private const float CharacterFps = 20f;
+
+        private const int CoinCount = 24;
         private const int LayerSlots = 8;
         private const float ViewHeightPx = 240f;
         private const float NearestFollow = 0.3f;
@@ -45,14 +52,14 @@ namespace SoloHero.Editor
 
         /// <summary>
         /// Chapter looks (E8-03..05, D-082): background folder, 2-3 enemy looks mixed per stage, boss look and music.
-        /// 8 enemy looks = LuizMelo Monsters Creatures Fantasy (goblin, skeleton, mushroom, flying eye) + 4 recolours;
-        /// 5 bosses from LuizMelo hero packs (all CC0). Sheets are made by the character conversion script.
+        /// 8 enemy looks (goblin, skeleton, mushroom, flying eye + 4 recolours) and 6 bosses, all modelled in Blender
+        /// and pixelised by tools/art/build3d.py.
         /// </summary>
         private static readonly (string folder, string label, string[] enemies, string boss, string bgm)[] Chapters =
         {
             ("Ch1_Meadow", "Meadow", new[] { "goblin", "mushroom" }, "ronin", "bgm_ch1"),
             ("Ch2_Snowpeak", "Snowpeak", new[] { "skeleton", "goblin", "flyeye" }, "necro", "bgm_ch2"),
-            ("Ch3_Forest", "Forest", new[] { "mushroom", "flyeye", "goblinr" }, "ranger", "bgm_ch3"),
+            ("Ch3_Forest", "Forest", new[] { "mushroom", "flyeye", "goblinr" }, "golem", "bgm_ch3"),
             ("Ch4_Dusk", "Dusk", new[] { "skeletonv", "flyeyer", "mushroomb" }, "shadowmage", "bgm_ch4"),
             ("Ch5_Sunset", "Sunset", new[] { "goblinr", "skeletonv", "flyeyer" }, "firemage", "bgm_ch5"),
         };
@@ -68,7 +75,7 @@ namespace SoloHero.Editor
             { "mushroom", ("Enemy_Mushroom", 1) }, { "mushroomb", ("Enemy_MushroomBlue", 1) },
             { "flyeye", ("Enemy_FlyingEye", 1) }, { "flyeyer", ("Enemy_FlyingEyeRed", 1) },
             { "ronin", ("Boss_Ronin", 1) }, { "necro", ("Boss_Necromancer", 1) }, { "ranger", ("Boss_Ranger", 1) },
-            { "shadowmage", ("Boss_ShadowMage", 1) }, { "firemage", ("Boss_FireMage", 1) },
+            { "shadowmage", ("Boss_ShadowMage", 1) }, { "firemage", ("Boss_FireMage", 1) }, { "golem", ("Boss_Golem", 1) },
         };
 
         [MenuItem("Tools/Setup/Build Art")]
@@ -149,6 +156,7 @@ namespace SoloHero.Editor
             art.hit = Clip(dir, entity, "hit", false);
             art.dead = Clip(dir, entity, "dead", false);
             art.pixelScale = pixelScale;
+            art.fps = CharacterFps;
             art.headHeight = HeadHeight(art.idle.Length > 0 ? art.idle[0] : null);
             EditorUtility.SetDirty(art);
             AssetDatabase.SaveAssets();
@@ -287,7 +295,9 @@ namespace SoloHero.Editor
             ("fire", false, 16f), ("bolt", true, 14f), ("ice", true, 14f), ("poison", true, 12f),
             ("meteor", true, 16f), ("holy", true, 14f), ("tornado", true, 14f), ("swords", true, 16f),
             ("heal", true, 12f), ("shield", false, 12f), ("aura", true, 14f), ("vortex", false, 14f),
-            ("breath", true, 14f), ("phoenix", true, 12f), ("wave", false, 20f)
+            ("breath", true, 14f), ("phoenix", true, 12f), ("wave", false, 20f),
+            // D-098 unique clips: glacier spear, judgement sword, quick slash cross, time stop clock.
+            ("spear", false, 18f), ("judge", true, 16f), ("cross", false, 22f), ("clock", false, 14f)
         };
 
         /// <summary>D-078: Art/Icons/Skills/skill_{id}.png for every catalog skill, plus the lock icon.</summary>
@@ -387,6 +397,7 @@ namespace SoloHero.Editor
             if (old != null) Object.DestroyImmediate(old.gameObject);
             var root = new GameObject("Audio");
             root.transform.SetParent(boot.transform, false);
+            FitCamera(Object.FindObjectOfType<Camera>());
 
             AudioSource bgm = NewSource(root.transform, "Bgm");
             var sfx = new AudioSource[SfxSources];
@@ -481,6 +492,7 @@ namespace SoloHero.Editor
             // D-091: the camera sits lower so the floor plane fills the band above the skill bar and the
             // characters stand in the middle of it (about 54% of the screen height).
             if (camera != null) camera.transform.position = new Vector3(camera.transform.position.x, CameraY, camera.transform.position.z);
+            FitCamera(camera);
             CameraShake shake = camera != null ? camera.GetComponent<CameraShake>() : null;
             if (camera != null && shake == null) shake = camera.gameObject.AddComponent<CameraShake>();
 
@@ -495,12 +507,14 @@ namespace SoloHero.Editor
             WireVfx(session, view, vfxSet, shake, themes);
             WireHpBars(view);
             WireShadows(view);
+            WireCoins(view, camera);
 
+            Material flash = FlashMaterial();
             var heroRenderer = (SpriteRenderer)viewSo.FindProperty("_heroRenderer").objectReferenceValue;
-            PrepareActor(heroRenderer, hero, 10);
+            PrepareActor(heroRenderer, hero, 10, flash);
             SerializedProperty enemies = viewSo.FindProperty("_enemyRenderers");
             for (int i = 0; i < enemies.arraySize; i++)
-                PrepareActor((SpriteRenderer)enemies.GetArrayElementAtIndex(i).objectReferenceValue, pig, 5);
+                PrepareActor((SpriteRenderer)enemies.GetArrayElementAtIndex(i).objectReferenceValue, pig, 5, flash);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -522,6 +536,8 @@ namespace SoloHero.Editor
             }
 
             var so = new SerializedObject(view);
+            so.FindProperty("_hpBarWidth").floatValue = 0.8f;
+            so.FindProperty("_hpBarHeight").floatValue = 0.1f;
             SerializedProperty b = so.FindProperty("_hpBacks");
             SerializedProperty f = so.FindProperty("_hpFills");
             b.arraySize = 4;
@@ -550,6 +566,65 @@ namespace SoloHero.Editor
             prop.arraySize = shadows.Length;
             for (int i = 0; i < shadows.Length; i++) prop.GetArrayElementAtIndex(i).objectReferenceValue = shadows[i];
             so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>D-096 kill coins: pooled coin sprites above characters and VFX, flown to the gold counter by CoinBurst.</summary>
+        private static void WireCoins(CombatWorldView view, Camera camera)
+        {
+            GameObject old = GameObject.Find("Coins");
+            if (old != null) Object.DestroyImmediate(old);
+            var root = new GameObject("Coins");
+            Sprite coin = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/Icons/icon_coin.png");
+            var coins = new SpriteRenderer[CoinCount];
+            for (int i = 0; i < CoinCount; i++)
+            {
+                coins[i] = BarPart(root.transform, "Coin" + i, coin, Color.white, 420);
+                coins[i].transform.localScale = new Vector3(0.75f, 0.75f, 1f);
+            }
+
+            CoinBurst burst = root.AddComponent<CoinBurst>();
+            var so = new SerializedObject(burst);
+            so.FindProperty("_view").objectReferenceValue = view;
+            so.FindProperty("_camera").objectReferenceValue = camera;
+            SerializedProperty prop = so.FindProperty("_coins");
+            prop.arraySize = CoinCount;
+            for (int i = 0; i < CoinCount; i++) prop.GetArrayElementAtIndex(i).objectReferenceValue = coins[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// D-096: the 2D Pixel Perfect package camera does nothing under URP except force an off-screen copy, so it is
+        /// replaced by PixelCameraFit (integer zoom, full-resolution rendering).
+        /// </summary>
+        private static void FitCamera(Camera camera)
+        {
+            if (camera == null) return;
+            foreach (MonoBehaviour c in camera.GetComponents<MonoBehaviour>())
+            {
+                if (c != null && c.GetType().Name == "PixelPerfectCamera") Object.DestroyImmediate(c, true);
+            }
+
+            if (camera.GetComponent<PixelCameraFit>() == null) camera.gameObject.AddComponent<PixelCameraFit>();
+            EditorUtility.SetDirty(camera.gameObject);
+        }
+
+        /// <summary>The shared white-flash sprite material for characters (SoloHero/SpriteFlash).</summary>
+        private static Material FlashMaterial()
+        {
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(FlashMaterialPath);
+            if (mat != null) return mat;
+            Shader shader = Shader.Find(FlashShader);
+            if (shader == null)
+            {
+                Debug.LogError("[Art] shader not found: " + FlashShader);
+                return null;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(FlashMaterialPath));
+            mat = new Material(shader) { name = "SpriteFlash" };
+            AssetDatabase.CreateAsset(mat, FlashMaterialPath);
+            AssetDatabase.SaveAssets();
+            return mat;
         }
 
         private static SpriteRenderer BarPart(Transform parent, string name, Sprite sprite, Color color, int order)
@@ -594,9 +669,10 @@ namespace SoloHero.Editor
             fxSo.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void PrepareActor(SpriteRenderer renderer, CharacterArt art, int sortingOrder)
+        private static void PrepareActor(SpriteRenderer renderer, CharacterArt art, int sortingOrder, Material material)
         {
             if (renderer == null) return;
+            if (material != null) renderer.sharedMaterial = material;
             if (renderer.GetComponent<SpriteFlipbook>() == null) renderer.gameObject.AddComponent<SpriteFlipbook>();
             renderer.sprite = art.idle.Length > 0 ? art.idle[0] : null;
             renderer.color = Color.white;

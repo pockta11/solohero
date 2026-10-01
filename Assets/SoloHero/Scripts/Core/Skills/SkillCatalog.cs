@@ -40,7 +40,7 @@ namespace SoloHero.Core.Skills
             new SkillDef
             {
                 Id = "quick_slash", Grade = Grade.Common, Kind = SkillKind.Strike, Cooldown = 7f, Range = 2.0,
-                DamageMult = 1.1, Waves = 3, WaveInterval = 0.15f, Vfx = "slash", VfxScale = 2.2f,
+                DamageMult = 1.1, Waves = 3, WaveInterval = 0.15f, Vfx = "cross", VfxScale = 1.2f,
                 Tint = 0xFFFFFF, Sound = "whoosh"
             },
             new SkillDef
@@ -118,7 +118,7 @@ namespace SoloHero.Core.Skills
             new SkillDef
             {
                 Id = "glacier_spear", Grade = Grade.Epic, Kind = SkillKind.Strike, Cooldown = 16f, Range = 5.0,
-                DamageMult = 10.0, StunSeconds = 3f, Vfx = "ice", VfxScale = 1.8f, Sound = "ice"
+                DamageMult = 10.0, StunSeconds = 3f, Vfx = "spear", VfxScale = 1.4f, Sound = "ice"
             },
             new SkillDef
             {
@@ -137,13 +137,13 @@ namespace SoloHero.Core.Skills
             new SkillDef
             {
                 Id = "judgement", Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 25f, Range = 6.0,
-                DamageMult = 30.0, Vfx = "holy", VfxAt = SkillVfxAt.EachTarget, VfxScale = 1.3f, Sound = "thunder"
+                DamageMult = 30.0, Vfx = "judge", VfxAt = SkillVfxAt.EachTarget, VfxScale = 0.8f, Sound = "thunder"
             },
             new SkillDef
             {
                 Id = "time_stop", Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 30f, Range = 8.0,
                 DamageMult = 3.0, StunSeconds = 4f, Buff = SkillBuff.Atk, BuffAmount = 40, BuffSeconds = 4f,
-                Vfx = "ring", VfxAt = SkillVfxAt.Front, VfxScale = 4f, Tint = 0xB080FF, Sound = "magic"
+                Vfx = "clock", VfxAt = SkillVfxAt.Front, VfxScale = 1.6f, Sound = "magic"
             },
             new SkillDef
             {

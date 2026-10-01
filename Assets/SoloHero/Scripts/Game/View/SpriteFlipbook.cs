@@ -5,6 +5,7 @@ namespace SoloHero.Game.View
     /// <summary>
     /// Plays a frame array on a SpriteRenderer. Views drive it from Core state (architecture: state lives in Core,
     /// the view only shows it). Looping clips repeat; one-shot clips hold the last frame and report Finished.
+    /// Character flipbooks set <see cref="FreezeOnHitStop"/> so they hold their frame during a <see cref="HitStop"/>.
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     public sealed class SpriteFlipbook : MonoBehaviour
@@ -16,6 +17,8 @@ namespace SoloHero.Game.View
         private float _time;
 
         public Sprite[] Current => _frames;
+
+        public bool FreezeOnHitStop { get; set; }
 
         public bool Finished { get; private set; }
 
@@ -44,7 +47,7 @@ namespace SoloHero.Game.View
         private void Update()
         {
             if (_frames == null || Finished) return;
-            _time += Time.deltaTime;
+            _time += FreezeOnHitStop ? HitStop.DeltaTime : Time.deltaTime;
             int index = (int)(_time * _fps);
             if (index >= _frames.Length)
             {

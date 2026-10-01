@@ -174,6 +174,39 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void SkillCombo_StunnedBurningOrNeither_PicksShatterThenIgnite()
+        {
+            var b = new BalanceValues();
+            Assert.AreEqual(b.SKILL_SHATTER_MULT, DamageCalc.SkillCombo(b, true, false));
+            Assert.AreEqual(b.SKILL_SHATTER_MULT, DamageCalc.SkillCombo(b, true, true));
+            Assert.AreEqual(b.SKILL_IGNITE_MULT, DamageCalc.SkillCombo(b, false, true));
+            Assert.AreEqual(1d, DamageCalc.SkillCombo(b, false, false));
+        }
+
+        [Test]
+        public void Thunder_OnFrozenEnemy_ShattersAndReportsCombo()
+        {
+            var b = new BalanceValues();
+            HeroBrain hero = Hero(b, 1e6);
+            CombatWorld world = World(b, hero);
+            EnemyBrain e = Spawn(b, world, 1d);
+            HitKind kind = HitKind.Normal;
+            double dealt = 0d;
+            world.HitLanded += (target, amount, k) => { kind = k; dealt = amount; };
+
+            SkillAutoCaster plain = Caster(b, "thunder");
+            plain.TryCast(0, hero, world);
+            Assert.AreEqual(HitKind.Skill, kind, "the first hit on a fresh enemy is not a combo");
+            double normal = dealt;
+
+            e.Stun(5f);
+            SkillAutoCaster again = Caster(b, "thunder");
+            again.TryCast(0, hero, world);
+            Assert.AreEqual(HitKind.Combo, kind);
+            Assert.AreEqual(normal * b.SKILL_SHATTER_MULT, dealt, normal * 1e-9);
+        }
+
+        [Test]
         public void BattleCry_HealsAndBuffsForDuration()
         {
             var b = new BalanceValues();

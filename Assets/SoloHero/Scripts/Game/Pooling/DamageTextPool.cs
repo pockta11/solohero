@@ -10,6 +10,7 @@ namespace SoloHero.Game.Pooling
     /// Shows every hero hit as a pooled floating number over the enemy (E2-10, E8-09): normal white, crit gold and
     /// large, skill hits sky blue, burn ticks small orange (D-078). Skill names pop over the hero through
     /// <see cref="ShowLabel"/>. Pre-warmed at scene start; when all texts are busy a hit is simply not shown.
+    /// D-096: hits on the same enemy close together stack upward instead of piling on one spot.
     /// </summary>
     public sealed class DamageTextPool : MonoBehaviour
     {
@@ -28,8 +29,18 @@ namespace SoloHero.Game.Pooling
         [SerializeField] private Color _dotColor = new Color(1f, 0.6f, 0.3f, 1f);
         [SerializeField] private int _skillSize = 44;
         [SerializeField] private int _dotSize = 33;
+        [SerializeField] private Color _comboColor = new Color(0.86f, 0.55f, 1f, 1f);
+        [SerializeField] private int _comboSize = 46;
 
-        private const float NormalJitterPixels = 18f;
+        private const float NormalJitterPixels = 10f;
+        private const int StackSlots = 8;
+        private const float StackWindowSeconds = 0.35f;
+        private const float StackStepPixels = 34f;
+        private const int StackMax = 4;
+
+        private readonly EnemyBrain[] _stackTarget = new EnemyBrain[StackSlots];
+        private readonly float[] _stackTime = new float[StackSlots];
+        private readonly int[] _stackCount = new int[StackSlots];
 
         private ViewPool<DamageText> _pool;
         private CombatWorld _world;
@@ -62,6 +73,35 @@ namespace SoloHero.Game.Pooling
 
         public void Return(DamageText text) => _pool.Release(text);
 
+        /// <summary>How many numbers this enemy showed within the stack window (0 for a fresh one), capped.</summary>
+        private int NextStack(EnemyBrain target)
+        {
+            float now = Time.time;
+            int free = 0;
+            float oldest = float.MaxValue;
+            for (int i = 0; i < StackSlots; i++)
+            {
+                if (_stackTarget[i] == target)
+                {
+                    int step = now - _stackTime[i] < StackWindowSeconds ? (_stackCount[i] + 1) % StackMax : 0;
+                    _stackCount[i] = step;
+                    _stackTime[i] = now;
+                    return step;
+                }
+
+                if (_stackTime[i] < oldest)
+                {
+                    oldest = _stackTime[i];
+                    free = i;
+                }
+            }
+
+            _stackTarget[free] = target;
+            _stackTime[free] = now;
+            _stackCount[free] = 0;
+            return 0;
+        }
+
         /// <summary>A short text on a dark plate over a world point (a skill name over the hero); holds, then fades.</summary>
         public void ShowLabel(Vector3 world, string label, Color color, int size)
         {
@@ -81,6 +121,7 @@ namespace SoloHero.Game.Pooling
             // Small sideways jitter keeps numbers from stacking on one spot; crits alternate their arc direction.
             if (!crit) local.x += Random.Range(-NormalJitterPixels, NormalJitterPixels);
             if (kind == HitKind.Dot) local.y -= NormalJitterPixels;
+            local.y += StackStepPixels * NextStack(target);
             _nextDrift = -_nextDrift;
             Color color;
             int size;
@@ -89,6 +130,7 @@ namespace SoloHero.Game.Pooling
                 case HitKind.Crit: color = _critColor; size = _critSize; break;
                 case HitKind.Skill: color = _skillColor; size = _skillSize; break;
                 case HitKind.Dot: color = _dotColor; size = _dotSize; break;
+                case HitKind.Combo: color = _comboColor; size = _comboSize; break;
                 default: color = _normalColor; size = _normalSize; break;
             }
 

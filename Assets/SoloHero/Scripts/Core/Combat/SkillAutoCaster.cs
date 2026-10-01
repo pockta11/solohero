@@ -291,8 +291,11 @@ namespace SoloHero.Core.Combat
         private void Hit(SkillDef def, EnemyBrain target, double damage, double dot, ICombatWorld world)
         {
             if (_castHero != null) damage *= _castHero.TalentHitMult(target);
+            // The combo reads the state from earlier hits; this skill's own stun / DoT applies after it.
+            double combo = DamageCalc.SkillCombo(_balance, target.IsStunned, target.HasDot);
+            damage *= combo;
             target.TakeDamage(damage);
-            world.ReportHit(target, damage, HitKind.Skill);
+            world.ReportHit(target, damage, combo > 1d ? HitKind.Combo : HitKind.Skill);
             if (dot > 0d) target.ApplyDot(dot, def.DotSeconds);
             if (def.StunSeconds > 0f) target.Stun(def.StunSeconds);
         }

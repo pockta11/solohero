@@ -25,8 +25,8 @@ MonoBehaviour:
   - 0.46750003
   - 0.3
   floor: {fileID: 21300000, guid: bd596715a048ec74cbf1bd605573ff05, type: 3}
-  pixelScale: 2
-  sky: {r: 0.67058825, g: 0.41568628, b: 0.54901963, a: 1}
+  pixelScale: 1
+  sky: {r: 0.14901961, g: 0.15686275, b: 0.3529412, a: 1}
   enemies:
   - {fileID: 11400000, guid: d0e4a92503ab77d4280543b48a0272f3, type: 2}
   - {fileID: 11400000, guid: e217a387f1276e6438bf90cb0e389f8b, type: 2}

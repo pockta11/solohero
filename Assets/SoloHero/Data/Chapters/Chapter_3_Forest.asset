@@ -17,17 +17,19 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 3e4e0c435f1e0e64888928f99db547df, type: 3}
   - {fileID: 21300000, guid: 88d0c26219b9aa440beb715f761bf098, type: 3}
   - {fileID: 21300000, guid: f92ec3f45aa1b244eba04a621584e445, type: 3}
+  - {fileID: 21300000, guid: 2dd72c69cbb86df43a1cde5f22ab6dd5, type: 3}
   follow:
   - 0.97
-  - 0.74666667
-  - 0.5233333
+  - 0.8025
+  - 0.635
+  - 0.46750003
   - 0.3
   floor: {fileID: 21300000, guid: 650f2882e08ff86458a7e59f305efb68, type: 3}
-  pixelScale: 2
-  sky: {r: 0.6901961, g: 0.4392157, b: 0.1882353, a: 1}
+  pixelScale: 1
+  sky: {r: 0.6039216, g: 0.84705883, b: 0.7372549, a: 1}
   enemies:
   - {fileID: 11400000, guid: b8dbe4864e07caf4cac69484ee6df0bd, type: 2}
   - {fileID: 11400000, guid: 6dab61255f6356c458d448150ad9a282, type: 2}
   - {fileID: 11400000, guid: 6a865b91c9ebeb6478745771d1040db8, type: 2}
-  boss: {fileID: 11400000, guid: e6566f080e036ae4c9fc6244df4adea1, type: 2}
+  boss: {fileID: 11400000, guid: e284d543ba40182468fd8969b89cf91e, type: 2}
   bgm: {fileID: 8300000, guid: 30bf56d37ea876f45b49607b05326faf, type: 3}

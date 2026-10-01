@@ -65,6 +65,15 @@ namespace SoloHero.Core.Save
 
         public long goldBoosterEndUtc;
 
+        /// <summary>D-099 attendance: days claimed in total (the 7-day cycle is count % 7) and the last claim's local date.</summary>
+        public int attendanceCount;
+        public string attendanceDate = "";
+
+        /// <summary>D-099 daily missions, index-aligned with MissionCatalog; reset when missionDate is not today.</summary>
+        public string missionDate = "";
+        public List<int> missionProgress = new List<int>();
+        public List<bool> missionClaimed = new List<bool>();
+
         public int tutorialStep;
 
         public bool bgmMuted;

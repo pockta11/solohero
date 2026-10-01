@@ -14,6 +14,7 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private GachaRevealView _reveal;
         [SerializeField] private SettingsPresenter _settings;
         [SerializeField] private StageSelectPresenter _stageSelect;
+        [SerializeField] private DailyPresenter _daily;
         [SerializeField] private PanelHost _panels;
         [SerializeField] private GameObject _quitConfirm;
 
@@ -55,6 +56,12 @@ namespace SoloHero.Game.UI.Common
             if (_stageSelect != null && _stageSelect.IsOpen)
             {
                 _stageSelect.Close();
+                return;
+            }
+
+            if (_daily != null && _daily.IsOpen)
+            {
+                _daily.Close();
                 return;
             }
 

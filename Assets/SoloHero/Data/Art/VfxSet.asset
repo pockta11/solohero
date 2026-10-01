@@ -242,3 +242,58 @@ MonoBehaviour:
     fps: 20
     ground: 0
     halfHeight: 0.875
+  - name: spear
+    frames:
+    - {fileID: -2304291878296514869, guid: 3370b22add15284408aaf1ab4e7323fe, type: 3}
+    - {fileID: 7346457462994560619, guid: 3370b22add15284408aaf1ab4e7323fe, type: 3}
+    - {fileID: 7222911459356780646, guid: 3370b22add15284408aaf1ab4e7323fe, type: 3}
+    - {fileID: 4133927698317335178, guid: 3370b22add15284408aaf1ab4e7323fe, type: 3}
+    - {fileID: 5596046814159372131, guid: 3370b22add15284408aaf1ab4e7323fe, type: 3}
+    - {fileID: 3922756719132045287, guid: 3370b22add15284408aaf1ab4e7323fe, type: 3}
+    - {fileID: -2702896632410756664, guid: 3370b22add15284408aaf1ab4e7323fe, type: 3}
+    - {fileID: -8794121718438713633, guid: 3370b22add15284408aaf1ab4e7323fe, type: 3}
+    - {fileID: 6380478075271210023, guid: 3370b22add15284408aaf1ab4e7323fe, type: 3}
+    fps: 18
+    ground: 0
+    halfHeight: 0.625
+  - name: judge
+    frames:
+    - {fileID: 356287431782170628, guid: 2dea171050a135e4eb2d655a40f7d6fc, type: 3}
+    - {fileID: 1323046701176071401, guid: 2dea171050a135e4eb2d655a40f7d6fc, type: 3}
+    - {fileID: 974398631710788873, guid: 2dea171050a135e4eb2d655a40f7d6fc, type: 3}
+    - {fileID: 189588305961730518, guid: 2dea171050a135e4eb2d655a40f7d6fc, type: 3}
+    - {fileID: -6149689865788448947, guid: 2dea171050a135e4eb2d655a40f7d6fc, type: 3}
+    - {fileID: -2330887332462975461, guid: 2dea171050a135e4eb2d655a40f7d6fc, type: 3}
+    - {fileID: 7596704904101806019, guid: 2dea171050a135e4eb2d655a40f7d6fc, type: 3}
+    - {fileID: -8382131988221483556, guid: 2dea171050a135e4eb2d655a40f7d6fc, type: 3}
+    - {fileID: 5148307202745716683, guid: 2dea171050a135e4eb2d655a40f7d6fc, type: 3}
+    fps: 16
+    ground: 1
+    halfHeight: 2.5
+  - name: cross
+    frames:
+    - {fileID: -2958667305166994770, guid: 9b1b58ef3ce08ff49890780bb56d8d14, type: 3}
+    - {fileID: -2556630253631366485, guid: 9b1b58ef3ce08ff49890780bb56d8d14, type: 3}
+    - {fileID: 3498116129316201944, guid: 9b1b58ef3ce08ff49890780bb56d8d14, type: 3}
+    - {fileID: 2357771825042182580, guid: 9b1b58ef3ce08ff49890780bb56d8d14, type: 3}
+    - {fileID: -3631262616365975216, guid: 9b1b58ef3ce08ff49890780bb56d8d14, type: 3}
+    - {fileID: -5972084140627383339, guid: 9b1b58ef3ce08ff49890780bb56d8d14, type: 3}
+    - {fileID: 6524096025181796544, guid: 9b1b58ef3ce08ff49890780bb56d8d14, type: 3}
+    fps: 22
+    ground: 0
+    halfHeight: 1
+  - name: clock
+    frames:
+    - {fileID: -106284065359316145, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    - {fileID: -6517515701135318181, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    - {fileID: -2362264662273857355, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    - {fileID: 8443043102937883193, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    - {fileID: -5722842871757948949, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    - {fileID: 1941367244438965629, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    - {fileID: -6798249923928854650, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    - {fileID: 4345532168248096235, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    - {fileID: -2318791505223704478, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    - {fileID: 4907714931595519170, guid: dcdc0f99b729a7444aa29ebc0f641fff, type: 3}
+    fps: 14
+    ground: 0
+    halfHeight: 1.5

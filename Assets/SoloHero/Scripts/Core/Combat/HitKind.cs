@@ -8,6 +8,9 @@ namespace SoloHero.Core.Combat
         Skill = 2,
 
         /// <summary>A burn / poison tick.</summary>
-        Dot = 3
+        Dot = 3,
+
+        /// <summary>A skill hit that landed a combo (D-098: shatter on a stunned enemy, ignite on a burning one).</summary>
+        Combo = 4
     }
 }

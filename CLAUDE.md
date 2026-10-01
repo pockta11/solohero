@@ -43,6 +43,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **2026-09-28 몹 무리·캐릭터 교체** (D-081~D-082): 몹 4마리씩 무리 등장(`SPAWN_WAVE_SIZE/GAP/SPACING`), 캐릭터 아트 Kings and Pigs → LuizMelo CC0(영웅 Hero Knight, 적 4종+색 변형, 보스 5종), 발밑 그림자. 변환 규칙: 여백 자르고 발 바닥 중앙, 적·보스 좌우 반전
 - **2026-09-28 특성 트리·스킬 수동 발동·2등신 영웅** (D-085~D-088): 스킬 패널을 "스킬 / 특성" 두 페이지로 나누고 특성 트리(공격·수호·비전 3갈래 × 4단계, 레벨당 1포인트, 초기화 100젬, `Core/Talents`)를 추가. 스킬바 위 AUTO 토글(수동이면 슬롯 탭 발동). 시뮬 무광고 7일차 5-6~5-8. 탭 = 캐릭터·장비·소환·스킬·특성, 설정은 오른쪽 메뉴 레일, 광고 보상은 왼쪽 레일(D-089)
 - **2026-09-29 귀여운 캐릭터·2.5D 전투** (D-090~D-092): 영웅·적 8종·보스 5종을 운빨존많겜식 절차 생성 도트로(`tools/art/charkit.py` + `hero.py` + `cast.py`, 보스도 1배). 전투는 원근 바닥(`floorgen.py`) + 몹 깊이 레인·레인별 크기·정렬(`Game/Combat/DepthLanes`), 카메라 y -0.6. 판정은 X축 그대로. 에뮬레이터 설치가 멈추면 `bundletool build-apks` 후 `adb install-multiple`
+- **2026-10-01~02 3D 캐릭터·게임 품질** (D-096~D-099): 캐릭터 15종을 Blender 3D → 도트로(`python tools/art/build3d.py`, Blender 5.2), 클립 12장·20 fps·적 달리기 클립. 카메라는 `PixelCameraFit`(정수 배율; 2D Pixel Perfect 패키지 컴포넌트는 URP에서 동작 안 함). 전투 손맛(히트스톱·넉백·처치 튕김·흰 플래시 셰이더 `SoloHero/SpriteFlash`·처치 코인·숫자 쌓기). 배경·바닥·앱 아이콘 자체 제작(`bggen.py`·`floorgen.py`·`appicon.py`). 스킬 콤보(파쇄·점화), 고유 VFX 4종, 출석·일일 미션(`Core/Daily`, 메뉴 "일일 보상"). 골렘 = 3장 보스. 개발 빌드는 FPS 표시. 진행표 `implementation-artifacts/qa/quality-plan-2026-10-01.md`
 - 빌드는 `libFirebaseCppApp` 포함을 자동 검사하고, EDM4U가 pom을 `srcaar`로 바꾸면 빌드 전에 되돌린다
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 

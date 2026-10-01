@@ -255,4 +255,26 @@ tab.talent	특성
 rail.settings	설정
 rail.stage	스테이지
 rail.credits	크레딧
+rail.daily	일일 보상
 hud.basic_skill	섬광 베기
+
+# Attendance and daily missions (D-099)
+daily.title	일일 보상
+daily.attendance	출석 {0}일차
+daily.attend_claim	출석 보상 받기
+daily.attend_done	오늘 출석 완료
+daily.day	{0}일
+daily.missions	일일 미션
+daily.mission_row	{0}  {1}/{2}
+daily.claim	받기
+daily.claimed	완료
+daily.progress	진행 중
+daily.close	닫기
+daily.got_gem	젬 +{0}
+daily.got_gold	골드 +{0}
+mission.name.kill	적 처치
+mission.name.clear	스테이지 클리어
+mission.name.upgrade	능력치 강화
+mission.name.summon	소환
+mission.name.ad	광고 보기
+mission.name.all	모든 미션 완료

@@ -37,5 +37,16 @@ namespace SoloHero.Core.Combat
 
         public static double SkillHit(HeroStats stats, double skillMult) =>
             Math.Max(1d, stats.Atk * skillMult);
+
+        /// <summary>
+        /// D-098 skill combo: a skill hit on a stunned / frozen enemy shatters (x SKILL_SHATTER_MULT), else on a
+        /// burning / poisoned one ignites (x SKILL_IGNITE_MULT); otherwise 1. The bigger one wins, they never stack.
+        /// </summary>
+        public static double SkillCombo(BalanceValues balance, bool stunned, bool burning)
+        {
+            if (balance == null) throw new ArgumentNullException(nameof(balance));
+            if (stunned) return balance.SKILL_SHATTER_MULT;
+            return burning ? balance.SKILL_IGNITE_MULT : 1d;
+        }
     }
 }

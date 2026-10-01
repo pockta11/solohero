@@ -112,6 +112,11 @@ namespace SoloHero.Game.Config
         public double SKILL_OWNED_ATK_E = 1;
         public double SKILL_OWNED_ATK_L = 2;
         public double SKILL_BOSS_STUN_MULT = 0.5;
+        public double SKILL_SHATTER_MULT = 1.5;
+        public double SKILL_IGNITE_MULT = 1.3;
+        public double ATTENDANCE_GEM = 30;
+        public double ATTENDANCE_GOLD_STAGES = 20;
+        public double ATTENDANCE_DAY7_GEM = 150;
         public float SKILL_DOT_TICK = 0.5f;
         public int TALENT_POINTS_PER_LEVEL = 1;
         public int TALENT_TIER_STEP = 5;
@@ -260,6 +265,11 @@ namespace SoloHero.Game.Config
                 SKILL_OWNED_ATK_E = SKILL_OWNED_ATK_E,
                 SKILL_OWNED_ATK_L = SKILL_OWNED_ATK_L,
                 SKILL_BOSS_STUN_MULT = SKILL_BOSS_STUN_MULT,
+                SKILL_SHATTER_MULT = SKILL_SHATTER_MULT,
+                SKILL_IGNITE_MULT = SKILL_IGNITE_MULT,
+                ATTENDANCE_GEM = ATTENDANCE_GEM,
+                ATTENDANCE_GOLD_STAGES = ATTENDANCE_GOLD_STAGES,
+                ATTENDANCE_DAY7_GEM = ATTENDANCE_DAY7_GEM,
                 SKILL_DOT_TICK = SKILL_DOT_TICK,
                 TALENT_POINTS_PER_LEVEL = TALENT_POINTS_PER_LEVEL,
                 TALENT_TIER_STEP = TALENT_TIER_STEP,

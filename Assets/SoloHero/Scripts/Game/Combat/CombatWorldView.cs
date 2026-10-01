@@ -14,15 +14,27 @@ namespace SoloHero.Game.Combat
     /// Each enemy takes its look from the chapter roster by spawn order (E8-03); looks without a hit or dead clip
     /// flash / vanish instead. Enemies keep their slot renderer for the death clip after Core frees the slot. The hit
     /// lands on the swing (D-065), so animation timing never changes combat results.
+    /// D-096 game feel, all view offsets on top of the Core position: a new enemy runs in from the right, a hit pushes
+    /// it back a little, a kill flings it back with a hop, the hero lunges on each swing, hits blink white through the
+    /// SpriteFlash shader, and character clips hold still during a <see cref="HitStop"/>.
     /// </summary>
     public sealed class CombatWorldView : MonoBehaviour
     {
         private const int EnemySlotVisualCount = 4;
-        private const float HitFlashSeconds = 0.08f;
+        private const float HitFlashSeconds = 0.09f;
+        private const float EntranceDistance = 2.6f;
+        private const float EntranceSeconds = 0.32f;
+        private const float KnockPerHit = 0.12f;
+        private const float KnockMax = 0.35f;
+        private const float KnockReturnRate = 10f;
+        private const float DeathFling = 0.7f;
+        private const float DeathHop = 0.3f;
+        private const float DeathFlingSeconds = 0.35f;
+        private const float HeroLunge = 0.1f;
+        private const float HeroLungeReturnRate = 12f;
 
         /// <summary>Bosses are drawn this far behind their Core position so the 2x body does not cover the hero (view only).</summary>
         private const float BossDrawOffset = 0.4f;
-        private static readonly Color HitFlash = new Color(1f, 0.55f, 0.55f, 1f);
         private static readonly Color FrozenTint = new Color(0.55f, 0.8f, 1f, 1f);
         private static readonly Color BurnTint = new Color(1f, 0.62f, 0.38f, 1f);
         private static readonly Color ShieldTint = new Color(0.78f, 0.92f, 1f, 1f);
@@ -55,6 +67,11 @@ namespace SoloHero.Game.Combat
         private float _heroFlash;
         private int _lastKills;
         private float _cameraY = float.NaN;
+        private float _heroLunge;
+        private SpriteFlipbook _heroBook;
+        private SpriteFlash _heroFlashFx;
+        private readonly SpriteFlipbook[] _enemyBooks = new SpriteFlipbook[EnemySlotVisualCount];
+        private readonly SpriteFlash[] _enemyFlashFx = new SpriteFlash[EnemySlotVisualCount];
         private readonly EnemySlotState[] _slots = new EnemySlotState[EnemySlotVisualCount];
 
         /// <summary>A killed enemy (not one cleared by a stage reset): world position, boss, whether it has a death clip.</summary>
@@ -74,6 +91,9 @@ namespace SoloHero.Game.Combat
             public float Flash;
             public float X;
             public float Y;
+            public float Entrance;
+            public float Push;
+            public float DeathTime;
             public CharacterArt Art;
         }
 
@@ -84,6 +104,15 @@ namespace SoloHero.Game.Combat
             if (_camera == null)
                 _camera = Camera.main;
             for (int i = 0; i < _slots.Length; i++) _slots[i] = new EnemySlotState();
+            _heroBook = Book(_heroRenderer);
+            if (_heroBook != null) _heroBook.FreezeOnHitStop = true;
+            if (_heroRenderer != null) _heroFlashFx = new SpriteFlash(_heroRenderer);
+            for (int i = 0; i < EnemySlotVisualCount && i < _enemyRenderers.Length; i++)
+            {
+                _enemyBooks[i] = Book(_enemyRenderers[i]);
+                if (_enemyBooks[i] != null) _enemyBooks[i].FreezeOnHitStop = true;
+                if (_enemyRenderers[i] != null) _enemyFlashFx[i] = new SpriteFlash(_enemyRenderers[i]);
+            }
 
             try
             {
@@ -132,14 +161,14 @@ namespace SoloHero.Game.Combat
                 EnemyBrain enemy = i < world.SlotCount ? world.GetSlot(i) : null;
                 DrawEnemy(i, enemy, theme, ref newKills);
                 DrawHpBar(i, enemy);
-                DrawShadow(i + 1, i < _enemyRenderers.Length ? _enemyRenderers[i] : null, (_slots[i].Boss ? 1.6f : 1f) * DepthLanes.Scale(_slots[i].Y));
+                DrawShadow(i + 1, i < _enemyRenderers.Length ? _enemyRenderers[i] : null, _slots[i].Y, (_slots[i].Boss ? 1.6f : 1f) * DepthLanes.Scale(_slots[i].Y));
             }
 
-            DrawShadow(0, _heroRenderer, 1f);
+            DrawShadow(0, _heroRenderer, 0f, 1f);
         }
 
-        /// <summary>A soft blob on the ground line under a drawn character, sized in world units.</summary>
-        private void DrawShadow(int index, SpriteRenderer body, float size)
+        /// <summary>A soft blob on the ground line under a drawn character, sized in world units (stays down during a hop).</summary>
+        private void DrawShadow(int index, SpriteRenderer body, float groundY, float size)
         {
             SpriteRenderer shadow = index < _shadows.Length ? _shadows[index] : null;
             if (shadow == null) return;
@@ -149,7 +178,7 @@ namespace SoloHero.Game.Combat
             float unit = shadow.sprite.bounds.size.x;
             float width = _shadowWidth * size;
             Vector3 feet = body.transform.position;
-            shadow.transform.position = new Vector3(feet.x, feet.y - 0.1f * size, 0f);
+            shadow.transform.position = new Vector3(feet.x, groundY - 0.1f * size, 0f);
             shadow.transform.localScale = new Vector3(width / unit, width / unit, 1f);
         }
 
@@ -171,15 +200,20 @@ namespace SoloHero.Game.Combat
             float top = art != null && art.headHeight > 0f
                 ? body.transform.position.y + art.headHeight * body.transform.lossyScale.y + 0.14f
                 : body.bounds.max.y + 0.12f;
-            float left = (float)enemy.X - _hpBarWidth * 0.5f;
-            back.transform.position = new Vector3((float)enemy.X, top, 0f);
+            float x = body.transform.position.x;
+            float left = x - _hpBarWidth * 0.5f;
+            back.transform.position = new Vector3(x, top, 0f);
             back.transform.localScale = new Vector3(_hpBarWidth / unit, _hpBarHeight / unit, 1f);
             float inner = _hpBarWidth - 0.04f;
             fill.transform.position = new Vector3(left + 0.02f + inner * ratio * 0.5f, top, 0f);
             fill.transform.localScale = new Vector3(inner * ratio / unit, (_hpBarHeight - 0.04f) / unit, 1f);
         }
 
-        private void OnHeroAttack() => _heroAttackPending = true;
+        private void OnHeroAttack()
+        {
+            _heroAttackPending = true;
+            _heroLunge = HeroLunge;
+        }
 
         private ChapterTheme ThemeFor(int globalStage)
         {
@@ -192,9 +226,10 @@ namespace SoloHero.Game.Combat
         {
             if (_heroRenderer == null) return;
             _heroRenderer.enabled = true;
-            _heroRenderer.transform.position = new Vector3((float)hero.X, 0f, 0f);
+            _heroLunge -= _heroLunge * Mathf.Min(1f, HeroLungeReturnRate * HitStop.DeltaTime);
+            _heroRenderer.transform.position = new Vector3((float)hero.X + _heroLunge, 0f, 0f);
             SetOrder(_heroRenderer, 0f);
-            SpriteFlipbook book = Book(_heroRenderer);
+            SpriteFlipbook book = _heroBook;
             bool tookHit = hero.Hp < _heroLastHp;
             _heroLastHp = hero.Hp;
 
@@ -229,7 +264,8 @@ namespace SoloHero.Game.Combat
             }
 
             _heroFlash -= Time.deltaTime;
-            _heroRenderer.color = _heroFlash > 0f ? HitFlash : hero.Shield > 0d ? ShieldTint : Color.white;
+            _heroRenderer.color = hero.Shield > 0d ? ShieldTint : Color.white;
+            _heroFlashFx?.Set(_heroFlash / HitFlashSeconds);
         }
 
         private bool IsLoop(Sprite[] clip) =>
@@ -240,7 +276,8 @@ namespace SoloHero.Game.Combat
             SpriteRenderer renderer = index < _enemyRenderers.Length ? _enemyRenderers[index] : null;
             if (renderer == null) return;
             EnemySlotState slot = _slots[index];
-            SpriteFlipbook book = Book(renderer);
+            SpriteFlipbook book = _enemyBooks[index];
+            float dt = HitStop.DeltaTime;
 
             // A slot freed and refilled inside one Core tick shows up as a new generation: finish the old one first.
             if (enemy != null && enemy.IsActive && slot.Active && slot.Generation != enemy.Generation)
@@ -249,30 +286,46 @@ namespace SoloHero.Game.Combat
             if (enemy != null && enemy.IsActive)
             {
                 bool fresh = !slot.Active || slot.Dying || slot.Generation != enemy.Generation;
-                if (fresh) slot.Art = ArtFor(enemy, theme);
+                if (fresh)
+                {
+                    slot.Art = ArtFor(enemy, theme);
+                    slot.Entrance = EntranceSeconds;
+                    slot.Push = 0f;
+                }
+
                 CharacterArt art = slot.Art;
                 slot.Active = true;
                 slot.Dying = false;
                 slot.Boss = enemy.IsBoss;
                 slot.Generation = enemy.Generation;
-                slot.X = (float)enemy.X + (enemy.IsBoss ? BossDrawOffset : 0f);
-                slot.Y = DepthLanes.For(enemy);
-                renderer.enabled = true;
-                renderer.transform.position = new Vector3(slot.X, slot.Y, 0f);
-                SetOrder(renderer, slot.Y);
 
                 bool attacked = enemy.AttackCount != slot.LastAttacks;
                 bool hurt = !fresh && enemy.Hp < slot.LastHp;
                 slot.LastAttacks = enemy.AttackCount;
                 slot.LastHp = enemy.Hp;
-                if (hurt) slot.Flash = HitFlashSeconds;
+                if (hurt)
+                {
+                    slot.Flash = HitFlashSeconds;
+                    slot.Push = Mathf.Min(KnockMax, slot.Push + KnockPerHit);
+                }
+
+                bool entering = slot.Entrance > 0f;
+                if (entering) slot.Entrance -= dt;
+                slot.Push -= slot.Push * Mathf.Min(1f, KnockReturnRate * dt);
+                float run = slot.Entrance > 0f ? slot.Entrance / EntranceSeconds : 0f;
+                slot.X = (float)enemy.X + (enemy.IsBoss ? BossDrawOffset : 0f) + EntranceDistance * run * run + slot.Push;
+                slot.Y = DepthLanes.For(enemy);
+                renderer.enabled = true;
+                renderer.transform.position = new Vector3(slot.X, slot.Y, 0f);
+                SetOrder(renderer, slot.Y);
 
                 if (art != null && book != null)
                 {
                     SetScale(renderer, art.pixelScale * DepthLanes.Scale(slot.Y));
-                    if (fresh) book.Play(art.idle, art.fps, loop: true, restart: true);
+                    if (fresh) book.Play(art.run, art.fps, loop: true, restart: true);
                     else if (attacked) book.Play(art.attack, art.fps, loop: false, restart: true);
                     else if (hurt && art.hit.Length > 0 && (book.Current != art.attack || book.Finished)) book.Play(art.hit, art.fps, loop: false, restart: true);
+                    else if (entering && slot.Entrance <= 0f && book.Current == art.run) book.Play(art.idle, art.fps, loop: true);
                     else if (book.Finished) book.Play(art.idle, art.fps, loop: true);
                 }
             }
@@ -281,10 +334,14 @@ namespace SoloHero.Game.Combat
                 // Core freed the slot this frame: keep drawing it until the death clip ends.
                 BeginDeath(slot, renderer, book, ref newKills);
             }
-            else if (slot.Dying && (book == null || book.Finished))
+            else if (slot.Dying)
             {
-                slot.Dying = false;
-                renderer.enabled = false;
+                AnimateDeath(slot, renderer, dt);
+                if (book == null || book.Finished)
+                {
+                    slot.Dying = false;
+                    renderer.enabled = false;
+                }
             }
             else if (!slot.Dying)
             {
@@ -292,7 +349,18 @@ namespace SoloHero.Game.Combat
             }
 
             slot.Flash -= Time.deltaTime;
-            renderer.color = slot.Flash > 0f ? HitFlash : StatusTint(enemy);
+            renderer.color = StatusTint(enemy);
+            _enemyFlashFx[index]?.Set(slot.Flash / HitFlashSeconds);
+        }
+
+        /// <summary>Kill fling: back and up in an arc over the first part of the death clip, then rest on the ground.</summary>
+        private static void AnimateDeath(EnemySlotState slot, SpriteRenderer renderer, float dt)
+        {
+            slot.DeathTime += dt;
+            float t = Mathf.Clamp01(slot.DeathTime / DeathFlingSeconds);
+            float fling = (slot.Boss ? 0.4f : 1f) * DeathFling * (1f - (1f - t) * (1f - t));
+            float hop = (slot.Boss ? 0f : DeathHop) * Mathf.Sin(Mathf.PI * t);
+            renderer.transform.position = new Vector3(slot.X + fling, slot.Y + hop, 0f);
         }
 
         /// <summary>D-078 status on the body: frozen / stunned blue, burning or poisoned pulses orange.</summary>
@@ -308,6 +376,8 @@ namespace SoloHero.Game.Combat
         private void BeginDeath(EnemySlotState slot, SpriteRenderer renderer, SpriteFlipbook book, ref int newKills)
         {
             slot.Active = false;
+            slot.DeathTime = 0f;
+            slot.Flash = HitFlashSeconds;
             CharacterArt art = slot.Art;
             bool hasClip = art != null && art.dead.Length > 0 && book != null;
             if (hasClip)
@@ -354,7 +424,8 @@ namespace SoloHero.Game.Combat
         {
             if (_camera == null || _balance == null) return;
 
-            float viewWidth = (float)_balance.PIXEL_REF_WIDTH / _balance.PPU;
+            // D-096: the visible width follows the integer zoom (PixelCameraFit), not the 270 px reference.
+            float viewWidth = _camera.orthographic ? 2f * _camera.orthographicSize * _camera.aspect : (float)_balance.PIXEL_REF_WIDTH / _balance.PPU;
             float cameraX = heroX + (0.5f - _balance.HERO_SCREEN_X / 100f) * viewWidth;
             Vector3 pos = _camera.transform.position;
             if (float.IsNaN(_cameraY)) _cameraY = pos.y;

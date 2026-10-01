@@ -9,7 +9,10 @@ namespace SoloHero.Game.Combat
     /// Chapter background (E2-02, E3-11, E3-12, E8-05): tiled parallax layers that loop forever. Each layer follows
     /// the camera by its theme factor; the ground strip stays in the world. The theme switches with the chapter
     /// and chapters past the theme count cycle. Layer renderers are created by the scene builder, never at runtime.
+    /// Runs after the combat view (D-096) so the layers read this frame's camera position, not last frame's - reading
+    /// a stale position made the background lag a frame behind and judder.
     /// </summary>
+    [DefaultExecutionOrder(100)]
     public sealed class ParallaxRig : MonoBehaviour
     {
         private const float TileCopies = 4f;

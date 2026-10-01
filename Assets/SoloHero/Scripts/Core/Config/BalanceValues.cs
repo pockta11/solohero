@@ -128,6 +128,17 @@ namespace SoloHero.Core.Config
         public double SKILL_OWNED_ATK_E = 1;
         public double SKILL_OWNED_ATK_L = 2;
         public double SKILL_BOSS_STUN_MULT = 0.5;
+
+        /// <summary>D-098 combo: a skill hit on a stunned / frozen enemy deals this much (shatter).</summary>
+        public double SKILL_SHATTER_MULT = 1.5;
+
+        /// <summary>D-098 combo: a skill hit on a burning / poisoned enemy deals this much (ignite).</summary>
+        public double SKILL_IGNITE_MULT = 1.3;
+
+        /// <summary>D-099 attendance: gems on odd cycle days, clear gold x stages on even days, the day-7 gems.</summary>
+        public double ATTENDANCE_GEM = 30;
+        public double ATTENDANCE_GOLD_STAGES = 20;
+        public double ATTENDANCE_DAY7_GEM = 150;
         public float SKILL_DOT_TICK = 0.5f;
         public int TALENT_POINTS_PER_LEVEL = 1;
         public int TALENT_TIER_STEP = 5;

@@ -31,6 +31,7 @@ namespace SoloHero.Editor
         private const string RevealName = "GachaReveal";
         private const string SettingsButtonName = "SettingsButton";
         private const string SettingsPopupName = "SettingsPopup";
+        private const string DailyName = "DailyPopup";
         private const string SettingsWindowName = "SettingsWindow";
         private const string QuitPopupName = "QuitConfirm";
         private const string SafeAreaName = "SafeArea";
@@ -254,7 +255,7 @@ namespace SoloHero.Editor
             UnwrapSafeArea(hud.transform);
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
-            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, BossIntroName, FlashName })
+            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, BossIntroName, FlashName })
             {
                 Transform stale = hud.transform.Find(name);
                 if (stale != null) Object.DestroyImmediate(stale.gameObject);
@@ -293,8 +294,9 @@ namespace SoloHero.Editor
             BuildDamageText(hud.transform, session);
             GachaRevealView reveal = BuildGachaReveal(hud.transform, gacha.GetComponent<GachaPanelPresenter>());
             StageSelectPresenter stageSelect = BuildStageSelect(hud.transform, session);
-            BuildRails(root, toast, settings, stageSelect);
-            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>());
+            DailyPresenter daily = BuildDaily(hud.transform, session, toast);
+            BuildRails(root, toast, settings, stageSelect, daily);
+            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily);
             BuildBossIntro(hud.transform, session);
             ScreenFlash flash = BuildFlash(hud.transform);
             WrapSafeArea(hud.transform);
@@ -1216,7 +1218,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void WrapSafeArea(Transform hud)
         {
-            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, BossIntroName, FlashName };
+            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, BossIntroName, FlashName };
             RectTransform safe = Rect(SafeAreaName, hud, 0f, 0f, 1f, 1f);
             safe.gameObject.AddComponent<SafeAreaFitter>();
             var move = new System.Collections.Generic.List<Transform>();
@@ -1340,7 +1342,7 @@ namespace SoloHero.Editor
         }
 
         /// <summary>E7-14: back key router and the quit confirm popup (last sibling, above every other layer).</summary>
-        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels)
+        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels, DailyPresenter daily)
         {
             RectTransform holder = Rect(QuitPopupName, hud, 0f, 0f, 1f, 1f);
             holder.SetAsLastSibling();
@@ -1362,6 +1364,7 @@ namespace SoloHero.Editor
             so.FindProperty("_reveal").objectReferenceValue = reveal;
             so.FindProperty("_settings").objectReferenceValue = settings;
             so.FindProperty("_stageSelect").objectReferenceValue = stageSelect;
+            so.FindProperty("_daily").objectReferenceValue = daily;
             so.FindProperty("_panels").objectReferenceValue = panels;
             so.FindProperty("_quitConfirm").objectReferenceValue = popup.gameObject;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -1381,7 +1384,7 @@ namespace SoloHero.Editor
         /// with the count or countdown under them), a folding menu on the right (settings, stage, credits). Both
         /// sit in the sky between the top bar and the battle lane (characters stand at 50%, nothing below 64%).
         /// </summary>
-        private static void BuildRails(RectTransform root, ToastQueue toast, SettingsPresenter settings, StageSelectPresenter stageSelect)
+        private static void BuildRails(RectTransform root, ToastQueue toast, SettingsPresenter settings, StageSelectPresenter stageSelect, DailyPresenter daily)
         {
             RectTransform left = Box("LeftRail", root, new Vector2(0f, RailTop), new Vector2(0f, 1f), new Vector2(RailInset, 0f), new Vector2(RailItem + 48f, RailStep * 2f));
             TapGuardButton booster = RailButton(left, "Booster", 0, "coin", Tone.Gold, true, out Text boosterLabel);
@@ -1397,19 +1400,20 @@ namespace SoloHero.Editor
             so.FindProperty("_toast").objectReferenceValue = toast;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            RectTransform right = Box("RightRail", root, new Vector2(1f, RailTop), new Vector2(1f, 1f), new Vector2(-RailInset, 0f), new Vector2(RailItem + 48f, RailMenuButton + 28f + 3f * RailMenuStep));
+            RectTransform right = Box("RightRail", root, new Vector2(1f, RailTop), new Vector2(1f, 1f), new Vector2(-RailInset, 0f), new Vector2(RailItem + 48f, RailMenuButton + 28f + 4f * RailMenuStep));
             RailMenu menu = right.gameObject.AddComponent<RailMenu>();
             Button toggle = MakeButton("Menu", right, 0.5f, 1f, 0.5f, 1f, "", 22, out _, Tone.Gray);
             Place((RectTransform)toggle.transform, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(RailMenuButton, RailMenuButton));
             FixedIcon(toggle.transform, "menu", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), 64f);
             UnityEventTools.AddPersistentListener(toggle.onClick, menu.Toggle);
+            var badges = new System.Collections.Generic.List<GameObject> { Badge(toggle.transform) };
 
             RectTransform column = Rect("Items", right, 0f, 0f, 1f, 1f);
             column.offsetMax = new Vector2(0f, -(RailMenuButton + 8f));
             UiSkin.Sliced(column.gameObject.AddComponent<Image>(), UiSkin.Inset);
-            string[] icons = { "cog", "skull", "book" };
-            string[] keys = { "rail.settings", "rail.stage", "rail.credits" };
-            UnityAction[] actions = { settings.Open, stageSelect.Open, settings.OpenCredits };
+            string[] icons = { "star", "cog", "skull", "book" };
+            string[] keys = { "rail.daily", "rail.settings", "rail.stage", "rail.credits" };
+            UnityAction[] actions = { daily.Open, settings.Open, stageSelect.Open, settings.OpenCredits };
             for (int i = 0; i < icons.Length; i++)
             {
                 RectTransform item = Box("Item" + i, column, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -12f - i * RailMenuStep), new Vector2(RailItem, RailMenuStep - 8f));
@@ -1424,11 +1428,111 @@ namespace SoloHero.Editor
                 Localize(caption, keys[i]);
                 UnityEventTools.AddPersistentListener(button.onClick, actions[i]);
                 UnityEventTools.AddPersistentListener(button.onClick, menu.Fold);
+                if (i == 0) badges.Add(Badge(item));
             }
+
+            var dailySo = new SerializedObject(daily);
+            SetArray(dailySo, "_badges", badges.ToArray());
+            dailySo.ApplyModifiedPropertiesWithoutUndo();
 
             var menuSo = new SerializedObject(menu);
             menuSo.FindProperty("_content").objectReferenceValue = column.gameObject;
             menuSo.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>D-099: a red dot in the top-right corner of a button, shown while a daily reward waits.</summary>
+        private static GameObject Badge(Transform parent)
+        {
+            RectTransform dot = Box("Badge", parent, new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-10f, -10f), new Vector2(28f, 28f));
+            Image image = Plain(dot, UiSkin.White);
+            image.color = new Color(0.95f, 0.25f, 0.25f, 1f);
+            dot.gameObject.AddComponent<UiPulse>();
+            dot.gameObject.SetActive(false);
+            return dot.gameObject;
+        }
+
+        /// <summary>
+        /// D-099 attendance + daily missions popup: a 7-day strip with the claim button, then six mission rows
+        /// (name and progress, gem reward, claim). The holder stays active so the presenter can track progress.
+        /// </summary>
+        private static DailyPresenter BuildDaily(Transform hud, CombatSession session, ToastQueue toast)
+        {
+            RectTransform holder = Rect(DailyName, hud, 0f, 0f, 1f, 1f);
+            holder.SetAsLastSibling();
+            DailyPresenter presenter = holder.gameObject.AddComponent<DailyPresenter>();
+
+            RectTransform popup = Rect("Popup", holder, 0f, 0f, 1f, 1f);
+            popup.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.88f);
+            RectTransform box = Rect("Box", popup, 0.04f, 0.16f, 0.96f, 0.84f);
+            UiSkin.Sliced(box.gameObject.AddComponent<Image>(), UiSkin.Frame);
+            Localize(MakeText("Title", box, 0.05f, 0.92f, 0.95f, 0.99f, "", 42, TextAnchor.MiddleCenter), "daily.title");
+
+            Text attendTitle = MakeText("AttendTitle", box, 0.05f, 0.86f, 0.95f, 0.92f, "", 32, TextAnchor.MiddleLeft);
+            var cells = new Image[7];
+            var icons = new Image[7];
+            var amounts = new Text[7];
+            var checks = new GameObject[7];
+            Sprite check = UiSkin.Icon("star");
+            for (int d = 0; d < 7; d++)
+            {
+                float x0 = 0.04f + d * 0.1324f;
+                RectTransform cell = Rect("Day" + d, box, x0, 0.69f, x0 + 0.124f, 0.855f);
+                cells[d] = cell.gameObject.AddComponent<Image>();
+                UiSkin.Sliced(cells[d], UiSkin.Card);
+                Text dayLabel = MakeText("Label", cell, 0f, 0.72f, 1f, 0.98f, "", 22, TextAnchor.MiddleCenter);
+                dayLabel.text = (d + 1).ToString();
+                icons[d] = Plain(Box("Icon", cell, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(52f, 52f)), null);
+                amounts[d] = MakeText("Amount", cell, 0f, 0.02f, 1f, 0.3f, "", 22, TextAnchor.MiddleCenter);
+                RectTransform mark = Box("Done", cell, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-2f, -2f), new Vector2(40f, 40f));
+                Plain(mark, check);
+                mark.gameObject.SetActive(false);
+                checks[d] = mark.gameObject;
+            }
+
+            Button attend = MakeButton("Attend", box, 0.25f, 0.6f, 0.75f, 0.67f, "", 32, out Text attendLabel, Tone.Green);
+            UnityEventTools.AddPersistentListener(attend.onClick, presenter.ClaimAttendance);
+
+            Localize(MakeText("MissionsTitle", box, 0.05f, 0.54f, 0.95f, 0.59f, "", 32, TextAnchor.MiddleLeft), "daily.missions");
+            var names = new Text[6];
+            var rewards = new Text[6];
+            var buttons = new Button[6];
+            var labels = new Text[6];
+            for (int i = 0; i < 6; i++)
+            {
+                float y1 = 0.535f - i * 0.075f;
+                RectTransform row = Rect("Mission" + i, box, 0.04f, y1 - 0.068f, 0.96f, y1);
+                UiSkin.Sliced(row.gameObject.AddComponent<Image>(), UiSkin.Card);
+                names[i] = MakeText("Name", row, 0.04f, 0f, 0.56f, 1f, "", 28, TextAnchor.MiddleLeft);
+                AddIcon(row, "gem", 0.57f, 0.2f, 0.64f, 0.8f);
+                rewards[i] = MakeText("Reward", row, 0.645f, 0f, 0.74f, 1f, "", 28, TextAnchor.MiddleLeft);
+                buttons[i] = MakeButton("Claim", row, 0.75f, 0.12f, 0.98f, 0.88f, "", 26, out labels[i], Tone.Gold);
+                UnityEventTools.AddIntPersistentListener(buttons[i].onClick, presenter.ClaimMission, i);
+            }
+
+            Button close = MakeButton("Close", box, 0.3f, 0.015f, 0.7f, 0.075f, "", 32, out Text closeLabel, Tone.Gray);
+            Localize(closeLabel, "daily.close");
+            UnityEventTools.AddPersistentListener(close.onClick, presenter.Close);
+
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
+            so.FindProperty("_session").objectReferenceValue = session;
+            so.FindProperty("_toast").objectReferenceValue = toast;
+            so.FindProperty("_attendTitle").objectReferenceValue = attendTitle;
+            SetArray(so, "_dayCells", cells);
+            SetArray(so, "_dayIcons", icons);
+            SetArray(so, "_dayAmounts", amounts);
+            SetArray(so, "_dayChecks", checks);
+            so.FindProperty("_attendButton").objectReferenceValue = attend;
+            so.FindProperty("_attendLabel").objectReferenceValue = attendLabel;
+            SetArray(so, "_missionNames", names);
+            SetArray(so, "_missionRewards", rewards);
+            SetArray(so, "_missionButtons", buttons);
+            SetArray(so, "_missionLabels", labels);
+            so.FindProperty("_gemIcon").objectReferenceValue = UiSkin.Icon("gem");
+            so.FindProperty("_goldIcon").objectReferenceValue = UiSkin.Icon("coin");
+            so.ApplyModifiedPropertiesWithoutUndo();
+            popup.gameObject.SetActive(false);
+            return presenter;
         }
 
         /// <summary>One rail square: a coloured button with a 4x icon, an ad badge, and a caption under it.</summary>
@@ -1658,7 +1762,9 @@ namespace SoloHero.Editor
                 cooldowns[i].fillAmount = 0f;
                 cooldowns[i].raycastTarget = false;
 
-                times[i] = MakeText("Time", slot, 0f, 0f, 1f, 1f, "", 44, TextAnchor.MiddleCenter);
+                // D-097: the seconds sit small in the lower-right corner so the radial sweep and the icon stay readable.
+                times[i] = MakeText("Time", slot, 0.3f, 0.04f, 0.94f, 0.46f, "", 30, TextAnchor.LowerRight);
+                times[i].gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.9f);
 
                 // D-085 manual mode: a pulsing bracket on slots that can be tapped now.
                 RectTransform ready = Box("Ready", slot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(136f, 136f));

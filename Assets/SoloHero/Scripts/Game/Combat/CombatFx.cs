@@ -21,12 +21,18 @@ namespace SoloHero.Game.Combat
     /// the skill screen flash; damage numbers, hit flashes, skill and level-up effects stay because they carry
     /// information. Skills (D-078): a grade-coloured cast ring and name over the hero, the skill's own clip where its
     /// VfxAt says, a sound per family, shake growing with grade and a screen flash for Epic / Legendary.
+    /// D-096: hit-stop on crits, kills and Epic+ skills, a bigger sword wave on the basic skill.
     /// </summary>
     public sealed class CombatFx : MonoBehaviour
     {
         private const float EffectY = 0.7f;
         private const string BasicWaveClip = "wave";
         private const float BasicWaveOffset = 1.1f;
+        private const float BasicWaveScale = 1.35f;
+        private const float CritStop = 0.045f;
+        private const float KillStop = 0.06f;
+        private const float BossKillStop = 0.18f;
+        private const float BigSkillStop = 0.08f;
         private const float CritShake = 0.06f;
         private const float CritShakeSeconds = 0.12f;
         private const float BossShake = 0.18f;
@@ -38,6 +44,7 @@ namespace SoloHero.Game.Combat
         private static readonly float[] GradeShake = { 0.04f, 0.07f, 0.11f, 0.17f };
         private static readonly Color CritTint = new Color(1f, 0.85f, 0.3f, 1f);
         private static readonly Color LevelTint = new Color(0.55f, 1f, 0.6f, 1f);
+        private static readonly Color ComboTint = new Color(0.86f, 0.55f, 1f, 1f);
 
         [SerializeField] private CombatSession _session;
         [SerializeField] private CombatWorldView _view;
@@ -133,12 +140,20 @@ namespace SoloHero.Game.Combat
             if (_hooked == null || LowEffect || _set == null || _vfx == null) return;
             VfxClip wave = _set.Find(BasicWaveClip);
             if (wave == null) return;
-            _vfx.Play(wave.frames, wave.fps, new Vector3((float)_hooked.Hero.X + BasicWaveOffset, EffectY, 0f), 1f, Color.white);
+            _vfx.Play(wave.frames, wave.fps, new Vector3((float)_hooked.Hero.X + BasicWaveOffset, EffectY, 0f), BasicWaveScale, Color.white);
         }
 
         private void OnHitLanded(EnemyBrain target, double amount, HitKind kind)
         {
             // Skill hits bring their own clip and sound; burn ticks stay quiet.
+            if (kind == HitKind.Combo)
+            {
+                Play(SfxId.Crit);
+                HitStop.Trigger(CritStop);
+                if (!LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 3f, ComboTint, EffectY + DepthLanes.For(target));
+                return;
+            }
+
             if (kind == HitKind.Dot || kind == HitKind.Skill)
             {
                 if (kind == HitKind.Skill && !LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 2f, Color.white, EffectY + DepthLanes.For(target));
@@ -147,6 +162,7 @@ namespace SoloHero.Game.Combat
 
             bool crit = kind == HitKind.Crit;
             Play(crit ? SfxId.Crit : SfxId.Hit);
+            if (crit) HitStop.Trigger(CritStop);
             if (LowEffect) return;
             PlayVfx(_set != null ? _set.slash : null, (float)target.X, crit ? 2.5f : 1.5f, crit ? CritTint : Color.white, EffectY + DepthLanes.For(target));
             if (crit) Shake(CritShake, CritShakeSeconds);
@@ -167,6 +183,7 @@ namespace SoloHero.Game.Combat
 
             int grade = (int)def.Grade;
             if (def.DealsDamage) Shake(GradeShake[grade], 0.12f + grade * 0.08f);
+            if (def.DealsDamage && def.Grade >= Grade.Epic) HitStop.Trigger(BigSkillStop);
             if (_flash == null || LowEffect || def.Grade < Grade.Epic) return;
             Color flash = gradeColor;
             flash.a = def.Grade == Grade.Legendary ? LegendaryFlashAlpha : EpicFlashAlpha;
@@ -216,6 +233,7 @@ namespace SoloHero.Game.Combat
         private void OnEnemyDied(Vector3 position, bool boss, bool hasDeathClip)
         {
             Play(SfxId.EnemyDeath);
+            HitStop.Trigger(boss ? BossKillStop : KillStop);
             if (LowEffect || _set == null) return;
             // Looks without a death clip vanish into a puff; the others get a small puff over their own clip.
             float scale = boss ? 2f : hasDeathClip ? 0.6f : 1f;
