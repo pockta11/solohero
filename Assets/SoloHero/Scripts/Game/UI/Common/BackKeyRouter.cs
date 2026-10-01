@@ -16,6 +16,7 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private StageSelectPresenter _stageSelect;
         [SerializeField] private DailyPresenter _daily;
         [SerializeField] private DungeonPresenter _dungeon;
+        [SerializeField] private CompanionPresenter _companion;
         [SerializeField] private PanelHost _panels;
         [SerializeField] private GameObject _quitConfirm;
 
@@ -69,6 +70,12 @@ namespace SoloHero.Game.UI.Common
             if (_dungeon != null && _dungeon.IsOpen)
             {
                 _dungeon.Close();
+                return;
+            }
+
+            if (_companion != null && _companion.IsOpen)
+            {
+                _companion.Close();
                 return;
             }
 

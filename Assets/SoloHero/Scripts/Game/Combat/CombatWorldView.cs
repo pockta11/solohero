@@ -50,6 +50,9 @@ namespace SoloHero.Game.Combat
         [SerializeField] private SpriteRenderer[] _shadows = new SpriteRenderer[0];
         [SerializeField] private float _shadowWidth = 1.1f;
         [SerializeField] private CharacterArt _heroArt;
+
+        [Tooltip("D-101 promotion looks for tiers 1..4; tier 0 (and a missing entry) uses the hero art above.")]
+        [SerializeField] private CharacterArt[] _heroTiers = new CharacterArt[0];
         [SerializeField] private CharacterArt _enemyArt;
         [SerializeField] private CharacterArt _bossArt;
         [SerializeField] private ChapterThemeSet _themes;
@@ -68,6 +71,8 @@ namespace SoloHero.Game.Combat
         private int _lastKills;
         private float _cameraY = float.NaN;
         private float _heroLunge;
+        private SoloHero.Core.Save.SaveDataV2 _save;
+        private CharacterArt _heroShown;
         private SpriteFlipbook _heroBook;
         private SpriteFlash _heroFlashFx;
         private readonly SpriteFlipbook[] _enemyBooks = new SpriteFlipbook[EnemySlotVisualCount];
@@ -104,6 +109,7 @@ namespace SoloHero.Game.Combat
             if (_camera == null)
                 _camera = Camera.main;
             for (int i = 0; i < _slots.Length; i++) _slots[i] = new EnemySlotState();
+            _save = SoloHero.Game.UI.Panels.PanelServices.TryGet<SoloHero.Core.Save.SaveDataV2>();
             _heroBook = Book(_heroRenderer);
             if (_heroBook != null) _heroBook.FreezeOnHitStop = true;
             if (_heroRenderer != null) _heroFlashFx = new SpriteFlash(_heroRenderer);
@@ -233,26 +239,34 @@ namespace SoloHero.Game.Combat
             bool tookHit = hero.Hp < _heroLastHp;
             _heroLastHp = hero.Hp;
 
-            if (_heroArt != null && book != null)
+            CharacterArt art = HeroArt();
+            if (art != _heroShown)
             {
-                SetScale(_heroRenderer, _heroArt.pixelScale);
+                // Promotion changed the look: restart on the new art's idle.
+                _heroShown = art;
+                if (art != null && book != null) book.Play(art.idle, art.fps, loop: true, restart: true);
+            }
+
+            if (art != null && book != null)
+            {
+                SetScale(_heroRenderer, art.pixelScale);
                 if (hero.State == HeroState.Dead)
                 {
-                    book.Play(_heroArt.dead, _heroArt.fps, loop: false);
+                    book.Play(art.dead, art.fps, loop: false);
                 }
                 else if (_heroAttackPending)
                 {
                     // Faster swings play the clip faster so it never lags behind the attack speed.
-                    float fps = Mathf.Max(_heroArt.fps, _heroArt.attack.Length * (float)hero.Stats.AtkSpd);
-                    book.Play(_heroArt.attack, fps, loop: false, restart: true);
+                    float fps = Mathf.Max(art.fps, art.attack.Length * (float)hero.Stats.AtkSpd);
+                    book.Play(art.attack, fps, loop: false, restart: true);
                 }
-                else if (tookHit && (book.Current != _heroArt.attack || book.Finished))
+                else if (tookHit && (book.Current != art.attack || book.Finished))
                 {
-                    book.Play(_heroArt.hit, _heroArt.fps, loop: false, restart: true);
+                    book.Play(art.hit, art.fps, loop: false, restart: true);
                 }
-                else if (book.Current == _heroArt.dead || book.Finished || IsLoop(book.Current))
+                else if (book.Current == art.dead || book.Finished || IsLoop(art, book.Current))
                 {
-                    book.Play(hero.State == HeroState.Advance ? _heroArt.run : _heroArt.idle, _heroArt.fps, loop: true);
+                    book.Play(hero.State == HeroState.Advance ? art.run : art.idle, art.fps, loop: true);
                 }
             }
 
@@ -268,8 +282,16 @@ namespace SoloHero.Game.Combat
             _heroFlashFx?.Set(_heroFlash / HitFlashSeconds);
         }
 
-        private bool IsLoop(Sprite[] clip) =>
-            _heroArt != null && (clip == _heroArt.idle || clip == _heroArt.run);
+        private static bool IsLoop(CharacterArt art, Sprite[] clip) =>
+            art != null && (clip == art.idle || clip == art.run);
+
+        /// <summary>The look for the saved promotion tier (D-101).</summary>
+        private CharacterArt HeroArt()
+        {
+            int tier = _save != null ? _save.promotionTier : 0;
+            if (tier >= 1 && tier <= _heroTiers.Length && _heroTiers[tier - 1] != null) return _heroTiers[tier - 1];
+            return _heroArt;
+        }
 
         private void DrawEnemy(int index, EnemyBrain enemy, ChapterTheme theme, ref int newKills)
         {

@@ -103,6 +103,15 @@ namespace SoloHero.Editor
         {
             ReimportArt();
             CharacterArt hero = BuildCharacter("Hero", "knight", "Hero_Knight", 1);
+            // D-102 companions, index-aligned with CompanionCatalog.
+            string[] pets = { "slime", "wisp", "owl", "dragon" };
+            string[] petAssets = { "Pet_Slime", "Pet_Wisp", "Pet_Owl", "Pet_Dragon" };
+            var petArts = new CharacterArt[pets.Length];
+            for (int p = 0; p < pets.Length; p++) petArts[p] = BuildCharacter("Pets", "pet" + pets[p], petAssets[p], 1);
+            // D-101 promotion looks, tiers 1..4.
+            var heroTiers = new CharacterArt[4];
+            for (int t = 0; t < heroTiers.Length; t++)
+                heroTiers[t] = BuildCharacter("Hero", "knight" + (t + 1), "Hero_Knight" + (t + 1), 1);
             var looks = new Dictionary<string, CharacterArt>();
             foreach (KeyValuePair<string, (string asset, int scale)> look in LookNames)
             {
@@ -115,7 +124,7 @@ namespace SoloHero.Editor
             BuildEquipmentIcons();
             BuildSkillIcons();
             SoundBank bank = BuildSoundBank();
-            WireGameScene(hero, looks["goblin"], looks["ronin"], themes, vfx);
+            WireGameScene(hero, heroTiers, petArts, looks["goblin"], looks["ronin"], themes, vfx);
             WireBootAudio(bank);
 
             GameUiBuilder.BuildBatch();
@@ -438,7 +447,7 @@ namespace SoloHero.Editor
             return c;
         }
 
-        private static void WireGameScene(CharacterArt hero, CharacterArt pig, CharacterArt boss, ChapterThemeSet themes, VfxSet vfxSet)
+        private static void WireGameScene(CharacterArt hero, CharacterArt[] heroTiers, CharacterArt[] petArts, CharacterArt pig, CharacterArt boss, ChapterThemeSet themes, VfxSet vfxSet)
         {
             var scene = EditorSceneManager.OpenScene(GameScene, OpenSceneMode.Single);
             var view = Object.FindObjectOfType<CombatWorldView>();
@@ -498,6 +507,9 @@ namespace SoloHero.Editor
 
             var viewSo = new SerializedObject(view);
             viewSo.FindProperty("_heroArt").objectReferenceValue = hero;
+            SerializedProperty tiersProp = viewSo.FindProperty("_heroTiers");
+            tiersProp.arraySize = heroTiers.Length;
+            for (int t = 0; t < heroTiers.Length; t++) tiersProp.GetArrayElementAtIndex(t).objectReferenceValue = heroTiers[t];
             viewSo.FindProperty("_enemyArt").objectReferenceValue = pig;
             viewSo.FindProperty("_bossArt").objectReferenceValue = boss;
             viewSo.FindProperty("_themes").objectReferenceValue = themes;
@@ -508,6 +520,7 @@ namespace SoloHero.Editor
             WireHpBars(view);
             WireShadows(view);
             WireCoins(view, camera);
+            WireCompanion(session, vfxSet, petArts);
 
             Material flash = FlashMaterial();
             var heroRenderer = (SpriteRenderer)viewSo.FindProperty("_heroRenderer").objectReferenceValue;
@@ -565,6 +578,30 @@ namespace SoloHero.Editor
             SerializedProperty prop = so.FindProperty("_shadows");
             prop.arraySize = shadows.Length;
             for (int i = 0; i < shadows.Length; i++) prop.GetArrayElementAtIndex(i).objectReferenceValue = shadows[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>D-102: the companion's renderer (flash material, flipbook) and its view, next to the hero.</summary>
+        private static void WireCompanion(CombatSession session, VfxSet vfxSet, CharacterArt[] petArts)
+        {
+            GameObject old = GameObject.Find("Companion");
+            if (old != null) Object.DestroyImmediate(old);
+            var go = new GameObject("Companion");
+            SpriteRenderer renderer = go.AddComponent<SpriteRenderer>();
+            renderer.sortingOrder = 99;
+            Material flash = FlashMaterial();
+            if (flash != null) renderer.sharedMaterial = flash;
+            go.AddComponent<SpriteFlipbook>();
+            renderer.enabled = false;
+            CompanionView view = go.AddComponent<CompanionView>();
+            var so = new SerializedObject(view);
+            so.FindProperty("_session").objectReferenceValue = session;
+            so.FindProperty("_renderer").objectReferenceValue = renderer;
+            so.FindProperty("_vfx").objectReferenceValue = Object.FindObjectOfType<VfxPool>();
+            so.FindProperty("_set").objectReferenceValue = vfxSet;
+            SerializedProperty arts = so.FindProperty("_arts");
+            arts.arraySize = petArts.Length;
+            for (int i = 0; i < petArts.Length; i++) arts.GetArrayElementAtIndex(i).objectReferenceValue = petArts[i];
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

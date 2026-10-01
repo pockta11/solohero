@@ -16,6 +16,22 @@ namespace SoloHero.Core
         public static double StageGold(BalanceValues c, int g) =>
             c.STAGE_GOLD_BASE * Math.Pow(c.STAGE_GOLD_GROWTH, g - 1);
 
+        /// <summary>D-101: gold for promoting to <paramref name="tier"/> (1..4), priced off the highest stage.</summary>
+        public static double PromotionCost(BalanceValues c, int g, int tier) =>
+            Math.Floor(StageGold(c, g) * c.PROMOTE_COST_STAGES * tier);
+
+        /// <summary>D-101: HP / ATK / DEF multiplier of a promotion tier.</summary>
+        public static double PromotionMult(BalanceValues c, int tier) => Math.Pow(c.PROMOTE_STAT_MULT, tier < 0 ? 0 : tier);
+
+        /// <summary>D-102: gold for raising a companion of <paramref name="grade"/> from <paramref name="level"/>.</summary>
+        public static double CompanionLevelCost(BalanceValues c, Grade grade, int level) =>
+            Math.Floor(c.COMPANION_COST_BASE * Math.Pow(c.COMPANION_COST_GRADE_MULT, (int)grade)
+                * Math.Pow(c.COMPANION_COST_GROWTH, level < 1 ? 0 : level - 1));
+
+        /// <summary>D-102: companion damage multiplier at <paramref name="level"/>.</summary>
+        public static double CompanionLevelScale(BalanceValues c, int level) =>
+            Math.Pow(c.COMPANION_LEVEL_GAIN, level < 1 ? 0 : level - 1);
+
         /// <summary>D-100 gold dungeon: gold per kill at stage g.</summary>
         public static double DungeonGoldPerKill(BalanceValues c, int g) =>
             Math.Floor(StageGold(c, g) * c.DUNGEON_GOLD_PER_KILL);

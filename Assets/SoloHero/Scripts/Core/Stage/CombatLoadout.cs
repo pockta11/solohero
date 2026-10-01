@@ -39,7 +39,8 @@ namespace SoloHero.Core.Stage
                 bonus.BootsCritBonus,
                 default,
                 SkillService.OwnedAtkBonus(balance, save),
-                TalentService.Effects(save));
+                TalentService.Effects(save),
+                save.promotionTier);
         }
 
         public static void Apply(StageRunner runner, BalanceValues balance, SaveDataV2 save)
@@ -47,6 +48,9 @@ namespace SoloHero.Core.Stage
             if (runner == null) throw new ArgumentNullException(nameof(runner));
 
             runner.SetHeroStats(ComputeStats(balance, save));
+            int companion = SoloHero.Core.Companions.CompanionCatalog.IndexOf(save.companionEquipped);
+            runner.Companion.Set(companion >= 0 ? SoloHero.Core.Companions.CompanionCatalog.All[companion] : null,
+                SoloHero.Core.Companions.CompanionService.Level(save, companion));
             runner.SetTalents(TalentService.Effects(save));
             for (int slot = 0; slot < runner.Skills.SlotCount; slot++)
             {

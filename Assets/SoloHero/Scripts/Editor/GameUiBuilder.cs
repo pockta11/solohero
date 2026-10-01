@@ -33,6 +33,12 @@ namespace SoloHero.Editor
         private const string SettingsPopupName = "SettingsPopup";
         private const string DailyName = "DailyPopup";
         private const string DungeonName = "DungeonPopup";
+        private const string CompanionName = "CompanionPopup";
+        private static readonly string[] CompanionArtPaths =
+        {
+            "Assets/SoloHero/Data/Art/Pet_Slime.asset", "Assets/SoloHero/Data/Art/Pet_Wisp.asset",
+            "Assets/SoloHero/Data/Art/Pet_Owl.asset", "Assets/SoloHero/Data/Art/Pet_Dragon.asset",
+        };
         private const string SettingsWindowName = "SettingsWindow";
         private const string QuitPopupName = "QuitConfirm";
         private const string SafeAreaName = "SafeArea";
@@ -256,7 +262,7 @@ namespace SoloHero.Editor
             UnwrapSafeArea(hud.transform);
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
-            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, BossIntroName, FlashName })
+            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, CompanionName, BossIntroName, FlashName })
             {
                 Transform stale = hud.transform.Find(name);
                 if (stale != null) Object.DestroyImmediate(stale.gameObject);
@@ -297,8 +303,9 @@ namespace SoloHero.Editor
             StageSelectPresenter stageSelect = BuildStageSelect(hud.transform, session);
             DailyPresenter daily = BuildDaily(hud.transform, session, toast);
             DungeonPresenter dungeon = BuildDungeon(hud.transform, session, toast);
-            BuildRails(root, toast, settings, stageSelect, daily, dungeon);
-            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily, dungeon);
+            CompanionPresenter companion = BuildCompanion(hud.transform, session, toast);
+            BuildRails(root, toast, settings, stageSelect, daily, dungeon, companion);
+            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily, dungeon, companion);
             BuildBossIntro(hud.transform, session);
             ScreenFlash flash = BuildFlash(hud.transform);
             WrapSafeArea(hud.transform);
@@ -369,9 +376,23 @@ namespace SoloHero.Editor
             UiFlipbook flipbook = heroRect.gameObject.AddComponent<UiFlipbook>();
             var flipSo = new SerializedObject(flipbook);
             flipSo.FindProperty("_art").objectReferenceValue = heroArt;
+            SerializedProperty flipTiers = flipSo.FindProperty("_tiers");
+            flipTiers.arraySize = 4;
+            for (int t = 0; t < 4; t++)
+                flipTiers.GetArrayElementAtIndex(t).objectReferenceValue = AssetDatabase.LoadAssetAtPath<CharacterArt>(HeroArtPath.Replace("Hero_Knight", "Hero_Knight" + (t + 1)));
             flipSo.FindProperty("_scale").floatValue = PortraitScale(heroArt);
             flipSo.ApplyModifiedPropertiesWithoutUndo();
             heroImage.preserveAspect = false;
+            // D-101 promotion button along the bottom of the portrait window.
+            Button promote = MakeButton("Promote", portrait, 0f, 0f, 1f, 0f, "", 22, out Text promoteLabel, Tone.Gold);
+            RectTransform promoteRect = (RectTransform)promote.transform;
+            promoteRect.anchorMin = new Vector2(0f, 0f);
+            promoteRect.anchorMax = new Vector2(1f, 0f);
+            promoteRect.pivot = new Vector2(0.5f, 0f);
+            promoteRect.offsetMin = new Vector2(10f, 8f);
+            promoteRect.offsetMax = new Vector2(-10f, 52f);
+            TapGuardButton promoteGuard = promote.gameObject.AddComponent<TapGuardButton>();
+            UnityEventTools.AddPersistentListener(promoteGuard.OnTap, presenter.Promote);
             Button poke = portrait.gameObject.AddComponent<Button>();
             poke.transition = Selectable.Transition.None;
             poke.targetGraphic = portraitImage;
@@ -381,9 +402,10 @@ namespace SoloHero.Editor
             RectTransform plate = TopBand("Nameplate", portrait, NameplateTop, NameplateHeight, 12f, 12f);
             UiSkin.Sliced(plate.gameObject.AddComponent<Image>(), UiSkin.Plate);
             plate.GetComponent<Image>().raycastTarget = false;
-            Text heroName = AddText(Inset("Name", plate, 10f, 2f, 84f, 0f), 22, TextAnchor.MiddleLeft);
+            Text heroName = AddText(Inset("Name", plate, 8f, 2f, 70f, 0f), 18, TextAnchor.MiddleLeft);
             heroName.horizontalOverflow = HorizontalWrapMode.Overflow;
-            Localize(heroName, "hero.name");
+            // D-101: the presenter writes the promotion title here (not a fixed localized key).
+            heroName.text = "";
             Text heroLevel = AddText(Inset("Level", plate, 64f, 2f, 10f, 0f), 22, TextAnchor.MiddleRight);
             heroLevel.horizontalOverflow = HorizontalWrapMode.Overflow;
             heroLevel.color = new Color(1f, 0.85f, 0.35f, 1f);
@@ -441,6 +463,9 @@ namespace SoloHero.Editor
             SetArray(so, "_buttons", buttons);
             SetArray(so, "_statTexts", stats);
             so.FindProperty("_heroLevelText").objectReferenceValue = heroLevel;
+            so.FindProperty("_heroNameText").objectReferenceValue = heroName;
+            so.FindProperty("_promoteButton").objectReferenceValue = promoteGuard;
+            so.FindProperty("_promoteLabel").objectReferenceValue = promoteLabel;
             so.FindProperty("_levelPunch").objectReferenceValue = levelPunch;
             so.FindProperty("_expFill").objectReferenceValue = expFill;
             so.FindProperty("_expText").objectReferenceValue = expText;
@@ -1220,7 +1245,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void WrapSafeArea(Transform hud)
         {
-            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, BossIntroName, FlashName };
+            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, CompanionName, BossIntroName, FlashName };
             RectTransform safe = Rect(SafeAreaName, hud, 0f, 0f, 1f, 1f);
             safe.gameObject.AddComponent<SafeAreaFitter>();
             var move = new System.Collections.Generic.List<Transform>();
@@ -1344,7 +1369,7 @@ namespace SoloHero.Editor
         }
 
         /// <summary>E7-14: back key router and the quit confirm popup (last sibling, above every other layer).</summary>
-        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels, DailyPresenter daily, DungeonPresenter dungeon)
+        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels, DailyPresenter daily, DungeonPresenter dungeon, CompanionPresenter companion)
         {
             RectTransform holder = Rect(QuitPopupName, hud, 0f, 0f, 1f, 1f);
             holder.SetAsLastSibling();
@@ -1368,6 +1393,7 @@ namespace SoloHero.Editor
             so.FindProperty("_stageSelect").objectReferenceValue = stageSelect;
             so.FindProperty("_daily").objectReferenceValue = daily;
             so.FindProperty("_dungeon").objectReferenceValue = dungeon;
+            so.FindProperty("_companion").objectReferenceValue = companion;
             so.FindProperty("_panels").objectReferenceValue = panels;
             so.FindProperty("_quitConfirm").objectReferenceValue = popup.gameObject;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -1387,7 +1413,7 @@ namespace SoloHero.Editor
         /// with the count or countdown under them), a folding menu on the right (settings, stage, credits). Both
         /// sit in the sky between the top bar and the battle lane (characters stand at 50%, nothing below 64%).
         /// </summary>
-        private static void BuildRails(RectTransform root, ToastQueue toast, SettingsPresenter settings, StageSelectPresenter stageSelect, DailyPresenter daily, DungeonPresenter dungeon)
+        private static void BuildRails(RectTransform root, ToastQueue toast, SettingsPresenter settings, StageSelectPresenter stageSelect, DailyPresenter daily, DungeonPresenter dungeon, CompanionPresenter companion)
         {
             RectTransform left = Box("LeftRail", root, new Vector2(0f, RailTop), new Vector2(0f, 1f), new Vector2(RailInset, 0f), new Vector2(RailItem + 48f, RailStep * 2f));
             TapGuardButton booster = RailButton(left, "Booster", 0, "coin", Tone.Gold, true, out Text boosterLabel);
@@ -1403,7 +1429,7 @@ namespace SoloHero.Editor
             so.FindProperty("_toast").objectReferenceValue = toast;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            RectTransform right = Box("RightRail", root, new Vector2(1f, RailTop), new Vector2(1f, 1f), new Vector2(-RailInset, 0f), new Vector2(RailItem + 48f, RailMenuButton + 28f + 5f * RailMenuStep));
+            RectTransform right = Box("RightRail", root, new Vector2(1f, RailTop), new Vector2(1f, 1f), new Vector2(-RailInset, 0f), new Vector2(RailItem + 48f, RailMenuButton + 28f + 6f * RailMenuStep));
             RailMenu menu = right.gameObject.AddComponent<RailMenu>();
             Button toggle = MakeButton("Menu", right, 0.5f, 1f, 0.5f, 1f, "", 22, out _, Tone.Gray);
             Place((RectTransform)toggle.transform, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(RailMenuButton, RailMenuButton));
@@ -1414,9 +1440,9 @@ namespace SoloHero.Editor
             RectTransform column = Rect("Items", right, 0f, 0f, 1f, 1f);
             column.offsetMax = new Vector2(0f, -(RailMenuButton + 8f));
             UiSkin.Sliced(column.gameObject.AddComponent<Image>(), UiSkin.Inset);
-            string[] icons = { "star", "crown", "cog", "skull", "book" };
-            string[] keys = { "rail.daily", "rail.dungeon", "rail.settings", "rail.stage", "rail.credits" };
-            UnityAction[] actions = { daily.Open, dungeon.Open, settings.Open, stageSelect.Open, settings.OpenCredits };
+            string[] icons = { "star", "crown", "heart", "cog", "skull", "book" };
+            string[] keys = { "rail.daily", "rail.dungeon", "rail.companion", "rail.settings", "rail.stage", "rail.credits" };
+            UnityAction[] actions = { daily.Open, dungeon.Open, companion.Open, settings.Open, stageSelect.Open, settings.OpenCredits };
             for (int i = 0; i < icons.Length; i++)
             {
                 RectTransform item = Box("Item" + i, column, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -12f - i * RailMenuStep), new Vector2(RailItem, RailMenuStep - 8f));
@@ -1533,6 +1559,68 @@ namespace SoloHero.Editor
             SetArray(so, "_missionLabels", labels);
             so.FindProperty("_gemIcon").objectReferenceValue = UiSkin.Icon("gem");
             so.FindProperty("_goldIcon").objectReferenceValue = UiSkin.Icon("coin");
+            so.ApplyModifiedPropertiesWithoutUndo();
+            popup.gameObject.SetActive(false);
+            return presenter;
+        }
+
+        /// <summary>D-102 companions popup: four rows (portrait, name and level, attack or unlock stage, equip, level up).</summary>
+        private static CompanionPresenter BuildCompanion(Transform hud, CombatSession session, ToastQueue toast)
+        {
+            RectTransform holder = Rect(CompanionName, hud, 0f, 0f, 1f, 1f);
+            holder.SetAsLastSibling();
+            CompanionPresenter presenter = holder.gameObject.AddComponent<CompanionPresenter>();
+
+            RectTransform popup = Rect("Popup", holder, 0f, 0f, 1f, 1f);
+            popup.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.88f);
+            RectTransform box = Rect("Box", popup, 0.04f, 0.22f, 0.96f, 0.78f);
+            UiSkin.Sliced(box.gameObject.AddComponent<Image>(), UiSkin.Frame);
+            Localize(MakeText("Title", box, 0.05f, 0.9f, 0.95f, 0.98f, "", 42, TextAnchor.MiddleCenter), "companion.title");
+
+            var portraits = new Image[4];
+            var names = new Text[4];
+            var infos = new Text[4];
+            var equips = new Button[4];
+            var equipLabels = new Text[4];
+            var levels = new Button[4];
+            var levelLabels = new Text[4];
+            for (int i = 0; i < 4; i++)
+            {
+                float y1 = 0.88f - i * 0.195f;
+                RectTransform row = Rect("Row" + i, box, 0.04f, y1 - 0.18f, 0.96f, y1);
+                UiSkin.Sliced(row.gameObject.AddComponent<Image>(), UiSkin.Card);
+                RectTransform face = Box("Portrait", row, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), new Vector2(144f, 144f));
+                portraits[i] = Plain(face, null);
+                portraits[i].preserveAspect = true;
+                names[i] = MakeText("Name", row, 0.2f, 0.52f, 0.62f, 0.92f, "", 30, TextAnchor.MiddleLeft);
+                infos[i] = MakeText("Info", row, 0.2f, 0.1f, 0.62f, 0.5f, "", 24, TextAnchor.MiddleLeft);
+                equips[i] = MakeButton("Equip", row, 0.63f, 0.54f, 0.97f, 0.92f, "", 26, out equipLabels[i], Tone.Blue);
+                UnityEventTools.AddIntPersistentListener(equips[i].onClick, presenter.Equip, i);
+                levels[i] = MakeButton("Level", row, 0.63f, 0.1f, 0.97f, 0.48f, "", 26, out levelLabels[i], Tone.Green);
+                IconButton(levels[i], levelLabels[i], "coin", 26f);
+                levels[i].gameObject.AddComponent<HoldRepeat>();
+                UnityEventTools.AddIntPersistentListener(levels[i].onClick, presenter.LevelUp, i);
+            }
+
+            Button close = MakeButton("Close", box, 0.3f, 0.02f, 0.7f, 0.09f, "", 32, out Text closeLabel, Tone.Gray);
+            Localize(closeLabel, "companion.close");
+            UnityEventTools.AddPersistentListener(close.onClick, presenter.Close);
+
+            var arts = new CharacterArt[CompanionArtPaths.Length];
+            for (int i = 0; i < arts.Length; i++) arts[i] = AssetDatabase.LoadAssetAtPath<CharacterArt>(CompanionArtPaths[i]);
+
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
+            so.FindProperty("_session").objectReferenceValue = session;
+            so.FindProperty("_toast").objectReferenceValue = toast;
+            SetArray(so, "_arts", arts);
+            SetArray(so, "_portraits", portraits);
+            SetArray(so, "_names", names);
+            SetArray(so, "_infos", infos);
+            SetArray(so, "_equipButtons", equips);
+            SetArray(so, "_equipLabels", equipLabels);
+            SetArray(so, "_levelButtons", levels);
+            SetArray(so, "_levelLabels", levelLabels);
             so.ApplyModifiedPropertiesWithoutUndo();
             popup.gameObject.SetActive(false);
             return presenter;

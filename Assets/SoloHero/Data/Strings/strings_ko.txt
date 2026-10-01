@@ -295,3 +295,28 @@ dungeon.over	종료!
 dungeon.earned	+{0}
 dungeon.result_gold	골드 던전 완료: 골드 +{0}
 dungeon.result_exp	경험치 던전 완료: 경험치 +{0}
+
+# Promotion (D-101)
+hero.tier0	견습 기사
+hero.tier1	기사
+hero.tier2	성기사
+hero.tier3	용기사
+hero.tier4	영웅
+char.promote_lv	승급 Lv{0}
+char.promote_cost	승급 {0}
+char.promote_max	최고 등급
+char.promoted	{0}(으)로 승급! 체력·공격력·방어력 +{1}%
+
+# Companions (D-102)
+rail.companion	동료
+companion.title	동료
+companion.row	{0}  Lv {1}
+companion.attack	공격력 {0}% · {1}초마다
+companion.unlock	{0} 보스 처치 시 합류
+companion.equip	장착
+companion.equipped	장착 중
+companion.close	닫기
+companion.name.slime	슬라임
+companion.name.wisp	정령
+companion.name.owl	부엉이
+companion.name.dragon	아기 용

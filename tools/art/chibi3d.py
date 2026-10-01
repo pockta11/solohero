@@ -69,6 +69,27 @@ PAL = {
     "helm": ["#7a88b0", "#c4d2ea", "#f4f8ff"],
     "plume": ["#b8283c", "#ee4454", "#ff8a86"],
     "shield": ["#2e4fb0", "#4c7ae6", "#90b8ff"],
+    # Promotion tiers (D-101)
+    "helm_gold": ["#c8862a", "#ffd25a", "#fff4b0"],
+    "helm_dark": ["#3a3050", "#5c4f80", "#8f80b8"],
+    "plume_blue": ["#2a4ab0", "#4a7ae6", "#9ec0ff"],
+    "plume_purple": ["#5a2a90", "#8a4ad0", "#c890ff"],
+    "plume_white": ["#b8c0d8", "#f0f4ff", "#ffffff"],
+    "tunic_white": ["#a8b0c8", "#e8ecf8", "#ffffff"],
+    "tunic_purple": ["#3a2a6a", "#5a40a0", "#8a70d0"],
+    "tunic_crimson": ["#8a1e2e", "#c83040", "#ff7080"],
+    "cape_blue": ["#2a3a90", "#3e5ad0", "#7ea0ff"],
+    "cape_purple": ["#3a1e5a", "#5e3290", "#9a6ad0"],
+    "cape_gold": ["#b07018", "#f0b030", "#ffe08a"],
+    "blade_crystal": ["#3a8ad0", "#8ae0ff", "#ffffff"],
+    # Companions (D-102)
+    "slime": ["#3a9a4a", "#6ad86a", "#c8ffb0"],
+    "wisp": ["#4a8ae0", "#8ad0ff", "#e8fbff"],
+    "owl": ["#6a4a30", "#9a6e48", "#c8a070"],
+    "owl_face": ["#c8b8a0", "#f0e6d4", "#ffffff"],
+    "beak": ["#d07a20", "#ffb040", "#ffe090"],
+    "dragon": ["#a02a30", "#e04848", "#ff9a8a"],
+    "belly": ["#d8a860", "#ffd890", "#fff4c8"],
     # Golem
     "stone": ["#4e4462", "#8a809e", "#c8c0d2"],
     "stone_dark": ["#3e3652", "#6a6284", "#9e96b4"],
@@ -100,6 +121,15 @@ NOLINES = ["smear0", "smear1", "smear2"]
 HERO = dict(R=13.0, frame=(96, 72), foot_x=40, mirror=False, folder="Hero", name="knight", skin="skin",
             head="helmet", body="tunic", cloth="tunic", legs="pants", boots="boots", weapon="sword", shield=True,
             cape=True, eyes="cute", hair=True)
+# D-101 promotion looks: the same knight with tier colours (helm, plume, tunic, cape, shield, blade) and extras.
+TIERS = {
+    "knight1": dict(plume="plume_blue", cloth="tunic", cape_mat="cape_blue"),
+    "knight2": dict(helm="helm_gold", plume="plume_white", cloth="tunic_white", cape_mat="cape", shield_mat="gold"),
+    "knight3": dict(helm="helm_dark", plume="plume_purple", cloth="tunic_purple", cape_mat="cape_purple", blade="blade_crystal"),
+    "knight4": dict(helm="helm_gold", plume="plume", cloth="tunic_crimson", cape_mat="cape_gold", shield_mat="gold",
+                    blade="blade_crystal", wings=True),
+}
+
 LOOKS = {
     "knight": HERO,
     "goblin": dict(R=10.0, skin="goblin", head="goblin", body="tunic", cloth="brown", legs="leather", weapon="club", eyes="cute"),
@@ -117,6 +147,12 @@ LOOKS = {
     "firemage": dict(R=17.0, skin="skin", head="wizard", hat="red", body="robe", cloth="red", legs="red", weapon="staff", orb="orb_fire", eyes="cute", boss=True),
     "golem": dict(kind="golem", boss=True),
 }
+for _name, _over in TIERS.items():
+    LOOKS[_name] = dict(HERO, name=_name, **_over)
+
+# D-102 companions: small creatures that float behind the hero; they face right like the hero (not mirrored).
+for _name, _species in (("petslime", "slime"), ("petwisp", "wisp"), ("petowl", "owl"), ("petdragon", "dragon")):
+    LOOKS[_name] = dict(kind="pet", species=_species, R=8.0, frame=(48, 48), foot_x=24, mirror=False, folder="Pets")
 LOOK = LOOKS[ENTITY]
 if LOOK.get("boss"):
     LOOK.setdefault("frame", (128, 112))
@@ -473,7 +509,7 @@ def build_humanoid(look):
         cone(cloth, rig.hip, (0, 0, -rig.hip_z * 0.5 + 2.2 * k), 7.2 * k, 4.6 * k, rig.hip_z + 4.4 * k)
     if look.get("cape"):
         rig.cape = empty("cape", rig.hip, (-2.6 * k, 0, 8.4 * k))
-        ellip("cape", rig.cape, (-0.6 * k, 0, -4.6 * k), (1.0 * k, 4.6 * k, 5.6 * k))
+        ellip(look.get("cape_mat", "cape"), rig.cape, (-0.6 * k, 0, -4.6 * k), (1.0 * k, 4.6 * k, 5.6 * k))
 
     # Legs: thigh + shin from the hip, a boot kept level.
     rig.legs = {}
@@ -509,7 +545,7 @@ def build_humanoid(look):
     face = Face(rig.head, hc, head_r, head_id)
     kind = look["head"]
     if kind in ("helmet", "hood"):
-        shell = "helm" if kind == "helmet" else look["hood"]
+        shell = look.get("helm", "helm") if kind == "helmet" else look["hood"]
         ellip(shell, rig.head, (hc[0] - 0.06 * R, 0, hc[2] + 0.06 * R), (1.1 * R, 1.08 * R, 1.06 * R))
         fc = (hc[0] + 0.3 * R, 0, hc[2] - 0.12 * R)
         fr = (0.9 * R, 0.92 * R, 0.86 * R)
@@ -517,7 +553,11 @@ def build_humanoid(look):
         ellip(skin, rig.head, fc, fr, line_id=face_id)
         face = Face(rig.head, fc, fr, face_id)
         if kind == "helmet":
-            ellip("plume", rig.head, (hc[0] - 0.15 * R, 0, hc[2] + 1.12 * R), (0.62 * R, 0.2 * R, 0.32 * R), (0, rad(-15), 0))
+            ellip(look.get("plume", "plume"), rig.head, (hc[0] - 0.15 * R, 0, hc[2] + 1.12 * R), (0.62 * R, 0.2 * R, 0.32 * R), (0, rad(-15), 0))
+            if look.get("wings"):
+                for sgn in (-1, 1):
+                    ellip("plume_white", rig.head, (hc[0] - 0.25 * R, sgn * 1.02 * R, hc[2] + 0.45 * R),
+                          (0.5 * R, 0.1 * R, 0.24 * R), (sgn * rad(-25), rad(-35), 0))
         if look.get("hair"):
             ellip("hair", rig.head, (fc[0] + 0.25 * R, 0, fc[2] + 0.5 * R), (0.32 * R, 0.55 * R, 0.16 * R), (0, rad(-25), 0), line_id=face_id)
         if kind == "hood":
@@ -563,7 +603,7 @@ def build_humanoid(look):
         if w == "sword":
             cyl("leather", wp, (0, 0, 0), 0.8 * k, 3.2 * k, (0, rad(90), 0))
             box("gold", wp, (1.9 * k, 0, 0), (0.9 * k, 1.2 * k, 4.2 * k))
-            box("steel", wp, (7.6 * k, 0, 0), (10.5 * k, 0.6 * k, 2.6 * k), taper=0.35)
+            box(look.get("blade", "steel"), wp, (7.6 * k, 0, 0), (10.5 * k, 0.6 * k, 2.6 * k), taper=0.35)
         elif w == "club":
             cone("wood", wp, (4.2 * k, 0, 0), 1.0 * k, 2.4 * k, 10.0 * k, (0, rad(90), 0))
         elif w == "katana":
@@ -585,7 +625,7 @@ def build_humanoid(look):
         rig.bow = bow
     if look.get("shield"):
         sh = empty("shield", hand_b)
-        cyl("shield", sh, (0, -1.2 * k, 0), 4.6 * k, 1.0 * k, (rad(90), 0, 0))
+        cyl(look.get("shield_mat", "shield"), sh, (0, -1.2 * k, 0), 4.6 * k, 1.0 * k, (rad(90), 0, 0))
         torus("gold", sh, (0, -1.8 * k, 0), 4.6 * k, 0.55 * k, (rad(90), 0, 0))
         ellip("gold", sh, (0, -2.0 * k, 0), (1.2 * k, 0.6 * k, 1.2 * k))
         rig.shield = sh
@@ -638,6 +678,76 @@ def pose_humanoid(rig, look, p):
 
 
 # ---------------------------------------------------------------- flying eye
+
+def build_pet(look):
+    """D-102 companion: a round body with cute eyes and species parts (slime, wisp, owl, baby dragon)."""
+    R = look["R"]
+    sp = look["species"]
+    rig = Rig()
+    rig.k, rig.R = 1.0, R
+    root = empty("root", rot=(0, 0, rad(-78.0)))
+    rig.fall = empty("fall", root)
+    rig.hip = empty("hip", rig.fall)
+    rig.hip_z = R if sp == "slime" else R + 6.0
+    rig.body = empty("body", rig.hip)
+    body_mat = {"slime": "slime", "wisp": "wisp", "owl": "owl", "dragon": "dragon"}[sp]
+    radii = (R * 1.1, R, R * 0.85) if sp == "slime" else (R, R * 0.95, R)
+    body_id = new_id()
+    ellip(body_mat, rig.body, (0, 0, 0), radii, line_id=body_id)
+    face = Face(rig.body, (0, 0, 0), radii, body_id)
+    if sp == "owl":
+        face_id = new_id()
+        fc, fr = (0.45 * R, 0, 0.1 * R), (0.62 * R, 0.8 * R, 0.62 * R)
+        ellip("owl_face", rig.body, fc, fr, line_id=face_id)
+        face = Face(rig.body, fc, fr, face_id)
+        for sgn in (-1, 1):
+            cone("owl", rig.body, (-0.1 * R, sgn * 0.55 * R, 0.85 * R), 0.25 * R, 0.0, 0.6 * R, (sgn * rad(-25), rad(-10), 0))
+        cone("beak", rig.body, (fc[0] + 0.6 * R, 0, fc[2] - 0.15 * R), 0.16 * R, 0.0, 0.35 * R, (0, rad(110), 0), verts=6, smooth=False)
+    if sp == "dragon":
+        ellip("belly", rig.body, (0.55 * R, 0, -0.3 * R), (0.45 * R, 0.6 * R, 0.55 * R))
+        for sgn in (-1, 1):
+            cone("bone", rig.body, (-0.05 * R, sgn * 0.45 * R, 0.85 * R), 0.16 * R, 0.0, 0.55 * R, (sgn * rad(-15), rad(-25), 0))
+        cone("dragon", rig.body, (-1.05 * R, 0, -0.35 * R), 0.35 * R, 0.05 * R, 1.0 * R, (0, rad(-110), 0))
+    if sp == "wisp":
+        for i in range(3):
+            ellip("wisp", rig.body, (-(1.1 + i * 0.45) * R, 0, -0.15 * R * i), (0.4 * R * (1 - i * 0.25),) * 3)
+    rig.eyes = Eyes(face, "cute", R, az=24.0, el=-6.0, w=0.2, h=0.3)
+    face.decal("blush", -48, -22, (0.04 * R, 0.17 * R, 0.09 * R))
+    face.decal("blush", 48, -22, (0.04 * R, 0.17 * R, 0.09 * R))
+    rig.wings = []
+    if sp in ("wisp", "owl", "dragon"):
+        wing_mat = {"wisp": "white", "owl": "owl", "dragon": "wing_r"}[sp]
+        for sgn in (-1, 1):
+            pivot = empty("wing", rig.body, (-0.25 * R, sgn * 0.8 * R, 0.25 * R))
+            ellip(wing_mat, pivot, (-0.2 * R, sgn * 0.6 * R, 0.2 * R), (0.5 * R, 0.75 * R, 0.16 * R), (sgn * rad(-25), 0, 0))
+            rig.wings.append((pivot, sgn))
+    return rig
+
+
+def pose_pet(rig, look, p):
+    rig.hip.location = (p["bx"], 0, rig.hip_z + p["by"])
+    rig.body.rotation_euler = (0, rad(p["lean"]), 0)
+    sq = p["squash"]
+    rig.body.scale = (1 + sq * 0.15, 1 + sq * 0.15, 1 - sq * 0.2)
+    for pivot, sgn in rig.wings:
+        pivot.rotation_euler = (sgn * rad(-40.0 * p["wing"]), 0, 0)
+    rig.eyes.set(p["eyes"])
+
+
+def pet_clips(look):
+    slime = look["species"] == "slime"
+    idle = []
+    for i in range(N):
+        s = math.sin(i / N * math.tau)
+        if slime:
+            idle.append(pose(by=max(0.0, s) * 2.0, squash=max(0.0, -s) * 0.6, eyes="closed" if i in BLINK else "open"))
+        else:
+            idle.append(pose(by=s * 1.5, wing=math.sin(2 * i / N * math.tau), eyes="closed" if i in BLINK else "open"))
+    attack = [pose(bx=-1, lean=-10, squash=0.3), pose(bx=-2, lean=-15, squash=0.5, eyes="angry"),
+              pose(bx=4, lean=20, by=1, squash=-0.2, wing=1.0, eyes="angry"), pose(bx=5, lean=18, wing=-1.0),
+              pose(bx=2, lean=6), pose()]
+    return {"idle": idle, "attack": resample(attack, 8)}
+
 
 def build_flyeye(look):
     R = look["R"]
@@ -960,15 +1070,18 @@ def smear_objects(rig, arc):
 
 def main():
     kind = LOOK.get("kind")
-    if ENTITY == "knight":
+    if ENTITY.startswith("knight"):
         rig, clips, poser = build_humanoid(LOOK), hero_clips(), pose_humanoid
     elif kind == "flyeye":
         rig, clips, poser = build_flyeye(LOOK), cast_clips(LOOK), pose_flyeye
     elif kind == "golem":
         rig, clips, poser = build_golem(LOOK), cast_clips(LOOK), pose_golem
+    elif kind == "pet":
+        rig, clips, poser = build_pet(LOOK), pet_clips(LOOK), pose_pet
     else:
         rig, clips, poser = build_humanoid(LOOK), cast_clips(LOOK), pose_humanoid
-    clips = finish_clips(clips)
+    if kind != "pet":
+        clips = finish_clips(clips)
     out = os.path.join(OUT_ROOT, ENTITY)
     os.makedirs(out, exist_ok=True)
     meta = {"entity": ENTITY, "name": LOOK["name"], "folder": LOOK["folder"], "frame": [W, H], "scale": SCALE,

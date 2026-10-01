@@ -11,6 +11,9 @@ namespace SoloHero.Core.Combat
         Dot = 3,
 
         /// <summary>A skill hit that landed a combo (D-098: shatter on a stunned enemy, ignite on a burning one).</summary>
-        Combo = 4
+        Combo = 4,
+
+        /// <summary>D-102: the equipped companion's attack.</summary>
+        Companion = 5
     }
 }

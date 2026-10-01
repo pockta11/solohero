@@ -21,7 +21,8 @@ namespace SoloHero.Core.Growth
             double bootsCritBonus = 0d,
             BuffSet buffs = default,
             double skillOwnedAtk = 0d,
-            TalentEffects talents = null)
+            TalentEffects talents = null,
+            int promotionTier = 0)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             TalentEffects t = talents ?? TalentEffects.None;
@@ -29,15 +30,18 @@ namespace SoloHero.Core.Growth
             double levelBonus = heroLevel - 1;
             double upg = balance.UPG_STAT_MULT;
             double buffAtk = 1d + buffs.SumAtk;
+            double promo = Formulas.PromotionMult(balance, promotionTier);
 
             double hp = (balance.HP_BASE + balance.LEVEL_HP_GAIN * levelBonus)
                 * Math.Pow(upg, upgradeHp)
                 * armorMult
+                * promo
                 * (1d + t.HpPct);
 
             double atk = (balance.ATK_BASE + balance.LEVEL_ATK_GAIN * levelBonus)
                 * Math.Pow(upg, upgradeAtk)
                 * swordMult
+                * promo
                 * (1d + skillOwnedAtk)
                 * (1d + t.AtkPct)
                 * buffAtk;
@@ -45,6 +49,7 @@ namespace SoloHero.Core.Growth
             double def = balance.DEF_BASE
                 * Math.Pow(upg, upgradeDef)
                 * helmMult
+                * promo
                 * (1d + t.DefPct);
 
             double atkSpdMax = balance.ATKSPD_BASE + balance.UPG_GAIN_SPD * balance.UPG_MAX_LEVEL_SPD;

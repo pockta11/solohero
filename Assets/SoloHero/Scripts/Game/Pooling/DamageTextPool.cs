@@ -31,6 +31,8 @@ namespace SoloHero.Game.Pooling
         [SerializeField] private int _dotSize = 33;
         [SerializeField] private Color _comboColor = new Color(0.86f, 0.55f, 1f, 1f);
         [SerializeField] private int _comboSize = 46;
+        [SerializeField] private Color _companionColor = new Color(0.6f, 1f, 0.5f, 1f);
+        [SerializeField] private int _companionSize = 38;
 
         private const float NormalJitterPixels = 10f;
         private const int StackSlots = 8;
@@ -131,6 +133,7 @@ namespace SoloHero.Game.Pooling
                 case HitKind.Skill: color = _skillColor; size = _skillSize; break;
                 case HitKind.Dot: color = _dotColor; size = _dotSize; break;
                 case HitKind.Combo: color = _comboColor; size = _comboSize; break;
+                case HitKind.Companion: color = _companionColor; size = _companionSize; break;
                 default: color = _normalColor; size = _normalSize; break;
             }
 

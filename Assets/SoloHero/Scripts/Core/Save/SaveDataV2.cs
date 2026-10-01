@@ -23,6 +23,13 @@ namespace SoloHero.Core.Save
         public int heroLevel = 1;
         public double heroExp;
 
+        /// <summary>D-101 promotion tier 0..4: hero look and an HP / ATK / DEF multiplier.</summary>
+        public int promotionTier;
+
+        /// <summary>D-102 companions: the equipped id ("" none; every save starts with the slime) and levels index-aligned with CompanionCatalog.</summary>
+        public string companionEquipped = "slime";
+        public List<int> companionLevels = new List<int>();
+
         public int upgradeHp;
         public int upgradeAtk;
         public int upgradeDef;

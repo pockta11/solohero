@@ -17,6 +17,7 @@ namespace SoloHero.Game.UI.Panels
     /// <summary>
     /// Character panel (E7-05): gold portrait window (idle flipbook, nameplate with level), EXP + 6 stat chips, and
     /// 4 upgrade tiles with level, current -> next value, cost and MAX state. Upgrade buttons repeat while held.
+    /// D-101: the nameplate shows the promotion title and a button under the portrait promotes the hero.
     /// </summary>
     public sealed class CharacterPanelPresenter : MonoBehaviour
     {
@@ -34,11 +35,18 @@ namespace SoloHero.Game.UI.Panels
         [Tooltip("HP, ATK, DEF, attack speed, crit rate, crit damage.")]
         [SerializeField] private Text[] _statTexts = new Text[6];
         [SerializeField] private UiPunch _levelPunch;
+        [SerializeField] private Text _heroNameText;
+        [SerializeField] private TapGuardButton _promoteButton;
+        [SerializeField] private Text _promoteLabel;
 
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
 
+        /// <summary>D-101 promotion titles by tier.</summary>
+        private static readonly string[] TierKeys = { "hero.tier0", "hero.tier1", "hero.tier2", "hero.tier3", "hero.tier4" };
+
         private UpgradeService _upgrade;
+        private PromotionService _promotion;
         private BalanceValues _balance;
         private SaveDataV2 _save;
         private AudioService _audio;
@@ -49,6 +57,7 @@ namespace SoloHero.Game.UI.Panels
         private void OnEnable()
         {
             _upgrade = PanelServices.TryGet<UpgradeService>();
+            _promotion = PanelServices.TryGet<PromotionService>();
             _balance = PanelServices.TryGet<BalanceValues>();
             _save = PanelServices.TryGet<SaveDataV2>();
             _audio = PanelServices.TryGet<AudioService>();
@@ -90,9 +99,55 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
+        public void Promote()
+        {
+            if (_promotion == null) return;
+            Result result = _promotion.TryPromote();
+            if (!result.Ok)
+            {
+                if (_toast != null) _toast.ShowFailure(result.Reason);
+                return;
+            }
+
+            if (_session != null) _session.RefreshLoadout();
+            if (_toast != null)
+                _toast.Show(Strings.Format("char.promoted", Strings.Get(TierKeys[_promotion.Tier]),
+                    ((_balance.PROMOTE_STAT_MULT - 1d) * 100d).ToString("0", CultureInfo.InvariantCulture)));
+            _audio?.Play(SfxId.LevelUp);
+            if (_levelPunch != null) _levelPunch.Play();
+            Refresh();
+        }
+
+        private void RefreshPromotion()
+        {
+            if (_promotion == null) return;
+            int tier = _promotion.Tier;
+            if (_heroNameText != null) _heroNameText.text = Strings.Get(TierKeys[tier]);
+            if (_promoteButton == null || _promoteLabel == null) return;
+            if (_promotion.IsMax)
+            {
+                _promoteLabel.text = Strings.Get("char.promote_max");
+                _promoteButton.SetAvailable(false);
+                return;
+            }
+
+            int need = _promotion.RequiredLevel(tier + 1);
+            if (_save.heroLevel < need)
+            {
+                _promoteLabel.text = Strings.Format("char.promote_lv", need);
+                _promoteButton.SetAvailable(false);
+                return;
+            }
+
+            double cost = _promotion.Cost(tier + 1);
+            _promoteLabel.text = Strings.Format("char.promote_cost", BigNumberFormat.Format(cost));
+            _promoteButton.SetAvailable(_save.gold >= cost);
+        }
+
         private void Refresh()
         {
             if (_upgrade == null || _balance == null || _save == null) return;
+            RefreshPromotion();
             _shownGold = _save.gold;
             _shownLevel = _save.heroLevel;
 

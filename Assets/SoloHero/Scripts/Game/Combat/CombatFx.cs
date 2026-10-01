@@ -146,6 +146,13 @@ namespace SoloHero.Game.Combat
         private void OnHitLanded(EnemyBrain target, double amount, HitKind kind)
         {
             // Skill hits bring their own clip and sound; burn ticks stay quiet.
+            // D-102: CompanionView plays the companion's own effect; only the hit sound here.
+            if (kind == HitKind.Companion)
+            {
+                Play(SfxId.Hit);
+                return;
+            }
+
             if (kind == HitKind.Combo)
             {
                 Play(SfxId.Crit);

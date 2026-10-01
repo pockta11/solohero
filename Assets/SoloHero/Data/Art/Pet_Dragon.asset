@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 934de9d630de4cc3b81407134a6797ef, type: 3}
+  m_Name: Pet_Dragon
+  m_EditorClassIdentifier: 
+  idle:
+  - {fileID: 8077267563235959111, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -9079061776848636197, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: 6756220286680547540, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -335019025325952678, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -3952769631057206662, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -7287875832566547797, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -1817663792933230206, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: 6808948929278317574, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -7046567633298058590, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: 3006216412841616486, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -6420464579270458202, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: 2065930182562234457, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  run:
+  - {fileID: 8077267563235959111, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -9079061776848636197, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: 6756220286680547540, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -335019025325952678, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -3952769631057206662, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -7287875832566547797, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -1817663792933230206, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: 6808948929278317574, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -7046567633298058590, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: 3006216412841616486, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: -6420464579270458202, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  - {fileID: 2065930182562234457, guid: 8dbcea937cab488498b45c521bf4734f, type: 3}
+  attack:
+  - {fileID: 708317351329556222, guid: eec1cd84c4bfd054d83d6ee2fb0d84ac, type: 3}
+  - {fileID: 6476890931132926584, guid: eec1cd84c4bfd054d83d6ee2fb0d84ac, type: 3}
+  - {fileID: 2590580369653634433, guid: eec1cd84c4bfd054d83d6ee2fb0d84ac, type: 3}
+  - {fileID: 9105793498683511590, guid: eec1cd84c4bfd054d83d6ee2fb0d84ac, type: 3}
+  - {fileID: -2910775107342796141, guid: eec1cd84c4bfd054d83d6ee2fb0d84ac, type: 3}
+  - {fileID: 6670572532654374293, guid: eec1cd84c4bfd054d83d6ee2fb0d84ac, type: 3}
+  - {fileID: 399727007012779112, guid: eec1cd84c4bfd054d83d6ee2fb0d84ac, type: 3}
+  - {fileID: 7456484296344662185, guid: eec1cd84c4bfd054d83d6ee2fb0d84ac, type: 3}
+  hit: []
+  dead: []
+  fps: 20
+  pixelScale: 1
+  headHeight: 0.6875

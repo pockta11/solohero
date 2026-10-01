@@ -12,6 +12,9 @@ namespace SoloHero.Game.UI.Common
     public sealed class UiFlipbook : MonoBehaviour
     {
         [SerializeField] private CharacterArt _art;
+
+        [Tooltip("D-101: promotion looks for tiers 1..4, picked from the saved tier; empty keeps _art.")]
+        [SerializeField] private CharacterArt[] _tiers = new CharacterArt[0];
         [Tooltip("Canvas units per sprite pixel; keep it an integer so the pixel grid stays even.")]
         [SerializeField] private float _scale = 3f;
 
@@ -21,9 +24,34 @@ namespace SoloHero.Game.UI.Common
         private int _shown = -1;
         private bool _oneShot;
 
-        private void Awake() => _image = GetComponent<Image>();
+        private CharacterArt _baseArt;
 
-        private void OnEnable() => PlayIdle();
+        private void Awake()
+        {
+            _image = GetComponent<Image>();
+            _baseArt = _art;
+        }
+
+        private SoloHero.Core.Save.SaveDataV2 _save;
+        private int _tierShown = -1;
+
+        private void OnEnable()
+        {
+            _save = SoloHero.Game.UI.Panels.PanelServices.TryGet<SoloHero.Core.Save.SaveDataV2>();
+            PickTier();
+            PlayIdle();
+        }
+
+        /// <summary>Switches to the art of the saved promotion tier; true when it changed.</summary>
+        private bool PickTier()
+        {
+            int tier = _save != null ? _save.promotionTier : 0;
+            if (tier == _tierShown) return false;
+            _tierShown = tier;
+            if (tier >= 1 && tier <= _tiers.Length && _tiers[tier - 1] != null) _art = _tiers[tier - 1];
+            else if (_tiers.Length > 0 && _baseArt != null) _art = _baseArt;
+            return true;
+        }
 
         public void Poke()
         {
@@ -48,6 +76,12 @@ namespace SoloHero.Game.UI.Common
 
         private void Update()
         {
+            if (PickTier())
+            {
+                PlayIdle();
+                return;
+            }
+
             if (_clip == null || _art == null) return;
             float fps = _art.fps > 0f ? _art.fps : 10f;
             _time += Time.unscaledDeltaTime;

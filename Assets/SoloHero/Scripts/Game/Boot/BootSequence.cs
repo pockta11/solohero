@@ -120,6 +120,8 @@ namespace SoloHero.Game.Boot
         private void RegisterGrowth(BalanceValues balance, ISaveRequester requester)
         {
             Services.Register(new UpgradeService(_data, balance, requester));
+            Services.Register(new PromotionService(_data, balance, requester));
+            Services.Register(new SoloHero.Core.Companions.CompanionService(_data, balance, requester));
             Services.Register(new SkillService(_data, balance, requester));
             Services.Register(new SoloHero.Core.Talents.TalentService(_data, balance, requester));
             Services.Register(new EquipService(requester));
