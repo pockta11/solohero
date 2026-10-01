@@ -265,7 +265,8 @@ namespace SoloHero.Game.Combat
         private void UpdateMusic(StageRunner runner)
         {
             if (_audio == null) return;
-            bool boss = runner.IsBoss && (runner.State == StageState.BossIntro || runner.State == StageState.BossTimer);
+            // D-100: a dungeon run plays the boss track too - it is the short, intense part of the day.
+            bool boss = runner.InDungeon || (runner.IsBoss && (runner.State == StageState.BossIntro || runner.State == StageState.BossTimer));
             StageIndex.FromGlobal(runner.GlobalStage, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
             if (boss == _bossMusic && chapter == _musicChapter) return;
             _bossMusic = boss;

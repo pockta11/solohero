@@ -284,7 +284,8 @@ namespace SoloHero.Game.UI
 
             _shownKills = runner.Kills;
             _shownKillTarget = runner.KillTarget;
-            _killsText.text = _shownKills.ToString() + " / " + _shownKillTarget.ToString();
+            // D-100: a dungeon has no kill target, only a running count.
+            _killsText.text = runner.InDungeon ? _shownKills.ToString() : _shownKills.ToString() + " / " + _shownKillTarget.ToString();
         }
 
         private void RefreshBossTimer(StageRunner runner)
@@ -306,7 +307,7 @@ namespace SoloHero.Game.UI
             bool failed = runner.State == StageState.Failed;
             SetShown(_failPanel, failed, ref _failPanelVisible);
             SetShown(_retreatButton, failed && runner.IsBoss, ref _retreatVisible);
-            SetShown(_challengeButton, runner.RetreatMode, ref _challengeVisible);
+            SetShown(_challengeButton, runner.RetreatMode && !runner.InDungeon, ref _challengeVisible);
         }
 
         private void HideChoices()

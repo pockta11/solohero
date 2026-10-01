@@ -33,6 +33,12 @@ namespace SoloHero.Core.Stage
         private float _retryTimer;
         private int _failedG;
         private bool _failedWasBoss;
+        private readonly ISaveRequester _saveRequester;
+        private DungeonKind _dungeon;
+        private float _dungeonTimer;
+        private float _resultTimer;
+        private int _returnG;
+        private bool _returnRetreat;
 
         public StageRunner(BalanceValues balance, IRandom random, HeroStats stats, SaveDataV2 save, ISaveRequester saveRequester = null)
         {
@@ -41,6 +47,7 @@ namespace SoloHero.Core.Stage
             _save = save ?? throw new ArgumentNullException(nameof(save));
             _stats = stats;
             _stageReward = new StageReward(_save, _balance, saveRequester);
+            _saveRequester = saveRequester;
             _world = new CombatWorld(_balance);
             _spawner = new SpawnScheduler(_balance);
             _skills = new SkillAutoCaster(_balance);
@@ -71,9 +78,53 @@ namespace SoloHero.Core.Stage
         /// <summary>Raised at the end of every <see cref="Begin"/>, even when the state enum does not change.</summary>
         public event Action<int> StageStarted;
 
+        /// <summary>D-100: the dungeon run that is in progress (or showing its result), None otherwise.</summary>
+        public DungeonKind Dungeon => _dungeon;
+        public bool InDungeon => _dungeon != DungeonKind.None;
+        public float DungeonTimeRemaining => _dungeonTimer > 0f ? _dungeonTimer : 0f;
+
+        /// <summary>Gold or EXP earned in the current dungeon run (already added to the save, kill by kill).</summary>
+        public double DungeonEarned { get; private set; }
+
+        /// <summary>Raised once when a dungeon run ends (time up or hero down), with what it earned.</summary>
+        public event Action<DungeonKind, double> DungeonEnded;
+
+        /// <summary>
+        /// D-100: leaves the current stage for a daily dungeon run at the farming stage's strength. Waves keep coming
+        /// for DUNGEON_TIME seconds; every kill pays at once, so an interrupted run keeps what it earned. Afterwards
+        /// the runner returns to the stage it left. Refused during a boss fight or another dungeon.
+        /// </summary>
+        public bool StartDungeon(DungeonKind kind)
+        {
+            if (kind == DungeonKind.None || InDungeon) return false;
+            if (State == StageState.BossIntro || State == StageState.BossTimer) return false;
+            _returnG = _isBoss ? StageIndex.PreviousNormalStage(_g) : _g;
+            _returnRetreat = _retreatMode || _isBoss;
+            int g = _save.farmingStage < 1 ? 1 : _save.farmingStage;
+            if (StageIndex.IsBoss(g, _balance.STAGES_PER_CHAPTER)) g = StageIndex.PreviousNormalStage(g);
+            _g = g < 1 ? 1 : g;
+            _isBoss = false;
+            _killTarget = int.MaxValue;
+            _kills = 0;
+            _cleared = false;
+            _deathTimer = 0f;
+            _dungeonTimer = _balance.DUNGEON_TIME;
+            _resultTimer = 0f;
+            DungeonEarned = 0d;
+            _world.ClearAll();
+            _spawner.Reset(int.MaxValue, false);
+            _skills.ResetCooldowns();
+            _hero.Reset(_stats);
+            _dungeon = kind;
+            // No StageStarted: a dungeon run is not a stage attempt (telemetry counts those).
+            SetState(StageState.Dungeon);
+            return true;
+        }
+
         public void Begin(int g)
         {
             if (g < 1) g = 1;
+            _dungeon = DungeonKind.None;
             _g = g;
             _isBoss = StageIndex.IsBoss(g, _balance.STAGES_PER_CHAPTER);
             _killTarget = _isBoss ? 1 : _balance.KILL_TARGET_NORMAL;
@@ -109,7 +160,7 @@ namespace SoloHero.Core.Stage
         /// <summary>Fail-streak prompt on a normal stage: farm one stage lower. Clearing it moves back up.</summary>
         public bool StepDown()
         {
-            if (!PromptRetreat || _isBoss || _g <= 1) return false;
+            if (InDungeon || !PromptRetreat || _isBoss || _g <= 1) return false;
             if (State != StageState.Failed && State != StageState.Running) return false;
             FailStreak = 0;
             _retreatMode = true;
@@ -124,7 +175,7 @@ namespace SoloHero.Core.Stage
         /// </summary>
         public bool FarmAt(int g)
         {
-            if (g < 1 || g > _save.highestStage) return false;
+            if (InDungeon || g < 1 || g > _save.highestStage) return false;
             if (StageIndex.IsBoss(g, _balance.STAGES_PER_CHAPTER)) return false;
             FailStreak = 0;
             _retreatMode = true;
@@ -168,7 +219,7 @@ namespace SoloHero.Core.Stage
         /// <summary>Leaves farming for the frontier: the boss after a boss retreat, the wall stage after a step-down.</summary>
         public void ChallengeBoss()
         {
-            if (!_retreatMode) return;
+            if (!_retreatMode || InDungeon) return;
             _retreatMode = false;
             _challenging = true;
             Begin(FrontierStage);
@@ -191,6 +242,13 @@ namespace SoloHero.Core.Stage
                     break;
                 case StageState.Failed:
                     TickFailed(dt);
+                    break;
+                case StageState.Dungeon:
+                    TickDungeon(dt);
+                    break;
+                case StageState.DungeonResult:
+                    _resultTimer += dt;
+                    if (_resultTimer >= _balance.DUNGEON_RESULT_TIME) Resume(_returnG, _returnRetreat);
                     break;
             }
         }
@@ -257,6 +315,46 @@ namespace SoloHero.Core.Stage
                 if (_deathTimer >= _balance.DEATH_ANIM_TIME)
                     Fail(wasBoss: _isBoss);
             }
+        }
+
+        /// <summary>Combat with endless waves; every kill pays; time up or the hero falling ends the run.</summary>
+        private void TickDungeon(float dt)
+        {
+            TickSpawns(dt);
+            _world.TickEnemies(dt);
+            _skills.Tick(dt, _hero, _world, false);
+            _hero.SetSkillBuffs(_skills.BuffAtk, _skills.BuffAtkSpd, _skills.BuffCrit, _skills.BuffGuard);
+            _hero.Tick(dt, _world);
+
+            int gained = _world.ResolveDeaths();
+            for (int i = 0; i < gained; i++)
+            {
+                _kills++;
+                if (_dungeon == DungeonKind.Gold)
+                {
+                    double gold = Formulas.DungeonGoldPerKill(_balance, _g);
+                    _save.gold += gold;
+                    DungeonEarned += gold;
+                }
+                else
+                {
+                    double exp = Formulas.DungeonExpPerKill(_balance, _g);
+                    new HeroLevelService(_save, _balance).AddExp(exp);
+                    DungeonEarned += exp;
+                }
+            }
+
+            _dungeonTimer -= dt;
+            bool down = _hero.Hp <= 0d || _hero.State == HeroState.Dead;
+            if (down && _hero.State != HeroState.Dead) _hero.Kill();
+            if (_dungeonTimer > 0f && !down) return;
+
+            _dungeonTimer = 0f;
+            _resultTimer = 0f;
+            _world.ClearAll();
+            SetState(StageState.DungeonResult);
+            _saveRequester?.RequestSave();
+            DungeonEnded?.Invoke(_dungeon, DungeonEarned);
         }
 
         private void TickClearing(float dt)

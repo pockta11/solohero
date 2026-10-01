@@ -278,3 +278,20 @@ mission.name.upgrade	능력치 강화
 mission.name.summon	소환
 mission.name.ad	광고 보기
 mission.name.all	모든 미션 완료
+
+# Daily dungeons (D-100)
+rail.dungeon	던전
+dungeon.title	일일 던전
+dungeon.gold	골드 던전
+dungeon.exp	경험치 던전
+dungeon.gold_desc	30초 동안 몰려오는 적을 처치해 골드를 모읍니다
+dungeon.exp_desc	30초 동안 몰려오는 적을 처치해 경험치를 모읍니다
+dungeon.tickets	{0}/{1}
+dungeon.per_kill	처치당 +{0}
+dungeon.enter	입장
+dungeon.close	닫기
+dungeon.time	{0}초
+dungeon.over	종료!
+dungeon.earned	+{0}
+dungeon.result_gold	골드 던전 완료: 골드 +{0}
+dungeon.result_exp	경험치 던전 완료: 경험치 +{0}

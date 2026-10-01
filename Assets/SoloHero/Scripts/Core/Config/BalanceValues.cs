@@ -139,6 +139,13 @@ namespace SoloHero.Core.Config
         public double ATTENDANCE_GEM = 30;
         public double ATTENDANCE_GOLD_STAGES = 20;
         public double ATTENDANCE_DAY7_GEM = 150;
+
+        /// <summary>D-100 daily dungeons: run length, entries per dungeon per local day, rewards, result pause.</summary>
+        public float DUNGEON_TIME = 30f;
+        public int DUNGEON_DAILY_TICKETS = 2;
+        public double DUNGEON_GOLD_PER_KILL = 0.8;
+        public double DUNGEON_EXP_MULT = 6;
+        public float DUNGEON_RESULT_TIME = 2.5f;
         public float SKILL_DOT_TICK = 0.5f;
         public int TALENT_POINTS_PER_LEVEL = 1;
         public int TALENT_TIER_STEP = 5;

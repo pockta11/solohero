@@ -16,6 +16,14 @@ namespace SoloHero.Core
         public static double StageGold(BalanceValues c, int g) =>
             c.STAGE_GOLD_BASE * Math.Pow(c.STAGE_GOLD_GROWTH, g - 1);
 
+        /// <summary>D-100 gold dungeon: gold per kill at stage g.</summary>
+        public static double DungeonGoldPerKill(BalanceValues c, int g) =>
+            Math.Floor(StageGold(c, g) * c.DUNGEON_GOLD_PER_KILL);
+
+        /// <summary>D-100 EXP dungeon: hero EXP per kill at stage g.</summary>
+        public static double DungeonExpPerKill(BalanceValues c, int g) =>
+            EnemyExp(c, g, false) * c.DUNGEON_EXP_MULT;
+
         public static double StageClearGold(BalanceValues c, int g, bool isBoss) =>
             StageGold(c, g) * (isBoss ? c.BOSS_GOLD_MULT : 1d);
 

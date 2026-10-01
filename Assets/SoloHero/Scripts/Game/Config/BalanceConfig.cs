@@ -117,6 +117,11 @@ namespace SoloHero.Game.Config
         public double ATTENDANCE_GEM = 30;
         public double ATTENDANCE_GOLD_STAGES = 20;
         public double ATTENDANCE_DAY7_GEM = 150;
+        public float DUNGEON_TIME = 30f;
+        public int DUNGEON_DAILY_TICKETS = 2;
+        public double DUNGEON_GOLD_PER_KILL = 0.8;
+        public double DUNGEON_EXP_MULT = 6;
+        public float DUNGEON_RESULT_TIME = 2.5f;
         public float SKILL_DOT_TICK = 0.5f;
         public int TALENT_POINTS_PER_LEVEL = 1;
         public int TALENT_TIER_STEP = 5;
@@ -270,6 +275,11 @@ namespace SoloHero.Game.Config
                 ATTENDANCE_GEM = ATTENDANCE_GEM,
                 ATTENDANCE_GOLD_STAGES = ATTENDANCE_GOLD_STAGES,
                 ATTENDANCE_DAY7_GEM = ATTENDANCE_DAY7_GEM,
+                DUNGEON_TIME = DUNGEON_TIME,
+                DUNGEON_DAILY_TICKETS = DUNGEON_DAILY_TICKETS,
+                DUNGEON_GOLD_PER_KILL = DUNGEON_GOLD_PER_KILL,
+                DUNGEON_EXP_MULT = DUNGEON_EXP_MULT,
+                DUNGEON_RESULT_TIME = DUNGEON_RESULT_TIME,
                 SKILL_DOT_TICK = SKILL_DOT_TICK,
                 TALENT_POINTS_PER_LEVEL = TALENT_POINTS_PER_LEVEL,
                 TALENT_TIER_STEP = TALENT_TIER_STEP,

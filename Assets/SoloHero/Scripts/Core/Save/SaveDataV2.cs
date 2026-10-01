@@ -74,6 +74,11 @@ namespace SoloHero.Core.Save
         public List<int> missionProgress = new List<int>();
         public List<bool> missionClaimed = new List<bool>();
 
+        /// <summary>D-100 daily dungeon entries used today (gold / EXP); reset when dungeonDate is not today.</summary>
+        public string dungeonDate = "";
+        public int dungeonGoldUsed;
+        public int dungeonExpUsed;
+
         public int tutorialStep;
 
         public bool bgmMuted;
