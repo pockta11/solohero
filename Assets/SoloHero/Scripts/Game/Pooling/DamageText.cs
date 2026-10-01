@@ -30,6 +30,11 @@ namespace SoloHero.Game.Pooling
         private Vector2 _start;
         private Color _color;
         private float _age;
+
+        /// <summary>Changes on every Show, so the pool can tell whether a held reference is still the same number.</summary>
+        public int Serial { get; private set; }
+
+        public bool Showing => isActiveAndEnabled;
         private bool _crit;
         private float _drift;
         private bool _isLabel;
@@ -47,6 +52,7 @@ namespace SoloHero.Game.Pooling
 
         public void Show(DamageTextPool owner, Vector2 anchoredPosition, string text, Color color, int fontSize, bool crit, float driftSign, bool label = false)
         {
+            Serial++;
             _isLabel = label;
             if (label) crit = false;
             _owner = owner;
@@ -63,6 +69,16 @@ namespace SoloHero.Game.Pooling
             if (_plate == null) return;
             _plate.gameObject.SetActive(label);
             if (label) _plate.sizeDelta = new Vector2(_label.preferredWidth + PlatePadX, fontSize + PlatePadY);
+        }
+
+        /// <summary>D-103: a merged hit - new total, restart the rise with a small pop so the growing number reads.</summary>
+        public void Merge(string text)
+        {
+            _label.text = text;
+            _age = 0f;
+            _rect.localScale = Vector3.one * 1.25f;
+            _crit = false;
+            _drift = 0f;
         }
 
         private void Update()
@@ -85,6 +101,8 @@ namespace SoloHero.Game.Pooling
             // Crits: horizontal drift with a parabolic rise (an arc); normal hits: straight up.
             float rise = _crit ? RisePixels * (2f * t - t * t) * 1.2f : RisePixels * t;
             _rect.anchoredPosition = _start + new Vector2(_drift * t, rise);
+            if (!_crit && _rect.localScale.x > 1f)
+                _rect.localScale = Vector3.one * Mathf.MoveTowards(_rect.localScale.x, 1f, Time.deltaTime * 2.5f);
             if (_crit)
             {
                 float pop = Mathf.Clamp01(_age / CritPopSeconds);

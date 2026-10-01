@@ -45,6 +45,8 @@ namespace SoloHero.Game.Combat
         private static readonly Color CritTint = new Color(1f, 0.85f, 0.3f, 1f);
         private static readonly Color LevelTint = new Color(0.55f, 1f, 0.6f, 1f);
         private static readonly Color ComboTint = new Color(0.86f, 0.55f, 1f, 1f);
+        private const float ComboFxGap = 0.2f;
+        private float _lastComboFx = -1f;
 
         [SerializeField] private CombatSession _session;
         [SerializeField] private CombatWorldView _view;
@@ -155,9 +157,12 @@ namespace SoloHero.Game.Combat
 
             if (kind == HitKind.Combo)
             {
+                // D-103: one combo burst (sound, stop, sparkle) per moment, not one per wave of a multi-hit skill.
+                if (Time.time - _lastComboFx < ComboFxGap) return;
+                _lastComboFx = Time.time;
                 Play(SfxId.Crit);
                 HitStop.Trigger(CritStop);
-                if (!LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 3f, ComboTint, EffectY + DepthLanes.For(target));
+                if (!LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 1.8f, ComboTint, EffectY + DepthLanes.For(target));
                 return;
             }
 

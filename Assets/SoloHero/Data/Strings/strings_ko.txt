@@ -320,3 +320,10 @@ companion.name.slime	슬라임
 companion.name.wisp	정령
 companion.name.owl	부엉이
 companion.name.dragon	아기 용
+
+# Equipment effects (D-103)
+equip.owned_line	{0}  보유 {1}종
+equip.effect_atk	공격력 ×{0}
+equip.effect_def	방어력 ×{0}
+equip.effect_hp	체력 ×{0}
+equip.effect_boots	공속+{0}% 치명+{1}%

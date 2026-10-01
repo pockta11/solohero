@@ -11,6 +11,8 @@ namespace SoloHero.Game.Pooling
     /// large, skill hits sky blue, burn ticks small orange (D-078). Skill names pop over the hero through
     /// <see cref="ShowLabel"/>. Pre-warmed at scene start; when all texts are busy a hit is simply not shown.
     /// D-096: hits on the same enemy close together stack upward instead of piling on one spot.
+    /// D-103: multi-wave skills, burn ticks and companion hits on the same enemy merge into one growing number
+    /// (within MergeWindowSeconds, same kind) instead of a pile of identical numbers.
     /// </summary>
     public sealed class DamageTextPool : MonoBehaviour
     {
@@ -43,6 +45,14 @@ namespace SoloHero.Game.Pooling
         private readonly EnemyBrain[] _stackTarget = new EnemyBrain[StackSlots];
         private readonly float[] _stackTime = new float[StackSlots];
         private readonly int[] _stackCount = new int[StackSlots];
+
+        private const float MergeWindowSeconds = 0.35f;
+        private readonly EnemyBrain[] _mergeTarget = new EnemyBrain[StackSlots];
+        private readonly HitKind[] _mergeKind = new HitKind[StackSlots];
+        private readonly DamageText[] _mergeText = new DamageText[StackSlots];
+        private readonly int[] _mergeSerial = new int[StackSlots];
+        private readonly double[] _mergeAmount = new double[StackSlots];
+        private readonly float[] _mergeTime = new float[StackSlots];
 
         private ViewPool<DamageText> _pool;
         private CombatWorld _world;
@@ -113,8 +123,55 @@ namespace SoloHero.Game.Pooling
             text.Show(this, local, label, color, size, false, 0f, true);
         }
 
+        /// <summary>Adds the hit to a live number for the same enemy and kind, if one is recent enough.</summary>
+        private bool TryMerge(EnemyBrain target, double amount, HitKind kind)
+        {
+            if (kind == HitKind.Normal || kind == HitKind.Crit) return false;
+            float now = Time.time;
+            for (int i = 0; i < StackSlots; i++)
+            {
+                if (_mergeTarget[i] != target || _mergeKind[i] != kind) continue;
+                DamageText live = _mergeText[i];
+                if (now - _mergeTime[i] > MergeWindowSeconds || live == null || !live.Showing || live.Serial != _mergeSerial[i]) return false;
+                _mergeAmount[i] += amount;
+                _mergeTime[i] = now;
+                live.Merge(BigNumberFormat.Format(_mergeAmount[i]));
+                return true;
+            }
+
+            return false;
+        }
+
+        private void Remember(EnemyBrain target, HitKind kind, DamageText text, double amount)
+        {
+            int slot = 0;
+            float oldest = float.MaxValue;
+            for (int i = 0; i < StackSlots; i++)
+            {
+                if (_mergeTarget[i] == target && _mergeKind[i] == kind)
+                {
+                    slot = i;
+                    break;
+                }
+
+                if (_mergeTime[i] < oldest)
+                {
+                    oldest = _mergeTime[i];
+                    slot = i;
+                }
+            }
+
+            _mergeTarget[slot] = target;
+            _mergeKind[slot] = kind;
+            _mergeText[slot] = text;
+            _mergeSerial[slot] = text.Serial;
+            _mergeAmount[slot] = amount;
+            _mergeTime[slot] = Time.time;
+        }
+
         private void OnHitLanded(EnemyBrain target, double amount, HitKind kind)
         {
+            if (TryMerge(target, amount, kind)) return;
             if (_pool == null || _camera == null || !_pool.TryGet(out DamageText text)) return;
 
             bool crit = kind == HitKind.Crit;
@@ -138,6 +195,7 @@ namespace SoloHero.Game.Pooling
             }
 
             text.Show(this, local, BigNumberFormat.Format(amount), color, size, crit, _nextDrift);
+            Remember(target, kind, text, amount);
         }
     }
 }

@@ -28,6 +28,7 @@ namespace SoloHero.Game.UI.Panels
 
         private EquipService _equip;
         private SaveDataV2 _save;
+        private SoloHero.Core.Config.BalanceValues _balance;
         private int _shownOwnedCount = -1;
         private string _shownKey = "";
         private int _shownPulls = -1;
@@ -36,6 +37,7 @@ namespace SoloHero.Game.UI.Panels
         {
             _equip = PanelServices.TryGet<EquipService>();
             _save = PanelServices.TryGet<SaveDataV2>();
+            _balance = PanelServices.TryGet<SoloHero.Core.Config.BalanceValues>();
             _shownOwnedCount = -1;
             Refresh();
         }
@@ -89,20 +91,17 @@ namespace SoloHero.Game.UI.Panels
             _shownOwnedCount = _save.ownedEquipment.Count;
             _shownPulls = _save.totalPullCount;
             _shownKey = _save.equippedSword + _save.equippedHelm + _save.equippedArmor + _save.equippedBoots;
+            EquipmentBonus bonus = _balance != null ? EquipmentBonus.Resolve(_balance, _save) : default;
 
             for (int s = 0; s < GachaCatalog.SlotCount; s++)
             {
                 var slot = (EquipmentSlot)s;
                 int grade = EquipmentBonus.GradeOrNone(Equipped(slot), slot);
                 int owned = 0;
-                string ownedList = "";
                 for (int g = 0; g < GachaCatalog.GradeCount; g++)
                 {
                     if (!_save.ownedEquipment.Contains(GachaCatalog.IdOf(slot, (Grade)g))) continue;
                     owned++;
-                    int ownedLevel = EquipmentLevels.Get(_save, GachaCatalog.IdOf(slot, (Grade)g));
-                    ownedList += (ownedList.Length > 0 ? " " : "") + PanelServices.GradeName((Grade)g)
-                        + (ownedLevel > 0 ? "+" + ownedLevel : "");
                 }
 
                 if (s < _slotTexts.Length && _slotTexts[s] != null)
@@ -125,9 +124,26 @@ namespace SoloHero.Game.UI.Panels
                     _slotFrames[s].sprite = grade < 0 ? _frames.empty : _frames.Get((Grade)grade);
 
                 if (s < _ownedTexts.Length && _ownedTexts[s] != null)
-                    _ownedTexts[s].text = owned == 0 ? Strings.Get("equip.none") : Strings.Format("equip.owned", ownedList);
+                    _ownedTexts[s].text = owned == 0
+                        ? Strings.Get("equip.none")
+                        : Strings.Format("equip.owned_line", grade < 0 ? "" : Effect(slot, bonus), owned);
                 if (s < _swapButtons.Length && _swapButtons[s] != null)
                     _swapButtons[s].SetAvailable(owned > 1 || (owned == 1 && grade < 0));
+            }
+        }
+
+        /// <summary>D-103: what the equipped item does, e.g. "ATK x1.80" (boots: attack speed and crit).</summary>
+        private static string Effect(EquipmentSlot slot, EquipmentBonus bonus)
+        {
+            switch (slot)
+            {
+                case EquipmentSlot.Sword: return Strings.Format("equip.effect_atk", bonus.SwordMult.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+                case EquipmentSlot.Helm: return Strings.Format("equip.effect_def", bonus.HelmMult.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+                case EquipmentSlot.Armor: return Strings.Format("equip.effect_hp", bonus.ArmorMult.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+                default:
+                    return Strings.Format("equip.effect_boots",
+                        (bonus.BootsSpeedBonus * 100d).ToString("0", System.Globalization.CultureInfo.InvariantCulture),
+                        bonus.BootsCritBonus.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture));
             }
         }
 

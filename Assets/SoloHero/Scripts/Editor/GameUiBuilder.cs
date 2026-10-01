@@ -32,6 +32,7 @@ namespace SoloHero.Editor
         private const string SettingsButtonName = "SettingsButton";
         private const string SettingsPopupName = "SettingsPopup";
         private const string DailyName = "DailyPopup";
+        private const string ArtRootUi = "Assets/SoloHero/Art/UI/";
         private const string DungeonName = "DungeonPopup";
         private const string CompanionName = "CompanionPopup";
         private static readonly string[] CompanionArtPaths =
@@ -327,6 +328,7 @@ namespace SoloHero.Editor
             RectTransform bar = Rect("TabBar", root, 0f, 0f, 1f, TabTop);
             PanelHost host = root.gameObject.AddComponent<PanelHost>();
             var backgrounds = new Image[TabKeys.Length];
+            var badges = new GameObject[TabKeys.Length];
             float width = 1f / TabKeys.Length;
             for (int i = 0; i < TabKeys.Length; i++)
             {
@@ -341,7 +343,15 @@ namespace SoloHero.Editor
                 tabLabel.rectTransform.offsetMin = Vector2.zero;
                 tabLabel.rectTransform.offsetMax = Vector2.zero;
                 UnityEventTools.AddIntPersistentListener(button.onClick, host.Toggle, i);
+                badges[i] = Badge(button.transform);
             }
+
+            // D-103: red dots on the character tab (promotion ready) and the talent tab (points to spend).
+            TabBadges tabBadges = bar.gameObject.AddComponent<TabBadges>();
+            var badgeSo = new SerializedObject(tabBadges);
+            badgeSo.FindProperty("_heroBadge").objectReferenceValue = badges[0];
+            badgeSo.FindProperty("_talentBadge").objectReferenceValue = badges[TabKeys.Length - 1];
+            badgeSo.ApplyModifiedPropertiesWithoutUndo();
 
             var so = new SerializedObject(host);
             SetArray(so, "_panels", panels);
@@ -933,6 +943,17 @@ namespace SoloHero.Editor
             fillRect.anchorMax = new Vector2(0f, 1f);
 
             Text rates = MakeText("Rates", panel, 0.04f, 0.63f, 0.96f, 0.75f, "", 22, TextAnchor.MiddleCenter);
+            // D-103: a softly pulsing summon circle fills the result area until the first pull lands there.
+            Sprite circle = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRootUi + "ui_summon_circle.png");
+            if (circle != null)
+            {
+                RectTransform deco = Box("SummonCircle", panel, new Vector2(0.5f, 0.46f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(220f, 220f));
+                Image decoImage = Plain(deco, circle);
+                decoImage.preserveAspect = true;
+                decoImage.color = new Color(1f, 1f, 1f, 0.45f);
+                deco.gameObject.AddComponent<UiPulse>();
+            }
+
             Text result = MakeText("Result", panel, 0.04f, 0.33f, 0.96f, 0.62f, "", 33, TextAnchor.MiddleCenter);
             result.supportRichText = true;
             result.verticalOverflow = VerticalWrapMode.Overflow;
