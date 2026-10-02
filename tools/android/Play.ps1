@@ -9,6 +9,8 @@
   Builds/game.aab to Builds/game-emulator.aab, then:  pwsh tools/android/Emu.ps1 install -Aab Builds/game-emulator.aab
   Ad buttons stay on screen in that build but do nothing.
   Mouse click = tap, Esc = Android back. Closing the emulator window shuts it down (progress is saved).
+  Always a cold boot (-no-snapshot): a Quick Boot snapshot restores the app process that was running when it was
+  saved (an old build) and SwiftShader loses its textures on restore (rainbow stripes).
 #>
 $ErrorActionPreference = "Stop"
 $root = "C:\Users\user\android-sdk-tools"
@@ -23,7 +25,7 @@ function Say([string]$text) { Write-Host ("[SoloHero] " + $text) }
 $running = (& $adb devices) -match "^$serial\s+device"
 if (-not $running) {
     Say "Starting the emulator (1-2 minutes)..."
-    Start-Process -FilePath $emu -ArgumentList @("-avd", "solohero16k35", "-gpu", "swiftshader_indirect", "-no-boot-anim") `
+    Start-Process -FilePath $emu -ArgumentList @("-avd", "solohero16k35", "-no-snapshot", "-gpu", "swiftshader_indirect", "-no-boot-anim") `
         -RedirectStandardOutput (Join-Path $root "emulator.log") -RedirectStandardError (Join-Path $root "emulator.err")
     $booted = $false
     for ($i = 0; $i -lt 90; $i++) {
@@ -43,5 +45,7 @@ if (-not (& $adb -s $serial shell pm list packages $package)) {
 }
 
 Say "Launching SoloHero."
+# A fresh process every time, so a running emulator never shows a stale one.
+& $adb -s $serial shell am force-stop $package | Out-Null
 & $adb -s $serial shell am start -n "$package/com.unity3d.player.UnityPlayerActivity" | Out-Null
 Start-Sleep -Seconds 3
