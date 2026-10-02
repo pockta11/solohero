@@ -4,8 +4,10 @@
 
 .DESCRIPTION
   Uses the user-local SDK root created in story 1-09 (C:\Users\user\android-sdk-tools).
-  Why this config: the API 36.1 16 KB image crash-loops surfaceflinger on emulator 37.1,
-  and host GPU mode asserts (hasReadColorBufferDma) - API 35 + swiftshader_indirect is stable.
+  Two AVDs:
+    solohero_fast  (default) Android 15 Google APIs x86_64, 4 KB pages, 1080x2400, host GPU - 60 fps, adb root.
+    solohero16k35  16 KB pages for page-size checks. The API 36.1 16 KB image crash-loops surfaceflinger on
+                   emulator 37.1, and host GPU renders a black game screen there, so it runs on swiftshader_indirect.
 
 .EXAMPLE
   pwsh tools/android/Emu.ps1 start            # boot AVD solohero16k35 and wait for boot_completed
@@ -17,7 +19,7 @@
 param(
     [Parameter(Mandatory)] [ValidateSet("start", "install", "run", "shot", "logcat", "stop")] [string] $Cmd,
     [string] $Arg = "",
-    [string] $Avd = "solohero16k35",
+    [string] $Avd = "solohero_fast",
     [string] $Package = "com.SoloSoft.solohero",
     [string] $Aab = "Builds/game.aab",
     [string] $Root = "C:\Users\user\android-sdk-tools",
@@ -34,7 +36,8 @@ function Assert-Exit([string] $what) { if ($LASTEXITCODE -ne 0) { throw "$what f
 
 switch ($Cmd) {
     "start" {
-        Start-Process -FilePath $emu -ArgumentList @("-avd", $Avd, "-no-snapshot", "-gpu", "swiftshader_indirect", "-no-boot-anim") `
+        $gpu = if ($Avd -like "*16k*") { "swiftshader_indirect" } else { "host" }
+        Start-Process -FilePath $emu -ArgumentList @("-avd", $Avd, "-no-snapshot", "-gpu", $gpu, "-no-boot-anim") `
             -RedirectStandardOutput (Join-Path $Root "emulator.log") -RedirectStandardError (Join-Path $Root "emulator.err") -WindowStyle Normal
         $booted = $false
         for ($i = 0; $i -lt 72; $i++) {

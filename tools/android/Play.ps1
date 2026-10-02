@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  One-click play on the emulator (desktop shortcut target): boots AVD solohero16k35 if it is not running,
+  One-click play on the emulator (desktop shortcut target): boots AVD solohero_fast if no emulator is running,
   keeps the screen on and launches SoloHero.
 
 .DESCRIPTION
@@ -9,6 +9,9 @@
   Builds/game.aab to Builds/game-emulator.aab, then:  pwsh tools/android/Emu.ps1 install -Aab Builds/game-emulator.aab
   Ad buttons stay on screen in that build but do nothing.
   Mouse click = tap, Esc = Android back. Closing the emulator window shuts it down (progress is saved).
+  solohero_fast = Android 15 Google APIs x86_64, 4 KB pages, 1080x2400, 6 cores, 6 GB, host GPU (RTX): 60 fps.
+  The 16 KB page AVD solohero16k35 only renders with SwiftShader (about 15-20 fps); keep it for page-size checks
+  (pwsh tools/android/Emu.ps1 start -Avd solohero16k35).
   Always a cold boot (-no-snapshot): a Quick Boot snapshot restores the app process that was running when it was
   saved (an old build) and SwiftShader loses its textures on restore (rainbow stripes).
 #>
@@ -25,7 +28,7 @@ function Say([string]$text) { Write-Host ("[SoloHero] " + $text) }
 $running = (& $adb devices) -match "^$serial\s+device"
 if (-not $running) {
     Say "Starting the emulator (1-2 minutes)..."
-    Start-Process -FilePath $emu -ArgumentList @("-avd", "solohero16k35", "-no-snapshot", "-gpu", "swiftshader_indirect", "-no-boot-anim") `
+    Start-Process -FilePath $emu -ArgumentList @("-avd", "solohero_fast", "-no-snapshot", "-gpu", "host", "-no-boot-anim") `
         -RedirectStandardOutput (Join-Path $root "emulator.log") -RedirectStandardError (Join-Path $root "emulator.err")
     $booted = $false
     for ($i = 0; $i -lt 90; $i++) {
