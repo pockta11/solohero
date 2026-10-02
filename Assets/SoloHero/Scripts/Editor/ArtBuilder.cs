@@ -108,10 +108,13 @@ namespace SoloHero.Editor
             string[] petAssets = { "Pet_Slime", "Pet_Wisp", "Pet_Owl", "Pet_Dragon" };
             var petArts = new CharacterArt[pets.Length];
             for (int p = 0; p < pets.Length; p++) petArts[p] = BuildCharacter("Pets", "pet" + pets[p], petAssets[p], 1);
-            // D-101 promotion looks, tiers 1..4.
-            var heroTiers = new CharacterArt[4];
-            for (int t = 0; t < heroTiers.Length; t++)
-                heroTiers[t] = BuildCharacter("Hero", "knight" + (t + 1), "Hero_Knight" + (t + 1), 1);
+            // D-104 job looks, index-aligned with JobCatalog.All (the beginner is the knight above).
+            var jobArts = new CharacterArt[SoloHero.Core.Jobs.JobCatalog.Count];
+            for (int j = 0; j < jobArts.Length; j++)
+            {
+                string look = SoloHero.Core.Jobs.JobCatalog.All[j].Look;
+                jobArts[j] = look == "knight" ? hero : BuildCharacter("Hero", look, JobAssetName(look), 1);
+            }
             var looks = new Dictionary<string, CharacterArt>();
             foreach (KeyValuePair<string, (string asset, int scale)> look in LookNames)
             {
@@ -124,7 +127,7 @@ namespace SoloHero.Editor
             BuildEquipmentIcons();
             BuildSkillIcons();
             SoundBank bank = BuildSoundBank();
-            WireGameScene(hero, heroTiers, petArts, looks["goblin"], looks["ronin"], themes, vfx);
+            WireGameScene(hero, jobArts, petArts, looks["goblin"], looks["ronin"], themes, vfx);
             WireBootAudio(bank);
 
             GameUiBuilder.BuildBatch();
@@ -144,6 +147,11 @@ namespace SoloHero.Editor
                 AssetDatabase.ImportAsset(AssetDatabase.GUIDToAssetPath(guid), ImportAssetOptions.ForceUpdate);
             AssetDatabase.Refresh();
         }
+
+        /// <summary>D-104 job look asset under Data/Art: "knight1" -> "Hero_Knight1", "jobmage" -> "Hero_Jobmage".</summary>
+        public static string JobAssetName(string look) => "Hero_" + char.ToUpperInvariant(look[0]) + look.Substring(1);
+
+        public static string JobArtPath(string look) => DataArt + "/" + JobAssetName(look) + ".asset";
 
         private static CharacterArt BuildCharacter(string folder, string entity, string assetName, int pixelScale)
         {
@@ -447,7 +455,7 @@ namespace SoloHero.Editor
             return c;
         }
 
-        private static void WireGameScene(CharacterArt hero, CharacterArt[] heroTiers, CharacterArt[] petArts, CharacterArt pig, CharacterArt boss, ChapterThemeSet themes, VfxSet vfxSet)
+        private static void WireGameScene(CharacterArt hero, CharacterArt[] jobArts, CharacterArt[] petArts, CharacterArt pig, CharacterArt boss, ChapterThemeSet themes, VfxSet vfxSet)
         {
             var scene = EditorSceneManager.OpenScene(GameScene, OpenSceneMode.Single);
             var view = Object.FindObjectOfType<CombatWorldView>();
@@ -507,9 +515,9 @@ namespace SoloHero.Editor
 
             var viewSo = new SerializedObject(view);
             viewSo.FindProperty("_heroArt").objectReferenceValue = hero;
-            SerializedProperty tiersProp = viewSo.FindProperty("_heroTiers");
-            tiersProp.arraySize = heroTiers.Length;
-            for (int t = 0; t < heroTiers.Length; t++) tiersProp.GetArrayElementAtIndex(t).objectReferenceValue = heroTiers[t];
+            SerializedProperty jobsProp = viewSo.FindProperty("_jobArts");
+            jobsProp.arraySize = jobArts.Length;
+            for (int j = 0; j < jobArts.Length; j++) jobsProp.GetArrayElementAtIndex(j).objectReferenceValue = jobArts[j];
             viewSo.FindProperty("_enemyArt").objectReferenceValue = pig;
             viewSo.FindProperty("_bossArt").objectReferenceValue = boss;
             viewSo.FindProperty("_themes").objectReferenceValue = themes;

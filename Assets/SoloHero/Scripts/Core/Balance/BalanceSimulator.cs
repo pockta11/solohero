@@ -81,7 +81,7 @@ namespace SoloHero.Core.Balance
                 IRandom skillRng = new SystemRandom(new Random(unchecked(settings.Seed * 104729 + 31)));
                 var summon = new SkillSummonService(balance, GachaTableValues.FromBalance(balance), skillRng);
                 SkillBook.EnsureStarters(_save, balance);
-                _spender = new SimSpender(balance, _save, gacha, summon);
+                _spender = new SimSpender(balance, _save, gacha, summon) { Job1 = settings.Job1, Job2 = settings.Job2 };
                 _ads = new AdSlotPolicy(balance, _save, _clock);
                 _tutorial = new TutorialService(balance, gacha);
                 _spender.GradeObtained += OnGradeObtained;

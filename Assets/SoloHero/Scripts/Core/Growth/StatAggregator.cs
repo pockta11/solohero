@@ -22,7 +22,7 @@ namespace SoloHero.Core.Growth
             BuffSet buffs = default,
             double skillOwnedAtk = 0d,
             TalentEffects talents = null,
-            int promotionTier = 0)
+            int jobTier = 0)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             TalentEffects t = talents ?? TalentEffects.None;
@@ -30,7 +30,7 @@ namespace SoloHero.Core.Growth
             double levelBonus = heroLevel - 1;
             double upg = balance.UPG_STAT_MULT;
             double buffAtk = 1d + buffs.SumAtk;
-            double promo = Formulas.PromotionMult(balance, promotionTier);
+            double promo = Formulas.JobStatMult(balance, jobTier);
 
             double hp = (balance.HP_BASE + balance.LEVEL_HP_GAIN * levelBonus)
                 * Math.Pow(upg, upgradeHp)

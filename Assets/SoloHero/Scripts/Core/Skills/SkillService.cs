@@ -100,6 +100,7 @@ namespace SoloHero.Core.Skills
         public Result TryEquip(string id, int slot = -1)
         {
             if (SkillCatalog.Find(id) == null || !SkillBook.IsOwned(_data, id)) return Result.Fail(FailReason.Locked);
+            if (!SoloHero.Core.Jobs.JobService.CanUse(_data, SkillCatalog.Find(id))) return Result.Fail(FailReason.JobLocked);
 
             if (slot < 0)
             {
@@ -127,7 +128,10 @@ namespace SoloHero.Core.Skills
             return Result.Success;
         }
 
-        /// <summary>Fills the unlocked slots with the strongest owned skills: grade, then level, then catalog order.</summary>
+        /// <summary>
+        /// Fills the unlocked slots with the strongest owned skills the job may use (D-104): grade, then level, then
+        /// catalog order.
+        /// </summary>
         public void AutoEquip()
         {
             int slots = SlotCount(_balance);
@@ -146,6 +150,7 @@ namespace SoloHero.Core.Skills
                 {
                     SkillDef def = SkillCatalog.All[i];
                     if (!SkillBook.IsOwned(_data, def.Id) || Array.IndexOf(picked, def.Id) >= 0) continue;
+                    if (!SoloHero.Core.Jobs.JobService.CanUse(_data, def)) continue;
                     int level = SkillBook.GetLevel(_data, def.Id);
                     if (best == null || def.Grade > best.Grade || (def.Grade == best.Grade && level > bestLevel))
                     {

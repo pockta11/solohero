@@ -13,8 +13,8 @@ namespace SoloHero.Game.UI.Common
     {
         [SerializeField] private CharacterArt _art;
 
-        [Tooltip("D-101: promotion looks for tiers 1..4, picked from the saved tier; empty keeps _art.")]
-        [SerializeField] private CharacterArt[] _tiers = new CharacterArt[0];
+        [Tooltip("D-104: job looks index-aligned with JobCatalog.All, picked from the saved job; empty keeps _art.")]
+        [SerializeField] private CharacterArt[] _jobs = new CharacterArt[0];
         [Tooltip("Canvas units per sprite pixel; keep it an integer so the pixel grid stays even.")]
         [SerializeField] private float _scale = 3f;
 
@@ -33,23 +33,23 @@ namespace SoloHero.Game.UI.Common
         }
 
         private SoloHero.Core.Save.SaveDataV2 _save;
-        private int _tierShown = -1;
+        private int _jobShown = -1;
 
         private void OnEnable()
         {
             _save = SoloHero.Game.UI.Panels.PanelServices.TryGet<SoloHero.Core.Save.SaveDataV2>();
-            PickTier();
+            PickJob();
             PlayIdle();
         }
 
-        /// <summary>Switches to the art of the saved promotion tier; true when it changed.</summary>
-        private bool PickTier()
+        /// <summary>Switches to the art of the saved job; true when it changed.</summary>
+        private bool PickJob()
         {
-            int tier = _save != null ? _save.promotionTier : 0;
-            if (tier == _tierShown) return false;
-            _tierShown = tier;
-            if (tier >= 1 && tier <= _tiers.Length && _tiers[tier - 1] != null) _art = _tiers[tier - 1];
-            else if (_tiers.Length > 0 && _baseArt != null) _art = _baseArt;
+            int job = _save != null ? SoloHero.Core.Jobs.JobCatalog.IndexOf(_save.jobId) : 0;
+            if (job == _jobShown) return false;
+            _jobShown = job;
+            if (job > 0 && job < _jobs.Length && _jobs[job] != null) _art = _jobs[job];
+            else if (_baseArt != null) _art = _baseArt;
             return true;
         }
 
@@ -76,7 +76,7 @@ namespace SoloHero.Game.UI.Common
 
         private void Update()
         {
-            if (PickTier())
+            if (PickJob())
             {
                 PlayIdle();
                 return;

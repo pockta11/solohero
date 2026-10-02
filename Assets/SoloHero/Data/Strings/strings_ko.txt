@@ -83,7 +83,7 @@ skill.name.battle_cry	전투의 함성
 skill.desc.battle_cry	{6}초 동안 공격력 +{5}%, 체력 {7}% 회복
 skill.name.quick_slash	연속 베기
 skill.desc.quick_slash	앞의 적에게 공격력의 {0}% 피해 {1}회
-skill.name.iron_skin	강철 피부
+skill.name.iron_skin	회피 기동
 skill.desc.iron_skin	{6}초 동안 받는 피해 -{5}%
 skill.name.first_aid	응급 처치
 skill.desc.first_aid	체력이 {10}% 이하일 때 체력 {7}% 회복
@@ -95,8 +95,8 @@ skill.name.thunder	낙뢰
 skill.desc.thunder	먼 적 하나에게 벼락, 공격력의 {0}% 피해
 skill.name.berserk	광폭화
 skill.desc.berserk	{6}초 동안 공격속도 +{5}%
-skill.name.poison_cloud	독안개
-skill.desc.poison_cloud	넓은 범위에 {0}% 피해, {3}초 동안 초당 {2}% 중독
+skill.name.poison_cloud	독침 화살
+skill.desc.poison_cloud	넓은 범위에 독화살 {0}% 피해, {3}초 동안 초당 {2}% 중독
 skill.name.eagle_eye	매의 눈
 skill.desc.eagle_eye	{6}초 동안 치명타 확률 +{5}%
 skill.name.meteor	메테오
@@ -105,9 +105,9 @@ skill.name.chain_lightning	연쇄 번개
 skill.desc.chain_lightning	범위 안 모든 적에게 번개 {0}% 피해 {1}회
 skill.name.blade_storm	칼날 폭풍
 skill.desc.blade_storm	주변 적 모두에게 {0}% 피해 {1}회
-skill.name.holy_light	성스러운 빛
+skill.name.holy_light	축복의 화살
 skill.desc.holy_light	체력이 {10}% 이하일 때 체력 {7}% 회복, {9}초 동안 보호막 {8}%
-skill.name.glacier_spear	빙하의 창
+skill.name.glacier_spear	빙결 화살
 skill.desc.glacier_spear	먼 적 하나에게 {0}% 피해, {4}초 빙결
 skill.name.war_god	군신의 가호
 skill.desc.war_god	{6}초 동안 공격력 +{5}%, 보호막 {8}%
@@ -115,8 +115,8 @@ skill.name.dragon_breath	용의 숨결
 skill.desc.dragon_breath	넓은 범위에 화염 {0}% 피해 {1}회, {3}초 동안 초당 {2}% 화상
 skill.name.judgement	심판
 skill.desc.judgement	범위 안 모든 적에게 하늘의 빛, 공격력의 {0}% 피해
-skill.name.time_stop	시간 정지
-skill.desc.time_stop	모든 적을 {4}초 멈추고 {0}% 피해, {6}초 동안 공격력 +{5}%
+skill.name.time_stop	속박의 화살비
+skill.desc.time_stop	모든 적을 {4}초 묶고 {0}% 피해, {6}초 동안 공격력 +{5}%
 skill.name.sword_rain	검의 비
 skill.desc.sword_rain	넓은 범위에 검을 쏟아 {0}% 피해 {1}회
 skill.name.phoenix	불사조
@@ -256,7 +256,6 @@ rail.settings	설정
 rail.stage	스테이지
 rail.credits	크레딧
 rail.daily	일일 보상
-hud.basic_skill	섬광 베기
 
 # Attendance and daily missions (D-099)
 daily.title	일일 보상
@@ -296,16 +295,76 @@ dungeon.earned	+{0}
 dungeon.result_gold	골드 던전 완료: 골드 +{0}
 dungeon.result_exp	경험치 던전 완료: 경험치 +{0}
 
-# Promotion (D-101)
-hero.tier0	견습 기사
-hero.tier1	기사
-hero.tier2	성기사
-hero.tier3	용기사
-hero.tier4	영웅
-char.promote_lv	승급 Lv{0}
-char.promote_cost	승급 {0}
-char.promote_max	최고 등급
-char.promoted	{0}(으)로 승급! 체력·공격력·방어력 +{1}%
+# Jobs (D-104). job.current: {0} job, {1} level, {2} next tier. job.main_*: {0} targets, {1} ATK %, {2} hits
+job.title	전직
+job.current	현재 직업: {0} · Lv {1}에 {2}차 전직
+job.current_max	현재 직업: {0} (최종 전직)
+job.need_lv	Lv {0} 필요
+job.pick	선택
+job.confirm	정말 전직
+job.advanced	{0}(으)로 전직했습니다!
+job.button_lv	전직 Lv{0}
+job.button_ready	전직 가능!
+job.button_max	직업 정보
+job.main_info	대상 {0}명 · 공격력 {1}%
+job.main_hits	대상 {0}명 · {1}% × {2}회
+job.stat.atk	공격력 +{0}%
+job.stat.crit	치명타 확률 +{0}%
+job.stat.crit_damage	치명 피해 +{0}%
+job.stat.atkspd	공격속도 +{0}%
+job.stat.hp	체력 +{0}%
+job.stat.def	방어력 +{0}%
+job.stat.skill_damage	스킬 피해 +{0}%
+job.stat.cooldown	쿨타임 -{0}%
+job.stat.dot	지속 피해 +{0}%
+job.line.warrior	전사
+job.line.mage	마법사
+job.line.archer	궁수
+skill.line_only	{0} 전용
+toast.job_locked	전직해야 쓸 수 있는 스킬입니다
+hud.ultimate	궁극기
+job.name.beginner	초보자
+job.main.beginner	섬광 베기
+job.desc.beginner	기본 스킬 3종(강타·회전베기·전투의 함성)만 씁니다. Lv 10에 전직하세요.
+job.name.warrior	전사
+job.main.warrior	파워 슬래시
+job.desc.warrior	앞의 적 여럿을 크게 벱니다. 전사 스킬을 쓸 수 있습니다.
+job.name.mage	마법사
+job.main.mage	매직 볼트
+job.desc.mage	먼 적에게 마법탄을 쏩니다. 마법사 스킬을 쓸 수 있습니다.
+job.name.archer	궁수
+job.main.archer	더블 샷
+job.desc.archer	먼 거리에서 화살 두 발을 쏩니다. 궁수 스킬을 쓸 수 있습니다.
+job.name.knight	나이트
+job.main.knight	홀리 차지
+job.desc.knight	넓게 베고 단단히 버팁니다. 궁극기: 수호의 십자가
+job.name.berserker	버서커
+job.main.berserker	레이징 블로우
+job.desc.berserker	강한 일격과 치명타. 궁극기: 피의 분노
+job.name.pyro	화염술사
+job.main.pyro	플레임 볼트
+job.desc.pyro	맞은 적을 태웁니다. 궁극기: 인페르노
+job.name.cryo	빙뢰술사
+job.main.cryo	아이스 볼트
+job.desc.cryo	여러 적을 잠깐 얼립니다. 궁극기: 블리자드
+job.name.ranger	레인저
+job.main.ranger	애로우 블로우
+job.desc.ranger	빠른 연사로 여러 적을 맞힙니다. 궁극기: 애로우 레인
+job.name.sniper	저격수
+job.main.sniper	저격
+job.desc.sniper	한 적에게 강력한 한 발. 궁극기: 데스 샷
+skill.name.ult_guardian_cross	수호의 십자가
+skill.desc.ult_guardian_cross	주변 적 모두에게 {0}% 피해, {9}초 동안 보호막 {8}%
+skill.name.ult_blood_rage	피의 분노
+skill.desc.ult_blood_rage	주변 적에게 {0}% 피해, {6}초 동안 공격력 +{5}%, 체력 {7}% 회복
+skill.name.ult_inferno	인페르노
+skill.desc.ult_inferno	넓은 범위에 화염 {0}% 피해 {1}회, {3}초 동안 초당 {2}% 화상
+skill.name.ult_blizzard	블리자드
+skill.desc.ult_blizzard	넓은 범위에 눈보라 {0}% 피해 {1}회, {4}초 빙결
+skill.name.ult_arrow_rain	애로우 레인
+skill.desc.ult_arrow_rain	넓은 범위에 화살비 {0}% 피해 {1}회
+skill.name.ult_death_shot	데스 샷
+skill.desc.ult_death_shot	먼 적 하나에게 공격력의 {0}% 일격
 
 # Companions (D-102)
 rail.companion	동료

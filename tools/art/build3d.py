@@ -17,7 +17,7 @@ sys.path.insert(0, HERE)
 from charkit import hexc
 from pixelize import ART, Entity
 
-ENTITIES = ["knight", "knight1", "knight2", "knight3", "knight4", "petslime", "petwisp", "petowl", "petdragon", "goblin", "goblinr", "skeleton", "skeletonv", "mushroom", "mushroomb", "flyeye", "flyeyer",
+ENTITIES = ["knight", "knight1", "knight2", "knight4", "jobmage", "jobpyro", "jobcryo", "jobarcher", "jobranger", "jobsniper", "petslime", "petwisp", "petowl", "petdragon", "goblin", "goblinr", "skeleton", "skeletonv", "mushroom", "mushroomb", "flyeye", "flyeyer",
             "ronin", "necro", "ranger", "shadowmage", "firemage", "golem"]
 
 

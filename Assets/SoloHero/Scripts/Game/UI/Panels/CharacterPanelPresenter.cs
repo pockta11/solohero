@@ -4,6 +4,7 @@ using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Jobs;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
 using SoloHero.Game.Audio;
@@ -17,7 +18,7 @@ namespace SoloHero.Game.UI.Panels
     /// <summary>
     /// Character panel (E7-05): gold portrait window (idle flipbook, nameplate with level), EXP + 6 stat chips, and
     /// 4 upgrade tiles with level, current -> next value, cost and MAX state. Upgrade buttons repeat while held.
-    /// D-101: the nameplate shows the promotion title and a button under the portrait promotes the hero.
+    /// D-104: the nameplate shows the job name and the button under the portrait opens the job advancement popup.
     /// </summary>
     public sealed class CharacterPanelPresenter : MonoBehaviour
     {
@@ -36,17 +37,15 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text[] _statTexts = new Text[6];
         [SerializeField] private UiPunch _levelPunch;
         [SerializeField] private Text _heroNameText;
-        [SerializeField] private TapGuardButton _promoteButton;
-        [SerializeField] private Text _promoteLabel;
+        [SerializeField] private TapGuardButton _jobButton;
+        [SerializeField] private Text _jobLabel;
+        [SerializeField] private JobPresenter _jobPopup;
 
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
 
-        /// <summary>D-101 promotion titles by tier.</summary>
-        private static readonly string[] TierKeys = { "hero.tier0", "hero.tier1", "hero.tier2", "hero.tier3", "hero.tier4" };
-
         private UpgradeService _upgrade;
-        private PromotionService _promotion;
+        private JobService _jobs;
         private BalanceValues _balance;
         private SaveDataV2 _save;
         private AudioService _audio;
@@ -57,7 +56,7 @@ namespace SoloHero.Game.UI.Panels
         private void OnEnable()
         {
             _upgrade = PanelServices.TryGet<UpgradeService>();
-            _promotion = PanelServices.TryGet<PromotionService>();
+            _jobs = PanelServices.TryGet<JobService>();
             _balance = PanelServices.TryGet<BalanceValues>();
             _save = PanelServices.TryGet<SaveDataV2>();
             _audio = PanelServices.TryGet<AudioService>();
@@ -77,7 +76,7 @@ namespace SoloHero.Game.UI.Panels
                 return;
             }
 
-            if (_save.gold != _shownGold) Refresh();
+            if (_save.gold != _shownGold || _save.jobId != _shownJob) Refresh();
             else if (_save.heroExp != _shownExp) DrawExp();
         }
 
@@ -99,55 +98,30 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
-        public void Promote()
+        public void OpenJobs()
         {
-            if (_promotion == null) return;
-            Result result = _promotion.TryPromote();
-            if (!result.Ok)
-            {
-                if (_toast != null) _toast.ShowFailure(result.Reason);
-                return;
-            }
-
-            if (_session != null) _session.RefreshLoadout();
-            if (_toast != null)
-                _toast.Show(Strings.Format("char.promoted", Strings.Get(TierKeys[_promotion.Tier]),
-                    ((_balance.PROMOTE_STAT_MULT - 1d) * 100d).ToString("0", CultureInfo.InvariantCulture)));
-            _audio?.Play(SfxId.LevelUp);
-            if (_levelPunch != null) _levelPunch.Play();
-            Refresh();
+            _audio?.Play(SfxId.Tap);
+            if (_jobPopup != null) _jobPopup.Open();
         }
 
-        private void RefreshPromotion()
+        private string _shownJob;
+
+        private void RefreshJob()
         {
-            if (_promotion == null) return;
-            int tier = _promotion.Tier;
-            if (_heroNameText != null) _heroNameText.text = Strings.Get(TierKeys[tier]);
-            if (_promoteButton == null || _promoteLabel == null) return;
-            if (_promotion.IsMax)
-            {
-                _promoteLabel.text = Strings.Get("char.promote_max");
-                _promoteButton.SetAvailable(false);
-                return;
-            }
-
-            int need = _promotion.RequiredLevel(tier + 1);
-            if (_save.heroLevel < need)
-            {
-                _promoteLabel.text = Strings.Format("char.promote_lv", need);
-                _promoteButton.SetAvailable(false);
-                return;
-            }
-
-            double cost = _promotion.Cost(tier + 1);
-            _promoteLabel.text = Strings.Format("char.promote_cost", BigNumberFormat.Format(cost));
-            _promoteButton.SetAvailable(_save.gold >= cost);
+            if (_jobs == null) return;
+            _shownJob = _save.jobId;
+            if (_heroNameText != null) _heroNameText.text = Strings.Get(_jobs.Current.NameKey);
+            if (_jobLabel == null) return;
+            // The popup always opens (it also shows the current job); the label says what the next step needs.
+            _jobLabel.text = _jobs.IsMax ? Strings.Get("job.button_max")
+                : _jobs.CanAdvance ? Strings.Get("job.button_ready")
+                : Strings.Format("job.button_lv", _jobs.NextLevel);
         }
 
         private void Refresh()
         {
             if (_upgrade == null || _balance == null || _save == null) return;
-            RefreshPromotion();
+            RefreshJob();
             _shownGold = _save.gold;
             _shownLevel = _save.heroLevel;
 

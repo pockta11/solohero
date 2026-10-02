@@ -115,16 +115,26 @@ namespace SoloHero.Core.Combat
 
             _attackPending = false;
             int count = PickSwingTargets(world);
+            int hits = MainHits;
+            double mult = MainMult;
             for (int i = 0; i < count; i++)
             {
                 EnemyBrain target = _swing[i];
                 _swing[i] = null;
-                bool crit = DamageCalc.RollCrit(_stats, _random, _critBuffPoints);
-                double dmg = DamageCalc.HeroHit(_stats, crit, _balance, _balance.BASIC_SKILL_MULT)
-                    * (1d + _atkBuffFraction) * TalentHitMult(target);
-                target.TakeDamage(dmg);
-                world.ReportHit(target, dmg, crit ? HitKind.Crit : HitKind.Normal);
-                DealtDamage?.Invoke(dmg, crit);
+                for (int h = 0; h < hits && target.IsAlive; h++)
+                {
+                    bool crit = DamageCalc.RollCrit(_stats, _random, _critBuffPoints);
+                    double dmg = DamageCalc.HeroHit(_stats, crit, _balance, mult)
+                        * (1d + _atkBuffFraction) * TalentHitMult(target);
+                    target.TakeDamage(dmg);
+                    world.ReportHit(target, dmg, crit ? HitKind.Crit : HitKind.Normal);
+                    DealtDamage?.Invoke(dmg, crit);
+                }
+
+                // D-104 second-job main attacks: a burn (DoT) or a short stun on every target.
+                if (_main != null && _main.DotPercent > 0d)
+                    target.ApplyDot(DamageCalc.SkillDot(_stats, _main.DotPercent, 1d) * (1d + _talents.DotPct), _main.DotSeconds);
+                if (_main != null && _main.StunSeconds > 0f) target.Stun(_main.StunSeconds);
             }
         }
 
@@ -144,8 +154,8 @@ namespace SoloHero.Core.Combat
         /// <summary>Nearest enemies in front of the hero within the basic skill range, up to its target count.</summary>
         private int PickSwingTargets(ICombatWorld world)
         {
-            int max = _balance.BASIC_SKILL_TARGETS < 1 ? 1 : Math.Min(MaxSwingTargets, _balance.BASIC_SKILL_TARGETS);
-            double range = Math.Max(_balance.BASIC_SKILL_RANGE, _balance.ATTACK_RANGE);
+            int max = MainTargets < 1 ? 1 : Math.Min(MaxSwingTargets, MainTargets);
+            double range = Math.Max(MainRange, _balance.ATTACK_RANGE);
             double heroX = world.HeroX;
             int count = 0;
             while (count < max)
@@ -181,6 +191,16 @@ namespace SoloHero.Core.Combat
         }
 
         public void SetTalents(TalentEffects talents) => _talents = talents ?? TalentEffects.None;
+
+        /// <summary>D-104: the job's main attack; null keeps the beginner flash slash (BASIC_SKILL_*).</summary>
+        public void SetMainAttack(SoloHero.Core.Jobs.MainAttack main) => _main = main;
+
+        private SoloHero.Core.Jobs.MainAttack _main;
+
+        private int MainTargets => _main != null ? _main.Targets : _balance.BASIC_SKILL_TARGETS;
+        private double MainMult => _main != null ? _main.Mult : _balance.BASIC_SKILL_MULT;
+        private double MainRange => _main != null ? _main.Range : _balance.BASIC_SKILL_RANGE;
+        private int MainHits => _main != null && _main.Hits > 1 ? _main.Hits : 1;
 
         /// <summary>Talent damage factor against one target: boss damage, and Execute under its HP threshold.</summary>
         public double TalentHitMult(EnemyBrain target)

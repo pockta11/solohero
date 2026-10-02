@@ -23,8 +23,11 @@ namespace SoloHero.Core.Save
         public int heroLevel = 1;
         public double heroExp;
 
-        /// <summary>D-101 promotion tier 0..4: hero look and an HP / ATK / DEF multiplier.</summary>
+        /// <summary>D-101 promotion tier, superseded by jobs (D-104); kept only so old saves load. Unused.</summary>
         public int promotionTier;
+
+        /// <summary>D-104 job id from JobCatalog; "" is the beginner.</summary>
+        public string jobId = "";
 
         /// <summary>D-102 companions: the equipped id ("" none; every save starts with the slime) and levels index-aligned with CompanionCatalog.</summary>
         public string companionEquipped = "slime";

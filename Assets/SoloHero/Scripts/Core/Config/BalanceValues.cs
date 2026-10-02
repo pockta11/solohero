@@ -147,13 +147,11 @@ namespace SoloHero.Core.Config
         public double DUNGEON_EXP_MULT = 6;
         public float DUNGEON_RESULT_TIME = 2.5f;
 
-        /// <summary>D-101 promotion: hero level needed for tiers 1..4, cost (clear gold x stages x tier), stat gain per tier.</summary>
-        public int PROMOTE_LV_1 = 15;
-        public int PROMOTE_LV_2 = 30;
-        public int PROMOTE_LV_3 = 45;
-        public int PROMOTE_LV_4 = 60;
-        public double PROMOTE_COST_STAGES = 40;
-        public double PROMOTE_STAT_MULT = 1.15;
+        /// <summary>D-104 job advancement (replaces the D-101 promotion): hero level for the first and second job,
+        /// HP / ATK / DEF multiplier per advancement.</summary>
+        public int JOB_LV_1 = 10;
+        public int JOB_LV_2 = 30;
+        public double JOB_STAT_MULT = 1.05;
 
         /// <summary>D-102 companions: level cap, damage gain per level, level-up cost (base x grade mult^grade x growth^(level-1)).</summary>
         public int COMPANION_MAX_LEVEL = 50;

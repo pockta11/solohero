@@ -51,8 +51,8 @@ namespace SoloHero.Game.Combat
         [SerializeField] private float _shadowWidth = 1.1f;
         [SerializeField] private CharacterArt _heroArt;
 
-        [Tooltip("D-101 promotion looks for tiers 1..4; tier 0 (and a missing entry) uses the hero art above.")]
-        [SerializeField] private CharacterArt[] _heroTiers = new CharacterArt[0];
+        [Tooltip("D-104 job looks, index-aligned with JobCatalog.All; the beginner (and a missing entry) uses the hero art above.")]
+        [SerializeField] private CharacterArt[] _jobArts = new CharacterArt[0];
         [SerializeField] private CharacterArt _enemyArt;
         [SerializeField] private CharacterArt _bossArt;
         [SerializeField] private ChapterThemeSet _themes;
@@ -242,7 +242,7 @@ namespace SoloHero.Game.Combat
             CharacterArt art = HeroArt();
             if (art != _heroShown)
             {
-                // Promotion changed the look: restart on the new art's idle.
+                // A job advancement changed the look: restart on the new art's idle.
                 _heroShown = art;
                 if (art != null && book != null) book.Play(art.idle, art.fps, loop: true, restart: true);
             }
@@ -285,11 +285,11 @@ namespace SoloHero.Game.Combat
         private static bool IsLoop(CharacterArt art, Sprite[] clip) =>
             art != null && (clip == art.idle || clip == art.run);
 
-        /// <summary>The look for the saved promotion tier (D-101).</summary>
+        /// <summary>The look for the saved job (D-104).</summary>
         private CharacterArt HeroArt()
         {
-            int tier = _save != null ? _save.promotionTier : 0;
-            if (tier >= 1 && tier <= _heroTiers.Length && _heroTiers[tier - 1] != null) return _heroTiers[tier - 1];
+            int index = _save != null ? SoloHero.Core.Jobs.JobCatalog.IndexOf(_save.jobId) : 0;
+            if (index > 0 && index < _jobArts.Length && _jobArts[index] != null) return _jobArts[index];
             return _heroArt;
         }
 

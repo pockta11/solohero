@@ -3,6 +3,7 @@ using SoloHero.Core;
 using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Jobs;
 using SoloHero.Core.Save;
 using SoloHero.Core.Skills;
 using SoloHero.Game.Audio;
@@ -19,12 +20,17 @@ namespace SoloHero.Game.UI.Panels
     /// catalog skill in a 6-column grid (grade frame, level badge, slot number when equipped, dark with a lock when not owned), and
     /// the selected skill's detail with level-up and equip / unequip. Equipping into full slots enters a pick mode:
     /// tap the slot to replace. Auto-equip fills the slots with the strongest skills.
+    /// D-104: skills of another job line (or any line before the first job) are tinted and say which job uses them.
     /// </summary>
     public sealed class SkillPanelPresenter : MonoBehaviour
     {
         private static readonly Color PickPulse = new Color(0.4f, 1f, 0.5f, 1f);
         private static readonly Color UnownedFrame = new Color(0.5f, 0.5f, 0.56f, 1f);
         private static readonly Color UnownedIcon = new Color(0.16f, 0.15f, 0.22f, 1f);
+        private static readonly Color OtherLineIcon = new Color(0.55f, 0.5f, 0.6f, 1f);
+
+        /// <summary>D-104 line names by JobLine value.</summary>
+        private static readonly string[] LineKeys = { "", "job.line.warrior", "job.line.mage", "job.line.archer" };
 
         [Header("Equipped slots")]
         [SerializeField] private Image[] _slotFrames = new Image[0];
@@ -220,11 +226,13 @@ namespace SoloHero.Game.UI.Panels
             {
                 bool unlocked = SkillService.IsSlotUnlocked(_balance, i, _save.heroLevel);
                 SkillDef def = unlocked ? SkillCatalog.Find(SkillBook.EquippedAt(_save, i)) : null;
-                Sprite sprite = def != null && _icons != null ? _icons.Get(def.Id) : null;
+                Sprite sprite = def != null && _icons != null ? _icons.Get(def.IconId) : null;
                 if (i < _slotIcons.Length && _slotIcons[i] != null)
                 {
                     _slotIcons[i].sprite = sprite;
                     _slotIcons[i].enabled = sprite != null;
+                    // D-104: an equipped skill of another line stays in its slot but does not fight.
+                    _slotIcons[i].color = def == null || JobService.CanUse(_save, def) ? Color.white : OtherLineIcon;
                 }
 
                 SetFrame(_slotFrames[i], def, true);
@@ -249,8 +257,8 @@ namespace SoloHero.Game.UI.Panels
                 SetFrame(_cellFrames[i], def, has);
                 if (i < _cellIcons.Length && _cellIcons[i] != null)
                 {
-                    _cellIcons[i].sprite = _icons != null ? _icons.Get(def.Id) : null;
-                    _cellIcons[i].color = has ? Color.white : UnownedIcon;
+                    _cellIcons[i].sprite = _icons != null ? _icons.Get(def.IconId) : null;
+                    _cellIcons[i].color = !has ? UnownedIcon : JobService.CanUse(_save, def) ? Color.white : OtherLineIcon;
                 }
 
                 Set(_cellBadges, i, has);
@@ -294,7 +302,7 @@ namespace SoloHero.Game.UI.Panels
 
             if (_detailIcon != null)
             {
-                _detailIcon.sprite = _icons != null ? _icons.Get(def.Id) : null;
+                _detailIcon.sprite = _icons != null ? _icons.Get(def.IconId) : null;
                 _detailIcon.color = owned ? Color.white : new Color(0.45f, 0.45f, 0.5f, 1f);
             }
 
@@ -312,6 +320,11 @@ namespace SoloHero.Game.UI.Panels
                 _detailInfo.text = owned
                     ? Strings.Format("skill.info", level, _balance.SKILL_MAX_LEVEL, Num(def.Cooldown))
                     : Strings.Format("skill.info_unowned", Num(def.Cooldown));
+                if (def.Line != JobLine.None)
+                {
+                    string line = Strings.Format("skill.line_only", Strings.Get(LineKeys[(int)def.Line]));
+                    _detailInfo.text += JobService.CanUse(_save, def) ? "  " + line : "  <color=#FF8080>" + line + "</color>";
+                }
             }
 
             if (_detailDesc != null) _detailDesc.text = Strings.Format(def.DescKey, DescArgs(def, shownLevel));

@@ -1,6 +1,7 @@
 using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Jobs;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Save;
 using SoloHero.Core.Settings;
@@ -136,13 +137,21 @@ namespace SoloHero.Game.Combat
             _hooked = null;
         }
 
-        /// <summary>D-093 basic skill: a sword wave sweeps forward from the hero on every swing.</summary>
+        /// <summary>
+        /// D-093 basic skill: a sword wave sweeps forward from the hero on every swing. D-104: a job's main attack
+        /// plays its own clip and tint instead (bolt, fire, ice, arrow), ranged ones further in front.
+        /// </summary>
         private void OnBasicSwing()
         {
             if (_hooked == null || LowEffect || _set == null || _vfx == null) return;
-            VfxClip wave = _set.Find(BasicWaveClip);
-            if (wave == null) return;
-            _vfx.Play(wave.frames, wave.fps, new Vector3((float)_hooked.Hero.X + BasicWaveOffset, EffectY, 0f), BasicWaveScale, Color.white);
+            MainAttack main = _save != null ? JobCatalog.Find(_save.jobId).Main : null;
+            VfxClip clip = _set.Find(main != null ? main.Vfx : BasicWaveClip) ?? _set.Find(BasicWaveClip);
+            if (clip == null) return;
+            float scale = main != null ? main.VfxScale : BasicWaveScale;
+            float x = (float)_hooked.Hero.X + (main != null && main.Range > 3d ? (float)main.Range * 0.4f : BasicWaveOffset);
+            float y = clip.ground ? clip.halfHeight * scale : EffectY;
+            Color tint = main != null && main.Tint != 0 ? Tint(main.Tint) : Color.white;
+            _vfx.Play(clip.frames, clip.fps, new Vector3(x, y, 0f), scale, tint);
         }
 
         private void OnHitLanded(EnemyBrain target, double amount, HitKind kind)

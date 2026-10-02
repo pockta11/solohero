@@ -54,6 +54,10 @@ namespace SoloHero.Core.Balance
         /// <summary>Unix seconds of day 1, 00:00 local. The simulation treats local time as UTC.</summary>
         public long StartUtc = 1_800_000_000L;
 
+        /// <summary>D-104: the jobs the player model picks at the first and second advancement.</summary>
+        public string Job1 = "warrior";
+        public string Job2 = "knight";
+
         public static SimSettings NoAds(int seed) => new SimSettings { Name = "no-ads", Seed = seed, UseAds = false };
 
         public static SimSettings WithAds(int seed) => new SimSettings { Name = "ads", Seed = seed, UseAds = true };

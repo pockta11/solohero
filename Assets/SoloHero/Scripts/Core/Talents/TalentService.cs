@@ -127,6 +127,15 @@ namespace SoloHero.Core.Talents
             if (data == null) throw new ArgumentNullException(nameof(data));
             if (data.talentIds.Count == 0) return TalentEffects.None;
             var effects = new TalentEffects();
+            AddTo(effects, data);
+            return effects;
+        }
+
+        /// <summary>Adds the learned talents to <paramref name="effects"/> (D-104: job mastery is added on top).</summary>
+        public static void AddTo(TalentEffects effects, SaveDataV2 data)
+        {
+            if (effects == null) throw new ArgumentNullException(nameof(effects));
+            if (data == null) throw new ArgumentNullException(nameof(data));
             for (int i = 0; i < data.talentIds.Count && i < data.talentRanks.Count; i++)
             {
                 TalentDef def = TalentCatalog.Find(data.talentIds[i]);
@@ -134,8 +143,6 @@ namespace SoloHero.Core.Talents
                 int rank = Math.Min(data.talentRanks[i], def.MaxRank);
                 if (rank > 0) effects.Add(def.Stat, def.PerRank * rank);
             }
-
-            return effects;
         }
 
         private void Align()

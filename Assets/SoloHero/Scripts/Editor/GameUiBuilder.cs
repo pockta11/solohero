@@ -35,6 +35,7 @@ namespace SoloHero.Editor
         private const string ArtRootUi = "Assets/SoloHero/Art/UI/";
         private const string DungeonName = "DungeonPopup";
         private const string CompanionName = "CompanionPopup";
+        private const string JobName = "JobPopup";
         private static readonly string[] CompanionArtPaths =
         {
             "Assets/SoloHero/Data/Art/Pet_Slime.asset", "Assets/SoloHero/Data/Art/Pet_Wisp.asset",
@@ -49,6 +50,7 @@ namespace SoloHero.Editor
         private const string SkillBarName = "SkillBar";
         private const string SkillAutoName = "SkillAuto";
         private const string BasicSkillName = "BasicSkill";
+        private const string UltimateSkillName = "UltimateSkill";
         private const string SkillIconsPath = "Assets/SoloHero/Data/Art/SkillIcons.asset";
         private const string GradeFramesPath = "Assets/SoloHero/Data/Art/GradeFrames.asset";
         private const string HeroArtPath = "Assets/SoloHero/Data/Art/Hero_Knight.asset";
@@ -263,7 +265,7 @@ namespace SoloHero.Editor
             UnwrapSafeArea(hud.transform);
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
-            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, CompanionName, BossIntroName, FlashName })
+            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, CompanionName, JobName, BossIntroName, FlashName })
             {
                 Transform stale = hud.transform.Find(name);
                 if (stale != null) Object.DestroyImmediate(stale.gameObject);
@@ -290,7 +292,8 @@ namespace SoloHero.Editor
             trimImage.raycastTarget = false;
             RectTransform panelArea = Rect("Panels", root, 0f, TabTop, 1f, PanelTop);
 
-            GameObject character = BuildCharacter(panelArea, session, toast);
+            JobPresenter jobPopup = BuildJobPopup(hud.transform, session, toast);
+            GameObject character = BuildCharacter(panelArea, session, toast, jobPopup);
             GameObject equipment = BuildEquipment(panelArea, session, toast);
             GameObject gacha = BuildGacha(panelArea, session, toast);
             GameObject skill = BuildSkill(panelArea, session, toast);
@@ -306,7 +309,9 @@ namespace SoloHero.Editor
             DungeonPresenter dungeon = BuildDungeon(hud.transform, session, toast);
             CompanionPresenter companion = BuildCompanion(hud.transform, session, toast);
             BuildRails(root, toast, settings, stageSelect, daily, dungeon, companion);
-            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily, dungeon, companion);
+            // Built early for the character panel; lift it over the damage numbers like the other popups.
+            jobPopup.transform.SetAsLastSibling();
+            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily, dungeon, companion, jobPopup);
             BuildBossIntro(hud.transform, session);
             ScreenFlash flash = BuildFlash(hud.transform);
             WrapSafeArea(hud.transform);
@@ -365,7 +370,7 @@ namespace SoloHero.Editor
         /// Character panel, idle-RPG sheet: a short hero stage (portrait, level, EXP, six stats) and four full-width
         /// upgrade rows. Each row is icon, name, level, current to next, and a green cost button on the right.
         /// </summary>
-        private static GameObject BuildCharacter(RectTransform area, CombatSession session, ToastQueue toast)
+        private static GameObject BuildCharacter(RectTransform area, CombatSession session, ToastQueue toast, JobPresenter jobPopup)
         {
             RectTransform panel = Panel("CharacterPanel", area);
             var presenter = panel.gameObject.AddComponent<CharacterPanelPresenter>();
@@ -386,23 +391,23 @@ namespace SoloHero.Editor
             UiFlipbook flipbook = heroRect.gameObject.AddComponent<UiFlipbook>();
             var flipSo = new SerializedObject(flipbook);
             flipSo.FindProperty("_art").objectReferenceValue = heroArt;
-            SerializedProperty flipTiers = flipSo.FindProperty("_tiers");
-            flipTiers.arraySize = 4;
-            for (int t = 0; t < 4; t++)
-                flipTiers.GetArrayElementAtIndex(t).objectReferenceValue = AssetDatabase.LoadAssetAtPath<CharacterArt>(HeroArtPath.Replace("Hero_Knight", "Hero_Knight" + (t + 1)));
+            SerializedProperty flipJobs = flipSo.FindProperty("_jobs");
+            CharacterArt[] jobArts = JobArts();
+            flipJobs.arraySize = jobArts.Length;
+            for (int j = 0; j < jobArts.Length; j++) flipJobs.GetArrayElementAtIndex(j).objectReferenceValue = jobArts[j];
             flipSo.FindProperty("_scale").floatValue = PortraitScale(heroArt);
             flipSo.ApplyModifiedPropertiesWithoutUndo();
             heroImage.preserveAspect = false;
-            // D-101 promotion button along the bottom of the portrait window.
-            Button promote = MakeButton("Promote", portrait, 0f, 0f, 1f, 0f, "", 22, out Text promoteLabel, Tone.Gold);
-            RectTransform promoteRect = (RectTransform)promote.transform;
-            promoteRect.anchorMin = new Vector2(0f, 0f);
-            promoteRect.anchorMax = new Vector2(1f, 0f);
-            promoteRect.pivot = new Vector2(0.5f, 0f);
-            promoteRect.offsetMin = new Vector2(10f, 8f);
-            promoteRect.offsetMax = new Vector2(-10f, 52f);
-            TapGuardButton promoteGuard = promote.gameObject.AddComponent<TapGuardButton>();
-            UnityEventTools.AddPersistentListener(promoteGuard.OnTap, presenter.Promote);
+            // D-104 job advancement button along the bottom of the portrait window.
+            Button jobButton = MakeButton("Job", portrait, 0f, 0f, 1f, 0f, "", 22, out Text jobLabel, Tone.Gold);
+            RectTransform jobRect = (RectTransform)jobButton.transform;
+            jobRect.anchorMin = new Vector2(0f, 0f);
+            jobRect.anchorMax = new Vector2(1f, 0f);
+            jobRect.pivot = new Vector2(0.5f, 0f);
+            jobRect.offsetMin = new Vector2(10f, 8f);
+            jobRect.offsetMax = new Vector2(-10f, 52f);
+            TapGuardButton jobGuard = jobButton.gameObject.AddComponent<TapGuardButton>();
+            UnityEventTools.AddPersistentListener(jobGuard.OnTap, presenter.OpenJobs);
             Button poke = portrait.gameObject.AddComponent<Button>();
             poke.transition = Selectable.Transition.None;
             poke.targetGraphic = portraitImage;
@@ -414,7 +419,7 @@ namespace SoloHero.Editor
             plate.GetComponent<Image>().raycastTarget = false;
             Text heroName = AddText(Inset("Name", plate, 8f, 2f, 70f, 0f), 18, TextAnchor.MiddleLeft);
             heroName.horizontalOverflow = HorizontalWrapMode.Overflow;
-            // D-101: the presenter writes the promotion title here (not a fixed localized key).
+            // D-104: the presenter writes the job name here (not a fixed localized key).
             heroName.text = "";
             Text heroLevel = AddText(Inset("Level", plate, 64f, 2f, 10f, 0f), 22, TextAnchor.MiddleRight);
             heroLevel.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -474,8 +479,9 @@ namespace SoloHero.Editor
             SetArray(so, "_statTexts", stats);
             so.FindProperty("_heroLevelText").objectReferenceValue = heroLevel;
             so.FindProperty("_heroNameText").objectReferenceValue = heroName;
-            so.FindProperty("_promoteButton").objectReferenceValue = promoteGuard;
-            so.FindProperty("_promoteLabel").objectReferenceValue = promoteLabel;
+            so.FindProperty("_jobButton").objectReferenceValue = jobGuard;
+            so.FindProperty("_jobLabel").objectReferenceValue = jobLabel;
+            so.FindProperty("_jobPopup").objectReferenceValue = jobPopup;
             so.FindProperty("_levelPunch").objectReferenceValue = levelPunch;
             so.FindProperty("_expFill").objectReferenceValue = expFill;
             so.FindProperty("_expText").objectReferenceValue = expText;
@@ -1266,7 +1272,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void WrapSafeArea(Transform hud)
         {
-            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, CompanionName, BossIntroName, FlashName };
+            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, CompanionName, JobName, BossIntroName, FlashName };
             RectTransform safe = Rect(SafeAreaName, hud, 0f, 0f, 1f, 1f);
             safe.gameObject.AddComponent<SafeAreaFitter>();
             var move = new System.Collections.Generic.List<Transform>();
@@ -1390,7 +1396,7 @@ namespace SoloHero.Editor
         }
 
         /// <summary>E7-14: back key router and the quit confirm popup (last sibling, above every other layer).</summary>
-        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels, DailyPresenter daily, DungeonPresenter dungeon, CompanionPresenter companion)
+        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels, DailyPresenter daily, DungeonPresenter dungeon, CompanionPresenter companion, JobPresenter job)
         {
             RectTransform holder = Rect(QuitPopupName, hud, 0f, 0f, 1f, 1f);
             holder.SetAsLastSibling();
@@ -1415,6 +1421,7 @@ namespace SoloHero.Editor
             so.FindProperty("_daily").objectReferenceValue = daily;
             so.FindProperty("_dungeon").objectReferenceValue = dungeon;
             so.FindProperty("_companion").objectReferenceValue = companion;
+            so.FindProperty("_job").objectReferenceValue = job;
             so.FindProperty("_panels").objectReferenceValue = panels;
             so.FindProperty("_quitConfirm").objectReferenceValue = popup.gameObject;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -1586,6 +1593,89 @@ namespace SoloHero.Editor
         }
 
         /// <summary>D-102 companions popup: four rows (portrait, name and level, attack or unlock stage, equip, level up).</summary>
+        /// <summary>D-104 job looks index-aligned with JobCatalog.All, as ArtBuilder writes them.</summary>
+        private static CharacterArt[] JobArts()
+        {
+            var arts = new CharacterArt[SoloHero.Core.Jobs.JobCatalog.Count];
+            for (int j = 0; j < arts.Length; j++)
+            {
+                string look = SoloHero.Core.Jobs.JobCatalog.All[j].Look;
+                arts[j] = AssetDatabase.LoadAssetAtPath<CharacterArt>(look == "knight" ? HeroArtPath : ArtBuilder.JobArtPath(look));
+            }
+
+            return arts;
+        }
+
+        /// <summary>
+        /// D-104 job advancement popup: the current job and the next requirement on top, then up to three job cards
+        /// (portrait, name, main attack and mastery, description, pick / confirm button).
+        /// </summary>
+        private static JobPresenter BuildJobPopup(Transform hud, CombatSession session, ToastQueue toast)
+        {
+            RectTransform holder = Rect(JobName, hud, 0f, 0f, 1f, 1f);
+            holder.SetAsLastSibling();
+            JobPresenter presenter = holder.gameObject.AddComponent<JobPresenter>();
+
+            RectTransform popup = Rect("Popup", holder, 0f, 0f, 1f, 1f);
+            popup.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.88f);
+            RectTransform box = Rect("Box", popup, 0.04f, 0.2f, 0.96f, 0.8f);
+            UiSkin.Sliced(box.gameObject.AddComponent<Image>(), UiSkin.Frame);
+            Localize(MakeText("Title", box, 0.05f, 0.91f, 0.95f, 0.98f, "", 42, TextAnchor.MiddleCenter), "job.title");
+            Text current = MakeText("Current", box, 0.05f, 0.85f, 0.95f, 0.91f, "", 26, TextAnchor.MiddleCenter);
+            current.color = new Color(1f, 0.85f, 0.35f, 1f);
+
+            var cards = new GameObject[3];
+            var portraits = new Image[3];
+            var names = new Text[3];
+            var mains = new Text[3];
+            var descs = new Text[3];
+            var picks = new TapGuardButton[3];
+            var pickLabels = new Text[3];
+            for (int i = 0; i < 3; i++)
+            {
+                float y1 = 0.84f - i * 0.245f;
+                RectTransform row = Rect("Card" + i, box, 0.04f, y1 - 0.235f, 0.96f, y1);
+                UiSkin.Sliced(row.gameObject.AddComponent<Image>(), UiSkin.Card);
+                cards[i] = row.gameObject;
+                RectTransform face = Box("Portrait", row, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(192f, 144f));
+                portraits[i] = Plain(face, null);
+                portraits[i].preserveAspect = true;
+                names[i] = MakeText("Name", row, 0.22f, 0.74f, 0.7f, 0.96f, "", 33, TextAnchor.MiddleLeft);
+                names[i].color = new Color(1f, 0.9f, 0.6f, 1f);
+                mains[i] = MakeText("Main", row, 0.22f, 0.4f, 0.98f, 0.76f, "", 22, TextAnchor.UpperLeft);
+                mains[i].color = new Color(0.6f, 0.9f, 1f, 1f);
+                mains[i].verticalOverflow = VerticalWrapMode.Overflow;
+                descs[i] = MakeText("Desc", row, 0.22f, 0.04f, 0.7f, 0.42f, "", 22, TextAnchor.UpperLeft);
+                descs[i].color = new Color(0.86f, 0.85f, 0.95f, 1f);
+                descs[i].horizontalOverflow = HorizontalWrapMode.Wrap;
+                descs[i].verticalOverflow = VerticalWrapMode.Overflow;
+                Button pick = MakeButton("Pick", row, 0.72f, 0.08f, 0.97f, 0.42f, "", 28, out pickLabels[i], Tone.Gold);
+                picks[i] = pick.gameObject.AddComponent<TapGuardButton>();
+                UnityEventTools.AddIntPersistentListener(picks[i].OnTap, presenter.Pick, i);
+            }
+
+            Button close = MakeButton("Close", box, 0.3f, 0.02f, 0.7f, 0.09f, "", 32, out Text closeLabel, Tone.Gray);
+            Localize(closeLabel, "companion.close");
+            UnityEventTools.AddPersistentListener(close.onClick, presenter.Close);
+
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
+            so.FindProperty("_session").objectReferenceValue = session;
+            so.FindProperty("_toast").objectReferenceValue = toast;
+            so.FindProperty("_current").objectReferenceValue = current;
+            SetArray(so, "_arts", JobArts());
+            SetArray(so, "_cards", cards);
+            SetArray(so, "_portraits", portraits);
+            SetArray(so, "_names", names);
+            SetArray(so, "_mains", mains);
+            SetArray(so, "_descs", descs);
+            SetArray(so, "_picks", picks);
+            SetArray(so, "_pickLabels", pickLabels);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            popup.gameObject.SetActive(false);
+            return presenter;
+        }
+
         private static CompanionPresenter BuildCompanion(Transform hud, CombatSession session, ToastQueue toast)
         {
             RectTransform holder = Rect(CompanionName, hud, 0f, 0f, 1f, 1f);
@@ -1902,7 +1992,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void BuildSkillBar(Transform hud, BattleHud battleHud, SerializedObject so)
         {
-            foreach (string stale in new[] { "Skill1", "Skill2", "Skill3", SkillBarName, SkillAutoName, BasicSkillName })
+            foreach (string stale in new[] { "Skill1", "Skill2", "Skill3", SkillBarName, SkillAutoName, BasicSkillName, UltimateSkillName })
             {
                 Transform t = hud.Find(stale);
                 if (t != null) Object.DestroyImmediate(t.gameObject);
@@ -1910,19 +2000,28 @@ namespace SoloHero.Editor
 
             int count = new SoloHero.Core.Config.BalanceValues().SKILL_SLOT_COUNT;
             RectTransform bar = Rect(SkillBarName, hud, 0.02f, 0.393f, 0.98f, 0.455f);
-            var icons = new Image[count];
-            var frames = new Image[count];
-            var cooldowns = new Image[count];
-            var times = new Text[count];
-            var locks = new Text[count];
-            var punches = new UiPunch[count];
-            var readyMarks = new GameObject[count];
+            // D-104: one more entry after the equip slots for the second job's ultimate, next to the basic skill.
+            int total = count + 1;
+            var icons = new Image[total];
+            var frames = new Image[total];
+            var cooldowns = new Image[total];
+            var times = new Text[total];
+            var locks = new Text[total];
+            var punches = new UiPunch[total];
+            var readyMarks = new GameObject[total];
             Sprite lockSprite = UiSkin.Icon("lock");
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < total; i++)
             {
+                bool ultimate = i == count;
                 float cx = (i + 0.5f) / count;
-                RectTransform slot = Rect("Slot" + i, bar, cx, 0.5f, cx, 0.5f);
+                RectTransform slot = ultimate ? Rect(UltimateSkillName, hud, 0.02f, 0.458f, 0.02f, 0.458f) : Rect("Slot" + i, bar, cx, 0.5f, cx, 0.5f);
                 slot.sizeDelta = new Vector2(120f, 120f);
+                if (ultimate)
+                {
+                    slot.pivot = new Vector2(0f, 0f);
+                    slot.anchoredPosition = new Vector2(150f, 0f);
+                    slot.sizeDelta = new Vector2(96f, 96f);
+                }
                 frames[i] = slot.gameObject.AddComponent<Image>();
                 UiSkin.Sliced(frames[i], UiSkin.GradeNone);
                 Button button = slot.gameObject.AddComponent<Button>();
@@ -1930,9 +2029,10 @@ namespace SoloHero.Editor
                 if (battleHud != null) UnityEventTools.AddIntPersistentListener(button.onClick, battleHud.CastSlot, i);
                 punches[i] = slot.gameObject.AddComponent<UiPunch>();
 
-                icons[i] = Plain(Box("Icon", slot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(96f, 96f)), null);
+                Vector2 inner = ultimate ? new Vector2(76f, 76f) : new Vector2(96f, 96f);
+                icons[i] = Plain(Box("Icon", slot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, inner), null);
 
-                RectTransform overlay = Box("Cooldown", slot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(96f, 96f));
+                RectTransform overlay = Box("Cooldown", slot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, inner);
                 cooldowns[i] = overlay.gameObject.AddComponent<Image>();
                 cooldowns[i].sprite = UiSkin.White;
                 cooldowns[i].color = new Color(0f, 0f, 0.05f, 0.68f);
@@ -1960,6 +2060,14 @@ namespace SoloHero.Editor
                 lockImage.sprite = lockSprite;
                 lockImage.preserveAspect = true;
                 lockImage.raycastTarget = false;
+                if (ultimate)
+                {
+                    Text ultTag = AddText(BottomBand("Tag", slot, -18f, 30f, -24f, -24f), 22, TextAnchor.MiddleCenter);
+                    ultTag.verticalOverflow = VerticalWrapMode.Overflow;
+                    ultTag.color = new Color(1f, 0.75f, 0.35f, 1f);
+                    Localize(ultTag, "hud.ultimate");
+                    slot.gameObject.SetActive(false);
+                }
             }
 
             // D-085: AUTO toggle on the ground line above the last slots; green = auto, gray = manual.
@@ -1984,12 +2092,14 @@ namespace SoloHero.Editor
             Text basicTag = AddText(BottomBand("Tag", basic, -18f, 30f, -24f, -24f), 22, TextAnchor.MiddleCenter);
             basicTag.verticalOverflow = VerticalWrapMode.Overflow;
             basicTag.color = new Color(1f, 0.9f, 0.55f, 1f);
-            Localize(basicTag, "hud.basic_skill");
+            // D-104: BattleHud writes the job's main attack name here.
+            basicTag.text = "";
             Localize(autoLabel, "hud.skill_auto");
             if (battleHud != null) UnityEventTools.AddPersistentListener(auto.onClick, battleHud.ToggleSkillAuto);
 
             if (so == null) return;
             so.FindProperty("_basicCooldown").objectReferenceValue = basicCooldown;
+            so.FindProperty("_basicTag").objectReferenceValue = basicTag;
             so.FindProperty("_autoImage").objectReferenceValue = auto.GetComponent<Image>();
             so.FindProperty("_autoLabel").objectReferenceValue = autoLabel;
             so.FindProperty("_autoOnSprite").objectReferenceValue = UiSkin.ButtonSprite(Tone.Green);

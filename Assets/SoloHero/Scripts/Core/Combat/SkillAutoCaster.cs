@@ -38,7 +38,8 @@ namespace SoloHero.Core.Combat
         public SkillAutoCaster(BalanceValues balance)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
-            int slots = balance.SKILL_SLOT_COUNT < 1 ? 1 : balance.SKILL_SLOT_COUNT;
+            // D-104: one extra slot after the book slots holds the second job's ultimate.
+            int slots = (balance.SKILL_SLOT_COUNT < 1 ? 1 : balance.SKILL_SLOT_COUNT) + 1;
             _defs = new SkillDef[slots];
             _levels = new int[slots];
             _cooldown = new float[slots];
@@ -47,6 +48,9 @@ namespace SoloHero.Core.Combat
         }
 
         public int SlotCount => _defs.Length;
+
+        /// <summary>D-104: the job ultimate's slot (the last one); it auto-casts even in manual mode.</summary>
+        public int UltimateSlot => _defs.Length - 1;
 
         /// <summary>D-085: false in manual mode, where slots cast only when tapped.</summary>
         public bool AutoEnabled { get; set; } = true;
@@ -146,11 +150,12 @@ namespace SoloHero.Core.Combat
 
             TickPending(dt, world);
 
-            if (!AutoEnabled || hero.State == HeroState.Skill) return;
+            if (hero.State == HeroState.Skill) return;
             if (_sequenceGap > 0f) return;
 
             for (int i = 0; i < _defs.Length; i++)
             {
+                if (!AutoEnabled && i != UltimateSlot) continue;
                 SkillDef def = _defs[i];
                 if (def == null || _cooldown[i] > 0f) continue;
                 if (!MeetsAutoCondition(def, hero, world, isBossFight)) continue;

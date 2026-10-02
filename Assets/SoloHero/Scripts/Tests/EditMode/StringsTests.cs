@@ -56,7 +56,7 @@ namespace SoloHero.Tests.EditMode
         {
             Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));
             var used = new Regex("Strings\\.(?:Get|Format)\\(\"([a-z0-9_.]+)\"");
-            var keyed = new Regex("\"((?:tab|hud|toast|ad|boot|offline|tutorial|stat|char|skill|grade|slot|equip|gacha|settings|quit|stage|boss)\\.[a-z0-9_.]+)\"");
+            var keyed = new Regex("\"((?:tab|hud|toast|ad|boot|offline|tutorial|stat|char|skill|grade|slot|equip|gacha|settings|quit|stage|boss|job)\\.[a-z0-9_.]+)\"");
             var missing = new List<string>();
 
             foreach (string file in Directory.GetFiles(ScriptsRoot, "*.cs", SearchOption.AllDirectories))
@@ -93,6 +93,20 @@ namespace SoloHero.Tests.EditMode
             {
                 Assert.IsTrue(table.ContainsKey(def.NameKey), def.NameKey);
                 Assert.IsTrue(table.ContainsKey(def.DescKey), def.DescKey);
+            }
+        }
+
+        [Test]
+        public void Table_HasEveryJobTextAndUltimate()
+        {
+            Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));
+            foreach (SoloHero.Core.Jobs.JobDef job in SoloHero.Core.Jobs.JobCatalog.All)
+            {
+                foreach (string key in new[] { job.NameKey, job.MainKey, job.DescKey })
+                    Assert.IsTrue(table.ContainsKey(key), key);
+                if (job.Ultimate == null) continue;
+                Assert.IsTrue(table.ContainsKey(job.Ultimate.NameKey), job.Ultimate.NameKey);
+                Assert.IsTrue(table.ContainsKey(job.Ultimate.DescKey), job.Ultimate.DescKey);
             }
         }
 

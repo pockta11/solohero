@@ -1,4 +1,5 @@
 using SoloHero.Core.Gacha;
+using SoloHero.Core.Jobs;
 
 namespace SoloHero.Core.Skills
 {
@@ -13,6 +14,14 @@ namespace SoloHero.Core.Skills
         public string Id { get; init; } = "";
         public Grade Grade { get; init; }
         public SkillKind Kind { get; init; }
+
+        /// <summary>D-104 job line that may equip it; None = starter skill, usable by everyone.</summary>
+        public JobLine Line { get; init; }
+
+        /// <summary>Icon id in the SkillIconSet; defaults to the skill id (job ultimates borrow a catalog icon).</summary>
+        public string Icon { get; init; }
+
+        public string IconId => string.IsNullOrEmpty(Icon) ? Id : Icon;
         public float Cooldown { get; init; } = 10f;
 
         /// <summary>Reach to the right of the hero (units). Strike / Area targets and the auto-cast check use it.</summary>

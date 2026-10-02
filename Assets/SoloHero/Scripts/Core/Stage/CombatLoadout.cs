@@ -2,6 +2,7 @@ using System;
 using SoloHero.Core.Config;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Jobs;
 using SoloHero.Core.Save;
 using SoloHero.Core.Skills;
 using SoloHero.Core.Talents;
@@ -39,8 +40,8 @@ namespace SoloHero.Core.Stage
                 bonus.BootsCritBonus,
                 default,
                 SkillService.OwnedAtkBonus(balance, save),
-                TalentService.Effects(save),
-                save.promotionTier);
+                JobService.Effects(save),
+                JobService.TierOf(save));
         }
 
         public static void Apply(StageRunner runner, BalanceValues balance, SaveDataV2 save)
@@ -51,14 +52,21 @@ namespace SoloHero.Core.Stage
             int companion = SoloHero.Core.Companions.CompanionCatalog.IndexOf(save.companionEquipped);
             runner.Companion.Set(companion >= 0 ? SoloHero.Core.Companions.CompanionCatalog.All[companion] : null,
                 SoloHero.Core.Companions.CompanionService.Level(save, companion));
-            runner.SetTalents(TalentService.Effects(save));
-            for (int slot = 0; slot < runner.Skills.SlotCount; slot++)
+            runner.SetTalents(JobService.Effects(save));
+            int slots = SkillService.SlotCount(balance);
+            for (int slot = 0; slot < slots; slot++)
             {
                 SkillDef def = SkillService.IsSlotUnlocked(balance, slot, save.heroLevel)
                     ? SkillCatalog.Find(SkillBook.EquippedAt(save, slot))
                     : null;
+                // D-104: a skill of another line (an old save, or a job change) stays equipped but does not cast.
+                if (!JobService.CanUse(save, def)) def = null;
                 runner.Skills.SetSlot(slot, def, def != null ? SkillBook.GetLevel(save, def.Id) : 1);
             }
+
+            JobDef job = JobCatalog.Find(save.jobId);
+            runner.Hero.SetMainAttack(job.Main);
+            runner.Skills.SetSlot(runner.Skills.UltimateSlot, job.Ultimate, 1);
         }
     }
 }

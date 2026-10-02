@@ -85,6 +85,7 @@ namespace SoloHero.Core.Balance
             }
 
             AllocateTalents();
+            Advance();
 
             // New slots open with hero levels; the player fills them.
             if (_skills.FirstEmptyUnlockedSlot() >= 0) _skills.AutoEquip();
@@ -275,6 +276,17 @@ namespace SoloHero.Core.Balance
             GoldPulls += r.Items.Length;
             Collect(r);
             return true;
+        }
+
+        /// <summary>D-104: the player model advances as soon as it may, to the jobs named in the settings.</summary>
+        public string Job1 = "warrior";
+        public string Job2 = "knight";
+
+        private void Advance()
+        {
+            var jobs = new SoloHero.Core.Jobs.JobService(_save, _b);
+            if (!jobs.CanAdvance) return;
+            if (jobs.TryAdvance(jobs.Tier == 0 ? Job1 : Job2).Ok) _skills.AutoEquip();
         }
 
         private bool SummonSkill()

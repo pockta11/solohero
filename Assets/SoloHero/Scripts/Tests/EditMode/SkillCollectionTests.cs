@@ -123,16 +123,17 @@ namespace SoloHero.Tests.EditMode
             var b = new BalanceValues();
             var save = SaveDataV2.CreateNew();
             save.heroLevel = b.SKILL_UNLOCK_LV_4;
+            save.jobId = "mage"; // D-104: book skills need a job of their line
             var service = new SkillService(save, b);
             SkillBook.AddOwned(save, "meteor");
-            SkillBook.AddOwned(save, "thunder");
+            SkillBook.AddOwned(save, "fireball");
 
             Assert.IsTrue(service.TryEquip("meteor").Ok);
             Assert.AreEqual(3, SkillBook.SlotOf(save, "meteor"));
-            Assert.AreEqual(FailReason.SlotsFull, service.TryEquip("thunder").Reason);
+            Assert.AreEqual(FailReason.SlotsFull, service.TryEquip("fireball").Reason);
 
-            Assert.IsTrue(service.TryEquip("thunder", 0).Ok);
-            Assert.AreEqual("thunder", SkillBook.EquippedAt(save, 0));
+            Assert.IsTrue(service.TryEquip("fireball", 0).Ok);
+            Assert.AreEqual("fireball", SkillBook.EquippedAt(save, 0));
             Assert.AreEqual(-1, SkillBook.SlotOf(save, SkillCatalog.PowerStrike));
         }
 
@@ -141,6 +142,7 @@ namespace SoloHero.Tests.EditMode
         {
             var b = new BalanceValues();
             var save = SaveDataV2.CreateNew();
+            save.jobId = "mage";
             var service = new SkillService(save, b);
             SkillBook.AddOwned(save, "meteor");
 
@@ -167,6 +169,7 @@ namespace SoloHero.Tests.EditMode
         {
             var b = new BalanceValues();
             var save = SaveDataV2.CreateNew();
+            save.jobId = "warrior";
             save.heroLevel = b.SKILL_UNLOCK_LV_2;
             var service = new SkillService(save, b);
             SkillBook.AddOwned(save, "judgement");

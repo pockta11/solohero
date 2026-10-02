@@ -150,6 +150,25 @@ LOOKS = {
 for _name, _over in TIERS.items():
     LOOKS[_name] = dict(HERO, name=_name, **_over)
 
+# D-104 job looks: hero-sized (frame, pivot and face as the knight), weapon-specific attack clips.
+JOB_LOOKS = {
+    "jobmage": dict(head="wizard", hat="tunic", body="robe", cloth="tunic", legs="tunic", weapon="staff", orb="orb_purple"),
+    "jobpyro": dict(head="wizard", hat="red", body="robe", cloth="tunic_crimson", legs="red", weapon="staff", orb="orb_fire",
+                    cape_mat="cape_gold", cape=True),
+    "jobcryo": dict(head="wizard", hat="tunic_white", body="robe", cloth="cape_blue", legs="cape_blue", weapon="staff",
+                    orb="wisp", cape_mat="plume_white", cape=True),
+    "jobarcher": dict(head="hood", hood="green_cloth", body="tunic", cloth="green_cloth", legs="brown", weapon="bow"),
+    "jobranger": dict(head="hood", hood="leather", body="tunic", cloth="green_cloth", legs="leather", weapon="bow",
+                      cape_mat="green_cloth", cape=True),
+    "jobsniper": dict(head="hood", hood="black", body="tunic", cloth="navy", legs="black", weapon="bow", cape_mat="black",
+                      cape=True),
+}
+for _name, _over in JOB_LOOKS.items():
+    _look = dict(HERO, name=_name, hair=True, shield=False, brows=False, cape=False)
+    _look.update(_over)
+    _look["job"] = True
+    LOOKS[_name] = _look
+
 # D-102 companions: small creatures that float behind the hero; they face right like the hero (not mirrored).
 for _name, _species in (("petslime", "slime"), ("petwisp", "wisp"), ("petowl", "owl"), ("petdragon", "dragon")):
     LOOKS[_name] = dict(kind="pet", species=_species, R=8.0, frame=(48, 48), foot_x=24, mirror=False, folder="Pets")
@@ -1072,6 +1091,9 @@ def main():
     kind = LOOK.get("kind")
     if ENTITY.startswith("knight"):
         rig, clips, poser = build_humanoid(LOOK), hero_clips(), pose_humanoid
+    elif LOOK.get("job"):
+        # Mage and archer jobs swing a staff or draw a bow, so they take the enemy clip set with its run cycle.
+        rig, clips, poser = build_humanoid(LOOK), cast_clips(LOOK), pose_humanoid
     elif kind == "flyeye":
         rig, clips, poser = build_flyeye(LOOK), cast_clips(LOOK), pose_flyeye
     elif kind == "golem":

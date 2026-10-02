@@ -12,6 +12,9 @@ namespace SoloHero.Core.Common
         DailyLimit,
         AdUnavailable,
         SlotsFull,
-        NoTalentPoints
+        NoTalentPoints,
+
+        /// <summary>D-104: the skill belongs to another job line (or the hero has no job yet).</summary>
+        JobLocked
     }
 }
