@@ -20,12 +20,12 @@ namespace SoloHero.Editor
     /// Tools > Setup > Build Art (E8-02..05, E8-08, E8-12, E8-13). Imports the sheets under Art/ and the clips under
     /// Audio/ with their presets, builds CharacterArt / ChapterTheme / VfxSet / SoundBank data assets, wires them into
     /// Game.unity (flipbooks, parallax layers, ground, VFX pool, combat FX, camera shake) and Boot.unity (audio
-    /// sources) and applies the Galmuri pixel font to every UI Text in Boot and Game. Safe to run again.
+    /// sources) and applies the UI font (rounded Jua) to every UI Text in Boot and Game. Safe to run again.
     /// Batch: Unity.exe -batchmode -quit -projectPath . -executeMethod SoloHero.Editor.ArtBuilder.BuildBatch
     /// </summary>
     public static class ArtBuilder
     {
-        public const string FontPath = "Assets/SoloHero/Art/Fonts/Galmuri11.ttf";
+        public const string FontPath = "Assets/SoloHero/Art/Fonts/SoloHeroJua.ttf";
 
         private const string ArtRoot = "Assets/SoloHero/Art";
         private const string DataArt = "Assets/SoloHero/Data/Art";

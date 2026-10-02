@@ -1,6 +1,8 @@
 using System;
+using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Settings;
 using SoloHero.Core.Skills;
@@ -30,6 +32,13 @@ namespace SoloHero.Game.UI
         [SerializeField] private Text _retreatPrompt;
         [SerializeField] private UiPunch _goldPunch;
         [SerializeField] private Text _gemText;
+
+        [Header("Hero status in the top bar: name + level, HP and EXP gauges")]
+        [SerializeField] private Text _heroNameText;
+        [SerializeField] private RectTransform _heroHpFill;
+        [SerializeField] private Text _heroHpText;
+        [SerializeField] private RectTransform _heroExpFill;
+        [SerializeField] private Text _heroExpText;
 
         [Header("Skill bar (D-078): one entry per slot")]
         [SerializeField] private SkillIconSet _skillIconSet;
@@ -139,12 +148,55 @@ namespace SoloHero.Game.UI
             }
 
             RefreshStage(runner);
+            RefreshHero(runner);
             RefreshKills(runner);
             RefreshBossTimer(runner);
             RefreshBossBar(runner);
             RefreshChoices(runner);
             RefreshSkills(runner);
             RefreshRetreatPrompt(runner);
+        }
+
+        private int _shownHeroLevel = -1;
+        private string _shownHeroJob;
+        private int _shownHpPermille = -1;
+        private double _shownHp = -1d;
+        private int _shownExpPermille = -1;
+
+        /// <summary>Top bar: "Lv 30 Pyromancer", HP gauge with the current HP, EXP gauge with its percentage.</summary>
+        private void RefreshHero(StageRunner runner)
+        {
+            if (_save == null || _balance == null) return;
+            if (_heroNameText != null && (_save.heroLevel != _shownHeroLevel || _save.jobId != _shownHeroJob))
+            {
+                _shownHeroLevel = _save.heroLevel;
+                _shownHeroJob = _save.jobId;
+                _heroNameText.text = Strings.Format("hud.hero_name", _save.heroLevel,
+                    Strings.Get(SoloHero.Core.Jobs.JobCatalog.Find(_save.jobId).NameKey));
+            }
+
+            HeroBrain hero = runner.Hero;
+            double maxHp = hero.MaxHp;
+            int hp = maxHp > 0d ? Mathf.Clamp(Mathf.RoundToInt((float)(hero.Hp / maxHp * 1000d)), 0, 1000) : 0;
+            if (hp != _shownHpPermille && _heroHpFill != null)
+            {
+                _shownHpPermille = hp;
+                _heroHpFill.anchorMax = new Vector2(hp / 1000f, 1f);
+            }
+
+            if (_heroHpText != null && Math.Abs(hero.Hp - _shownHp) >= 1d)
+            {
+                _shownHp = hero.Hp;
+                _heroHpText.text = BigNumberFormat.Format(Math.Max(0d, Math.Ceiling(hero.Hp)));
+            }
+
+            double need = HeroLevelService.ExpRequired(_balance, _save.heroLevel);
+            int exp = need > 0d ? Mathf.Clamp(Mathf.FloorToInt((float)(_save.heroExp / need * 1000d)), 0, 1000) : 0;
+            if (exp == _shownExpPermille) return;
+            _shownExpPermille = exp;
+            if (_heroExpFill != null) _heroExpFill.anchorMax = new Vector2(exp / 1000f, 1f);
+            if (_heroExpText != null)
+                _heroExpText.text = Strings.Format("char.percent", (exp / 10f).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
         }
 
         public void ChooseRetry()

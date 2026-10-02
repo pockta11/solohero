@@ -82,13 +82,22 @@ namespace SoloHero.Editor
             };
         }
 
-        /// <summary>A pixel drop shadow keeps white text readable on busy backgrounds.</summary>
+        /// <summary>
+        /// Casual-RPG lettering: a dark plum outline plus a drop shadow under it, so the rounded font reads on busy
+        /// backgrounds. Texts that only have the old plain shadow get the outline added in front of it.
+        /// </summary>
         public static void TextShadow(Text text)
         {
-            if (text == null || text.GetComponent<Shadow>() != null) return;
-            Shadow shadow = text.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
-            shadow.effectDistance = new Vector2(0f, -3f);
+            if (text == null || text.GetComponent<Outline>() != null) return;
+            Outline outline = text.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.15f, 0.1f, 0.2f, 1f);
+            outline.effectDistance = new Vector2(2.5f, -2.5f);
+            Shadow shadow = null;
+            foreach (Shadow s in text.GetComponents<Shadow>())
+                if (!(s is Outline)) shadow = s;
+            if (shadow == null) shadow = text.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0.08f, 0.05f, 0.12f, 0.75f);
+            shadow.effectDistance = new Vector2(0f, -5f);
         }
     }
 }

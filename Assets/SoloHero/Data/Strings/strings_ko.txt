@@ -140,6 +140,8 @@ equip.empty	{0}: 없음
 equip.owned	보유 {0}
 equip.none	-
 equip.swap	교체
+equip.best	최고 등급 장착
+equip.best_already	이미 최고 등급을 장착했습니다
 
 # Summon panel
 gacha.pity	전설까지 {0}회   ({1}/{2})
@@ -323,6 +325,7 @@ job.line.archer	궁수
 skill.line_only	{0} 전용
 toast.job_locked	전직해야 쓸 수 있는 스킬입니다
 hud.ultimate	궁극기
+hud.hero_name	Lv {0} {1}
 job.name.beginner	초보자
 job.main.beginner	섬광 베기
 job.desc.beginner	기본 스킬 3종(강타·회전베기·전투의 함성)만 씁니다. Lv 10에 전직하세요.

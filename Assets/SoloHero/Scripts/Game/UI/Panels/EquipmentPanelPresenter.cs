@@ -1,7 +1,11 @@
+using SoloHero.Core;
 using SoloHero.Core.Common;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
+using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
+using SoloHero.Core.Stage;
+using SoloHero.Game.Audio;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
 using SoloHero.Game.View;
@@ -13,6 +17,7 @@ namespace SoloHero.Game.UI.Panels
     /// <summary>
     /// Equipment panel (E7-06): 4 slots with the equipped grade in its color, owned grades per slot,
     /// and a swap button that steps to the next owned item in that slot (downgrades allowed, GDD).
+    /// D-106: the slots stand around the hero (tap a slot to swap), with ATK / HP / DEF and "equip best" below.
     /// </summary>
     public sealed class EquipmentPanelPresenter : MonoBehaviour
     {
@@ -25,6 +30,8 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Image[] _slotFrames = new Image[4];
         [SerializeField] private EquipmentIconSet _icons;
         [SerializeField] private GradeFrameSet _frames;
+        [Tooltip("D-106: ATK, HP, DEF of the current loadout.")]
+        [SerializeField] private Text[] _statTexts = new Text[3];
 
         private EquipService _equip;
         private SaveDataV2 _save;
@@ -85,6 +92,36 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
+        /// <summary>D-106: equips the highest owned grade in every slot.</summary>
+        public void EquipBest()
+        {
+            if (_equip == null || _save == null) return;
+            bool changed = false;
+            for (int s = 0; s < GachaCatalog.SlotCount; s++)
+            {
+                var slot = (EquipmentSlot)s;
+                for (int g = GachaCatalog.GradeCount - 1; g >= 0; g--)
+                {
+                    string id = GachaCatalog.IdOf(slot, (Grade)g);
+                    if (!_save.ownedEquipment.Contains(id)) continue;
+                    if (id != Equipped(slot) && _equip.TryEquip(_save, slot, id).Ok) changed = true;
+                    break;
+                }
+            }
+
+            if (changed)
+            {
+                if (_session != null) _session.RefreshLoadout();
+                PanelServices.TryGet<AudioService>()?.Play(SfxId.Upgrade);
+            }
+            else if (_toast != null)
+            {
+                _toast.Show(Strings.Get("equip.best_already"));
+            }
+
+            Refresh();
+        }
+
         private void Refresh()
         {
             if (_save == null) return;
@@ -108,8 +145,8 @@ namespace SoloHero.Game.UI.Panels
                 {
                     int level = grade < 0 ? 0 : EquipmentLevels.Get(_save, Equipped(slot));
                     _slotTexts[s].text = grade < 0
-                        ? Strings.Format("equip.empty", PanelServices.SlotName(slot))
-                        : Strings.Format("equip.slot", PanelServices.SlotName(slot), PanelServices.GradeName((Grade)grade) + (level > 0 ? " +" + level : ""));
+                        ? PanelServices.SlotName(slot)
+                        : PanelServices.GradeName((Grade)grade) + (level > 0 ? " +" + level : "");
                     _slotTexts[s].color = grade < 0 ? Color.white : PanelServices.GradeColor((Grade)grade);
                 }
 
@@ -124,12 +161,21 @@ namespace SoloHero.Game.UI.Panels
                     _slotFrames[s].sprite = grade < 0 ? _frames.empty : _frames.Get((Grade)grade);
 
                 if (s < _ownedTexts.Length && _ownedTexts[s] != null)
-                    _ownedTexts[s].text = owned == 0
-                        ? Strings.Get("equip.none")
-                        : Strings.Format("equip.owned_line", grade < 0 ? "" : Effect(slot, bonus), owned);
+                    _ownedTexts[s].text = grade < 0 ? Strings.Get("equip.none") : Effect(slot, bonus);
                 if (s < _swapButtons.Length && _swapButtons[s] != null)
                     _swapButtons[s].SetAvailable(owned > 1 || (owned == 1 && grade < 0));
             }
+
+            if (_balance == null) return;
+            HeroStats stats = CombatLoadout.ComputeStats(_balance, _save);
+            SetStat(0, stats.Atk);
+            SetStat(1, stats.Hp);
+            SetStat(2, stats.Def);
+        }
+
+        private void SetStat(int index, double value)
+        {
+            if (index < _statTexts.Length && _statTexts[index] != null) _statTexts[index].text = BigNumberFormat.Format(value);
         }
 
         /// <summary>D-103: what the equipped item does, e.g. "ATK x1.80" (boots: attack speed and crit).</summary>
