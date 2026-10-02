@@ -5,7 +5,7 @@ Scripts that made the project-owned and converted art. Python 3 + Pillow (+ nump
 | Script | Output |
 |---|---|
 | `vfxgen.py OUT` | skill VFX strips `vfx{name}_play_{frames}.png` -> `Assets/SoloHero/Art/Vfx` |
-| `icongen.py OUT` | skill icons `skill_{id}.png` (24x24) + `icon_lock.png` -> `Art/Icons/Skills`, `Art/UI/Icons` |
+| `icongen.py OUT` | skill icons `skill_{id}.png` (24x24; also D-104 `skill_main_{job}` main attacks and `skill_ult_*` ultimates) + `icon_lock.png` -> `Art/Icons/Skills`, `Art/UI/Icons` |
 | `sfxgen.py OUT` | synthesized `sfx_skill_{fire,thunder,ice,heal,magic}.wav` -> `Assets/SoloHero/Audio/Sfx` |
 | `itchdl.py user/slug ...` | downloads free (name-your-price) itch.io packs as zips |
 | `build3d.py [ENTITY ...]` | **current characters**: Blender renders (`chibi3d.py`) -> `pixelize.py` -> `Art/{Hero,Enemies,Bosses}/{entity}_{clip}_{frames}.png` (hero, 8 enemies, 6 bosses incl. `golem`). Needs Blender 5.2 (`winget install BlenderFoundation.Blender`); `--preview out.png` writes a contact sheet |

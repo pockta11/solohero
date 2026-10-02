@@ -2080,7 +2080,7 @@ namespace SoloHero.Editor
             basic.pivot = new Vector2(0f, 0f);
             basic.sizeDelta = new Vector2(96f, 96f);
             UiSkin.Sliced(Plain(basic, null), UiSkin.GradeFrame(SoloHero.Core.Gacha.Grade.Rare));
-            FixedIcon(basic, "basic", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, 64f);
+            Image basicIcon = FixedIcon(basic, "basic", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, 64f);
             Image basicCooldown = Box("Cooldown", basic, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(76f, 76f)).gameObject.AddComponent<Image>();
             basicCooldown.sprite = UiSkin.White;
             basicCooldown.color = new Color(0f, 0f, 0.05f, 0.6f);
@@ -2100,6 +2100,7 @@ namespace SoloHero.Editor
             if (so == null) return;
             so.FindProperty("_basicCooldown").objectReferenceValue = basicCooldown;
             so.FindProperty("_basicTag").objectReferenceValue = basicTag;
+            so.FindProperty("_basicIcon").objectReferenceValue = basicIcon;
             so.FindProperty("_autoImage").objectReferenceValue = auto.GetComponent<Image>();
             so.FindProperty("_autoLabel").objectReferenceValue = autoLabel;
             so.FindProperty("_autoOnSprite").objectReferenceValue = UiSkin.ButtonSprite(Tone.Green);

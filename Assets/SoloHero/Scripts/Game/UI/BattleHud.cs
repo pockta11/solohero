@@ -50,6 +50,8 @@ namespace SoloHero.Game.UI
         [SerializeField] private Image _basicCooldown;
         [Tooltip("D-104: the basic skill's name, which is the job's main attack.")]
         [SerializeField] private Text _basicTag;
+        [Tooltip("D-104: the basic skill's icon; jobs show their main attack icon, the beginner keeps the flash slash.")]
+        [SerializeField] private Image _basicIcon;
         [SerializeField] private GameObject _bossBar;
         [SerializeField] private RectTransform _bossFill;
         [SerializeField] private Text _bossName;
@@ -332,13 +334,33 @@ namespace SoloHero.Game.UI
             if (_basicTag != null && _save != null && _save.jobId != _shownJob)
             {
                 _shownJob = _save.jobId;
-                _basicTag.text = Strings.Get(SoloHero.Core.Jobs.JobCatalog.Find(_shownJob).MainKey);
+                SoloHero.Core.Jobs.JobDef job = SoloHero.Core.Jobs.JobCatalog.Find(_shownJob);
+                _basicTag.text = Strings.Get(job.MainKey);
+                ShowBasicIcon(job);
             }
 
             if (_basicCooldown == null) return;
             float interval = runner.Hero.SwingInterval;
             float fill = interval > 0f ? Mathf.Clamp01(runner.Hero.SwingCooldown / interval) : 0f;
             if (Mathf.Abs(_basicCooldown.fillAmount - fill) > 0.01f) _basicCooldown.fillAmount = fill;
+        }
+
+        private Sprite _basicDefault;
+        private Vector2 _basicDefaultSize;
+
+        private void ShowBasicIcon(SoloHero.Core.Jobs.JobDef job)
+        {
+            if (_basicIcon == null) return;
+            if (_basicDefault == null)
+            {
+                _basicDefault = _basicIcon.sprite;
+                _basicDefaultSize = _basicIcon.rectTransform.sizeDelta;
+            }
+
+            Sprite icon = job.Main != null && _skillIconSet != null ? _skillIconSet.Get(SoloHero.Core.Jobs.JobCatalog.MainIconId(job)) : null;
+            _basicIcon.sprite = icon != null ? icon : _basicDefault;
+            // Skill icons are 24 px tiles at 3 canvas units per pixel; the flash slash is a 16 px UI icon at 4.
+            _basicIcon.rectTransform.sizeDelta = icon != null ? new Vector2(72f, 72f) : _basicDefaultSize;
         }
 
         private void RefreshAuto(StageRunner runner)

@@ -37,6 +37,21 @@ MonoBehaviour:
   - sword_rain
   - phoenix
   - black_hole
+  - main_warrior
+  - main_mage
+  - main_archer
+  - ult_guardian_cross
+  - main_knight
+  - ult_blood_rage
+  - main_berserker
+  - ult_inferno
+  - main_pyro
+  - ult_blizzard
+  - main_cryo
+  - ult_arrow_rain
+  - main_ranger
+  - ult_death_shot
+  - main_sniper
   icons:
   - {fileID: 21300000, guid: befc4d65995647f4388a4c7a2fa16023, type: 3}
   - {fileID: 21300000, guid: 515f35ce00cefb441803e1d373ca646e, type: 3}
@@ -62,5 +77,20 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 9f6cca1bded991f4aaf3c5438ddc075b, type: 3}
   - {fileID: 21300000, guid: 358f5efddab75ef41ba0b5b6699ac802, type: 3}
   - {fileID: 21300000, guid: 7e7761d4ce97f844ba989893f5d9388b, type: 3}
+  - {fileID: 21300000, guid: edee111bf8e22eb4491fc23266942bb2, type: 3}
+  - {fileID: 21300000, guid: af2d09c4957df5e458859952b8306bba, type: 3}
+  - {fileID: 21300000, guid: 40866bc122b9c1f41b1cb522fec71f00, type: 3}
+  - {fileID: 21300000, guid: ea4fd32509d1e584da8249bebf248bf6, type: 3}
+  - {fileID: 21300000, guid: 26a1a68b3e5a20d4f9e61cd7f8c45701, type: 3}
+  - {fileID: 21300000, guid: 2b036fbe8e932944890c949b8bbcdc7d, type: 3}
+  - {fileID: 21300000, guid: d5a690f4798156e48ad92682ecd8a31c, type: 3}
+  - {fileID: 21300000, guid: bc4838e9b179d684bb3bb231e0d41281, type: 3}
+  - {fileID: 21300000, guid: 841e128c08171334d8c9b7a3732a2725, type: 3}
+  - {fileID: 21300000, guid: eeb04d8bbd22a7b4aa851a7714436c05, type: 3}
+  - {fileID: 21300000, guid: e9b9d965b3a1fe048b282f3ad7383a4b, type: 3}
+  - {fileID: 21300000, guid: 7c5b0f1c8c4a2e943919e8aabbb6e519, type: 3}
+  - {fileID: 21300000, guid: 56561b59e1301924383667b659b7d282, type: 3}
+  - {fileID: 21300000, guid: 62cb06a607b767e4b8cee0e6f95176df, type: 3}
+  - {fileID: 21300000, guid: 367194a8859480d4593b695f127778ce, type: 3}
   locked: {fileID: 21300000, guid: a2287f54e90469e4198445007f6ec9c2, type: 3}
   empty: {fileID: 0}

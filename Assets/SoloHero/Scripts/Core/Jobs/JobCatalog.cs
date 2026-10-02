@@ -119,7 +119,7 @@ namespace SoloHero.Core.Jobs
                 {
                     Id = "ult_guardian_cross", Grade = Grade.Legendary, Line = JobLine.Warrior, Kind = SkillKind.Area,
                     Cooldown = 25f, Range = 3.0, DamageMult = 9.0, ShieldPercent = 30, ShieldSeconds = 8f,
-                    Vfx = "holy", VfxAt = SkillVfxAt.EachTarget, Sound = "thunder", Icon = "judgement",
+                    Vfx = "holy", VfxAt = SkillVfxAt.EachTarget, Sound = "thunder",
                 },
             },
             new JobDef
@@ -132,7 +132,7 @@ namespace SoloHero.Core.Jobs
                     Id = "ult_blood_rage", Grade = Grade.Legendary, Line = JobLine.Warrior, Kind = SkillKind.Area,
                     Cooldown = 28f, Range = 3.0, DamageMult = 7.0, Buff = SkillBuff.Atk, BuffAmount = 60,
                     BuffSeconds = 10f, HealPercent = 15, Vfx = "aura", VfxAt = SkillVfxAt.Hero, VfxScale = 1.6f,
-                    Tint = 0xFF4040, Sound = "cry", Icon = "berserk",
+                    Tint = 0xFF4040, Sound = "cry",
                 },
             },
             new JobDef
@@ -145,7 +145,6 @@ namespace SoloHero.Core.Jobs
                     Id = "ult_inferno", Grade = Grade.Legendary, Line = JobLine.Mage, Kind = SkillKind.Area,
                     Cooldown = 24f, Range = 5.0, DamageMult = 3.5, Waves = 4, WaveInterval = 0.2f, DotPercent = 120,
                     DotSeconds = 4f, Vfx = "breath", VfxAt = SkillVfxAt.Front, VfxScale = 1.3f, Sound = "fire",
-                    Icon = "dragon_breath",
                 },
             },
             new JobDef
@@ -157,7 +156,7 @@ namespace SoloHero.Core.Jobs
                 {
                     Id = "ult_blizzard", Grade = Grade.Legendary, Line = JobLine.Mage, Kind = SkillKind.Area,
                     Cooldown = 26f, Range = 6.0, DamageMult = 3.0, Waves = 5, WaveInterval = 0.2f, StunSeconds = 1.5f,
-                    Vfx = "ice", VfxAt = SkillVfxAt.EachTarget, VfxScale = 1.3f, Sound = "ice", Icon = "frost_nova",
+                    Vfx = "ice", VfxAt = SkillVfxAt.EachTarget, VfxScale = 1.3f, Sound = "ice",
                 },
             },
             new JobDef
@@ -169,7 +168,7 @@ namespace SoloHero.Core.Jobs
                 {
                     Id = "ult_arrow_rain", Grade = Grade.Legendary, Line = JobLine.Archer, Kind = SkillKind.Area,
                     Cooldown = 22f, Range = 6.0, DamageMult = 1.6, Waves = 10, WaveInterval = 0.1f, Vfx = "swords",
-                    VfxAt = SkillVfxAt.Front, VfxScale = 1.3f, Tint = 0xC8F0A0, Sound = "whoosh", Icon = "sword_rain",
+                    VfxAt = SkillVfxAt.Front, VfxScale = 1.3f, Tint = 0xC8F0A0, Sound = "whoosh",
                 },
             },
             new JobDef
@@ -181,12 +180,14 @@ namespace SoloHero.Core.Jobs
                 {
                     Id = "ult_death_shot", Grade = Grade.Legendary, Line = JobLine.Archer, Kind = SkillKind.Strike,
                     Cooldown = 22f, Range = 8.0, DamageMult = 45.0, Vfx = "spear", VfxScale = 1.6f, Sound = "thunder",
-                    Icon = "glacier_spear",
                 },
             },
         };
 
         public static int Count => All.Length;
+
+        /// <summary>Icon id of a job's main attack in the skill icon set ("main_" + job id).</summary>
+        public static string MainIconId(JobDef job) => "main_" + job.Id;
 
         /// <summary>The job with this id; the beginner for "" or an unknown id.</summary>
         public static JobDef Find(string id)

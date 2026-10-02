@@ -147,6 +147,157 @@ def shield(ic, cx, top, w, h, c1, c2, c3):
             ic.p(x, top + y, c)
 
 
+def arrow(ic, x0, y0, x1, y1, shaft=rgb(0xC8A060), head=STEEL, fletch=rgb(0xF0F0F0)):
+    """Arrow from tail (x0,y0) to tip (x1,y1)."""
+    ic.line(x0, y0, x1, y1, shaft, 1)
+    dx, dy = x1 - x0, y1 - y0
+    L = math.hypot(dx, dy)
+    ux, uy = dx / L, dy / L
+    for k in range(3):
+        ic.line(x1 - ux * k - uy * (2 - k), y1 - uy * k + ux * (2 - k), x1 - ux * k + uy * (2 - k), y1 - uy * k - ux * (2 - k), head[1 if k else 0], 1)
+    ic.p(x1, y1, head[0])
+    for k in range(3):
+        ic.p(x0 + ux * k - uy * 1.5, y0 + uy * k + ux * 1.5, fletch)
+        ic.p(x0 + ux * k + uy * 1.5, y0 + uy * k - ux * 1.5, fletch)
+
+
+def crescent(ic, cx, cy, r, c1, c2, a0=-2.4, a1=0.9):
+    """Slash arc: a thick crescent swept from a0 to a1."""
+    for k in range(90):
+        a = a0 + (a1 - a0) * k / 89
+        w = math.sin(k / 89 * math.pi) * 2.2
+        for t in range(int(w * 2) + 1):
+            rr = r - t * 0.5
+            ic.p(cx + math.cos(a) * rr, cy + math.sin(a) * rr, c1 if t < w else c2)
+
+
+def make_jobs(icons):
+    """D-104 job main attacks (main_{job}) and second-job ultimates (ult_*)."""
+    BG_DARK = ((24, 20, 34), (80, 70, 110))
+    BG_BLOOD = ((70, 10, 16), (190, 40, 40))
+    BG_FOREST = ((16, 50, 30), (70, 150, 90))
+
+    ic = Icon(BG_BLUE)  # main_warrior: power slash, blue arc + sword
+    crescent(ic, 10, 13, 9, W, ICE[1])
+    sword(ic, 18, 4, 13, 10)
+    icons['main_warrior'] = ic
+
+    ic = Icon(BG_PURPLE)  # main_mage: magic bolt, orb with trail
+    for k in range(5):
+        ic.disc(8 - k * 0.2 + k * 0, 16, 0, W)
+    for k in range(6):
+        ic.disc(15 - k * 1.7, 9 + k * 1.7, 3 - k * 0.45, PURPLE[2 if k > 2 else 1])
+    ic.disc(15, 9, 3.6, PURPLE[1])
+    ic.disc(14, 8, 2, PURPLE[0])
+    for (x, y) in ((19, 4), (20, 12), (10, 4)):
+        ic.p(x, y, PURPLE[0])
+    icons['main_mage'] = ic
+
+    ic = Icon(BG_FOREST)  # main_archer: double shot, two parallel arrows
+    arrow(ic, 4, 13, 18, 6)
+    arrow(ic, 5, 19, 19, 12)
+    icons['main_archer'] = ic
+
+    ic = Icon(BG_GOLD)  # main_knight: holy charge, gold arc + cross shine
+    crescent(ic, 10, 13, 9, W, GOLD[0])
+    ic.line(17, 3, 17, 11, W, 1)
+    ic.line(13, 7, 21, 7, W, 1)
+    ic.p(17, 7, GOLD[1])
+    icons['main_knight'] = ic
+
+    ic = Icon(BG_BLOOD)  # main_berserker: raging blow, red arc + axe
+    crescent(ic, 10, 13, 9, rgb(0xFFB0A0), rgb(0xFF4040))
+    ic.line(12, 21, 17, 5, rgb(0x7A4A2A), 1)
+    for y in range(2, 13):
+        for x in range(15, 23):
+            if (x - 17) ** 2 + (y - 7) ** 2 <= 22 and x >= 18:
+                ic.p(x, y, STEEL[0] if x > 19 else STEEL[1])
+    icons['main_berserker'] = ic
+
+    ic = Icon(BG_RED)  # main_pyro: flame bolt
+    for k in range(5):
+        ic.disc(15 - k * 2, 9 + k * 2, 2.6 - k * 0.4, FIRE[min(3, k)])
+    flame(ic, 15, 9, 5)
+    icons['main_pyro'] = ic
+
+    ic = Icon(BG_ICE)  # main_cryo: ice bolt, crystal shard
+    for y in range(3, 21):
+        half = 4 - abs(y - 11) * 0.45
+        for x in range(int(12 - half), int(12 + half) + 1):
+            ic.p(x + (y - 11) * -0.35, y, ICE[0] if x < 12 else ICE[1])
+    ic.line(12 + 2.8, 3, 12 - 3.2, 20, ICE[2], 1)
+    for (x, y) in ((5, 6), (19, 16), (18, 5)):
+        ic.p(x, y, W)
+    icons['main_cryo'] = ic
+
+    ic = Icon(BG_FOREST)  # main_ranger: arrow blow, three spread arrows
+    arrow(ic, 3, 11, 13, 4)
+    arrow(ic, 5, 16, 16, 9)
+    arrow(ic, 7, 21, 19, 14)
+    icons['main_ranger'] = ic
+
+    ic = Icon(BG_DARK)  # main_sniper: one long arrow through a sight
+    ic.ring(15, 9, 5, rgb(0xFF6060))
+    ic.line(15, 2, 15, 5, rgb(0xFF6060), 1)
+    ic.line(21, 9, 21, 9, rgb(0xFF6060), 1)
+    arrow(ic, 3, 21, 16, 8, head=[W, STEEL[0], STEEL[1]])
+    icons['main_sniper'] = ic
+
+    ic = Icon(BG_GOLD)  # ult_guardian_cross: shield with a holy cross
+    for k in range(8):
+        a = k * math.pi / 4
+        ic.line(12 + math.cos(a) * 9, 12 + math.sin(a) * 9, 12 + math.cos(a) * 11, 12 + math.sin(a) * 11, W, 1)
+    shield(ic, 12, 4, 14, 16, rgb(0x5C8CFF), rgb(0x3D63D0), GOLD[1])
+    ic.rect(11, 6, 13, 17, W)
+    ic.rect(7, 9, 17, 11, W)
+    icons['ult_guardian_cross'] = ic
+
+    ic = Icon(BG_BLOOD)  # ult_blood_rage: blood drop with fury marks
+    for y in range(4, 21):
+        half = 6 * ((y - 4) / 11) ** 0.8 if y <= 15 else math.sqrt(max(0, 36 - (y - 15) ** 2))
+        for x in range(int(12 - half), int(12 + half) + 1):
+            ic.p(x, y, rgb(0xFF5050) if x < 11 else rgb(0xC81E28))
+    ic.disc(10, 13, 1.5, rgb(0xFFB0A0))
+    for s in (-1, 1):
+        ic.line(12 + s * 4, 14, 12 + s * 2, 16, OUTLINE, 1)
+    ic.line(10, 18, 14, 18, OUTLINE, 1)
+    icons['ult_blood_rage'] = ic
+
+    ic = Icon(BG_RED)  # ult_inferno: pillar of fire on a ring
+    ic.ring(12, 18, 8, FIRE[1], 0, 3.14)
+    flame(ic, 12, 11, 8)
+    flame(ic, 6, 15, 3.5)
+    flame(ic, 18, 15, 3.5)
+    icons['ult_inferno'] = ic
+
+    ic = Icon(BG_ICE)  # ult_blizzard: snowflakes in a gale
+    for (y, x0, x1) in ((6, 3, 11), (12, 2, 8), (18, 4, 12)):
+        ic.line(x0, y, x1, y, ICE[1], 1)
+        ic.p(x1 + 1, y - 1, ICE[1])
+    snowflake(ic, 15, 12, 6.5, W, ICE[1])
+    ic.p(6, 9, W); ic.p(9, 15, W); ic.p(20, 4, W); ic.p(20, 20, W)
+    icons['ult_blizzard'] = ic
+
+    ic = Icon(BG_FOREST)  # ult_arrow_rain: arrows falling from the sky
+    for (x, top) in ((6, 2), (12, 6), (18, 3)):
+        arrow(ic, x, top, x, top + 13, head=[W, GREEN[0], GREEN[1]])
+    for x in (4, 9, 15, 20):
+        ic.p(x, 21, GREEN[1])
+    icons['ult_arrow_rain'] = ic
+
+    ic = Icon(BG_DARK)  # ult_death_shot: skull in a crosshair
+    ic.ring(12, 12, 9, rgb(0xFF4040))
+    for (x0, y0, x1, y1) in ((12, 1, 12, 5), (12, 19, 12, 22), (1, 12, 5, 12), (19, 12, 22, 12)):
+        ic.line(x0, y0, x1, y1, rgb(0xFF4040), 1)
+    ic.disc(12, 11, 4.5, rgb(0xF0EAD8))
+    ic.rect(10, 14, 14, 16, rgb(0xF0EAD8))
+    ic.disc(10, 11, 1.2, OUTLINE)
+    ic.disc(14, 11, 1.2, OUTLINE)
+    ic.p(12, 13, OUTLINE)
+    ic.p(11, 16, OUTLINE); ic.p(13, 16, OUTLINE)
+    icons['ult_death_shot'] = ic
+
+
 def make():
     icons = {}
 
@@ -339,6 +490,7 @@ def make():
     ic.disc(12, 12, 2.5, (8, 0, 16, 255))
     icons['black_hole'] = ic
 
+    make_jobs(icons)
     for name, ic in icons.items():
         ic.save(name)
     return list(icons)

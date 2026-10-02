@@ -328,13 +328,20 @@ namespace SoloHero.Editor
                 AssetDatabase.CreateAsset(set, path);
             }
 
-            SoloHero.Core.Skills.SkillDef[] all = SoloHero.Core.Skills.SkillCatalog.All;
-            set.ids = new string[all.Length];
-            set.icons = new Sprite[all.Length];
-            for (int i = 0; i < all.Length; i++)
+            // Catalog skills, then D-104 job ultimates (their skill id) and job main attacks ("main_" + job id).
+            var ids = new List<string>();
+            foreach (SoloHero.Core.Skills.SkillDef def in SoloHero.Core.Skills.SkillCatalog.All) ids.Add(def.Id);
+            foreach (SoloHero.Core.Jobs.JobDef job in SoloHero.Core.Jobs.JobCatalog.All)
             {
-                string file = ArtRoot + "/Icons/Skills/skill_" + all[i].Id + ".png";
-                set.ids[i] = all[i].Id;
+                if (job.Ultimate != null) ids.Add(job.Ultimate.IconId);
+                if (job.Main != null) ids.Add(SoloHero.Core.Jobs.JobCatalog.MainIconId(job));
+            }
+
+            set.ids = ids.ToArray();
+            set.icons = new Sprite[ids.Count];
+            for (int i = 0; i < ids.Count; i++)
+            {
+                string file = ArtRoot + "/Icons/Skills/skill_" + ids[i] + ".png";
                 set.icons[i] = AssetDatabase.LoadAssetAtPath<Sprite>(file);
                 if (set.icons[i] == null) Debug.LogWarning("[Art] missing icon " + file);
             }
