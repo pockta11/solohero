@@ -74,7 +74,7 @@ namespace SoloHero.Editor
         private const float RailStep = 160f;
         private const float RailMenuButton = 96f;
         private const float RailMenuStep = 112f;
-        private const float TalentCell = 60f;
+        private const float TalentCell = 76f;
         private const float TalentDetailHeight = 124f;
         private const float SkillGridTop = 152f;
         private const string CardBackPath = "Assets/SoloHero/Art/UI/ui_card_back.png";
@@ -433,7 +433,8 @@ namespace SoloHero.Editor
                 Localize(name, LaneKeys[i]);
                 levels[i] = AddText(TopBand("Level", card, 10f, 40f, 76f, 14f), 26, TextAnchor.MiddleRight);
                 levels[i].color = new Color(1f, 0.85f, 0.35f, 1f);
-                values[i] = AddText(TopBand("Value", card, 54f, 32f, 76f, 12f), 22, TextAnchor.MiddleLeft);
+                // D-106: the current -> next value fills the middle of the card in a large size.
+                values[i] = AddText(Inset("Value", card, 12f, 88f, 12f, 60f), 33, TextAnchor.MiddleCenter);
                 values[i].supportRichText = true;
                 values[i].horizontalOverflow = HorizontalWrapMode.Overflow;
                 values[i].color = new Color(0.86f, 0.85f, 0.95f, 1f);
@@ -683,8 +684,9 @@ namespace SoloHero.Editor
                     RectTransform cell = Box("Node" + i, tiers, new Vector2(x, y), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(TalentCell, TalentCell));
                     frames[i] = cell.gameObject.AddComponent<Image>();
                     UiSkin.Sliced(frames[i], UiSkin.GradeNone);
-                    icons[i] = Plain(Box("Icon", cell, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(32f, 32f)), null);
-                    ranks[i] = AddText(BottomBand("Rank", cell, -8f, 24f, -12f, -12f), 22, TextAnchor.MiddleCenter);
+                    // D-106: 16 px talent icons at 3 units per pixel, the rank under the node instead of over the icon.
+                    icons[i] = Plain(Box("Icon", cell, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(48f, 48f)), null);
+                    ranks[i] = AddText(BottomBand("Rank", cell, -26f, 26f, -16f, -16f), 22, TextAnchor.MiddleCenter);
                     ranks[i].verticalOverflow = VerticalWrapMode.Overflow;
                     sprites[i] = UiSkin.Icon(TalentIcon(def.Id));
                     Button tap = cell.gameObject.AddComponent<Button>();
