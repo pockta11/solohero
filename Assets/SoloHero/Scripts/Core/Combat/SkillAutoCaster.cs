@@ -8,7 +8,7 @@ namespace SoloHero.Core.Combat
 {
     /// <summary>
     /// Runs the equipped skills in combat (D-078): up to SKILL_SLOT_COUNT slots cast automatically in slot order
-    /// when off cooldown and their condition holds (enemy in reach, or HP under the heal threshold), with
+    /// when off cooldown and their condition holds (the wave has arrived, or HP under the heal threshold), with
     /// SKILL_SEQUENCE_GAP between casts. A cast lands its first wave at once; later waves follow every
     /// WaveInterval. Buffs last per slot and are summed into the hero every tick. Allocation free while ticking.
     /// With <see cref="AutoEnabled"/> off (D-085 manual mode) only <see cref="TryCast"/> starts casts; cooldowns, buffs
@@ -192,15 +192,26 @@ namespace SoloHero.Core.Combat
             {
                 case SkillKind.Strike:
                 case SkillKind.Area:
-                    return world.HasEnemyInRange(def.Range);
+                    return world.HasEnemyInRange(def.Range) && WaveArrived(def.Range, hero, world);
                 case SkillKind.Buff:
-                    return world.HasEnemyInRange(def.Range) || (isBossFight && world.AliveCount > 0);
+                {
+                    double reach = Math.Max(def.Range, hero.MainRange);
+                    return world.HasEnemyInRange(reach) && WaveArrived(reach, hero, world);
+                }
                 case SkillKind.Heal:
                     return hero.Hp < hero.MaxHp;
                 default:
                     return false;
             }
         }
+
+        /// <summary>
+        /// D-105: auto casts wait for the wave instead of spending the cooldown on its first enemy. The wave has arrived
+        /// once every living enemy is inside <paramref name="range"/>, or the hero has stopped at it (enemies stand
+        /// still, so a stopped hero's skill already reaches as many as it ever will).
+        /// </summary>
+        private static bool WaveArrived(double range, HeroBrain hero, ICombatWorld world) =>
+            hero.State == HeroState.Engage || world.CountEnemiesInRange(range) >= world.AliveCount;
 
         private void Apply(int slot, SkillDef def, HeroBrain hero, ICombatWorld world)
         {

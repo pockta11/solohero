@@ -100,12 +100,12 @@ namespace SoloHero.Core.Jobs
             {
                 Id = "mage", Line = JobLine.Mage, Tier = 1, Look = "jobmage",
                 Main = new MainAttack { Targets = 2, Mult = 2.8, Range = 4.0, Vfx = "bolt", Tint = 0xC890FF, VfxScale = 1f },
-                Mastery = new[] { new Mastery(TalentStat.AtkPct, 0.04), new Mastery(TalentStat.HpPct, 0.03) },
+                Mastery = new[] { new Mastery(TalentStat.AtkPct, 0.03), new Mastery(TalentStat.HpPct, 0.03) },
             },
             new JobDef
             {
                 Id = "archer", Line = JobLine.Archer, Tier = 1, Look = "jobarcher",
-                Main = new MainAttack { Targets = 2, Hits = 2, Mult = 1.45, Range = 5.0, Vfx = "spear", Tint = 0xD8F0B0, VfxScale = 0.8f },
+                Main = new MainAttack { Targets = 2, Hits = 2, Mult = 1.4, Range = 5.0, Vfx = "spear", Tint = 0xD8F0B0, VfxScale = 0.8f },
                 Mastery = new[] { new Mastery(TalentStat.CritPoints, 5), new Mastery(TalentStat.AtkSpdPct, 0.05) },
             },
 
@@ -126,7 +126,7 @@ namespace SoloHero.Core.Jobs
             {
                 Id = "berserker", Line = JobLine.Warrior, Tier = 2, Parent = "warrior", Look = "knight4",
                 Main = new MainAttack { Targets = 4, Mult = 3.2, Range = 2.4, Tint = 0xFF6050, VfxScale = 1.5f },
-                Mastery = new[] { new Mastery(TalentStat.AtkPct, 0.1), new Mastery(TalentStat.CritDamage, 0.15) },
+                Mastery = new[] { new Mastery(TalentStat.AtkPct, 0.07), new Mastery(TalentStat.CritDamage, 0.15) },
                 Ultimate = new SkillDef
                 {
                     Id = "ult_blood_rage", Grade = Grade.Legendary, Line = JobLine.Warrior, Kind = SkillKind.Area,
@@ -139,7 +139,7 @@ namespace SoloHero.Core.Jobs
             {
                 Id = "pyro", Line = JobLine.Mage, Tier = 2, Parent = "mage", Look = "jobpyro",
                 Main = new MainAttack { Targets = 3, Mult = 2.4, Range = 4.5, DotPercent = 30, DotSeconds = 2f, Vfx = "fire", VfxScale = 0.9f },
-                Mastery = new[] { new Mastery(TalentStat.AtkPct, 0.08), new Mastery(TalentStat.DotPct, 0.2) },
+                Mastery = new[] { new Mastery(TalentStat.AtkPct, 0.05), new Mastery(TalentStat.DotPct, 0.2) },
                 Ultimate = new SkillDef
                 {
                     Id = "ult_inferno", Grade = Grade.Legendary, Line = JobLine.Mage, Kind = SkillKind.Area,
@@ -152,7 +152,7 @@ namespace SoloHero.Core.Jobs
             {
                 Id = "cryo", Line = JobLine.Mage, Tier = 2, Parent = "mage", Look = "jobcryo",
                 Main = new MainAttack { Targets = 4, Mult = 1.9, Range = 4.5, StunSeconds = 0.25f, Vfx = "ice", VfxScale = 0.9f },
-                Mastery = new[] { new Mastery(TalentStat.SkillDamagePct, 0.08), new Mastery(TalentStat.CooldownPct, 0.03) },
+                Mastery = new[] { new Mastery(TalentStat.SkillDamagePct, 0.05), new Mastery(TalentStat.CooldownPct, 0.03) },
                 Ultimate = new SkillDef
                 {
                     Id = "ult_blizzard", Grade = Grade.Legendary, Line = JobLine.Mage, Kind = SkillKind.Area,

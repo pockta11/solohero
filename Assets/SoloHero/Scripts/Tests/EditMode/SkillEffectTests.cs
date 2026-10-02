@@ -53,6 +53,47 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void AutoCast_WaitsUntilTheWholeWaveIsInRangeOrTheHeroStops()
+        {
+            var b = new BalanceValues();
+            HeroBrain hero = Hero(b);
+            hero.Reset(hero.Stats);
+            CombatWorld world = World(b, hero);
+            // A wave still coming in: only its front enemy is inside the whirlwind's reach.
+            EnemyBrain front = Spawn(b, world, 2.5d);
+            Spawn(b, world, 3.3d);
+            Spawn(b, world, 4.1d);
+            SkillAutoCaster skills = Caster(b, SkillCatalog.Whirlwind);
+
+            skills.Tick(0.1f, hero, world, false);
+            Assert.AreEqual(0f, skills.CooldownRemaining(0), "held while the hero walks to the wave");
+            Assert.AreEqual(EnemyHp, front.Hp, 1e-6);
+
+            // The hero reached the wave and stopped: cast now, whatever its reach covers.
+            for (int i = 0; i < 200 && hero.State != HeroState.Engage; i++) hero.Tick(0.05f, world);
+
+            Assert.AreEqual(HeroState.Engage, hero.State);
+            skills.Tick(0.1f, hero, world, false);
+            Assert.Greater(skills.CooldownRemaining(0), 0f);
+        }
+
+        [Test]
+        public void AutoCast_WholeWaveInReach_CastsWhileAdvancing()
+        {
+            var b = new BalanceValues();
+            HeroBrain hero = Hero(b);
+            hero.Reset(hero.Stats);
+            CombatWorld world = World(b, hero);
+            Spawn(b, world, 2.0d);
+            Spawn(b, world, 2.8d);
+            SkillAutoCaster skills = Caster(b, SkillCatalog.Whirlwind);
+
+            Assert.AreEqual(HeroState.Advance, hero.State);
+            skills.Tick(0.1f, hero, world, false);
+            Assert.Greater(skills.CooldownRemaining(0), 0f);
+        }
+
+        [Test]
         public void PowerStrike_HitsNearestForAtkTimesMultAndStartsCooldown()
         {
             var b = new BalanceValues();

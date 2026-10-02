@@ -199,7 +199,8 @@ namespace SoloHero.Core.Combat
 
         private int MainTargets => _main != null ? _main.Targets : _balance.BASIC_SKILL_TARGETS;
         private double MainMult => _main != null ? _main.Mult : _balance.BASIC_SKILL_MULT;
-        private double MainRange => _main != null ? _main.Range : _balance.BASIC_SKILL_RANGE;
+        /// <summary>Reach of the main attack (job or flash slash); the skill caster waits for a wave inside it.</summary>
+        public double MainRange => _main != null ? _main.Range : _balance.BASIC_SKILL_RANGE;
         private int MainHits => _main != null && _main.Hits > 1 ? _main.Hits : 1;
 
         /// <summary>Talent damage factor against one target: boss damage, and Execute under its HP threshold.</summary>
