@@ -173,12 +173,13 @@ namespace SoloHero.Tests.EditMode
             save.heroLevel = b.SKILL_UNLOCK_LV_2;
             var service = new SkillService(save, b);
             SkillBook.AddOwned(save, "judgement");
-            SkillBook.SetLevel(save, SkillCatalog.BattleCry, 5);
+            SkillBook.AddOwned(save, "quick_slash", 5);
+            SkillBook.SetLevel(save, SkillCatalog.BattleCry, 9);
 
             service.AutoEquip();
 
             Assert.AreEqual("judgement", SkillBook.EquippedAt(save, 0));
-            Assert.AreEqual(SkillCatalog.BattleCry, SkillBook.EquippedAt(save, 1));
+            Assert.AreEqual("quick_slash", SkillBook.EquippedAt(save, 1), "D-107: the beginner's starters do not count for a warrior");
             Assert.AreEqual("", SkillBook.EquippedAt(save, 2), "locked slots stay empty");
         }
 
@@ -225,6 +226,7 @@ namespace SoloHero.Tests.EditMode
             var b = new BalanceValues();
             var save = SaveDataV2.CreateNew();
             save.heroLevel = b.SKILL_UNLOCK_LV_4;
+            save.jobId = "mage";
             save.gold = b.SKILL_SUMMON_COST_SINGLE;
             SkillSummonService summon = Summon(b, 0.995d);
 
@@ -245,8 +247,9 @@ namespace SoloHero.Tests.EditMode
             var b = new BalanceValues();
             var save = SaveDataV2.CreateNew();
             SkillSummonService summon = Summon(b, 0.0d);
-            string id = SkillCatalog.OfGrade(Grade.Common)[0].Id;
-            SkillBook.EnsureStarters(save, b);
+            save.jobId = "warrior";
+            string id = SkillCatalog.OfLine(SoloHero.Core.Jobs.JobLine.Warrior, Grade.Common)[0].Id;
+            SkillBook.AddOwned(save, id);
             int before = SkillBook.GetLevel(save, id);
             save.gold = b.SKILL_SUMMON_COST_SINGLE;
 
@@ -268,6 +271,7 @@ namespace SoloHero.Tests.EditMode
             var save = SaveDataV2.CreateNew();
             save.skillPityCount = b.GACHA_PITY - 1;
             save.pityCount = 5;
+            save.jobId = "archer";
             save.gold = b.SKILL_SUMMON_COST_SINGLE;
 
             SkillPullItem item = Summon(b, 0.0d).TryPull(save).Items[0];
@@ -283,6 +287,7 @@ namespace SoloHero.Tests.EditMode
             var b = new BalanceValues();
             var save = SaveDataV2.CreateNew();
             SkillSummonService summon = Summon(b, 0.5d, 3);
+            save.jobId = "mage";
             save.gold = b.SKILL_SUMMON_COST_TEN - 1d;
             Assert.AreEqual(FailReason.NotEnoughGold, summon.TryPullTen(save).Status.Reason);
 

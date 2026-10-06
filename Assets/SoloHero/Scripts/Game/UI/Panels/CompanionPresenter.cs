@@ -18,7 +18,7 @@ namespace SoloHero.Game.UI.Panels
     /// </summary>
     public sealed class CompanionPresenter : MonoBehaviour
     {
-        private static readonly Color LockedTint = new Color(0.25f, 0.25f, 0.3f, 1f);
+        private static readonly Color LockedTint = UiPalette.Silhouette;
 
         [SerializeField] private GameObject _popup;
         [SerializeField] private CombatSession _session;
@@ -115,7 +115,7 @@ namespace SoloHero.Game.UI.Panels
                 if (_names[i] != null)
                 {
                     _names[i].text = Strings.Format("companion.row", Strings.Get(def.NameKey), level);
-                    _names[i].color = PanelServices.GradeColor(def.Grade);
+                    _names[i].color = UiPalette.GradeInk(def.Grade);
                 }
 
                 if (_infos[i] != null)

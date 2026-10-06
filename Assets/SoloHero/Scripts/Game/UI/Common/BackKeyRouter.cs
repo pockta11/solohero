@@ -92,7 +92,8 @@ namespace SoloHero.Game.UI.Common
                 return;
             }
 
-            if (_panels != null && _panels.OpenIndex >= 0)
+            // D-108: panels are pinned open, so the back key only closes one when the host allows it.
+            if (_panels != null && _panels.CanClose)
             {
                 _panels.Close();
                 return;

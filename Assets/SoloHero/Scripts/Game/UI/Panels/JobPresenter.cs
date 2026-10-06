@@ -45,6 +45,10 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text[] _descs = new Text[Cards];
         [SerializeField] private TapGuardButton[] _picks = new TapGuardButton[Cards];
         [SerializeField] private Text[] _pickLabels = new Text[Cards];
+        [Header("D-108: the window shrinks to the cards shown (height = base + cards x step)")]
+        [SerializeField] private RectTransform _window;
+        [SerializeField] private float _windowBase;
+        [SerializeField] private float _cardStep;
 
         private JobService _jobs;
         private SaveDataV2 _save;
@@ -127,6 +131,8 @@ namespace SoloHero.Game.UI.Panels
 
             // At the last job the popup shows that job alone, without a pick button.
             _choices = max ? new[] { current } : _jobs.Choices();
+            if (_window != null && _cardStep > 0f)
+                _window.sizeDelta = new Vector2(_window.sizeDelta.x, _windowBase + Mathf.Min(_choices.Length, Cards) * _cardStep);
             bool levelOk = _jobs.CanAdvance;
             for (int i = 0; i < Cards; i++)
             {

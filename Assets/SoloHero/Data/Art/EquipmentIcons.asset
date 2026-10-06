@@ -13,19 +13,19 @@ MonoBehaviour:
   m_Name: EquipmentIcons
   m_EditorClassIdentifier: 
   icons:
-  - {fileID: 21300000, guid: 01a09938a2d774b4991a1bf98cb0521e, type: 3}
-  - {fileID: 21300000, guid: 9eb45c87d085b7b4aa91355757499e4c, type: 3}
-  - {fileID: 21300000, guid: 252f6e3a15c15b14185ea0d17977311e, type: 3}
-  - {fileID: 21300000, guid: a226716b7f775034283b4573a535030f, type: 3}
-  - {fileID: 21300000, guid: 29f014ec45ebfc746900a709ac8a0159, type: 3}
-  - {fileID: 21300000, guid: 340ef67539e288a4c806b4ccf4517233, type: 3}
-  - {fileID: 21300000, guid: 9a749dfe7a1d5ee4e85107b1563f5507, type: 3}
-  - {fileID: 21300000, guid: 7623516cb992e8a41bbacacdd7edcbe7, type: 3}
-  - {fileID: 21300000, guid: 3789f3f0a8dcd584fa4e9c69bdb5b6ad, type: 3}
-  - {fileID: 21300000, guid: ca3fc08ead8a761418e6c17e7eea55d5, type: 3}
-  - {fileID: 21300000, guid: 4deef437029189042a66d6189b8a6528, type: 3}
-  - {fileID: 21300000, guid: 169a9d148c6ad8845acd51d8c7e20563, type: 3}
-  - {fileID: 21300000, guid: 9d3f3d3bdfe47ee458d853c4b65ad8fb, type: 3}
-  - {fileID: 21300000, guid: 4c7af45e0a494c24fa854859e44cff60, type: 3}
-  - {fileID: 21300000, guid: bc8da00c47886a5428b605de2b6fc52f, type: 3}
-  - {fileID: 21300000, guid: 25a8c92f6052f9640be57bf5861aebf8, type: 3}
+  - {fileID: 21300000, guid: e16a82f11ee6cc14cbc0ae0c42a1c8ca, type: 3}
+  - {fileID: 21300000, guid: 5113a6605ec678c4992a76f86eae76ba, type: 3}
+  - {fileID: 21300000, guid: 0948c65a96b96114ebadfc4cc798af1e, type: 3}
+  - {fileID: 21300000, guid: 07f7dd2cbe6625b4f9d7e99e1af4abea, type: 3}
+  - {fileID: 21300000, guid: 116f0c2975fc79441af61a3c401fec06, type: 3}
+  - {fileID: 21300000, guid: 3add335afd340924abe1bb2604c30400, type: 3}
+  - {fileID: 21300000, guid: c5f95c2c4cc77824eb1c38f0a3aa7f7c, type: 3}
+  - {fileID: 21300000, guid: 307936eda0058f345b15358593e45c87, type: 3}
+  - {fileID: 21300000, guid: 7d840366b3dcb5a4b865fd4fe134f625, type: 3}
+  - {fileID: 21300000, guid: e1f4e9cfb48918a48b1a67433a1aa5c6, type: 3}
+  - {fileID: 21300000, guid: 1e61d33427c5ff64fa0af04855f84fca, type: 3}
+  - {fileID: 21300000, guid: 2d8ca89ebb7f1694e931e178605d9e00, type: 3}
+  - {fileID: 21300000, guid: b092c170ab9ad9943ad920fbf9f30731, type: 3}
+  - {fileID: 21300000, guid: 65b4a8a23f76344449bf832a0b642ac4, type: 3}
+  - {fileID: 21300000, guid: c9e62875ad09d124e8fcc0ebbdf6a096, type: 3}
+  - {fileID: 21300000, guid: 9a04123eb6d6dd647ac5c750382440b5, type: 3}

@@ -19,13 +19,21 @@ namespace SoloHero.Game.UI.Panels
     /// </summary>
     public sealed class TalentPanelPresenter : MonoBehaviour
     {
-        private static readonly Color LockedIcon = new Color(0.3f, 0.3f, 0.36f, 1f);
-        private static readonly Color OpenFrame = new Color(0.62f, 0.6f, 0.72f, 1f);
+        // D-108: nodes are light slot frames on the cream panel, tinted by state; branch names use the darker inks.
+        private static readonly Color LockedIcon = UiPalette.Silhouette;
+        private static readonly Color LockedFrame = new Color(0.8f, 0.76f, 0.72f, 1f);
+        private static readonly Color OpenFrame = Color.white;
         private static readonly Color[] BranchColors =
         {
-            new Color(1f, 0.52f, 0.4f, 1f),
-            new Color(0.45f, 0.72f, 1f, 1f),
-            new Color(0.78f, 0.55f, 1f, 1f),
+            new Color(1f, 0.62f, 0.5f, 1f),
+            new Color(0.55f, 0.78f, 1f, 1f),
+            new Color(0.82f, 0.62f, 1f, 1f),
+        };
+        private static readonly Color[] BranchInks =
+        {
+            new Color32(0xD8, 0x4A, 0x32, 0xFF),
+            new Color32(0x2F, 0x72, 0xD8, 0xFF),
+            new Color32(0x8E, 0x4A, 0xE0, 0xFF),
         };
 
         [Header("Nodes, catalog order")]
@@ -139,7 +147,7 @@ namespace SoloHero.Game.UI.Panels
                 if (_branchTexts[b] == null) continue;
                 _branchTexts[b].text = Strings.Format("talent.branch_spent",
                     Strings.Get("talent.branch." + b), TalentService.BranchSpent(_save, (TalentBranch)b));
-                _branchTexts[b].color = BranchColors[b];
+                _branchTexts[b].color = BranchInks[b];
             }
 
             for (int i = 0; i < TalentCatalog.All.Length && i < _cellFrames.Length; i++) DrawCell(i, points);
@@ -155,7 +163,7 @@ namespace SoloHero.Game.UI.Panels
             Color branch = BranchColors[(int)def.Branch];
 
             if (_cellFrames[i] != null)
-                _cellFrames[i].color = rank > 0 ? branch : open ? OpenFrame : LockedIcon;
+                _cellFrames[i].color = rank > 0 ? branch : open ? OpenFrame : LockedFrame;
             if (i < _cellIcons.Length && _cellIcons[i] != null)
             {
                 _cellIcons[i].sprite = i < _icons.Length ? _icons[i] : null;

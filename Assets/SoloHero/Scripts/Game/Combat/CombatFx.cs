@@ -171,7 +171,8 @@ namespace SoloHero.Game.Combat
                 _lastComboFx = Time.time;
                 Play(SfxId.Crit);
                 HitStop.Trigger(CritStop);
-                if (!LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 1.8f, ComboTint, EffectY + DepthLanes.For(target));
+                // D-108: the spark sheet is 40 px now (was 16), so the scale drops to keep it a punchy accent.
+                if (!LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 0.9f, ComboTint, EffectY + DepthLanes.For(target));
                 return;
             }
 
@@ -185,7 +186,8 @@ namespace SoloHero.Game.Combat
             Play(crit ? SfxId.Crit : SfxId.Hit);
             if (crit) HitStop.Trigger(CritStop);
             if (LowEffect) return;
-            PlayVfx(_set != null ? _set.slash : null, (float)target.X, crit ? 2.5f : 1.5f, crit ? CritTint : Color.white, EffectY + DepthLanes.For(target));
+            // D-108: the slash sheet is 56 px (was 32); 1.0 / 1.6 keeps the old reach with a thicker swing.
+            PlayVfx(_set != null ? _set.slash : null, (float)target.X, crit ? 1.6f : 1.0f, crit ? CritTint : Color.white, EffectY + DepthLanes.For(target));
             if (crit) Shake(CritShake, CritShakeSeconds);
         }
 
@@ -195,7 +197,7 @@ namespace SoloHero.Game.Combat
             float heroX = (float)_hooked.Hero.X;
             Color gradeColor = PanelServices.GradeColor(def.Grade);
             Play(SoundOf(def));
-            if (_set != null) PlayVfx(_set.ring, heroX, 1.2f + (int)def.Grade * 0.4f, gradeColor, 0.5f);
+            if (_set != null) PlayVfx(_set.ring, heroX, (1.2f + (int)def.Grade * 0.4f) * 0.75f, gradeColor, 0.5f);
             if (_labels != null)
                 _labels.ShowLabel(new Vector3(heroX, SkillNameY, 0f), Strings.Get(def.NameKey), Color.Lerp(gradeColor, Color.white, 0.35f), SkillNameSize);
 
@@ -310,7 +312,7 @@ namespace SoloHero.Game.Combat
             if (_save.heroLevel <= _shownLevel) return;
             _shownLevel = _save.heroLevel;
             Play(SfxId.LevelUp);
-            if (_set != null) PlayVfx(_set.ring, (float)runner.Hero.X, 3f, LevelTint, 0.4f);
+            if (_set != null) PlayVfx(_set.ring, (float)runner.Hero.X, 2.2f, LevelTint, 0.4f);
             if (_toast != null) _toast.Show(Strings.Format("toast.level_up", _save.heroLevel));
         }
 

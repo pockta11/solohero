@@ -10,6 +10,8 @@ namespace SoloHero.Core.Skills
     /// content; ids are saved, so never rename one. Grade-wide economy (summon rates, costs, refunds, owned bonus,
     /// level-up cost) lives in BalanceValues. The first three are the starter skills every hero owns.
     /// D-104: the starters are line-free (the beginner's only skills); the other 21 belong to a job line, 7 each.
+    /// D-107: 15 more line skills, so every line has 12 (3 per grade); the starters are the beginner's alone.
+    /// New entries go at the end: the index order is the skill book's order and ids are saved.
     /// </summary>
     public static class SkillCatalog
     {
@@ -165,9 +167,99 @@ namespace SoloHero.Core.Skills
                 DamageMult = 3.0, Waves = 6, WaveInterval = 0.2f, StunSeconds = 1.5f, Vfx = "vortex",
                 VfxAt = SkillVfxAt.Front, VfxScale = 1.6f, Sound = "magic"
             },
+
+            // D-107 warrior
+            new SkillDef
+            {
+                Id = "shield_bash", Line = JobLine.Warrior, Grade = Grade.Common, Kind = SkillKind.Strike, Cooldown = 8f, Range = 2.0,
+                DamageMult = 3.2, StunSeconds = 1f, Vfx = "boom", VfxScale = 1.1f, Tint = 0xC8D8F0, Sound = "strike"
+            },
+            new SkillDef
+            {
+                Id = "ground_slam", Line = JobLine.Warrior, Grade = Grade.Common, Kind = SkillKind.Area, Cooldown = 10f, Range = 2.6,
+                DamageMult = 1.8, Vfx = "boom", VfxAt = SkillVfxAt.EachTarget, Tint = 0xD0A070, Sound = "strike"
+            },
+            new SkillDef
+            {
+                Id = "cleave", Line = JobLine.Warrior, Grade = Grade.Rare, Kind = SkillKind.Area, Cooldown = 11f, Range = 3.0,
+                DamageMult = 3.5, Vfx = "whirl", VfxAt = SkillVfxAt.Front, VfxScale = 1.8f, Tint = 0xFFFFFF, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "earthquake", Line = JobLine.Warrior, Grade = Grade.Epic, Kind = SkillKind.Area, Cooldown = 16f, Range = 4.5,
+                DamageMult = 4.0, Waves = 3, WaveInterval = 0.25f, StunSeconds = 0.8f, Vfx = "boom",
+                VfxAt = SkillVfxAt.EachTarget, VfxScale = 1.3f, Tint = 0xC08040, Sound = "strike"
+            },
+            new SkillDef
+            {
+                Id = "dragon_slash", Line = JobLine.Warrior, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 22f, Range = 4.0,
+                DamageMult = 7.0, Waves = 3, WaveInterval = 0.15f, Vfx = "cross", VfxAt = SkillVfxAt.Front, VfxScale = 2f,
+                Tint = 0xFF6040, Sound = "whoosh"
+            },
+
+            // D-107 mage
+            new SkillDef
+            {
+                Id = "magic_missile", Line = JobLine.Mage, Grade = Grade.Common, Kind = SkillKind.Strike, Cooldown = 7f, Range = 4.5,
+                DamageMult = 1.2, Waves = 3, WaveInterval = 0.12f, Vfx = "bolt", Tint = 0xC890FF, Sound = "magic"
+            },
+            new SkillDef
+            {
+                Id = "ember", Line = JobLine.Mage, Grade = Grade.Common, Kind = SkillKind.Area, Cooldown = 10f, Range = 3.0,
+                DamageMult = 1.2, DotPercent = 30, DotSeconds = 3f, Vfx = "fire", VfxAt = SkillVfxAt.EachTarget,
+                VfxScale = 0.8f, Sound = "fire"
+            },
+            new SkillDef
+            {
+                Id = "ice_lance", Line = JobLine.Mage, Grade = Grade.Rare, Kind = SkillKind.Strike, Cooldown = 10f, Range = 5.0,
+                DamageMult = 5.5, StunSeconds = 1f, Vfx = "spear", VfxScale = 1.1f, Tint = 0xA0E0FF, Sound = "ice"
+            },
+            new SkillDef
+            {
+                Id = "flame_pillar", Line = JobLine.Mage, Grade = Grade.Epic, Kind = SkillKind.Area, Cooldown = 15f, Range = 3.5,
+                DamageMult = 3.0, Waves = 3, WaveInterval = 0.2f, DotPercent = 60, DotSeconds = 3f, Vfx = "fire",
+                VfxAt = SkillVfxAt.EachTarget, VfxScale = 1.4f, Sound = "fire"
+            },
+            new SkillDef
+            {
+                Id = "arcane_storm", Line = JobLine.Mage, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 24f, Range = 6.0,
+                DamageMult = 2.0, Waves = 8, WaveInterval = 0.12f, Vfx = "bolt", VfxAt = SkillVfxAt.EachTarget,
+                Tint = 0x80C0FF, Sound = "thunder"
+            },
+
+            // D-107 archer
+            new SkillDef
+            {
+                Id = "arrow_shot", Line = JobLine.Archer, Grade = Grade.Common, Kind = SkillKind.Strike, Cooldown = 6f, Range = 5.0,
+                DamageMult = 3.0, Vfx = "spear", VfxScale = 0.8f, Tint = 0xE0D0A0, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "scatter_shot", Line = JobLine.Archer, Grade = Grade.Common, Kind = SkillKind.Area, Cooldown = 10f, Range = 4.0,
+                DamageMult = 0.9, Waves = 2, WaveInterval = 0.15f, Vfx = "swords", VfxAt = SkillVfxAt.Front, VfxScale = 0.8f,
+                Tint = 0xD8F0B0, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "piercing_arrow", Line = JobLine.Archer, Grade = Grade.Rare, Kind = SkillKind.Area, Cooldown = 11f, Range = 6.0,
+                DamageMult = 3.5, Vfx = "spear", VfxAt = SkillVfxAt.Front, VfxScale = 1.2f, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "storm_arrows", Line = JobLine.Archer, Grade = Grade.Epic, Kind = SkillKind.Area, Cooldown = 15f, Range = 5.0,
+                DamageMult = 1.2, Waves = 6, WaveInterval = 0.12f, Vfx = "swords", VfxAt = SkillVfxAt.Front,
+                Tint = 0xC8F0A0, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "starfall_arrow", Line = JobLine.Archer, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 24f, Range = 7.0,
+                DamageMult = 4.0, Waves = 4, WaveInterval = 0.2f, Vfx = "judge", VfxAt = SkillVfxAt.EachTarget,
+                VfxScale = 0.7f, Tint = 0xB0FFB0, Sound = "thunder"
+            },
         };
 
         private static readonly SkillDef[][] ByGrade = BuildByGrade();
+        private static readonly SkillDef[][][] ByLine = BuildByLine();
 
         public static int Count => All.Length;
 
@@ -197,6 +289,34 @@ namespace SoloHero.Core.Skills
             int g = (int)grade;
             if (g < 0 || g >= ByGrade.Length) throw new ArgumentOutOfRangeException(nameof(grade));
             return ByGrade[g];
+        }
+
+        /// <summary>D-107: the skills of one job line and grade (the skill summon pool).</summary>
+        public static SkillDef[] OfLine(JobLine line, Grade grade)
+        {
+            int l = (int)line;
+            int g = (int)grade;
+            if (l < 0 || l >= ByLine.Length) throw new ArgumentOutOfRangeException(nameof(line));
+            if (g < 0 || g >= GachaCatalog.GradeCount) throw new ArgumentOutOfRangeException(nameof(grade));
+            return ByLine[l][g];
+        }
+
+        private static SkillDef[][][] BuildByLine()
+        {
+            var result = new SkillDef[4][][];
+            for (int l = 0; l < result.Length; l++)
+            {
+                result[l] = new SkillDef[GachaCatalog.GradeCount][];
+                for (int g = 0; g < GachaCatalog.GradeCount; g++)
+                {
+                    var list = new System.Collections.Generic.List<SkillDef>();
+                    for (int i = 0; i < All.Length; i++)
+                        if ((int)All[i].Line == l && (int)All[i].Grade == g) list.Add(All[i]);
+                    result[l][g] = list.ToArray();
+                }
+            }
+
+            return result;
         }
 
         private static SkillDef[][] BuildByGrade()

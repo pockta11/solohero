@@ -9,7 +9,7 @@ using UnityEngine;
 namespace SoloHero.Game.Combat
 {
     /// <summary>
-    /// Draws the combat state (E2, E8-02..04): hero and the 4 enemy slots follow Core positions and play sprite
+    /// Draws the combat state (E2, E8-02..04): hero and the 6 enemy slots (D-107) follow Core positions and play sprite
     /// clips chosen from Core state - run while advancing, attack on each swing, hit when HP drops, dead on death.
     /// Each enemy takes its look from the chapter roster by spawn order (E8-03); looks without a hit or dead clip
     /// flash / vanish instead. Enemies keep their slot renderer for the death clip after Core frees the slot. The hit
@@ -20,7 +20,8 @@ namespace SoloHero.Game.Combat
     /// </summary>
     public sealed class CombatWorldView : MonoBehaviour
     {
-        private const int EnemySlotVisualCount = 4;
+        /// <summary>D-107: waves of six (SPAWN_MAX_ALIVE); ArtBuilder makes this many renderers, HP bars and shadows.</summary>
+        public const int EnemySlotVisualCount = 6;
         private const float HitFlashSeconds = 0.09f;
         private const float EntranceDistance = 2.6f;
         private const float EntranceSeconds = 0.32f;

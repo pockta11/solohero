@@ -6,12 +6,12 @@ namespace SoloHero.Game.Combat
     /// <summary>
     /// 2.5D battle view (D-091), view only: enemies stand on depth lanes spread over the floor plane (Core stays 1-D
     /// on X), and every character sorts by its lane so the one nearer the viewer (lower on screen) draws in front.
-    /// A wave of four takes four different lanes; the hero and bosses keep the middle lane.
+    /// A wave of six (D-107) takes six different lanes; the hero and bosses keep the middle lane.
     /// </summary>
     public static class DepthLanes
     {
         /// <summary>World Y of each lane relative to the hero's ground line (positive = farther back).</summary>
-        private static readonly float[] Lanes = { 0f, 0.55f, -0.45f, 0.3f };
+        private static readonly float[] Lanes = { 0f, 0.55f, -0.45f, 0.3f, -0.22f, 0.15f };
 
         private const int OrderBase = 100;
         private const float OrderPerUnit = 20f;

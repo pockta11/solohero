@@ -6,8 +6,9 @@ using UnityEngine.UI;
 namespace SoloHero.Game.UI.Common
 {
     /// <summary>
-    /// Bottom tab bar host (E7-04): one panel open at a time, tapping the open tab closes it.
-    /// Panels switch instantly (no slide) and play the open / close sound (E8-13).
+    /// Bottom tab bar host (E7-04): one panel open at a time. Panels switch instantly and play the open sound (E8-13).
+    /// D-108: a panel is always open (the area under the battle is never an empty wall), so tapping the open tab
+    /// only bounces its icon; the active tab shows a raised plate, a larger icon and a bright label.
     /// </summary>
     public sealed class PanelHost : MonoBehaviour
     {
@@ -19,6 +20,12 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private Sprite _tabActiveSprite;
         [Tooltip("Panel opened when the game starts (-1 = none). Idle RPGs start with the growth panel open.")]
         [SerializeField] private int _openOnStart = 0;
+        [Tooltip("D-108: never close the panel area (the open tab only bounces).")]
+        [SerializeField] private bool _alwaysOpen = true;
+        [SerializeField] private RectTransform[] _tabIcons = new RectTransform[0];
+        [SerializeField] private Text[] _tabLabels = new Text[0];
+        [SerializeField] private Color _labelIdle = new Color(0.8f, 0.82f, 0.95f, 1f);
+        [SerializeField] private Color _labelActive = Color.white;
         [Tooltip("Seconds for a panel to slide up from the tab bar when opened from closed.")]
         [SerializeField] private float _slideInSeconds = 0.18f;
         [Tooltip("Seconds for a panel to slide back down on close.")]
@@ -34,6 +41,9 @@ namespace SoloHero.Game.UI.Common
         private float _slideHeight;
 
         public int OpenIndex => _open;
+
+        /// <summary>False while panels are pinned open (D-108): the back key goes on to the quit prompt.</summary>
+        public bool CanClose => !_alwaysOpen && _open >= 0;
 
         private void Awake()
         {
@@ -66,6 +76,12 @@ namespace SoloHero.Game.UI.Common
             if (index < 0 || index >= _panels.Length) return;
             if (_open == index)
             {
+                if (_alwaysOpen)
+                {
+                    Bounce(index);
+                    return;
+                }
+
                 Close();
                 return;
             }
@@ -84,11 +100,12 @@ namespace SoloHero.Game.UI.Common
             }
 
             RefreshTabs();
+            Bounce(index);
         }
 
         public void Close()
         {
-            if (_open < 0) return;
+            if (_open < 0 || _alwaysOpen) return;
             Sound(SfxId.PanelClose);
             FinishSlide();
             if (_panels[_open] != null) BeginSlide(_open, true);
@@ -136,21 +153,51 @@ namespace SoloHero.Game.UI.Common
             if (audio != null) audio.Play(id);
         }
 
+        private void Bounce(int index)
+        {
+            if (index < 0 || index >= _tabIcons.Length || _tabIcons[index] == null) return;
+            UiPunch punch = _tabIcons[index].GetComponent<UiPunch>();
+            if (punch != null) punch.Play();
+        }
+
         private void RefreshTabs()
         {
             for (int i = 0; i < _tabBackgrounds.Length; i++)
             {
                 Image tab = _tabBackgrounds[i];
                 if (tab == null) continue;
-                if (_tabIdleSprite != null && _tabActiveSprite != null)
+                bool active = i == _open;
+                if (_tabActiveSprite != null && _tabIdleSprite == null)
                 {
-                    tab.sprite = i == _open ? _tabActiveSprite : _tabIdleSprite;
+                    // D-108: only the active tab has a plate.
+                    tab.sprite = _tabActiveSprite;
+                    tab.color = Color.white;
+                    tab.enabled = active;
+                }
+                else if (_tabIdleSprite != null && _tabActiveSprite != null)
+                {
+                    tab.sprite = active ? _tabActiveSprite : _tabIdleSprite;
                     tab.color = Color.white;
                 }
                 else
                 {
-                    tab.color = i == _open ? _tabActive : _tabIdle;
+                    tab.color = active ? _tabActive : _tabIdle;
                 }
+            }
+
+            for (int i = 0; i < _tabIcons.Length; i++)
+            {
+                if (_tabIcons[i] == null) continue;
+                bool active = i == _open;
+                // The icon's UiPunch owns localScale, so the active size goes through sizeDelta (64 / 80 = 4x / 5x).
+                _tabIcons[i].anchoredPosition = new Vector2(0f, active ? 10f : 0f);
+                _tabIcons[i].sizeDelta = active ? new Vector2(80f, 80f) : new Vector2(64f, 64f);
+            }
+
+            for (int i = 0; i < _tabLabels.Length; i++)
+            {
+                if (_tabLabels[i] == null) continue;
+                _tabLabels[i].color = i == _open ? _labelActive : _labelIdle;
             }
         }
     }

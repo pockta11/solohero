@@ -31,7 +31,7 @@ namespace SoloHero.Game.Config
         public double UPG_GAIN_SPD = 0.02;
         public int UPG_MAX_LEVEL_SPD = 100;
         public double UPG_FARM_EXPONENT = 1.31;
-        public double ENEMY_HP_BASE = 90;
+        public double ENEMY_HP_BASE = 80;
         public double ENEMY_HP_GROWTH = 1.14;
         public double ENEMY_ATK_BASE = 5;
         public double ENEMY_ATK_GROWTH = 1.14;
@@ -39,12 +39,12 @@ namespace SoloHero.Game.Config
         public double ENEMY_EXP_BASE = 5;
         public double ENEMY_EXP_GROWTH = 1.10;
         public float ENEMY_ATK_INTERVAL = 1.2f;
-        public int SPAWN_WAVE_SIZE = 4;
+        public int SPAWN_WAVE_SIZE = 6;
         public float SPAWN_WAVE_GAP = 0.5f;
-        public double SPAWN_WAVE_SPACING = 0.8;
-        public int SPAWN_MAX_ALIVE = 4;
+        public double SPAWN_WAVE_SPACING = 0.6;
+        public int SPAWN_MAX_ALIVE = 6;
         public double SPAWN_OFFSET_X = 1.5;
-        public int KILL_TARGET_NORMAL = 8;
+        public int KILL_TARGET_NORMAL = 12;
         public double BOSS_HP_MULT = 10;
         public double BOSS_ATK_MULT = 1.1;
         public float BOSS_ATK_INTERVAL = 1.8f;

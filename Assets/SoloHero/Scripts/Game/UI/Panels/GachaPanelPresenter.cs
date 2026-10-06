@@ -216,7 +216,8 @@ namespace SoloHero.Game.UI.Panels
                 if (_tabImages[i] == null) continue;
                 Sprite sprite = i == _mode ? _tabActive : _tabIdle;
                 if (sprite != null) _tabImages[i].sprite = sprite;
-                _tabImages[i].color = i == _mode ? Color.white : new Color(0.55f, 0.55f, 0.62f, 1f);
+                // D-108: the idle tab has its own gray plate; only dim when there is no separate sprite.
+                _tabImages[i].color = i == _mode || (_tabIdle != null && _tabIdle != _tabActive) ? Color.white : new Color(0.55f, 0.55f, 0.62f, 1f);
             }
         }
 
@@ -319,7 +320,7 @@ namespace SoloHero.Game.UI.Panels
             {
                 if (counts[g] == 0) continue;
                 if (_sb.Length > 0) _sb.Append("   ");
-                _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(PanelServices.GradeColor((Grade)g))).Append('>')
+                _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(UiPalette.GradeInk((Grade)g))).Append('>')
                     .Append(PanelServices.GradeName((Grade)g)).Append(' ').Append(counts[g]).Append("</color>");
             }
         }

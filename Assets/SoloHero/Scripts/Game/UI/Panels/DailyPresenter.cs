@@ -18,8 +18,9 @@ namespace SoloHero.Game.UI.Panels
     /// </summary>
     public sealed class DailyPresenter : MonoBehaviour
     {
-        private static readonly Color Dim = new Color(0.55f, 0.55f, 0.6f, 1f);
-        private static readonly Color Today = new Color(1f, 0.85f, 0.35f, 1f);
+        // D-108 tints over the cream day cards: claimed days fade, today's card glows gold.
+        private static readonly Color Dim = new Color(0.78f, 0.74f, 0.7f, 1f);
+        private static readonly Color Today = new Color(1f, 0.86f, 0.45f, 1f);
 
         [SerializeField] private GameObject _popup;
         [SerializeField] private CombatSession _session;

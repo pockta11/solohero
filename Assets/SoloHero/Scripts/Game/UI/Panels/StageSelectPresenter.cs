@@ -27,6 +27,11 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Button _prev;
         [SerializeField] private Button _next;
         [SerializeField] private CombatSession _session;
+        [Header("D-108: button faces by state (tints are used when these are empty)")]
+        [SerializeField] private Sprite _normalSprite;
+        [SerializeField] private Sprite _currentSprite;
+        [SerializeField] private Sprite _bossSprite;
+        [SerializeField] private Sprite _lockedSprite;
 
         private BalanceValues _balance;
         private SaveDataV2 _save;
@@ -104,7 +109,21 @@ namespace SoloHero.Game.UI.Panels
                 if (button != null)
                 {
                     button.interactable = pickable;
-                    button.image.color = g == current ? Current : pickable ? Selectable : Disabled;
+                    if (_normalSprite != null)
+                    {
+                        // The disabled sprite (gray) covers locked stages; bosses keep their red face.
+                        button.image.sprite = g == current && _currentSprite != null ? _currentSprite
+                            : boss && unlocked && _bossSprite != null ? _bossSprite : _normalSprite;
+                        button.image.color = Color.white;
+                        SpriteState state = button.spriteState;
+                        state.disabledSprite = boss && unlocked && _bossSprite != null ? _bossSprite
+                            : g == current && _currentSprite != null ? _currentSprite : _lockedSprite;
+                        button.spriteState = state;
+                    }
+                    else
+                    {
+                        button.image.color = g == current ? Current : pickable ? Selectable : Disabled;
+                    }
                 }
 
                 if (i < _stageLabels.Length && _stageLabels[i] != null)

@@ -341,12 +341,15 @@ namespace SoloHero.Editor
             set.icons = new Sprite[ids.Count];
             for (int i = 0; i < ids.Count; i++)
             {
-                string file = ArtRoot + "/Icons/Skills/skill_" + ids[i] + ".png";
+                // D-108: the smooth icons (tools/art/skillgen3.py) win over the 24 px pixel ones.
+                string file = ArtRoot + "/UI/Hd/Skills/skill_" + ids[i] + ".png";
+                if (AssetDatabase.LoadAssetAtPath<Sprite>(file) == null) file = ArtRoot + "/Icons/Skills/skill_" + ids[i] + ".png";
                 set.icons[i] = AssetDatabase.LoadAssetAtPath<Sprite>(file);
                 if (set.icons[i] == null) Debug.LogWarning("[Art] missing icon " + file);
             }
 
-            set.locked = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/Icons/icon_lock.png");
+            set.locked = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/Hd/Icons/hdicon_lock.png");
+            if (set.locked == null) set.locked = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/Icons/icon_lock.png");
             EditorUtility.SetDirty(set);
             AssetDatabase.SaveAssets();
         }
@@ -369,7 +372,10 @@ namespace SoloHero.Editor
             {
                 for (int g = 0; g < grades.Length; g++)
                 {
-                    string file = ArtRoot + "/Icons/Equipment/equip_" + slots[s] + "_" + grades[g] + ".png";
+                    // D-108: the smooth icons (tools/art/equipgen3.py) win over the 16 px pixel ones.
+                    string file = ArtRoot + "/UI/Hd/Equipment/equip_" + slots[s] + "_" + grades[g] + ".png";
+                    if (AssetDatabase.LoadAssetAtPath<Sprite>(file) == null)
+                        file = ArtRoot + "/Icons/Equipment/equip_" + slots[s] + "_" + grades[g] + ".png";
                     set.icons[s * grades.Length + g] = AssetDatabase.LoadAssetAtPath<Sprite>(file);
                     if (set.icons[s * grades.Length + g] == null) Debug.LogWarning("[Art] missing icon " + file);
                 }
@@ -540,7 +546,9 @@ namespace SoloHero.Editor
             Material flash = FlashMaterial();
             var heroRenderer = (SpriteRenderer)viewSo.FindProperty("_heroRenderer").objectReferenceValue;
             PrepareActor(heroRenderer, hero, 10, flash);
+            viewSo.Update();
             SerializedProperty enemies = viewSo.FindProperty("_enemyRenderers");
+            EnsureEnemyRenderers(viewSo, enemies);
             for (int i = 0; i < enemies.arraySize; i++)
                 PrepareActor((SpriteRenderer)enemies.GetArrayElementAtIndex(i).objectReferenceValue, pig, 5, flash);
 
@@ -548,29 +556,53 @@ namespace SoloHero.Editor
             EditorSceneManager.SaveScene(scene);
         }
 
-        /// <summary>World HP bars for the 4 enemy slots (back + fill), drawn above enemies and under VFX.</summary>
+        /// <summary>
+        /// D-107: the scene came with four enemy renderers; clone the last one (flipbook and all) until there is one per
+        /// enemy slot, named Enemy{i} next to the others.
+        /// </summary>
+        private static void EnsureEnemyRenderers(SerializedObject viewSo, SerializedProperty enemies)
+        {
+            int want = CombatWorldView.EnemySlotVisualCount;
+            if (enemies.arraySize >= want || enemies.arraySize == 0) return;
+            var last = (SpriteRenderer)enemies.GetArrayElementAtIndex(enemies.arraySize - 1).objectReferenceValue;
+            if (last == null) return;
+            for (int i = enemies.arraySize; i < want; i++)
+            {
+                GameObject copy = Object.Instantiate(last.gameObject, last.transform.parent);
+                copy.name = "Enemy" + i;
+                enemies.arraySize = i + 1;
+                enemies.GetArrayElementAtIndex(i).objectReferenceValue = copy.GetComponent<SpriteRenderer>();
+            }
+
+            viewSo.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>World HP bars for the enemy slots (back + fill), drawn above enemies and under VFX.</summary>
         private static void WireHpBars(CombatWorldView view)
         {
             GameObject old = GameObject.Find("EnemyHpBars");
             if (old != null) Object.DestroyImmediate(old);
             var root = new GameObject("EnemyHpBars");
-            Sprite white = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/ui_white.png");
-            var backs = new SpriteRenderer[4];
-            var fills = new SpriteRenderer[4];
-            for (int i = 0; i < 4; i++)
+            // D-108: 1 x 3 px gradient strips (light top, mid, dark bottom) stretched into the bar.
+            Sprite back = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/ui_hpback.png");
+            Sprite fill = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/ui_hpfill.png");
+            int count = CombatWorldView.EnemySlotVisualCount;
+            var backs = new SpriteRenderer[count];
+            var fills = new SpriteRenderer[count];
+            for (int i = 0; i < count; i++)
             {
-                backs[i] = BarPart(root.transform, "Back" + i, white, new Color(0.08f, 0.06f, 0.12f, 0.9f), 300);
-                fills[i] = BarPart(root.transform, "Fill" + i, white, new Color(0.9f, 0.27f, 0.25f, 1f), 301);
+                backs[i] = BarPart(root.transform, "Back" + i, back, Color.white, 300);
+                fills[i] = BarPart(root.transform, "Fill" + i, fill, Color.white, 301);
             }
 
             var so = new SerializedObject(view);
-            so.FindProperty("_hpBarWidth").floatValue = 0.8f;
+            so.FindProperty("_hpBarWidth").floatValue = 0.78f;
             so.FindProperty("_hpBarHeight").floatValue = 0.1f;
             SerializedProperty b = so.FindProperty("_hpBacks");
             SerializedProperty f = so.FindProperty("_hpFills");
-            b.arraySize = 4;
-            f.arraySize = 4;
-            for (int i = 0; i < 4; i++)
+            b.arraySize = count;
+            f.arraySize = count;
+            for (int i = 0; i < count; i++)
             {
                 b.GetArrayElementAtIndex(i).objectReferenceValue = backs[i];
                 f.GetArrayElementAtIndex(i).objectReferenceValue = fills[i];
@@ -586,7 +618,7 @@ namespace SoloHero.Editor
             if (old != null) Object.DestroyImmediate(old);
             var root = new GameObject("Shadows");
             Sprite blob = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/Tiles/shadow_blob.png");
-            var shadows = new SpriteRenderer[5];
+            var shadows = new SpriteRenderer[1 + CombatWorldView.EnemySlotVisualCount];
             for (int i = 0; i < shadows.Length; i++)
                 shadows[i] = BarPart(root.transform, "Shadow" + i, blob, Color.white, 1);
             var so = new SerializedObject(view);

@@ -298,6 +298,125 @@ def make_jobs(icons):
     icons['ult_death_shot'] = ic
 
 
+def make_line_skills(icons):
+    """D-107: 15 more line skills (5 per line)."""
+    BG_FOREST = ((16, 50, 30), (70, 150, 90))
+    BROWN = [rgb(0xE8C890), rgb(0xB08050), rgb(0x6A4A2A)]
+
+    ic = Icon(BG_STEEL)  # shield_bash: shield with impact lines
+    for k in range(5):
+        a = -0.9 + k * 0.45
+        ic.line(15 + math.cos(a) * 6, 12 + math.sin(a) * 6, 15 + math.cos(a) * 9, 12 + math.sin(a) * 9, FIRE[0], 1)
+    shield(ic, 10, 5, 12, 14, rgb(0x5C8CFF), rgb(0x3D63D0), STEEL[0])
+    ic.p(8, 8, W)
+    icons['shield_bash'] = ic
+
+    ic = Icon(BG_ORANGE)  # ground_slam: hammer on cracked ground
+    ic.rect(2, 16, 21, 21, BROWN[1])
+    ic.rect(2, 16, 21, 16, BROWN[0])
+    for (x0, x1) in ((9, 6), (10, 13), (11, 17)):
+        ic.line(x0, 17, x1, 20, BROWN[2], 1)
+    for (x, y) in ((4, 13), (18, 12), (16, 14)):
+        ic.p(x, y, BROWN[0])
+    ic.line(17, 3, 12, 11, rgb(0x7A4A2A), 2)
+    ic.rect(6, 9, 13, 14, STEEL[1])
+    ic.rect(6, 9, 13, 10, STEEL[0])
+    icons['ground_slam'] = ic
+
+    ic = Icon(BG_RED)  # cleave: wide sweeping arc
+    crescent(ic, 11, 12, 9, W, rgb(0xFFB0A0), a0=-2.8, a1=1.2)
+    sword(ic, 19, 4, 15, 9)
+    icons['cleave'] = ic
+
+    ic = Icon(BG_ORANGE)  # earthquake: split ground with flying rocks
+    for y in range(13, 21):
+        for x in range(2, 22):
+            if abs(x - 12 - (y - 13) * 0.3) > 1:
+                ic.p(x, y, BROWN[1] if y > 15 else BROWN[0])
+    ic.line(12, 13, 14, 21, OUTLINE, 1)
+    for (x, y, r) in ((6, 8, 2), (17, 6, 1.6), (11, 4, 1.3)):
+        ic.disc(x, y, r, BROWN[2])
+    icons['earthquake'] = ic
+
+    ic = Icon(BG_RED)  # dragon_slash: red double arc with flame tips
+    crescent(ic, 11, 12, 9, rgb(0xFFD0A0), rgb(0xFF5030))
+    crescent(ic, 13, 12, 5, W, rgb(0xFF9050))
+    flame(ic, 18, 5, 2.5)
+    icons['dragon_slash'] = ic
+
+    ic = Icon(BG_PURPLE)  # magic_missile: three orbs with trails
+    for k, (x, y) in enumerate(((15, 6), (17, 12), (15, 18))):
+        ic.line(x - 8, y + 2, x - 2, y, PURPLE[2], 1)
+        ic.disc(x, y, 2.3, PURPLE[1])
+        ic.p(x - 0.5, y - 0.5, PURPLE[0])
+    icons['magic_missile'] = ic
+
+    ic = Icon(BG_RED)  # ember: little flames
+    flame(ic, 8, 14, 3.5)
+    flame(ic, 16, 11, 4.5)
+    for (x, y) in ((5, 6), (12, 5), (19, 18)):
+        ic.p(x, y, FIRE[1])
+    icons['ember'] = ic
+
+    ic = Icon(BG_ICE)  # ice_lance: icicle lance
+    for k in range(14):
+        w = 0.4 + k * 0.22
+        cx, cy = 18 - k * 1.0, 4 + k * 1.1
+        ic.disc(cx, cy, w, ICE[1] if k % 3 else ICE[0])
+    ic.line(19, 3, 9, 14, W, 1)
+    icons['ice_lance'] = ic
+
+    ic = Icon(BG_ORANGE)  # flame_pillar: tall column of fire
+    for y in range(3, 21):
+        half = 3.5 + 1.5 * math.sin(y * 0.9)
+        for x in range(int(12 - half), int(12 + half) + 1):
+            d = abs(x - 12) / max(half, 1)
+            ic.p(x, y, FIRE[0] if d < 0.3 else FIRE[1] if d < 0.6 else FIRE[2])
+    ic.rect(5, 19, 19, 20, FIRE[3])
+    icons['flame_pillar'] = ic
+
+    ic = Icon(BG_PURPLE)  # arcane_storm: cloud with bolts
+    for (x, y, r) in ((8, 7, 3.5), (13, 6, 4), (17, 8, 3)):
+        ic.disc(x, y, r, rgb(0x6A70B0))
+    ic.disc(12, 7, 2.5, rgb(0x8890D0))
+    bolt(ic, [(9, 10), (7, 15), (10, 15), (7, 21)], rgb(0xE0F0FF), rgb(0x80C0FF))
+    bolt(ic, [(15, 10), (14, 14), (17, 14), (15, 19)], rgb(0xE0F0FF), rgb(0x80C0FF))
+    icons['arcane_storm'] = ic
+
+    ic = Icon(BG_FOREST)  # arrow_shot: one big arrow
+    arrow(ic, 4, 20, 19, 5)
+    icons['arrow_shot'] = ic
+
+    ic = Icon(BG_FOREST)  # scatter_shot: fan of short arrows
+    arrow(ic, 4, 19, 12, 5)
+    arrow(ic, 4, 19, 19, 9)
+    arrow(ic, 4, 19, 20, 17)
+    icons['scatter_shot'] = ic
+
+    ic = Icon(BG_GOLD)  # piercing_arrow: arrow through two rings
+    ic.ring(9, 12, 4, rgb(0xFF6060))
+    ic.ring(16, 12, 3, rgb(0xFF6060))
+    arrow(ic, 2, 12, 21, 12, head=[W, STEEL[0], STEEL[1]])
+    icons['piercing_arrow'] = ic
+
+    ic = Icon(BG_FOREST)  # storm_arrows: arrows riding a gust
+    ic.ring(12, 14, 8, GREEN[0], 3.4, 5.9)
+    for (x0, y0) in ((3, 9), (6, 15), (9, 5)):
+        arrow(ic, x0, y0, x0 + 11, y0 - 3, head=[W, GREEN[0], GREEN[1]])
+    icons['storm_arrows'] = ic
+
+    ic = Icon(((24, 20, 50), (90, 80, 160)))  # starfall_arrow: star with falling arrows
+    for k in range(5):
+        a = -math.pi / 2 + k * 2 * math.pi / 5
+        b = a + math.pi / 5
+        ic.line(7, 7, 7 + math.cos(a) * 5, 7 + math.sin(a) * 5, GOLD[0], 1)
+        ic.line(7, 7, 7 + math.cos(b) * 2.2, 7 + math.sin(b) * 2.2, GOLD[1], 1)
+    ic.disc(7, 7, 1.5, W)
+    arrow(ic, 12, 4, 19, 19, head=[W, rgb(0xB0FFB0), GREEN[1]])
+    arrow(ic, 8, 12, 12, 21, head=[W, rgb(0xB0FFB0), GREEN[1]])
+    icons['starfall_arrow'] = ic
+
+
 def make():
     icons = {}
 
@@ -491,6 +610,7 @@ def make():
     icons['black_hole'] = ic
 
     make_jobs(icons)
+    make_line_skills(icons)
     for name, ic in icons.items():
         ic.save(name)
     return list(icons)

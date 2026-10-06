@@ -147,14 +147,14 @@ namespace SoloHero.Game.UI.Panels
                     _slotTexts[s].text = grade < 0
                         ? PanelServices.SlotName(slot)
                         : PanelServices.GradeName((Grade)grade) + (level > 0 ? " +" + level : "");
-                    _slotTexts[s].color = grade < 0 ? Color.white : PanelServices.GradeColor((Grade)grade);
+                    _slotTexts[s].color = grade < 0 ? UiPalette.InkMuted : UiPalette.GradeInk((Grade)grade);
                 }
 
                 if (s < _slotIcons.Length && _slotIcons[s] != null && _icons != null)
                 {
                     // Empty slot: the common icon as a dim silhouette, so the slot still reads at a glance (E8-07).
                     _slotIcons[s].sprite = _icons.Get(slot, grade < 0 ? Grade.Common : (Grade)grade);
-                    _slotIcons[s].color = grade < 0 ? new Color(0f, 0f, 0f, 0.45f) : Color.white;
+                    _slotIcons[s].color = grade < 0 ? UiPalette.Silhouette : Color.white;
                 }
 
                 if (s < _slotFrames.Length && _slotFrames[s] != null && _frames != null)

@@ -359,13 +359,17 @@ namespace SoloHero.Core.Balance
         /// <summary>Expected score gain of one skill summon per net gold; a new or levelled skill is auto-equipped.</summary>
         private double ExpectedSkillPullRatio(Snapshot now, double baseScore, double enemyAtk)
         {
+            // D-107: the pool is the hero's own line; the beginner cannot summon skills at all.
+            var line = SoloHero.Core.Jobs.JobService.LineOf(_save);
+            if (line == SoloHero.Core.Jobs.JobLine.None) return 0d;
             bool pityNext = _save.skillPityCount + 1 >= _table.PityCeiling;
             double gain = 0d;
             double refund = 0d;
             for (int g = 0; g < GachaCatalog.GradeCount; g++)
             {
                 var grade = (Grade)g;
-                SkillDef[] pool = SkillCatalog.OfGrade(grade);
+                SkillDef[] pool = SkillCatalog.OfLine(line, grade);
+                if (pool.Length == 0) continue;
                 double p = GradeProbability(grade, pityNext) / pool.Length;
                 if (p <= 0d) continue;
                 for (int i = 0; i < pool.Length; i++)

@@ -3,7 +3,10 @@ using UnityEngine.UI;
 
 namespace SoloHero.Game.UI.Panels
 {
-    /// <summary>One result card of the gacha reveal (E5-11): a back, and a face tinted by grade with its texts.</summary>
+    /// <summary>
+    /// One result card of the gacha reveal (E5-11): a back, and a face tinted by grade with its texts.
+    /// D-108: the back carries a separate star emblem (so the 9-sliced card never stretches it).
+    /// </summary>
     public sealed class GachaCard : MonoBehaviour
     {
         [SerializeField] private Image _image;
@@ -13,6 +16,7 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text _note;
         [SerializeField] private Sprite _back;
         [SerializeField] private Sprite _face;
+        [SerializeField] private GameObject _emblem;
 
         public RectTransform Rect => (RectTransform)transform;
 
@@ -21,6 +25,7 @@ namespace SoloHero.Game.UI.Panels
             gameObject.SetActive(true);
             _image.sprite = _back;
             _image.color = Color.white;
+            if (_emblem != null) _emblem.SetActive(true);
             SetTexts(false);
             Rect.localScale = Vector3.one;
         }
@@ -34,9 +39,10 @@ namespace SoloHero.Game.UI.Panels
             }
 
             _image.sprite = _face;
-            _image.color = Color.Lerp(new Color(0.1f, 0.1f, 0.14f, 1f), gradeColor, 0.45f);
+            _image.color = Color.Lerp(Color.white, gradeColor, 0.7f);
+            if (_emblem != null) _emblem.SetActive(false);
             _grade.text = grade;
-            _grade.color = Color.Lerp(gradeColor, Color.white, 0.35f);
+            _grade.color = Color.white;
             _slot.text = slot;
             _note.text = note;
             SetTexts(true);

@@ -21,12 +21,15 @@ namespace SoloHero.Game.UI.Panels
     /// the selected skill's detail with level-up and equip / unequip. Equipping into full slots enters a pick mode:
     /// tap the slot to replace. Auto-equip fills the slots with the strongest skills.
     /// D-104: skills of another job line (or any line before the first job) are tinted and say which job uses them.
+    /// D-107: the grid shows only the hero's own skills (the starters for the beginner, else the job's line of 12),
+    /// and the collection count is out of those.
     /// </summary>
     public sealed class SkillPanelPresenter : MonoBehaviour
     {
         private static readonly Color PickPulse = new Color(0.4f, 1f, 0.5f, 1f);
-        private static readonly Color UnownedFrame = new Color(0.5f, 0.5f, 0.56f, 1f);
-        private static readonly Color UnownedIcon = new Color(0.16f, 0.15f, 0.22f, 1f);
+        // D-108: unowned skills sit on the cream panel as a soft frame with the icon's silhouette.
+        private static readonly Color UnownedFrame = new Color(0.82f, 0.78f, 0.74f, 1f);
+        private static readonly Color UnownedIcon = new Color(0.42f, 0.4f, 0.48f, 0.8f);
         private static readonly Color OtherLineIcon = new Color(0.55f, 0.5f, 0.6f, 1f);
 
         /// <summary>D-104 line names by JobLine value.</summary>
@@ -248,9 +251,26 @@ namespace SoloHero.Game.UI.Panels
         private void DrawGrid()
         {
             int owned = 0;
+            int shown = 0;
+            SkillDef selected = SkillCatalog.Find(_selected);
+            if (selected == null || !JobService.CanUse(_save, selected))
+            {
+                // The selection follows the job: start on the first skill of the hero's own list.
+                for (int i = 0; i < SkillCatalog.All.Length; i++)
+                {
+                    if (!JobService.CanUse(_save, SkillCatalog.All[i])) continue;
+                    _selected = SkillCatalog.All[i].Id;
+                    break;
+                }
+            }
+
             for (int i = 0; i < SkillCatalog.All.Length && i < _cellFrames.Length; i++)
             {
                 SkillDef def = SkillCatalog.All[i];
+                bool visible = JobService.CanUse(_save, def);
+                if (_cellFrames[i] != null && _cellFrames[i].gameObject.activeSelf != visible) _cellFrames[i].gameObject.SetActive(visible);
+                if (!visible) continue;
+                shown++;
                 int level = SkillBook.GetLevel(_save, def.Id);
                 bool has = level > 0;
                 if (has) owned++;
@@ -289,7 +309,7 @@ namespace SoloHero.Game.UI.Panels
                 _ownedBonus.text = Strings.Format("skill.owned_bonus", bonus.ToString("0.#", CultureInfo.InvariantCulture));
             }
 
-            if (_ownedCount != null) _ownedCount.text = Strings.Format("skill.collection", owned, SkillCatalog.Count);
+            if (_ownedCount != null) _ownedCount.text = Strings.Format("skill.collection", owned, shown);
         }
 
         private void DrawDetail()
@@ -303,7 +323,7 @@ namespace SoloHero.Game.UI.Panels
             if (_detailIcon != null)
             {
                 _detailIcon.sprite = _icons != null ? _icons.Get(def.IconId) : null;
-                _detailIcon.color = owned ? Color.white : new Color(0.45f, 0.45f, 0.5f, 1f);
+                _detailIcon.color = owned ? Color.white : new Color(0.55f, 0.5f, 0.5f, 0.75f);
             }
 
             SetFrame(_detailFrame, def, true);
@@ -312,7 +332,7 @@ namespace SoloHero.Game.UI.Panels
             if (_detailName != null)
             {
                 _detailName.text = Strings.Get(def.NameKey);
-                _detailName.color = Color.Lerp(grade, Color.white, 0.45f);
+                _detailName.color = UiPalette.GradeInk(def.Grade);
             }
 
             if (_detailInfo != null)
@@ -323,7 +343,7 @@ namespace SoloHero.Game.UI.Panels
                 if (def.Line != JobLine.None)
                 {
                     string line = Strings.Format("skill.line_only", Strings.Get(LineKeys[(int)def.Line]));
-                    _detailInfo.text += JobService.CanUse(_save, def) ? "  " + line : "  <color=#FF8080>" + line + "</color>";
+                    _detailInfo.text += JobService.CanUse(_save, def) ? "  " + line : "  <color=#D8423E>" + line + "</color>";
                 }
             }
 

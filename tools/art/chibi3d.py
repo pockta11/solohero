@@ -620,9 +620,10 @@ def build_humanoid(look):
         rig.weapon = empty("weapon", hand_f)
         wp = rig.weapon
         if w == "sword":
-            cyl("leather", wp, (0, 0, 0), 0.8 * k, 3.2 * k, (0, rad(90), 0))
-            box("gold", wp, (1.9 * k, 0, 0), (0.9 * k, 1.2 * k, 4.2 * k))
-            box(look.get("blade", "steel"), wp, (7.6 * k, 0, 0), (10.5 * k, 0.6 * k, 2.6 * k), taper=0.35)
+            # D-108: a longer, broader blade and guard so the sword reads at game scale.
+            cyl("leather", wp, (0, 0, 0), 0.85 * k, 3.4 * k, (0, rad(90), 0))
+            box("gold", wp, (2.0 * k, 0, 0), (1.1 * k, 1.4 * k, 5.0 * k))
+            box(look.get("blade", "steel"), wp, (8.9 * k, 0, 0), (12.8 * k, 0.7 * k, 3.1 * k), taper=0.35)
         elif w == "club":
             cone("wood", wp, (4.2 * k, 0, 0), 1.0 * k, 2.4 * k, 10.0 * k, (0, rad(90), 0))
         elif w == "katana":
@@ -631,16 +632,16 @@ def build_humanoid(look):
             box("steel", wp, (9.4 * k, 0, 0.3 * k), (13.5 * k, 0.5 * k, 1.6 * k), (0, rad(-3), 0), taper=0.3)
         else:
             cyl("wood", wp, (3.5 * k, 0, 0), 0.75 * k, 24.0 * k, (0, rad(90), 0))
-            rig.orb = ellip(look["orb"], wp, (16.5 * k, 0, 0), (2.6 * k, 2.6 * k, 2.6 * k))
-            torus("gold", wp, (14.6 * k, 0, 0), 1.3 * k, 0.4 * k, (0, rad(90), 0))
+            rig.orb = ellip(look["orb"], wp, (17.0 * k, 0, 0), (3.1 * k, 3.1 * k, 3.1 * k))
+            torus("gold", wp, (14.8 * k, 0, 0), 1.5 * k, 0.45 * k, (0, rad(90), 0))
     if w == "bow":
         bow = empty("bow", hand_b)
-        pts = [(1.0 * k + 3.2 * k * math.cos(rad(a)), 0, 9.0 * k * math.sin(rad(a))) for a in range(-90, 91, 10)]
-        tube("wood", bow, pts, 0.75 * k)
-        tube("white", bow, [(1.0 * k, 0, -9.0 * k), (1.0 * k, 0, 9.0 * k)], 0.2 * k)
+        pts = [(1.0 * k + 3.8 * k * math.cos(rad(a)), 0, 10.5 * k * math.sin(rad(a))) for a in range(-90, 91, 10)]
+        tube("wood", bow, pts, 0.9 * k)
+        tube("white", bow, [(1.0 * k, 0, -10.5 * k), (1.0 * k, 0, 10.5 * k)], 0.22 * k)
         rig.arrow = empty("arrow", bow)
-        tube("wood", rig.arrow, [(-9.0 * k, 0, 0), (4.5 * k, 0, 0)], 0.35 * k)
-        cone("steel", rig.arrow, (5.0 * k, 0, 0), 0.9 * k, 0.0, 1.8 * k, (0, rad(90), 0), verts=6, smooth=False)
+        tube("wood", rig.arrow, [(-10.0 * k, 0, 0), (5.0 * k, 0, 0)], 0.4 * k)
+        cone("steel", rig.arrow, (5.6 * k, 0, 0), 1.1 * k, 0.0, 2.2 * k, (0, rad(90), 0), verts=6, smooth=False)
         rig.bow = bow
     if look.get("shield"):
         sh = empty("shield", hand_b)
@@ -678,7 +679,7 @@ def pose_humanoid(rig, look, p):
     if rig.weapon is not None:
         rig.weapon.rotation_euler = (0, rad(p["fa"][1]) - rad(p["weapon"]), 0)
     if hasattr(rig, "orb"):
-        s = 2.6 * k * (1.0 + 0.12 * p["glow"])
+        s = 3.1 * k * (1.0 + 0.12 * p["glow"])
         rig.orb.scale = (s, s, s)
     if hasattr(rig, "bow"):
         rig.bow.rotation_euler = (0, rad(p["ba"][1]), 0)  # keep the bow upright

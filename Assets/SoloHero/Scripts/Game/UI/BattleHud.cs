@@ -35,6 +35,10 @@ namespace SoloHero.Game.UI
 
         [Header("Hero status in the top bar: name + level, HP and EXP gauges")]
         [SerializeField] private Text _heroNameText;
+        [Tooltip("D-108: level badge under the portrait; when set, the name text shows only the job name.")]
+        [SerializeField] private Text _heroLevelText;
+        [Tooltip("D-108: kill progress bar under the stage number (anchorMax.x = kills / target).")]
+        [SerializeField] private RectTransform _killFill;
         [SerializeField] private RectTransform _heroHpFill;
         [SerializeField] private Text _heroHpText;
         [SerializeField] private RectTransform _heroExpFill;
@@ -55,12 +59,16 @@ namespace SoloHero.Game.UI
         [SerializeField] private Sprite _autoOnSprite;
         [SerializeField] private Sprite _autoOffSprite;
         [SerializeField] private GameObject[] _skillReadyMarks = new GameObject[0];
+        [Tooltip("D-108: faint plus shown in empty unlocked slots (tap opens the skill tab).")]
+        [SerializeField] private Sprite _emptySlotIcon;
         [Tooltip("D-093 basic skill: cooldown sweep over its icon (the attack-speed timer).")]
         [SerializeField] private Image _basicCooldown;
         [Tooltip("D-104: the basic skill's name, which is the job's main attack.")]
         [SerializeField] private Text _basicTag;
         [Tooltip("D-104: the basic skill's icon; jobs show their main attack icon, the beginner keeps the flash slash.")]
         [SerializeField] private Image _basicIcon;
+        [Tooltip("D-108: tapping an empty skill slot opens the skill tab of this host.")]
+        [SerializeField] private PanelHost _panels;
         [SerializeField] private GameObject _bossBar;
         [SerializeField] private RectTransform _bossFill;
         [SerializeField] private Text _bossName;
@@ -171,8 +179,16 @@ namespace SoloHero.Game.UI
             {
                 _shownHeroLevel = _save.heroLevel;
                 _shownHeroJob = _save.jobId;
-                _heroNameText.text = Strings.Format("hud.hero_name", _save.heroLevel,
-                    Strings.Get(SoloHero.Core.Jobs.JobCatalog.Find(_save.jobId).NameKey));
+                string job = Strings.Get(SoloHero.Core.Jobs.JobCatalog.Find(_save.jobId).NameKey);
+                if (_heroLevelText != null)
+                {
+                    _heroLevelText.text = Strings.Format("char.lv", _save.heroLevel);
+                    _heroNameText.text = job;
+                }
+                else
+                {
+                    _heroNameText.text = Strings.Format("hud.hero_name", _save.heroLevel, job);
+                }
             }
 
             HeroBrain hero = runner.Hero;
@@ -234,14 +250,27 @@ namespace SoloHero.Game.UI
             _settings.SetSkillManual(!_settings.SkillManual);
         }
 
-        /// <summary>Skill bar tap: casts that slot now if it is ready (auto-cast keeps running either way).</summary>
+        /// <summary>
+        /// Skill bar tap: casts that slot now if it is ready (auto-cast keeps running either way). D-108: an empty
+        /// unlocked slot opens the skill tab instead, so the player finds where skills are equipped.
+        /// </summary>
         public void CastSlot(int slot)
         {
             StageRunner runner = CurrentRunner();
             if (runner == null) return;
+            if (runner.Skills.DefAt(slot) == null)
+            {
+                bool locked = slot < _shownLocked.Length && _shownLocked[slot];
+                if (!locked && _panels != null) _panels.Toggle(SkillTabIndex);
+                return;
+            }
+
             if (runner.Skills.TryCast(slot, runner.Hero, runner.World).Ok && slot < _skillPunches.Length && _skillPunches[slot] != null)
                 _skillPunches[slot].Play();
         }
+
+        /// <summary>Index of the skill tab in the bottom tab bar (character, equipment, summon, skill, talent).</summary>
+        private const int SkillTabIndex = 3;
 
         private StageRunner CurrentRunner()
         {
@@ -343,6 +372,11 @@ namespace SoloHero.Game.UI
             _shownKillTarget = runner.KillTarget;
             // D-100: a dungeon has no kill target, only a running count.
             _killsText.text = runner.InDungeon ? _shownKills.ToString() : _shownKills.ToString() + " / " + _shownKillTarget.ToString();
+            if (_killFill != null)
+            {
+                float ratio = runner.InDungeon || _shownKillTarget <= 0 ? 1f : Mathf.Clamp01((float)_shownKills / _shownKillTarget);
+                _killFill.anchorMax = new Vector2(ratio, 1f);
+            }
         }
 
         private void RefreshBossTimer(StageRunner runner)
@@ -411,8 +445,8 @@ namespace SoloHero.Game.UI
 
             Sprite icon = job.Main != null && _skillIconSet != null ? _skillIconSet.Get(SoloHero.Core.Jobs.JobCatalog.MainIconId(job)) : null;
             _basicIcon.sprite = icon != null ? icon : _basicDefault;
-            // Skill icons are 24 px tiles at 3 canvas units per pixel; the flash slash is a 16 px UI icon at 4.
-            _basicIcon.rectTransform.sizeDelta = icon != null ? new Vector2(72f, 72f) : _basicDefaultSize;
+            // D-108: skill icons are smooth 128 px tiles shown at 80 units inside the 104 frame.
+            _basicIcon.rectTransform.sizeDelta = icon != null ? new Vector2(80f, 80f) : _basicDefaultSize;
         }
 
         private void RefreshAuto(StageRunner runner)
@@ -507,13 +541,15 @@ namespace SoloHero.Game.UI
                 frame.gameObject.SetActive(def != null);
             if (icon != null)
             {
-                icon.sprite = sprite;
-                icon.enabled = sprite != null && !locked;
+                bool empty = def == null && !locked && _balance != null && i < SkillService.SlotCount(_balance) && _emptySlotIcon != null;
+                icon.sprite = empty ? _emptySlotIcon : sprite;
+                icon.enabled = empty || (sprite != null && !locked);
+                icon.color = empty ? new Color(1f, 1f, 1f, 0.45f) : Color.white;
             }
 
             if (frame != null && _gradeFrames != null)
             {
-                frame.sprite = def != null && !locked ? _gradeFrames.Get(def.Grade) : _gradeFrames.empty;
+                frame.sprite = def != null && !locked ? _gradeFrames.Get(def.Grade) : _gradeFrames.EmptyDark;
                 frame.color = Color.white;
             }
             else if (frame != null)

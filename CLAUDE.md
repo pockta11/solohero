@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Ads**: Google Mobile Ads Unity 11.5.0 (Android `play-services-ads` 25.4.0), 보상형만
 - **Async**: UniTask v2.5.11 · **Tween**: DOTween · **JSON**: Newtonsoft 3.2.1 · **UI**: uGUI + TMP
 
-## 현재 상태 (2026-09-28)
+## 현재 상태 (2026-10-06)
 
 **2D 리빌드 — E1~E8 구현 완료(대부분 review), E9 출시 준비·QA 진행 중.** 3D 쿼터뷰 구현은 2026-09-19에 전면 폐기했다. 1-09(빌드 파이프라인·API 36·16 KB, JDK 11 확정)와 1-03(정리·구조 이행) 완료. 레거시 격리 폴더는 2026-09-28 이식 완료로 삭제.
 
@@ -45,6 +45,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **2026-09-29 귀여운 캐릭터·2.5D 전투** (D-090~D-092): 영웅·적 8종·보스 5종을 운빨존많겜식 절차 생성 도트로(`tools/art/charkit.py` + `hero.py` + `cast.py`, 보스도 1배). 전투는 원근 바닥(`floorgen.py`) + 몹 깊이 레인·레인별 크기·정렬(`Game/Combat/DepthLanes`), 카메라 y -0.6. 판정은 X축 그대로. 에뮬레이터 설치가 멈추면 `bundletool build-apks` 후 `adb install-multiple`
 - **2026-10-01~02 3D 캐릭터·게임 품질** (D-096~D-099): 캐릭터 15종을 Blender 3D → 도트로(`python tools/art/build3d.py`, Blender 5.2), 클립 12장·20 fps·적 달리기 클립. 카메라는 `PixelCameraFit`(정수 배율; 2D Pixel Perfect 패키지 컴포넌트는 URP에서 동작 안 함). 전투 손맛(히트스톱·넉백·처치 튕김·흰 플래시 셰이더 `SoloHero/SpriteFlash`·처치 코인·숫자 쌓기). 배경·바닥·앱 아이콘 자체 제작(`bggen.py`·`floorgen.py`·`appicon.py`). 스킬 콤보(파쇄·점화), 고유 VFX 4종, 출석·일일 미션(`Core/Daily`, 메뉴 "일일 보상"), 일일 던전 골드·경험치(D-100, 메뉴 "던전"), 영웅 승급 4단계(D-101 → D-104 전직으로 대체), 동료 4종(D-102, 메뉴 "동료", `Core/Companions`). 골렘 = 3장 보스. 개발 빌드는 FPS 표시. 진행표 `implementation-artifacts/qa/quality-plan-2026-10-01.md`
 - **2026-10-02 전직** (D-104): 메이플식 1·2차 전직(`Core/Jobs` `JobCatalog`·`JobService`, 저장 `jobId`). 초보자는 섬광 베기 + 기본 스킬 3종만, Lv 10 전사·마법사·궁수, Lv 30 2차 6종(나이트·버서커·화염술사·빙뢰술사·레인저·저격수). 직업이 주공격(섬광 베기 대체)·숙련 패시브·궁극기(2차, 스킬바 옆 별도 슬롯)를 정하고, 뽑기 스킬 21종은 계열 7종씩 같은 계열만 장착. 캐릭터 패널 초상화 아래 전직 버튼 → 선택 팝업(두 번 눌러 확정). 외형 `chibi3d.py` `JOB_LOOKS`(jobmage·jobpyro·jobcryo·jobarcher·jobranger·jobsniper), 전사 계열은 knight1·2·4 재사용. 시뮬은 `SimSettings.Job1/Job2` 경로로 돈다. 자동 스킬은 무리가 다 사거리에 들어오거나 영웅이 멈춰 교전할 때만 발동(D-105). UI 글꼴은 `Art/Fonts/SoloHeroJua.ttf`(둥근 Jua, 테두리+그림자), 상단바는 초상·체력·경험치 얇은 줄, 캐릭터 창 2×2 카드, 장비 창은 영웅 좌우 장비 칸(D-106)
+- **2026-10-06 UI·아이콘·연출 다듬기** (D-107~D-108): 전직 후 자기 계열 스킬만·계열당 12종·몹 6마리 무리(D-107). 스킨 v3: 크림 판넬·금테 팝업·광택 버튼·남색 HUD/탭바(`tools/art/uigen3.py` → `Art/UI/Hd`, 1px = 1 캔버스 단위, `UiSkin.Hd`), 매끈한 UI 아이콘 30·장비 16·스킬 55종(`icongen3.py`·`equipgen3.py`·`skillgen3.py`, `UiSkin.Icon`·ArtBuilder가 Hd 우선), 판넬 항상 열림·팝업 리본/X/바깥 탭 닫기·눌림 탄성, 로딩 화면(`LoadingScreen`, 게임 씬 비동기 로드), 굵은 기본 VFX(`vfxgen2.py`), 무기 키운 캐릭터 재렌더. 판넬 글자색은 `UiPalette`(크림 위 진한 갈색), HUD 글자는 흰색+외곽선
 - 빌드는 `libFirebaseCppApp` 포함을 자동 검사하고, EDM4U가 pom을 `srcaar`로 바꾸면 빌드 전에 되돌린다
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 

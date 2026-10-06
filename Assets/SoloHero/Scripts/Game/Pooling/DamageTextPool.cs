@@ -39,7 +39,7 @@ namespace SoloHero.Game.Pooling
         private const float NormalJitterPixels = 10f;
         private const int StackSlots = 8;
         private const float StackWindowSeconds = 0.35f;
-        private const float StackStepPixels = 34f;
+        private const float StackStepPixels = 42f;
         private const int StackMax = 4;
 
         private readonly EnemyBrain[] _stackTarget = new EnemyBrain[StackSlots];

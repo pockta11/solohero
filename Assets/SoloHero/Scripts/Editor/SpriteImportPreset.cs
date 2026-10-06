@@ -20,11 +20,17 @@ namespace SoloHero.Editor
 
         private static readonly Regex SheetName = new Regex(@"^([a-z0-9]+)_([a-z0-9]+)_(\d+)$");
 
-        /// <summary>UI 9-slice sprites: ui9_{name}_{border px}.png.</summary>
-        private static readonly Regex NineSlice = new Regex(@"^ui9_[a-z0-9]+_(\d+)$");
+        /// <summary>
+        /// UI 9-slice sprites: ui9_{name}_{border px}.png, and the D-108 smooth skin hd9_{name}_{border px}.png or
+        /// hd9_{name}_{left/right}x{top/bottom}.png.
+        /// </summary>
+        private static readonly Regex NineSlice = new Regex(@"^(?:ui9|hd9)_[a-z0-9]+_(\d+)(?:x(\d+))?$");
 
         /// <summary>UI art is drawn at 1/4 of the 1080 reference width: 1 art pixel = 4 canvas units (100 / 25).</summary>
         private const int UiPpu = 25;
+
+        /// <summary>D-108 smooth skin (Art/UI/Hd, tools/art/uigen3.py): drawn at 1 px = 1 canvas unit, filtered.</summary>
+        private const int HdPpu = 100;
 
         /// <summary>
         /// Foot pivot per entity in frame pixels from the bottom-left, for sheets whose feet are not on the bottom-centre.
@@ -60,11 +66,25 @@ namespace SoloHero.Editor
                 settings.spriteAlignment = (int)(ui ? SpriteAlignment.Center : SpriteAlignment.BottomCenter);
                 if (ui)
                 {
-                    importer.spritePixelsPerUnit = UiPpu;
-                    settings.spritePixelsPerUnit = UiPpu;
+                    bool hd = path.Contains("/UI/Hd/");
+                    int ppu = hd ? HdPpu : UiPpu;
+                    importer.spritePixelsPerUnit = ppu;
+                    settings.spritePixelsPerUnit = ppu;
+                    if (hd)
+                    {
+                        // The settings copy was read with Point above and is written back last, so set both.
+                        // Icons (128 px, shown at 40-112 units) get mipmaps so the small sizes stay smooth.
+                        bool icon = path.Contains("/UI/Hd/Icons/") || path.Contains("/UI/Hd/Equipment/") || path.Contains("/UI/Hd/Skills/");
+                        FilterMode filter = icon ? FilterMode.Trilinear : FilterMode.Bilinear;
+                        importer.filterMode = filter;
+                        settings.filterMode = filter;
+                        importer.mipmapEnabled = icon;
+                        settings.mipmapEnabled = icon;
+                    }
                     Match nine = NineSlice.Match(name);
-                    float border = nine.Success ? int.Parse(nine.Groups[1].Value) : 0f;
-                    settings.spriteBorder = new Vector4(border, border, border, border);
+                    float side = nine.Success ? int.Parse(nine.Groups[1].Value) : 0f;
+                    float cap = nine.Success && nine.Groups[2].Success ? int.Parse(nine.Groups[2].Value) : side;
+                    settings.spriteBorder = new Vector4(side, cap, side, cap);
                 }
 
                 importer.wrapMode = repeating ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;

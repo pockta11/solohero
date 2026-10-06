@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: GradeFrames
   m_EditorClassIdentifier: 
   frames:
-  - {fileID: 21300000, guid: 2361225e31fa59a43b2482ffe6500529, type: 3}
-  - {fileID: 21300000, guid: 667a2c553c1a9e54d9580368719fbcf1, type: 3}
-  - {fileID: 21300000, guid: 88830d89a7b2cd44c9a64e302156174a, type: 3}
-  - {fileID: 21300000, guid: c1be85d6d8316334291c8cae460f92fb, type: 3}
-  empty: {fileID: 21300000, guid: 94826cd692d59e74b9c86f06ccb984bc, type: 3}
+  - {fileID: 21300000, guid: 4a44c52eb6de615449188fb5489ca9be, type: 3}
+  - {fileID: 21300000, guid: 271daa843ed84cd41aaa02103cc7f9bf, type: 3}
+  - {fileID: 21300000, guid: 80e5e2730dd70da49a134c28f10e2eff, type: 3}
+  - {fileID: 21300000, guid: a823fa9d0d1badf4d9888c3bd2cf917d, type: 3}
+  empty: {fileID: 21300000, guid: be66197bf362f724cac0ad6859c3b389, type: 3}
+  emptyDark: {fileID: 21300000, guid: fd91c3ddcaaa1c747bee475039a8180f, type: 3}

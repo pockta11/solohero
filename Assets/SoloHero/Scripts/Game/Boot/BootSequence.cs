@@ -26,6 +26,8 @@ namespace SoloHero.Game.Boot
 
         [SerializeField] private BalanceConfig _balance;
         [SerializeField] private TextAsset _strings;
+        [Tooltip("D-108: the loading screen; when set, the game scene loads asynchronously behind it.")]
+        [SerializeField] private LoadingScreen _loading;
 
         private SaveService _save;
         private SaveDataV2 _data;
@@ -51,7 +53,9 @@ namespace SoloHero.Game.Boot
             BalanceValues balance = _balance != null ? _balance.ToValues() : new BalanceValues();
             var clock = new SystemClock();
             var auth = new AuthService();
+            if (_loading != null) _loading.SetProgress(0.15f);
             BootReport report = await BootFlow.RunAsync(auth, CreateSave, balance, clock);
+            if (_loading != null) _loading.SetProgress(0.5f);
 
             _save = report.Save;
             _data = report.Data;
@@ -122,7 +126,10 @@ namespace SoloHero.Game.Boot
             Services.Register(new UpgradeService(_data, balance, requester));
             Services.Register(new SoloHero.Core.Jobs.JobService(_data, balance, requester));
             Services.Register(new SoloHero.Core.Companions.CompanionService(_data, balance, requester));
-            Services.Register(new SkillService(_data, balance, requester));
+            var skills = new SkillService(_data, balance, requester);
+            Services.Register(skills);
+            // D-107: saves that advanced before the line-only rule get their line's commons and a usable loadout.
+            SoloHero.Core.Jobs.JobService.EnsureLineSkills(_data, skills, balance);
             Services.Register(new SoloHero.Core.Talents.TalentService(_data, balance, requester));
             Services.Register(new EquipService(requester));
             var gacha = new GachaService(
@@ -166,12 +173,39 @@ namespace SoloHero.Game.Boot
                     return;
                 }
 
-                SceneManager.LoadScene(GameSceneName);
+                if (_loading != null) StartCoroutine(LoadGameAsync());
+                else SceneManager.LoadScene(GameSceneName);
             }
             catch (System.Exception e)
             {
                 Log.Warn(LogTag.Boot, "game scene load failed, staying on boot: " + e.Message);
             }
+        }
+
+        /// <summary>
+        /// D-108: loads the game scene behind the loading screen, reporting progress to its bar. The background
+        /// loading priority goes to High for the load (Normal integrates only about 10 ms per frame, which made the
+        /// asynchronous load several times slower than the old blocking one) and back to Normal afterwards.
+        /// </summary>
+        private System.Collections.IEnumerator LoadGameAsync()
+        {
+            ThreadPriority previous = Application.backgroundLoadingPriority;
+            Application.backgroundLoadingPriority = ThreadPriority.High;
+            AsyncOperation op = SceneManager.LoadSceneAsync(GameSceneName);
+            if (op == null)
+            {
+                Application.backgroundLoadingPriority = previous;
+                SceneManager.LoadScene(GameSceneName);
+                yield break;
+            }
+
+            while (!op.isDone)
+            {
+                _loading.SetProgress(0.55f + op.progress * 0.4f);
+                yield return null;
+            }
+
+            Application.backgroundLoadingPriority = previous;
         }
 
         private void OnApplicationPause(bool paused)

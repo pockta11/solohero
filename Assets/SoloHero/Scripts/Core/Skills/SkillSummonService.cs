@@ -2,6 +2,7 @@ using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Gacha;
+using SoloHero.Core.Jobs;
 using SoloHero.Core.Save;
 
 namespace SoloHero.Core.Skills
@@ -48,6 +49,7 @@ namespace SoloHero.Core.Skills
     /// with its own pity counter; grade first, then a uniform pick within the grade. A duplicate raises the skill
     /// one level (D-062 rule for gear); at SKILL_MAX_LEVEL it refunds SKILL_REFUND_{grade} gold.
     /// Order is settle -> save (caller) -> animate, as for equipment.
+    /// D-107: only the hero's own job line is in the pool, so summoning opens with the first job (JobLocked before).
     /// </summary>
     public sealed class SkillSummonService
     {
@@ -64,6 +66,7 @@ namespace SoloHero.Core.Skills
 
         public SkillSummonResult TryPull(SaveDataV2 data)
         {
+            if (JobService.LineOf(data) == JobLine.None) return SkillSummonResult.Fail(FailReason.JobLocked);
             if (data.gold < _balance.SKILL_SUMMON_COST_SINGLE) return SkillSummonResult.Fail(FailReason.NotEnoughGold);
             data.gold -= _balance.SKILL_SUMMON_COST_SINGLE;
             return Pull(data, 1);
@@ -71,6 +74,7 @@ namespace SoloHero.Core.Skills
 
         public SkillSummonResult TryPullTen(SaveDataV2 data)
         {
+            if (JobService.LineOf(data) == JobLine.None) return SkillSummonResult.Fail(FailReason.JobLocked);
             if (data.gold < _balance.SKILL_SUMMON_COST_TEN) return SkillSummonResult.Fail(FailReason.NotEnoughGold);
             data.gold -= _balance.SKILL_SUMMON_COST_TEN;
             return Pull(data, 10);
@@ -78,6 +82,7 @@ namespace SoloHero.Core.Skills
 
         public SkillSummonResult TryPullTenWithGem(SaveDataV2 data)
         {
+            if (JobService.LineOf(data) == JobLine.None) return SkillSummonResult.Fail(FailReason.JobLocked);
             if (data.gem < _balance.SKILL_SUMMON_COST_TEN_GEM) return SkillSummonResult.Fail(FailReason.NotEnoughGem);
             data.gem -= _balance.SKILL_SUMMON_COST_TEN_GEM;
             return Pull(data, 10);
@@ -108,7 +113,7 @@ namespace SoloHero.Core.Skills
                 if (grade == Grade.Legendary && _table.ResetOnLegendary) data.skillPityCount = 0;
             }
 
-            SkillDef[] pool = SkillCatalog.OfGrade(grade);
+            SkillDef[] pool = SkillCatalog.OfLine(JobService.LineOf(data), grade);
             SkillDef def = pool[_rng.Next(pool.Length)];
             return Acquire(data, def);
         }

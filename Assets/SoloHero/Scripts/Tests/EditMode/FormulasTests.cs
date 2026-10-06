@@ -12,7 +12,7 @@ namespace SoloHero.Tests.EditMode
         public void EnemyHp_StageOne_EqualsBase()
         {
             var c = new BalanceValues();
-            Assert.AreEqual(90d, Formulas.EnemyHp(c, 1), 1e-9);
+            Assert.AreEqual(c.ENEMY_HP_BASE, Formulas.EnemyHp(c, 1), 1e-9);
         }
 
         [Test]

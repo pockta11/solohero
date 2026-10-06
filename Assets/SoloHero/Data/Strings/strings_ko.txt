@@ -36,6 +36,14 @@ ad.booster_started	10분 동안 골드 2배!
 # Boot and offline reward
 boot.load_failed	클라우드 저장을 불러오지 못했습니다. 이 기기의 데이터로 진행합니다.
 offline.time	{0}시간 {1}분 / 최대 {2}시간
+offline.title	오프라인 보상
+loading.status	모험을 준비하는 중...
+loading.tip.0	팁: 앱을 꺼 둔 시간만큼 골드가 쌓여요 (최대 6시간)
+loading.tip.1	팁: 소환은 100회째에 전설 등급이 확정돼요
+loading.tip.2	팁: 강화 버튼을 꾹 누르면 연속으로 강화돼요
+loading.tip.3	팁: Lv 10에 전직하면 직업 전용 스킬을 쓸 수 있어요
+loading.tip.4	팁: 보스에게 지면 한 칸 아래에서 골드를 모아 다시 도전하세요
+loading.tip.5	팁: 일일 보상과 던전은 매일 초기화돼요
 offline.claim	받기
 offline.double	광고 보고 2배 ({0})
 offline.ad_failed	광고를 불러올 수 없습니다
@@ -43,7 +51,7 @@ offline.ad_failed	광고를 불러올 수 없습니다
 # Tutorial
 tutorial.upgrade_tip	팁: 캐릭터 탭에서 능력치를 강화하세요
 tutorial.welcome	환영 선물: 골드와 무료 소환
-tutorial.skill_unlocked	스킬 슬롯 2 해금! 소환 탭에서 새 스킬을 모으세요
+tutorial.skill_unlocked	스킬 슬롯 2 해금! Lv 10에 전직하면 직업 스킬을 소환할 수 있어요
 
 # Stats and character panel
 stat.hp	체력
@@ -54,7 +62,7 @@ stat.crit	치명타
 stat.critdmg	치명 피해
 char.max	최대
 char.lv	Lv {0}
-char.preview	{0} <color=#8CFF6E>▶ {1}</color>
+char.preview	{0}  <color=#2C9C45>▶ {1}</color>
 char.preview_max	{0}  (최대)
 char.atkspd_value	{0}/초
 char.percent	{0}%
@@ -123,6 +131,36 @@ skill.name.phoenix	불사조
 skill.desc.phoenix	체력이 {10}% 이하일 때 체력 {7}% 회복, {6}초 동안 공격력 +{5}%
 skill.name.black_hole	블랙홀
 skill.desc.black_hole	적을 빨아들여 {0}% 피해 {1}회, {4}초 기절
+skill.name.shield_bash	방패 강타
+skill.desc.shield_bash	앞의 적 하나에게 공격력의 {0}% 피해, {4}초 기절
+skill.name.ground_slam	대지 강타
+skill.desc.ground_slam	주변 적 모두에게 공격력의 {0}% 피해
+skill.name.cleave	휩쓸기
+skill.desc.cleave	앞의 적 모두에게 공격력의 {0}% 피해
+skill.name.earthquake	지진
+skill.desc.earthquake	넓은 범위에 {0}% 피해 {1}회, {4}초 기절
+skill.name.dragon_slash	용참
+skill.desc.dragon_slash	앞의 적 모두에게 {0}% 피해 {1}회
+skill.name.magic_missile	매직 미사일
+skill.desc.magic_missile	먼 적 하나에게 {0}% 피해 {1}회
+skill.name.ember	불씨
+skill.desc.ember	주변 적에게 {0}% 피해, {3}초 동안 초당 {2}% 화상
+skill.name.ice_lance	얼음 창
+skill.desc.ice_lance	먼 적 하나에게 {0}% 피해, {4}초 빙결
+skill.name.flame_pillar	화염 기둥
+skill.desc.flame_pillar	주변 적에게 불기둥 {0}% 피해 {1}회, {3}초 동안 초당 {2}% 화상
+skill.name.arcane_storm	비전 폭풍
+skill.desc.arcane_storm	범위 안 모든 적에게 번개 {0}% 피해 {1}회
+skill.name.arrow_shot	강한 화살
+skill.desc.arrow_shot	먼 적 하나에게 공격력의 {0}% 피해
+skill.name.scatter_shot	산탄 화살
+skill.desc.scatter_shot	앞의 적 모두에게 {0}% 피해 {1}회
+skill.name.piercing_arrow	관통 화살
+skill.desc.piercing_arrow	일직선의 적 모두에게 {0}% 피해
+skill.name.storm_arrows	폭풍 화살
+skill.desc.storm_arrows	넓은 범위에 화살 {0}% 피해 {1}회
+skill.name.starfall_arrow	별똥 화살
+skill.desc.starfall_arrow	범위 안 모든 적에게 별빛 화살 {0}% 피해 {1}회
 
 # Grades and slots
 grade.common	일반
@@ -323,7 +361,7 @@ job.line.warrior	전사
 job.line.mage	마법사
 job.line.archer	궁수
 skill.line_only	{0} 전용
-toast.job_locked	전직해야 쓸 수 있는 스킬입니다
+toast.job_locked	지금 직업으로는 쓸 수 없습니다 (전직 후 이용)
 hud.ultimate	궁극기
 hud.hero_name	Lv {0} {1}
 job.name.beginner	초보자
