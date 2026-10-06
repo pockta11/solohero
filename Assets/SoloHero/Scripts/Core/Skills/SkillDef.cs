@@ -38,6 +38,10 @@ namespace SoloHero.Core.Skills
         /// <summary>Enemies hit stop attacking for this long (bosses: x SKILL_BOSS_STUN_MULT).</summary>
         public float StunSeconds { get; init; }
 
+        /// <summary>D-109 mark (armor break, hex, hunter's mark): enemies hit take this % more from every hit.</summary>
+        public double MarkPercent { get; init; }
+        public float MarkSeconds { get; init; }
+
         public SkillBuff Buff { get; init; }
         public double BuffAmount { get; init; }
         public float BuffSeconds { get; init; }

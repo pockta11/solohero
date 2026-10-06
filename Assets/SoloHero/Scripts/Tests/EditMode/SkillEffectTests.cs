@@ -41,12 +41,12 @@ namespace SoloHero.Tests.EditMode
         private static SkillDef Def(string id) => SkillCatalog.Find(id);
 
         [Test]
-        public void Catalog_ThreeStartersAndTwelvePerLine_WithUniqueIds()
+        public void Catalog_ThreeStartersAndSixteenPerLine_WithUniqueIds()
         {
-            // D-107: 3 starters + 3 lines x 12 (3 per grade).
-            Assert.AreEqual(39, SkillCatalog.Count);
-            Assert.AreEqual(12, SkillCatalog.OfGrade(SoloHero.Core.Gacha.Grade.Common).Length);
-            for (int g = 1; g < 4; g++) Assert.AreEqual(9, SkillCatalog.OfGrade((SoloHero.Core.Gacha.Grade)g).Length);
+            // D-109: 3 starters + 3 lines x 16 (4 per grade).
+            Assert.AreEqual(51, SkillCatalog.Count);
+            Assert.AreEqual(15, SkillCatalog.OfGrade(SoloHero.Core.Gacha.Grade.Common).Length);
+            for (int g = 1; g < 4; g++) Assert.AreEqual(12, SkillCatalog.OfGrade((SoloHero.Core.Gacha.Grade)g).Length);
             for (int i = 0; i < SkillCatalog.All.Length; i++)
             {
                 Assert.AreEqual(i, SkillCatalog.IndexOf(SkillCatalog.All[i].Id), SkillCatalog.All[i].Id);
@@ -265,6 +265,54 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(cry.BuffAmount / 100d, skills.BuffAtk, 1e-9);
             skills.Tick(cry.BuffSeconds + 0.01f, hero, world, false);
             Assert.AreEqual(0d, skills.BuffAtk, 1e-9);
+        }
+
+        [Test]
+        public void HuntersMark_MarkedEnemyTakesMoreFromLaterHits_ThenExpires()
+        {
+            // D-109: the mark lands after its own hit and amplifies every later hit until it runs out.
+            var b = new BalanceValues();
+            HeroBrain hero = Hero(b);
+            CombatWorld world = World(b, hero);
+            EnemyBrain e = Spawn(b, world, 1d);
+            SkillDef mark = Def("hunters_mark");
+            SkillAutoCaster skills = Caster(b, "hunters_mark", SkillCatalog.PowerStrike);
+
+            Assert.IsTrue(skills.TryCast(0, hero, world).Ok);
+            double afterMark = EnemyHp - Atk * mark.DamageMult;
+            Assert.AreEqual(afterMark, e.Hp, 1e-6);
+            Assert.IsTrue(e.IsMarked);
+
+            Assert.IsTrue(skills.TryCast(1, hero, world).Ok);
+            double strike = Atk * Def(SkillCatalog.PowerStrike).DamageMult * (1d + mark.MarkPercent / 100d);
+            Assert.AreEqual(afterMark - strike, e.Hp, 1e-6);
+
+            e.TickStatus(mark.MarkSeconds + 0.01f);
+            Assert.IsFalse(e.IsMarked);
+            Assert.AreEqual(1d, e.DamageTakenMult, 1e-12);
+        }
+
+        [Test]
+        public void Valor_HasteRunsCooldownsFaster_WhileItLasts()
+        {
+            var b = new BalanceValues();
+            HeroBrain hero = Hero(b);
+            CombatWorld world = World(b, hero);
+            Spawn(b, world, 1d);
+            SkillDef valor = Def("valor");
+            SkillAutoCaster skills = Caster(b, SkillCatalog.PowerStrike, "valor");
+            skills.AutoEnabled = false;
+
+            Assert.IsTrue(skills.TryCast(0, hero, world).Ok);
+            Assert.IsTrue(skills.TryCast(1, hero, world).Ok);
+            Assert.AreEqual(valor.BuffAmount / 100d, skills.BuffHaste, 1e-9);
+
+            float before = skills.CooldownRemaining(0);
+            skills.Tick(1f, hero, world, false);
+            Assert.AreEqual(before - 1f * (1f + (float)(valor.BuffAmount / 100d)), skills.CooldownRemaining(0), 1e-4);
+
+            skills.Tick(valor.BuffSeconds, hero, world, false);
+            Assert.AreEqual(0d, skills.BuffHaste, 1e-9);
         }
 
         [Test]

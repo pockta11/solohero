@@ -50,6 +50,10 @@ namespace SoloHero.Game.UI.Panels
                 case EquipmentSlot.Sword: return Strings.Get("slot.sword");
                 case EquipmentSlot.Helm: return Strings.Get("slot.helm");
                 case EquipmentSlot.Armor: return Strings.Get("slot.armor");
+                case EquipmentSlot.Gloves: return Strings.Get("slot.gloves");
+                case EquipmentSlot.Necklace: return Strings.Get("slot.necklace");
+                case EquipmentSlot.Ring: return Strings.Get("slot.ring");
+                case EquipmentSlot.Earring: return Strings.Get("slot.earring");
                 default: return Strings.Get("slot.boots");
             }
         }

@@ -31,7 +31,10 @@ namespace SoloHero.Core.Skills
         Crit = 3,
 
         /// <summary>Damage taken x (1 - amount%).</summary>
-        Guard = 4
+        Guard = 4,
+
+        /// <summary>D-109: every skill cooldown runs amount% faster.</summary>
+        Haste = 5
     }
 
     /// <summary>Where the view plays a skill's effect clip.</summary>

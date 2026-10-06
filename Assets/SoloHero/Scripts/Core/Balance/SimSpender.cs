@@ -231,16 +231,17 @@ namespace SoloHero.Core.Balance
 
         public double Score(Snapshot s, double enemyAtk)
         {
-            EquipmentBonus eq = EquipmentBonus.FromGrades(_b, s.Sword, s.Helm, s.Armor, s.Boots,
-                s.SwordLevel, s.HelmLevel, s.ArmorLevel, s.BootsLevel);
+            EquipmentBonus eq = EquipmentBonus.FromGrades(_b, s.Grades, s.Levels, s.OwnedAtk);
             HeroStats st = StatAggregator.Compute(
                 _b, s.HeroLevel, s.UpgHp, s.UpgAtk, s.UpgDef, s.UpgSpd,
-                eq.SwordMult, eq.ArmorMult, eq.HelmMult, eq.BootsSpeedBonus, eq.BootsCritBonus,
-                default, s.Skill.OwnedAtk);
+                eq.AtkMult, eq.HpMult, eq.HelmMult, eq.BootsSpeedBonus, eq.BootsCritBonus,
+                default, s.Skill.OwnedAtk + eq.OwnedAtk);
 
             double crit = Math.Min(1d, (st.CritRate + s.Skill.CritBuff) / 100d);
-            double hitsPerSecond = st.AtkSpd * (1d + s.Skill.SpdBuff) * (1d + crit * (_b.CRIT_MULT - 1d));
-            double dps = st.Atk * (hitsPerSecond + s.Skill.Mult) * (1d + s.Skill.AtkBuff);
+            double critMult = _b.CRIT_MULT + eq.RingCritDamage;
+            double hitsPerSecond = st.AtkSpd * (1d + s.Skill.SpdBuff) * (1d + crit * (critMult - 1d));
+            double dps = st.Atk * (hitsPerSecond + s.Skill.HastedMult * (1d + eq.EarringSkillDamage)) * (1d + s.Skill.AtkBuff)
+                * (1d + s.Skill.Mark);
             double defRef = _b.DEF_REF_MULT * enemyAtk;
             double guard = Math.Min(0.9d, s.Skill.Guard);
             double ehp = st.Hp * (defRef + st.Def) / defRef / (1d - guard);
@@ -327,6 +328,7 @@ namespace SoloHero.Core.Balance
                     if (p <= 0d) continue;
 
                     string id = GachaCatalog.IdOf(slot, grade);
+                    Snapshot next = now;
                     if (_save.ownedEquipment.Contains(id))
                     {
                         int level = EquipmentLevels.Get(_save, id);
@@ -336,17 +338,15 @@ namespace SoloHero.Core.Balance
                             continue;
                         }
 
-                        // A duplicate enhances the copy; it only adds power now if that copy is equipped.
-                        if (g != now.Grade(s)) continue;
-                        Snapshot enhanced = now;
-                        enhanced.SetLevel(s, level + 1);
-                        gain += p * (Score(enhanced, enemyAtk) - baseScore);
+                        // A duplicate enhances the copy: its owned bonus always, its slot effect only when equipped.
+                        next.OwnedAtk += (EquipmentBonus.OwnedAtkPercent(_b, grade, level + 1) - EquipmentBonus.OwnedAtkPercent(_b, grade, level)) / 100d;
+                        if (g == now.Grade(s)) next.SetLevel(s, level + 1);
+                        gain += p * (Score(next, enemyAtk) - baseScore);
                         continue;
                     }
 
-                    if (g <= now.Grade(s)) continue;
-                    Snapshot next = now;
-                    next.SetGrade(s, g);
+                    next.OwnedAtk += EquipmentBonus.OwnedAtkPercent(_b, grade, 0) / 100d;
+                    if (g > now.Grade(s)) next.SetGrade(s, g);
                     gain += p * (Score(next, enemyAtk) - baseScore);
                 }
             }
@@ -404,7 +404,10 @@ namespace SoloHero.Core.Balance
             }
         }
 
-        /// <summary>Value copy of the growth state that <see cref="Score"/> reads.</summary>
+        /// <summary>
+        /// Value copy of the growth state that <see cref="Score"/> reads. The gear arrays (index = slot) are shared
+        /// between copies and replaced, never written, by <see cref="SetGrade"/> and <see cref="SetLevel"/>.
+        /// </summary>
         public struct Snapshot
         {
             public int HeroLevel;
@@ -413,32 +416,36 @@ namespace SoloHero.Core.Balance
             public int UpgDef;
             public int UpgSpd;
             public SkillPower Skill;
-            public int Sword;
-            public int Helm;
-            public int Armor;
-            public int Boots;
-            public int SwordLevel;
-            public int HelmLevel;
-            public int ArmorLevel;
-            public int BootsLevel;
+            public int[] Grades;
+            public int[] Levels;
 
-            public static Snapshot From(BalanceValues b, SaveDataV2 d) => new Snapshot
+            /// <summary>D-109 gear owned bonus as an ATK fraction.</summary>
+            public double OwnedAtk;
+
+            public static Snapshot From(BalanceValues b, SaveDataV2 d)
             {
-                SwordLevel = EquipmentLevels.Get(d, d.equippedSword),
-                HelmLevel = EquipmentLevels.Get(d, d.equippedHelm),
-                ArmorLevel = EquipmentLevels.Get(d, d.equippedArmor),
-                BootsLevel = EquipmentLevels.Get(d, d.equippedBoots),
-                HeroLevel = d.heroLevel,
-                UpgHp = d.upgradeHp,
-                UpgAtk = d.upgradeAtk,
-                UpgDef = d.upgradeDef,
-                UpgSpd = d.upgradeSpd,
-                Skill = SimSkillModel.Compute(b, d),
-                Sword = EquipmentBonus.GradeOrNone(d.equippedSword, EquipmentSlot.Sword),
-                Helm = EquipmentBonus.GradeOrNone(d.equippedHelm, EquipmentSlot.Helm),
-                Armor = EquipmentBonus.GradeOrNone(d.equippedArmor, EquipmentSlot.Armor),
-                Boots = EquipmentBonus.GradeOrNone(d.equippedBoots, EquipmentSlot.Boots)
-            };
+                var grades = new int[GachaCatalog.SlotCount];
+                var levels = new int[GachaCatalog.SlotCount];
+                for (int s = 0; s < grades.Length; s++)
+                {
+                    string id = EquippedSlots.Get(d, (EquipmentSlot)s);
+                    grades[s] = EquipmentBonus.GradeOrNone(id, (EquipmentSlot)s);
+                    levels[s] = grades[s] < 0 ? 0 : EquipmentLevels.Get(d, id);
+                }
+
+                return new Snapshot
+                {
+                    HeroLevel = d.heroLevel,
+                    UpgHp = d.upgradeHp,
+                    UpgAtk = d.upgradeAtk,
+                    UpgDef = d.upgradeDef,
+                    UpgSpd = d.upgradeSpd,
+                    Skill = SimSkillModel.Compute(b, d),
+                    Grades = grades,
+                    Levels = levels,
+                    OwnedAtk = EquipmentBonus.OwnedAtkBonus(b, d)
+                };
+            }
 
             public void AddLane(UpgradeLane lane)
             {
@@ -451,38 +458,21 @@ namespace SoloHero.Core.Balance
                 }
             }
 
-            public int Grade(int slot)
-            {
-                switch ((EquipmentSlot)slot)
-                {
-                    case EquipmentSlot.Sword: return Sword;
-                    case EquipmentSlot.Helm: return Helm;
-                    case EquipmentSlot.Armor: return Armor;
-                    default: return Boots;
-                }
-            }
+            public int Grade(int slot) => Grades[slot];
 
             /// <summary>Equips a new copy of <paramref name="grade"/>; a fresh copy starts at level 0.</summary>
             public void SetGrade(int slot, int grade)
             {
-                switch ((EquipmentSlot)slot)
-                {
-                    case EquipmentSlot.Sword: Sword = grade; SwordLevel = 0; break;
-                    case EquipmentSlot.Helm: Helm = grade; HelmLevel = 0; break;
-                    case EquipmentSlot.Armor: Armor = grade; ArmorLevel = 0; break;
-                    default: Boots = grade; BootsLevel = 0; break;
-                }
+                Grades = (int[])Grades.Clone();
+                Levels = (int[])Levels.Clone();
+                Grades[slot] = grade;
+                Levels[slot] = 0;
             }
 
             public void SetLevel(int slot, int level)
             {
-                switch ((EquipmentSlot)slot)
-                {
-                    case EquipmentSlot.Sword: SwordLevel = level; break;
-                    case EquipmentSlot.Helm: HelmLevel = level; break;
-                    case EquipmentSlot.Armor: ArmorLevel = level; break;
-                    default: BootsLevel = level; break;
-                }
+                Levels = (int[])Levels.Clone();
+                Levels[slot] = level;
             }
         }
     }

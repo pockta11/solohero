@@ -26,7 +26,7 @@ namespace SoloHero.Tests.EditMode
         public void EnemyAtk_StageTwo_AppliesGrowth()
         {
             var c = new BalanceValues();
-            Assert.AreEqual(5d, Formulas.EnemyAtk(c, 1), 1e-9);
+            Assert.AreEqual(c.ENEMY_ATK_BASE, Formulas.EnemyAtk(c, 1), 1e-9);
             Assert.AreEqual(c.ENEMY_ATK_BASE * c.ENEMY_ATK_GROWTH, Formulas.EnemyAtk(c, 2), 1e-9);
         }
 

@@ -170,7 +170,7 @@ def crescent_d(L, cx, cy, r, thick, a0, a1):
     rr = np.sqrt((L.x - cx) ** 2 + (L.y - cy) ** 2)
     th = np.arctan2(L.y - cy, L.x - cx)
     t = np.clip((th - a0) / (a1 - a0), 0, 1)
-    w = thick * np.sin(t * math.pi) ** 0.7
+    w = thick * np.clip(np.sin(t * math.pi), 0, 1) ** 0.7
     on = (th >= a0) & (th <= a1)
     return np.where(on, np.abs(rr - r) - w / 2, 1e3)
 
@@ -839,6 +839,164 @@ def i_ult_death_shot():
     return L
 
 
+# D-109 skills -----------------------------------------------------------------------------------------------------------
+BLOODY = (hexc('#FFC0B8'), hexc('#E83A3A'), hexc('#8A1020'))
+HEX = (hexc('#F0D0FF'), hexc('#B060F0'), hexc('#4A1A90'))
+MANA = (hexc('#E0F4FF'), hexc('#6AB8FF'), hexc('#2A4AC0'))
+GHOST = (hexc('#FFFFFF'), hexc('#E0C8FF'), hexc('#8A60D0'))
+
+
+def crosshair(L, cx, cy, r, ramp=RED, ow=4):
+    """Target reticle: a ring with four inner ticks and a centre dot."""
+    ring_band(L, cx, cy, r, 6, ramp, ow)
+    for k in range(4):
+        a = k * math.pi / 2
+        t = seg(L, cx + math.cos(a) * (r - 14), cy + math.sin(a) * (r - 14), cx + math.cos(a) * (r + 10), cy + math.sin(a) * (r + 10), 3.2)
+        outline(L, t, 3)
+        L.over(cov(t), ramp[1])
+    L.over(cov(L.circle(cx, cy, 5) - 3), INK)
+    L.over(cov(L.circle(cx, cy, 5)), ramp[0])
+
+
+def i_rending_blade():  # 출혈 베기
+    L = tile('blood')
+    slash(L, 40, 82, 56, 18, -1.3, 0.3, ramp=(hexc('#FFFFFF'), hexc('#FFD0C8'), hexc('#E05048')), ow=5)
+    sword(L, 30, 104, 100, 34, scale=0.8)
+    for (x, y, r) in ((92, 84, 11), (108, 104, 8), (76, 108, 7)):
+        drop(L, x, y, r, BLOODY)
+    return L
+
+
+def i_armor_break():  # 갑옷 파쇄
+    L = tile('earth')
+    d = shield_shape(L, 60, 22, 70, 88)
+    outline(L, d)
+    fill(L, d, SILVER)
+    crack = [(56, 22), (66, 46), (54, 60), (70, 80), (60, 110)]
+    for a, b in zip(crack, crack[1:]):
+        L.over(cov(seg(L, a[0], a[1], b[0], b[1], 3.6)), hexc('#2A1A10'))
+    for (x, y, r) in ((100, 36, 8), (104, 62, 6), (22, 84, 7)):
+        rock(L, x, y, r, ramp=SILVER)
+    for k in range(5):
+        a = -1.0 + k * 0.5
+        L.over(cov(seg(L, 98 + math.cos(a) * 14, 92 + math.sin(a) * 14, 98 + math.cos(a) * 26, 92 + math.sin(a) * 26, 3)), (255, 230, 150, 230))
+    return L
+
+
+def i_valor():  # 용맹: winged sword rising, speed streaks (haste)
+    L = tile('sky')
+    for (x, y, ln) in ((20, 30, 26), (14, 58, 34), (22, 86, 24), (98, 40, 22), (104, 70, 18)):
+        L.over(cov(rrect_at(L.x, L.y, x, y - 2.5, x + ln, y + 2.5, 2.5)), (255, 255, 255, 170))
+    wing(L, 50, 74, True, scale=0.95)
+    wing(L, 78, 74, False, scale=0.95)
+    sword(L, 64, 120, 64, 12, blade=(hexc('#FFFFFF'), hexc('#D8F4FF'), hexc('#6AA8E0')))
+    sparkle(L, 92, 22, 10)
+    return L
+
+
+def i_titan_crush():  # 거신 강타
+    L = tile('earth')
+    L.over(np.clip(1 - np.abs(L.ellipse(64, 108, 54, 14)) / 6, 0, 1), (255, 236, 180, 200))
+    for (x, y, r) in ((22, 96, 10), (106, 92, 12), (84, 112, 7), (40, 114, 6)):
+        rock(L, x, y, r)
+    hammer(L, 28, 30, 82, 92, ramp=GOLD)
+    for k in range(5):
+        a = -2.6 + k * 0.42
+        L.over(cov(seg(L, 92 + math.cos(a) * 22, 98 + math.sin(a) * 10, 92 + math.cos(a) * 36, 98 + math.sin(a) * 16, 3)), (255, 246, 200, 230))
+    return L
+
+
+def i_spark():  # 스파크
+    L = tile('storm')
+    for (pts) in ([(20, 30), (38, 46), (30, 50), (50, 64)], [(108, 28), (90, 48), (98, 50), (78, 64)],
+                  [(22, 104), (42, 86), (36, 82), (54, 70)], [(106, 104), (88, 88), (94, 84), (76, 70)]):
+        for a, b in zip(pts, pts[1:]):
+            L.over(cov(seg(L, a[0], a[1], b[0], b[1], 4.5) - 3), INK)
+        for a, b in zip(pts, pts[1:]):
+            L.over(cov(seg(L, a[0], a[1], b[0], b[1], 4.5)), hexc('#FFF06A'))
+    orb(L, 64, 66, 20, YELLOW)
+    sparkle(L, 64, 66, 12)
+    return L
+
+
+def i_hex():  # 저주: a cursed eye inside a rune ring
+    L = tile('void')
+    ring_band(L, 64, 64, 46, 7, HEX)
+    for k in range(8):
+        a = k * math.pi / 4 + math.pi / 8
+        cx, cy = 64 + math.cos(a) * 46, 64 + math.sin(a) * 46
+        L.over(cov(L.polygon([(cx, cy - 6), (cx + 5, cy), (cx, cy + 6), (cx - 5, cy)])), hexc('#FFE0FF'))
+    eye(L, 64, 64, 30, iris=(hexc('#F0C0FF'), hexc('#B040E0'), hexc('#3A0A70')))
+    for (x, y) in ((40, 98), (88, 96)):
+        L.over(cov(L.circle(x, y, 5)), (200, 140, 255, 200))
+    return L
+
+
+def i_mana_surge():  # 마나 폭주: blue swirl bursting upward around an orb
+    L = tile('sky')
+    swirl(L, 64, 68, 50, 2, MANA, width=9, turns=0.8)
+    orb(L, 64, 68, 17, MANA)
+    for (x, y) in ((26, 44), (102, 40), (64, 14)):
+        L.over(cov(L.polygon([(x, y - 10), (x + 8, y + 2), (x + 3, y + 2), (x + 3, y + 10), (x - 3, y + 10), (x - 3, y + 2), (x - 8, y + 2)]) - 2), INK[:3] + (200,))
+        L.over(cov(L.polygon([(x, y - 10), (x + 8, y + 2), (x + 3, y + 2), (x + 3, y + 10), (x - 3, y + 10), (x - 3, y + 2), (x - 8, y + 2)])), hexc('#E8F8FF'))
+    return L
+
+
+def i_absolute_zero():  # 절대영도
+    L = tile('ice')
+    for k in range(6):
+        a = k * math.pi / 3 + math.pi / 6
+        x, y = 64 + math.cos(a) * 44, 64 + math.sin(a) * 44
+        shard = L.polygon([(x + math.cos(a) * 12, y + math.sin(a) * 12), (x + math.cos(a + 1.6) * 6, y + math.sin(a + 1.6) * 6),
+                           (x - math.cos(a) * 8, y - math.sin(a) * 8), (x + math.cos(a - 1.6) * 6, y + math.sin(a - 1.6) * 6)])
+        outline(L, shard, 4)
+        fill(L, shard, ICE)
+    ring_band(L, 64, 64, 32, 5, ICE)
+    snowflake(L, 64, 64, 28)
+    sparkle(L, 100, 24, 9)
+    return L
+
+
+def i_rapid_shot():  # 속사
+    L = tile('nature')
+    for k in range(3):
+        y = 30 + k * 6
+        L.over(cov(rrect_at(L.x, L.y, 8, y + k * 18 - 2, 42, y + k * 18 + 2, 2)), (255, 255, 255, 150))
+    arrow(L, 12, 46, 116, 46, w=4.5)
+    arrow(L, 12, 84, 116, 84, w=4.5)
+    return L
+
+
+def i_hunters_mark():  # 사냥꾼의 표식
+    L = tile('blood')
+    crosshair(L, 70, 60, 34)
+    arrow(L, 20, 108, 66, 62, w=4.0, hs=0.9)
+    return L
+
+
+def i_deadeye():  # 데드아이: a narrowed eye with a reticle in the pupil, one long shot below
+    L = tile('night')
+    eye(L, 64, 50, 36, iris=(hexc('#FFD0C0'), hexc('#F04040'), hexc('#6A0A10')))
+    L.over(cov(np.abs(L.circle(64, 50, 9)) - 1.3), (255, 255, 255, 230))
+    arrow(L, 8, 100, 120, 100, head=(hexc('#FFFFFF'), hexc('#FFE0E0'), hexc('#C04040')), w=4.0)
+    sparkle(L, 108, 22, 9)
+    return L
+
+
+def i_phantom_volley():  # 환영 일제사격
+    L = tile('void')
+    for (ax, ay, bx, by, alpha) in ((18, 44, 104, 24, 0.55), (14, 66, 116, 56, 1.0), (16, 88, 110, 86, 0.75), (22, 108, 100, 112, 0.5)):
+        sub = Layer(S, S)
+        arrow(sub, ax, ay, bx, by, shaft=GHOST, head=GHOST, feather=GHOST, w=4.0)
+        img = sub.image()
+        a = np.array(img, np.float32)
+        a[..., 3] *= alpha
+        L.over(a[..., 3] / 255.0, np.dstack([a[..., :3], np.full((S, S), 255, np.float32)]))
+    for (x, y, sz) in ((96, 34, 8), (30, 98, 6)):
+        sparkle(L, x, y, sz, color=(240, 220, 255, 255))
+    return L
+
+
 ICONS = {
     'power_strike': i_power_strike, 'whirlwind': i_whirlwind, 'battle_cry': i_battle_cry,
     'quick_slash': i_quick_slash, 'iron_skin': i_iron_skin, 'first_aid': i_first_aid, 'fireball': i_fireball,
@@ -856,6 +1014,9 @@ ICONS = {
     'main_archer': i_main_archer, 'main_ranger': i_main_ranger, 'main_sniper': i_main_sniper,
     'ult_guardian_cross': i_ult_guardian_cross, 'ult_blood_rage': i_ult_blood_rage, 'ult_inferno': i_ult_inferno,
     'ult_blizzard': i_ult_blizzard, 'ult_arrow_rain': i_ult_arrow_rain, 'ult_death_shot': i_ult_death_shot,
+    'rending_blade': i_rending_blade, 'armor_break': i_armor_break, 'valor': i_valor, 'titan_crush': i_titan_crush,
+    'spark': i_spark, 'hex': i_hex, 'mana_surge': i_mana_surge, 'absolute_zero': i_absolute_zero,
+    'rapid_shot': i_rapid_shot, 'hunters_mark': i_hunters_mark, 'deadeye': i_deadeye, 'phantom_volley': i_phantom_volley,
 }
 
 if __name__ == '__main__':

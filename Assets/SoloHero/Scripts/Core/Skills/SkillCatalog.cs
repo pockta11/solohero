@@ -11,6 +11,8 @@ namespace SoloHero.Core.Skills
     /// level-up cost) lives in BalanceValues. The first three are the starter skills every hero owns.
     /// D-104: the starters are line-free (the beginner's only skills); the other 21 belong to a job line, 7 each.
     /// D-107: 15 more line skills, so every line has 12 (3 per grade); the starters are the beginner's alone.
+    /// D-109: 12 more, so every line has 16 (4 per grade), with two new riders: marks (enemies hit take more damage)
+    /// and the Haste buff (cooldowns run faster).
     /// New entries go at the end: the index order is the skill book's order and ids are saved.
     /// </summary>
     public static class SkillCatalog
@@ -255,6 +257,80 @@ namespace SoloHero.Core.Skills
                 Id = "starfall_arrow", Line = JobLine.Archer, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 24f, Range = 7.0,
                 DamageMult = 4.0, Waves = 4, WaveInterval = 0.2f, Vfx = "judge", VfxAt = SkillVfxAt.EachTarget,
                 VfxScale = 0.7f, Tint = 0xB0FFB0, Sound = "thunder"
+            },
+
+            // D-109 warrior
+            new SkillDef
+            {
+                Id = "rending_blade", Line = JobLine.Warrior, Grade = Grade.Common, Kind = SkillKind.Strike, Cooldown = 8f, Range = 2.0,
+                DamageMult = 2.0, DotPercent = 50, DotSeconds = 4f, Vfx = "slash", VfxScale = 1.2f, Tint = 0xFF7070, Sound = "strike"
+            },
+            new SkillDef
+            {
+                Id = "armor_break", Line = JobLine.Warrior, Grade = Grade.Rare, Kind = SkillKind.Area, Cooldown = 12f, Range = 2.6,
+                DamageMult = 2.5, MarkPercent = 25, MarkSeconds = 6f, Vfx = "mark", VfxAt = SkillVfxAt.EachTarget,
+                Tint = 0xFFB060, Sound = "strike"
+            },
+            new SkillDef
+            {
+                Id = "valor", Line = JobLine.Warrior, Grade = Grade.Epic, Kind = SkillKind.Buff, Cooldown = 28f, Range = 2.5,
+                Buff = SkillBuff.Haste, BuffAmount = 50, BuffSeconds = 10f, ShieldPercent = 15, ShieldSeconds = 10f,
+                Vfx = "aura", VfxAt = SkillVfxAt.Hero, VfxScale = 1.5f, Tint = 0x60E0FF, Sound = "cry"
+            },
+            new SkillDef
+            {
+                Id = "titan_crush", Line = JobLine.Warrior, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 24f, Range = 3.5,
+                DamageMult = 20.0, StunSeconds = 1.5f, MarkPercent = 30, MarkSeconds = 6f, Vfx = "wave", VfxAt = SkillVfxAt.Front,
+                VfxScale = 2.2f, Tint = 0xFFC060, Sound = "thunder"
+            },
+
+            // D-109 mage
+            new SkillDef
+            {
+                Id = "spark", Line = JobLine.Mage, Grade = Grade.Common, Kind = SkillKind.Area, Cooldown = 9f, Range = 4.0,
+                DamageMult = 0.8, Waves = 3, WaveInterval = 0.15f, Vfx = "spark", VfxAt = SkillVfxAt.EachTarget,
+                Tint = 0xFFF080, Sound = "thunder"
+            },
+            new SkillDef
+            {
+                Id = "hex", Line = JobLine.Mage, Grade = Grade.Rare, Kind = SkillKind.Area, Cooldown = 13f, Range = 5.0,
+                DamageMult = 1.5, DotPercent = 30, DotSeconds = 6f, MarkPercent = 30, MarkSeconds = 6f, Vfx = "mark",
+                VfxAt = SkillVfxAt.EachTarget, Tint = 0xC070FF, Sound = "magic"
+            },
+            new SkillDef
+            {
+                Id = "mana_surge", Line = JobLine.Mage, Grade = Grade.Epic, Kind = SkillKind.Buff, Cooldown = 26f, Range = 2.5,
+                Buff = SkillBuff.Haste, BuffAmount = 60, BuffSeconds = 8f, Vfx = "aura", VfxAt = SkillVfxAt.Hero, VfxScale = 1.5f,
+                Tint = 0x70A0FF, Sound = "magic"
+            },
+            new SkillDef
+            {
+                Id = "absolute_zero", Line = JobLine.Mage, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 26f, Range = 6.0,
+                DamageMult = 1.8, Waves = 10, WaveInterval = 0.15f, StunSeconds = 0.4f, Vfx = "ice", VfxAt = SkillVfxAt.EachTarget,
+                VfxScale = 0.9f, Sound = "ice"
+            },
+
+            // D-109 archer
+            new SkillDef
+            {
+                Id = "rapid_shot", Line = JobLine.Archer, Grade = Grade.Common, Kind = SkillKind.Strike, Cooldown = 6f, Range = 5.0,
+                DamageMult = 1.6, Waves = 2, WaveInterval = 0.12f, Vfx = "spear", VfxScale = 0.8f, Tint = 0xFFF0C0, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "hunters_mark", Line = JobLine.Archer, Grade = Grade.Rare, Kind = SkillKind.Strike, Cooldown = 12f, Range = 6.0,
+                DamageMult = 3.0, MarkPercent = 30, MarkSeconds = 6f, Vfx = "mark", VfxScale = 1.2f, Tint = 0xFF5050, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "deadeye", Line = JobLine.Archer, Grade = Grade.Epic, Kind = SkillKind.Strike, Cooldown = 18f, Range = 8.0,
+                DamageMult = 16.0, Vfx = "spear", VfxScale = 1.6f, Sound = "thunder"
+            },
+            new SkillDef
+            {
+                Id = "phantom_volley", Line = JobLine.Archer, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 24f, Range = 7.0,
+                DamageMult = 2.0, Waves = 9, WaveInterval = 0.1f, MarkPercent = 20, MarkSeconds = 5f, Vfx = "swords",
+                VfxAt = SkillVfxAt.Front, VfxScale = 1.4f, Tint = 0xC890FF, Sound = "whoosh"
             },
         };
 

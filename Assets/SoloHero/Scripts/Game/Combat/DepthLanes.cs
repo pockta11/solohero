@@ -10,8 +10,11 @@ namespace SoloHero.Game.Combat
     /// </summary>
     public static class DepthLanes
     {
-        /// <summary>World Y of each lane relative to the hero's ground line (positive = farther back).</summary>
-        private static readonly float[] Lanes = { 0f, 0.55f, -0.45f, 0.3f, -0.22f, 0.15f };
+        /// <summary>
+        /// World Y of each lane relative to the hero's ground line (positive = farther back). D-109: eight lanes for
+        /// the pack of eight; neighbours in a wave sit far apart so the tight line stays readable.
+        /// </summary>
+        private static readonly float[] Lanes = { 0f, 0.5f, -0.4f, 0.25f, -0.2f, 0.55f, -0.45f, 0.12f };
 
         private const int OrderBase = 100;
         private const float OrderPerUnit = 20f;

@@ -104,6 +104,31 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void TryEquip_Accessories_SetTheirOwnFields()
+        {
+            // D-109: gloves, necklace, ring and earring each have a save field of their own.
+            var data = SaveDataV2.CreateNew();
+            var service = new EquipService(new FakeSaveRequester());
+            EquipmentSlot[] slots = { EquipmentSlot.Gloves, EquipmentSlot.Necklace, EquipmentSlot.Ring, EquipmentSlot.Earring };
+            foreach (EquipmentSlot slot in slots)
+            {
+                string id = GachaCatalog.IdOf(slot, Grade.Rare);
+                data.ownedEquipment.Add(id);
+                Assert.IsTrue(service.TryEquip(data, slot, id).Ok);
+                Assert.AreEqual(id, EquippedSlots.Get(data, slot));
+            }
+
+            Assert.AreEqual("Equipment_Gloves_Rare", data.equippedGloves);
+            Assert.AreEqual("Equipment_Necklace_Rare", data.equippedNecklace);
+            Assert.AreEqual("Equipment_Ring_Rare", data.equippedRing);
+            Assert.AreEqual("Equipment_Earring_Rare", data.equippedEarring);
+            Assert.AreEqual("", data.equippedSword);
+
+            Assert.IsTrue(service.TryUnequip(data, EquipmentSlot.Ring).Ok);
+            Assert.AreEqual("", data.equippedRing);
+        }
+
+        [Test]
         public void TryEquip_AlreadyEquipped_SuccessWithoutRequestSave()
         {
             var data = SaveDataV2.CreateNew();

@@ -65,8 +65,8 @@ namespace SoloHero.Core.Gacha
             data.pityCount++;
             data.totalPullCount++;
 
-            // GDD: pick slot first (uniform 25%), then grade from the rate table / pity.
-            var slot = (EquipmentSlot)_rng.Next(4);
+            // GDD: pick slot first (uniform over the slots; D-109: 8), then grade from the rate table / pity.
+            var slot = (EquipmentSlot)_rng.Next(GachaCatalog.SlotCount);
 
             Grade grade;
             if (data.pityCount >= _table.PityCeiling)
@@ -160,27 +160,8 @@ namespace SoloHero.Core.Gacha
             return false;
         }
 
-        private static string GetEquipped(SaveDataV2 data, EquipmentSlot slot)
-        {
-            switch (slot)
-            {
-                case EquipmentSlot.Sword: return data.equippedSword;
-                case EquipmentSlot.Helm: return data.equippedHelm;
-                case EquipmentSlot.Armor: return data.equippedArmor;
-                case EquipmentSlot.Boots: return data.equippedBoots;
-                default: return "";
-            }
-        }
+        private static string GetEquipped(SaveDataV2 data, EquipmentSlot slot) => EquippedSlots.Get(data, slot);
 
-        private static void SetEquipped(SaveDataV2 data, EquipmentSlot slot, string id)
-        {
-            switch (slot)
-            {
-                case EquipmentSlot.Sword: data.equippedSword = id; break;
-                case EquipmentSlot.Helm: data.equippedHelm = id; break;
-                case EquipmentSlot.Armor: data.equippedArmor = id; break;
-                case EquipmentSlot.Boots: data.equippedBoots = id; break;
-            }
-        }
+        private static void SetEquipped(SaveDataV2 data, EquipmentSlot slot, string id) => EquippedSlots.Set(data, slot, id);
     }
 }

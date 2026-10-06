@@ -314,7 +314,9 @@ namespace SoloHero.Editor
             ("heal", true, 12f), ("shield", false, 12f), ("aura", true, 14f), ("vortex", false, 14f),
             ("breath", true, 14f), ("phoenix", true, 12f), ("wave", false, 20f),
             // D-098 unique clips: glacier spear, judgement sword, quick slash cross, time stop clock.
-            ("spear", false, 18f), ("judge", true, 16f), ("cross", false, 22f), ("clock", false, 14f)
+            ("spear", false, 18f), ("judge", true, 16f), ("cross", false, 22f), ("clock", false, 14f),
+            // D-109 mark skills' target sigil.
+            ("mark", false, 16f)
         };
 
         /// <summary>D-078: Art/Icons/Skills/skill_{id}.png for every catalog skill, plus the lock icon.</summary>
@@ -354,7 +356,7 @@ namespace SoloHero.Editor
             AssetDatabase.SaveAssets();
         }
 
-        /// <summary>E8-07: Art/Icons/Equipment/equip_{slot}_{grade}.png into the 16-slot icon set.</summary>
+        /// <summary>E8-07: Art/Icons/Equipment/equip_{slot}_{grade}.png into the icon set (D-109: 8 slots x 4 grades).</summary>
         private static void BuildEquipmentIcons()
         {
             string path = DataArt + "/EquipmentIcons.asset";
@@ -365,7 +367,7 @@ namespace SoloHero.Editor
                 AssetDatabase.CreateAsset(set, path);
             }
 
-            string[] slots = { "sword", "helm", "armor", "boots" };
+            string[] slots = { "sword", "helm", "armor", "boots", "gloves", "necklace", "ring", "earring" };
             string[] grades = { "common", "rare", "epic", "legendary" };
             set.icons = new Sprite[slots.Length * grades.Length];
             for (int s = 0; s < slots.Length; s++)

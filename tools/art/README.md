@@ -7,9 +7,9 @@ Scripts that made the project-owned and converted art. Python 3 + Pillow (+ nump
 | `uikit.py` | D-108 drawing kit (signed-distance anti-aliased shapes, gradients, 9-slice preview) used by the scripts below |
 | `uigen3.py [OUT] [--preview P]` | D-108 smooth UI skin `Art/UI/Hd/hd9_*` (9-slice, 1 px = 1 canvas unit) and `hd_*` sprites: candy buttons, cream panel/window/cards, HUD pills and gauges, grade slots, tab plate, ribbon, close button, summon circle, boss band, card faces |
 | `icongen3.py [OUT] [--preview P]` | D-108 smooth UI icons `Art/UI/Hd/Icons/hdicon_{name}.png` (128 px; `UiSkin.Icon` prefers them over `Art/UI/Icons`) |
-| `equipgen3.py [OUT] [--preview P]` | D-108 equipment icons `Art/UI/Hd/Equipment/equip_{slot}_{grade}.png` (grade = material + ornament) |
+| `equipgen3.py [OUT] [SLOT ...] [--preview P]` | D-108 equipment icons `Art/UI/Hd/Equipment/equip_{slot}_{grade}.png` (grade = material + ornament); D-109 adds gloves, necklace, ring, earring |
 | `skillgen3.py [OUT] [ID ...] [--preview P]` | D-108 skill icons `Art/UI/Hd/Skills/skill_{id}.png`: element tile + outlined symbol for every skill, job main attack and ultimate |
-| `vfxgen2.py [OUT] [--preview P]` | D-108 bolder basic VFX (spark, slash, boom, ring, whirl) and the cross / tornado skill clips; deletes the old strips |
+| `vfxgen2.py [OUT] [CLIP ...] [--preview P]` | D-108 bolder basic VFX (spark, slash, boom, ring, whirl) and the cross / tornado skill clips, D-109 `mark` (target sigil of the mark skills); deletes the old strips |
 | `loadinggen.py [--preview P]` | D-108 loading screen backdrop `Art/UI/ui_loading_bg.png` and title logo `Art/UI/Hd/hd_logo.png` |
 | `uimock3.py BATTLE.png OUT.png [SKIN]` | layout preview of the v3 skin over a battle screenshot (design check before touching the scene) |
 | `vfxgen.py OUT` | skill VFX strips `vfx{name}_play_{frames}.png` -> `Assets/SoloHero/Art/Vfx` |

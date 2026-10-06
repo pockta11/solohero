@@ -3,10 +3,13 @@ using SoloHero.Core.Config;
 
 namespace SoloHero.Core.Gacha
 {
-    /// <summary>The v1.0 gacha pool: 4 slots x 4 grades, ids "Equipment_{Slot}_{Grade}".</summary>
+    /// <summary>
+    /// The gear gacha pool, ids "Equipment_{Slot}_{Grade}": every pull picks a slot uniformly, then a grade from the
+    /// rate table. v1.0 had 4 slots x 4 grades; D-109 added the 4 accessories (32 items).
+    /// </summary>
     public static class GachaCatalog
     {
-        public const int SlotCount = 4;
+        public const int SlotCount = 8;
         public const int GradeCount = 4;
 
         public static string IdOf(EquipmentSlot slot, Grade grade) => "Equipment_" + slot + "_" + grade;

@@ -245,6 +245,30 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(Grade.Legendary, table.PickGrade(0.999));
         }
 
+        [Test]
+        public void Pull_ManyPulls_EverySlotIncludingAccessoriesDrops()
+        {
+            // D-109: the slot is uniform over all 8 slots, and a new accessory auto-equips into its own field.
+            var balance = new BalanceValues();
+            var data = SaveDataV2.CreateNew();
+            data.gold = 1e9;
+            GachaService service = CreateService(balance, new SystemRandom(new System.Random(7)));
+            var seen = new int[GachaCatalog.SlotCount];
+
+            for (int i = 0; i < 40; i++)
+            {
+                GachaBatchResult r = service.TryPullTen(data);
+                Assert.IsTrue(r.Status.Ok);
+                foreach (GachaPullItem item in r.Items) seen[(int)item.Slot]++;
+            }
+
+            for (int s = 0; s < seen.Length; s++)
+                Assert.Greater(seen[s], 25, ((EquipmentSlot)s).ToString());
+            Assert.IsNotEmpty(data.equippedRing);
+            Assert.IsNotEmpty(data.equippedEarring);
+            Assert.AreEqual(EquipmentSlot.Ring, GachaCatalog.Standard(balance)[(int)EquipmentSlot.Ring * GachaCatalog.GradeCount].Slot);
+        }
+
         private static GachaService CreateService(BalanceValues balance, IRandom rng)
         {
             return new GachaService(
@@ -256,10 +280,11 @@ namespace SoloHero.Tests.EditMode
 
         private static GachaEquipmentDef[] BuildCatalog(BalanceValues balance)
         {
-            var list = new List<GachaEquipmentDef>(16);
+            var list = new List<GachaEquipmentDef>(32);
             EquipmentSlot[] slots =
             {
-                EquipmentSlot.Sword, EquipmentSlot.Helm, EquipmentSlot.Armor, EquipmentSlot.Boots
+                EquipmentSlot.Sword, EquipmentSlot.Helm, EquipmentSlot.Armor, EquipmentSlot.Boots,
+                EquipmentSlot.Gloves, EquipmentSlot.Necklace, EquipmentSlot.Ring, EquipmentSlot.Earring
             };
             Grade[] grades = { Grade.Common, Grade.Rare, Grade.Epic, Grade.Legendary };
 

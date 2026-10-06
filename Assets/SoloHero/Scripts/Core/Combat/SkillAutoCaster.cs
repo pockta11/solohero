@@ -27,6 +27,7 @@ namespace SoloHero.Core.Combat
         private readonly SkillDef[] _pendingDef = new SkillDef[MaxPending];
         private readonly double[] _pendingDamage = new double[MaxPending];
         private readonly double[] _pendingDot = new double[MaxPending];
+        private readonly double[] _pendingMark = new double[MaxPending];
         private readonly int[] _pendingWaves = new int[MaxPending];
         private readonly float[] _pendingTimer = new float[MaxPending];
 
@@ -65,6 +66,9 @@ namespace SoloHero.Core.Combat
         public double BuffAtkSpd => BuffSum(SkillBuff.AtkSpd) / 100d;
         public double BuffCrit => BuffSum(SkillBuff.Crit);
         public double BuffGuard => BuffSum(SkillBuff.Guard) / 100d;
+
+        /// <summary>D-109: how much faster cooldowns run while a Haste buff lasts (0.5 = +50%).</summary>
+        public double BuffHaste => BuffSum(SkillBuff.Haste) / 100d;
 
         /// <summary>Kept for the ATK-only callers: the summed ATK buff fraction.</summary>
         public double AtkBuffSum => BuffAtk;
@@ -129,9 +133,10 @@ namespace SoloHero.Core.Combat
 
         public void Tick(float dt, HeroBrain hero, ICombatWorld world, bool isBossFight)
         {
+            float cooldownDt = dt * (float)(1d + BuffHaste);
             for (int i = 0; i < _cooldown.Length; i++)
             {
-                if (_cooldown[i] > 0f) _cooldown[i] -= dt;
+                if (_cooldown[i] > 0f) _cooldown[i] -= cooldownDt;
                 if (_buffRemaining[i] > 0f)
                 {
                     _buffRemaining[i] -= dt;
@@ -232,12 +237,13 @@ namespace SoloHero.Core.Combat
             double buff = (1d + BuffAtk) * (1d + _talents.SkillDamagePct) * overload;
             double damage = DamageCalc.SkillHit(hero.Stats, def.DamageMult * scale) * buff;
             double dot = def.DotPercent > 0d ? DamageCalc.SkillDot(hero.Stats, def.DotPercent, scale) * buff * (1d + _talents.DotPct) : 0d;
+            double mark = def.MarkPercent / 100d * scale;
             _castHero = hero;
-            Wave(def, damage, dot, world);
-            if (def.Waves > 1) Enqueue(def, damage, dot, def.Waves - 1);
+            Wave(def, damage, dot, mark, world);
+            if (def.Waves > 1) Enqueue(def, damage, dot, mark, def.Waves - 1);
         }
 
-        private void Enqueue(SkillDef def, double damage, double dot, int waves)
+        private void Enqueue(SkillDef def, double damage, double dot, double mark, int waves)
         {
             for (int i = 0; i < MaxPending; i++)
             {
@@ -245,6 +251,7 @@ namespace SoloHero.Core.Combat
                 _pendingDef[i] = def;
                 _pendingDamage[i] = damage;
                 _pendingDot[i] = dot;
+                _pendingMark[i] = mark;
                 _pendingWaves[i] = waves;
                 _pendingTimer[i] = def.WaveInterval;
                 return;
@@ -260,7 +267,7 @@ namespace SoloHero.Core.Combat
                 while (_pendingWaves[i] > 0 && _pendingTimer[i] <= 0f)
                 {
                     SkillDef def = _pendingDef[i];
-                    Wave(def, _pendingDamage[i], _pendingDot[i], world);
+                    Wave(def, _pendingDamage[i], _pendingDot[i], _pendingMark[i], world);
                     _pendingWaves[i]--;
                     _pendingTimer[i] += def.WaveInterval > 0f ? def.WaveInterval : 0.1f;
                 }
@@ -276,16 +283,17 @@ namespace SoloHero.Core.Combat
             _pendingTimer[i] = 0f;
             _pendingDamage[i] = 0d;
             _pendingDot[i] = 0d;
+            _pendingMark[i] = 0d;
         }
 
         /// <summary>One wave: Strike hits the nearest enemy in range, Area every enemy from the hero to the range.</summary>
-        private void Wave(SkillDef def, double damage, double dot, ICombatWorld world)
+        private void Wave(SkillDef def, double damage, double dot, double mark, ICombatWorld world)
         {
             if (def.Kind == SkillKind.Strike)
             {
                 EnemyBrain target = world.NearestEnemyInRange(def.Range);
                 if (target == null) return;
-                Hit(def, target, damage, dot, world);
+                Hit(def, target, damage, dot, mark, world);
                 if (def.VfxAt == SkillVfxAt.Impact || def.VfxAt == SkillVfxAt.EachTarget) SkillImpact?.Invoke(def, target.X);
                 return;
             }
@@ -298,13 +306,13 @@ namespace SoloHero.Core.Combat
                 if (e == null || !e.IsAlive) continue;
                 if (e.X < world.HeroX || e.X - world.HeroX > def.Range) continue;
                 double x = e.X;
-                Hit(def, e, damage, dot, world);
+                Hit(def, e, damage, dot, mark, world);
                 if (def.VfxAt == SkillVfxAt.EachTarget || (first && def.VfxAt == SkillVfxAt.Impact)) SkillImpact?.Invoke(def, x);
                 first = false;
             }
         }
 
-        private void Hit(SkillDef def, EnemyBrain target, double damage, double dot, ICombatWorld world)
+        private void Hit(SkillDef def, EnemyBrain target, double damage, double dot, double mark, ICombatWorld world)
         {
             if (_castHero != null) damage *= _castHero.TalentHitMult(target);
             // The combo reads the state from earlier hits; this skill's own stun / DoT applies after it.
@@ -314,6 +322,8 @@ namespace SoloHero.Core.Combat
             world.ReportHit(target, damage, combo > 1d ? HitKind.Combo : HitKind.Skill);
             if (dot > 0d) target.ApplyDot(dot, def.DotSeconds);
             if (def.StunSeconds > 0f) target.Stun(def.StunSeconds);
+            // D-109: the mark lands after this hit, so it amplifies the next waves and every later hit.
+            if (mark > 0d) target.Mark(mark, def.MarkSeconds);
         }
 
         private double BuffSum(SkillBuff stat)

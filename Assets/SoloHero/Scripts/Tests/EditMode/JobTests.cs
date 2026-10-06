@@ -76,14 +76,14 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void Catalog_EveryLineHasTwelveSkills_ThreePerGrade()
+        public void Catalog_EveryLineHasSixteenSkills_FourPerGrade()
         {
             int[,] count = new int[4, 4];
             foreach (SkillDef def in SkillCatalog.All) count[(int)def.Line, (int)def.Grade]++;
             Assert.AreEqual(3, count[0, 0], "the three starters are line-free commons");
             for (int line = 1; line <= 3; line++)
                 for (int grade = 0; grade < 4; grade++)
-                    Assert.AreEqual(3, count[line, grade], "line " + line + " grade " + grade);
+                    Assert.AreEqual(4, count[line, grade], "line " + line + " grade " + grade);
         }
 
         [Test]

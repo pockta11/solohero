@@ -10,6 +10,7 @@ using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Progression;
 using SoloHero.Core.Save;
+using SoloHero.Core.Skills;
 using SoloHero.Core.Stage;
 
 namespace SoloHero.Tests.EditMode
@@ -89,13 +90,14 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void Standard_Catalog_HasSixteenUniqueIdsWithGradeRefunds()
+        public void Standard_Catalog_HasThirtyTwoUniqueIdsWithGradeRefunds()
         {
             var balance = new BalanceValues();
 
             GachaEquipmentDef[] defs = GachaCatalog.Standard(balance);
 
-            Assert.AreEqual(16, defs.Length);
+            // D-109: 8 slots (4 gear + 4 accessories) x 4 grades.
+            Assert.AreEqual(32, defs.Length);
             var ids = new HashSet<string>();
             for (int i = 0; i < defs.Length; i++)
                 Assert.IsTrue(ids.Add(defs[i].Id));
@@ -106,7 +108,7 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void ComputeStats_LegendarySword_MultipliesAtk()
         {
-            var balance = new BalanceValues();
+            var balance = NoOwnedBonus();
             var save = SaveDataV2.CreateNew();
             double bare = CombatLoadout.ComputeStats(balance, save).Atk;
             save.ownedEquipment.Add(GachaCatalog.IdOf(EquipmentSlot.Sword, Grade.Legendary));
@@ -120,7 +122,7 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void ComputeStats_EnhancedSword_ScalesGradeBonus()
         {
-            var balance = new BalanceValues();
+            var balance = NoOwnedBonus();
             var save = SaveDataV2.CreateNew();
             string id = GachaCatalog.IdOf(EquipmentSlot.Sword, Grade.Rare);
             EquipmentLevels.AddOwned(save, id);
@@ -132,6 +134,55 @@ namespace SoloHero.Tests.EditMode
 
             double expectedMult = 1d + (balance.SWORD_ATK_R - 1d) * System.Math.Pow(1d + balance.EQUIP_ENHANCE_GAIN, 5);
             Assert.AreEqual(bare * expectedMult, enhanced, 1e-9);
+        }
+
+        /// <summary>The slot tests isolate the slot effect from the D-109 owned bonus.</summary>
+        private static BalanceValues NoOwnedBonus() => new BalanceValues
+        {
+            EQUIP_OWNED_ATK_C = 0, EQUIP_OWNED_ATK_R = 0, EQUIP_OWNED_ATK_E = 0, EQUIP_OWNED_ATK_L = 0
+        };
+
+        [Test]
+        public void ComputeStats_Accessories_StackWithGearAndReachCombat()
+        {
+            var balance = NoOwnedBonus();
+            var save = SaveDataV2.CreateNew();
+            HeroStats bare = CombatLoadout.ComputeStats(balance, save);
+            string gloves = GachaCatalog.IdOf(EquipmentSlot.Gloves, Grade.Epic);
+            string necklace = GachaCatalog.IdOf(EquipmentSlot.Necklace, Grade.Rare);
+            string ring = GachaCatalog.IdOf(EquipmentSlot.Ring, Grade.Legendary);
+            string earring = GachaCatalog.IdOf(EquipmentSlot.Earring, Grade.Common);
+            foreach (string id in new[] { gloves, necklace, ring, earring }) EquipmentLevels.AddOwned(save, id);
+            save.equippedGloves = gloves;
+            save.equippedNecklace = necklace;
+            save.equippedRing = ring;
+            save.equippedEarring = earring;
+
+            HeroStats geared = CombatLoadout.ComputeStats(balance, save);
+
+            Assert.AreEqual(bare.Atk * balance.GLOVES_ATK_E, geared.Atk, 1e-9);
+            Assert.AreEqual(bare.Hp * balance.NECKLACE_HP_R, geared.Hp, 1e-9);
+            Assert.AreEqual(bare.CritDamageBonus + balance.RING_CRITDMG_L, geared.CritDamageBonus, 1e-9);
+            Assert.AreEqual(balance.EARRING_SKILL_C, CombatLoadout.Effects(balance, save).SkillDamagePct, 1e-9);
+        }
+
+        [Test]
+        public void OwnedBonus_EveryOwnedItemAddsAtk_EnhanceScales()
+        {
+            var balance = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            double bare = CombatLoadout.ComputeStats(balance, save).Atk;
+            double skillOwned = SkillService.OwnedAtkBonus(balance, save);
+            EquipmentLevels.AddOwned(save, GachaCatalog.IdOf(EquipmentSlot.Ring, Grade.Epic));
+            EquipmentLevels.AddOwned(save, GachaCatalog.IdOf(EquipmentSlot.Boots, Grade.Common));
+            EquipmentLevels.Set(save, GachaCatalog.IdOf(EquipmentSlot.Boots, Grade.Common), 3);
+
+            double owned = EquipmentBonus.OwnedAtkBonus(balance, save);
+            double expected = (balance.EQUIP_OWNED_ATK_E + balance.EQUIP_OWNED_ATK_C * System.Math.Pow(1d + balance.EQUIP_ENHANCE_GAIN, 3)) / 100d;
+
+            Assert.AreEqual(expected, owned, 1e-12);
+            // Nothing is equipped: the owned bonus alone raises ATK, beside the skill owned bonus.
+            Assert.AreEqual(bare * (1d + skillOwned + owned) / (1d + skillOwned), CombatLoadout.ComputeStats(balance, save).Atk, 1e-9);
         }
 
         [Test]

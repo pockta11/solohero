@@ -203,11 +203,11 @@ namespace SoloHero.Core.Combat
         public double MainRange => _main != null ? _main.Range : _balance.BASIC_SKILL_RANGE;
         private int MainHits => _main != null && _main.Hits > 1 ? _main.Hits : 1;
 
-        /// <summary>Talent damage factor against one target: boss damage, and Execute under its HP threshold.</summary>
+        /// <summary>Damage factor against one target: its D-109 mark, talent boss damage, and Execute under its HP threshold.</summary>
         public double TalentHitMult(EnemyBrain target)
         {
             if (target == null) return 1d;
-            double mult = 1d;
+            double mult = target.DamageTakenMult;
             if (target.IsBoss) mult *= 1d + _talents.BossDamagePct;
             if (_talents.Execute && target.MaxHp > 0d && target.Hp < target.MaxHp * TalentCatalog.ExecuteThreshold)
                 mult *= 1d + TalentCatalog.ExecuteBonus;

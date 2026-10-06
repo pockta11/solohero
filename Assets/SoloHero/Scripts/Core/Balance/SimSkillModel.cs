@@ -17,6 +17,13 @@ namespace SoloHero.Core.Balance
         public double CritBuff;
         public double Guard;
 
+        /// <summary>D-109: uptime-weighted cooldown speed-up (Haste buffs) and damage amplifier (marks) as fractions.</summary>
+        public double Haste;
+        public double Mark;
+
+        /// <summary>Skill damage per second after Haste.</summary>
+        public double HastedMult => Mult * (1d + Haste);
+
         /// <summary>Owned effect of the whole collection (ATK fraction).</summary>
         public double OwnedAtk;
     }
@@ -105,6 +112,9 @@ namespace SoloHero.Core.Balance
                 double perCast = def.DamageMult * scale * def.Waves * targets
                     + def.DotPercent / 100d * scale * def.DotSeconds * targets;
                 power.Mult += perCast / def.Cooldown;
+                // A mark on the targets amplifies every hit while it lasts; a boss or a big pack is marked often enough.
+                if (def.MarkPercent > 0d && def.MarkSeconds > 0f)
+                    power.Mark += def.MarkPercent / 100d * scale * Math.Min(1d, def.MarkSeconds / def.Cooldown);
             }
 
             if (def.Buff == SkillBuff.None || def.BuffSeconds <= 0f) return;
@@ -116,6 +126,7 @@ namespace SoloHero.Core.Balance
                 case SkillBuff.AtkSpd: power.SpdBuff += amount / 100d; break;
                 case SkillBuff.Crit: power.CritBuff += amount; break;
                 case SkillBuff.Guard: power.Guard += amount / 100d; break;
+                case SkillBuff.Haste: power.Haste += amount / 100d; break;
             }
         }
     }

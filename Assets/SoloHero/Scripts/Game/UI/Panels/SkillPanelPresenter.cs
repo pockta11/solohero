@@ -83,7 +83,7 @@ namespace SoloHero.Game.UI.Panels
         private double _shownGold = -1d;
         private int _shownHeroLevel = -1;
         private int _shownPulls = -1;
-        private readonly object[] _descArgs = new object[12];
+        private readonly object[] _descArgs = new object[14];
 
         private void OnEnable()
         {
@@ -395,6 +395,8 @@ namespace SoloHero.Game.UI.Panels
             _descArgs[9] = Num(def.ShieldSeconds);
             _descArgs[10] = Num(def.HpThreshold);
             _descArgs[11] = Num(def.Cooldown);
+            _descArgs[12] = Num(def.MarkPercent * scale);
+            _descArgs[13] = Num(def.MarkSeconds);
             return _descArgs;
         }
 

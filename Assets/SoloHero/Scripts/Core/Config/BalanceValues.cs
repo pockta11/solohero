@@ -27,20 +27,20 @@ namespace SoloHero.Core.Config
         public double UPG_GAIN_SPD = 0.02;
         public int UPG_MAX_LEVEL_SPD = 100;
         public double UPG_FARM_EXPONENT = 1.31;
-        public double ENEMY_HP_BASE = 80;
-        public double ENEMY_HP_GROWTH = 1.14;
-        public double ENEMY_ATK_BASE = 5;
-        public double ENEMY_ATK_GROWTH = 1.14;
+        public double ENEMY_HP_BASE = 60;
+        public double ENEMY_HP_GROWTH = 1.155;
+        public double ENEMY_ATK_BASE = 4.5;
+        public double ENEMY_ATK_GROWTH = 1.155;
         public double ENEMY_DEF = 0;
-        public double ENEMY_EXP_BASE = 5;
+        public double ENEMY_EXP_BASE = 3.75;
         public double ENEMY_EXP_GROWTH = 1.10;
         public float ENEMY_ATK_INTERVAL = 1.2f;
-        public int SPAWN_WAVE_SIZE = 6;
-        public float SPAWN_WAVE_GAP = 0.5f;
-        public double SPAWN_WAVE_SPACING = 0.6;
-        public int SPAWN_MAX_ALIVE = 6;
-        public double SPAWN_OFFSET_X = 1.5;
-        public int KILL_TARGET_NORMAL = 12;
+        public int SPAWN_WAVE_SIZE = 8;
+        public float SPAWN_WAVE_GAP = 0.3f;
+        public double SPAWN_WAVE_SPACING = 0.4;
+        public int SPAWN_MAX_ALIVE = 8;
+        public double SPAWN_OFFSET_X = 0.8;
+        public int KILL_TARGET_NORMAL = 16;
         public double BOSS_HP_MULT = 10;
         public double BOSS_ATK_MULT = 1.1;
         public float BOSS_ATK_INTERVAL = 1.8f;
@@ -101,6 +101,29 @@ namespace SoloHero.Core.Config
         public double BOOTS_CRIT_R = 3;
         public double BOOTS_CRIT_E = 6;
         public double BOOTS_CRIT_L = 10;
+        // D-109 accessories: gloves ATK x, necklace HP x, ring crit damage + (fraction of a hit), earring skill damage + (fraction).
+        public double GLOVES_ATK_C = 1.05;
+        public double GLOVES_ATK_R = 1.12;
+        public double GLOVES_ATK_E = 1.25;
+        public double GLOVES_ATK_L = 1.50;
+        public double NECKLACE_HP_C = 1.05;
+        public double NECKLACE_HP_R = 1.12;
+        public double NECKLACE_HP_E = 1.25;
+        public double NECKLACE_HP_L = 1.50;
+        public double RING_CRITDMG_C = 0.10;
+        public double RING_CRITDMG_R = 0.25;
+        public double RING_CRITDMG_E = 0.50;
+        public double RING_CRITDMG_L = 1.00;
+        public double EARRING_SKILL_C = 0.05;
+        public double EARRING_SKILL_R = 0.12;
+        public double EARRING_SKILL_E = 0.25;
+        public double EARRING_SKILL_L = 0.50;
+
+        // D-109 equipment owned bonus: every owned item adds ATK +x% (x enhance), equipped or not.
+        public double EQUIP_OWNED_ATK_C = 0.5;
+        public double EQUIP_OWNED_ATK_R = 1;
+        public double EQUIP_OWNED_ATK_E = 2;
+        public double EQUIP_OWNED_ATK_L = 4;
         public int SKILL_SLOT_COUNT = 6;
         public int SKILL_UNLOCK_LV_1 = 1;
         public int SKILL_UNLOCK_LV_2 = 5;
@@ -143,7 +166,7 @@ namespace SoloHero.Core.Config
         /// <summary>D-100 daily dungeons: run length, entries per dungeon per local day, rewards, result pause.</summary>
         public float DUNGEON_TIME = 30f;
         public int DUNGEON_DAILY_TICKETS = 2;
-        public double DUNGEON_GOLD_PER_KILL = 0.8;
+        public double DUNGEON_GOLD_PER_KILL = 0.6;
         public double DUNGEON_EXP_MULT = 6;
         public float DUNGEON_RESULT_TIME = 2.5f;
 

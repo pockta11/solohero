@@ -48,7 +48,7 @@ namespace SoloHero.Core.Combat
 
             _timer = _def.Interval;
             double damage = DamageCalc.SkillHit(hero.Stats, _def.AttackMult * _scale)
-                * DamageCalc.SkillCombo(_balance, target.IsStunned, target.HasDot);
+                * DamageCalc.SkillCombo(_balance, target.IsStunned, target.HasDot) * target.DamageTakenMult;
             target.TakeDamage(damage);
             world.ReportHit(target, damage, HitKind.Companion);
             if (_def.DotPercent > 0d) target.ApplyDot(DamageCalc.SkillDot(hero.Stats, _def.DotPercent, _scale), _def.DotSeconds);

@@ -304,3 +304,16 @@ MonoBehaviour:
     fps: 14
     ground: 0
     halfHeight: 1.5
+  - name: mark
+    frames:
+    - {fileID: 3310942370550790621, guid: 89b37809133dfb44faebe5ad88492dc7, type: 3}
+    - {fileID: -8624924291114904060, guid: 89b37809133dfb44faebe5ad88492dc7, type: 3}
+    - {fileID: 6646666654957850658, guid: 89b37809133dfb44faebe5ad88492dc7, type: 3}
+    - {fileID: -3960293806081776914, guid: 89b37809133dfb44faebe5ad88492dc7, type: 3}
+    - {fileID: 9203307841724960032, guid: 89b37809133dfb44faebe5ad88492dc7, type: 3}
+    - {fileID: -3438733714827761822, guid: 89b37809133dfb44faebe5ad88492dc7, type: 3}
+    - {fileID: -4703461484731513921, guid: 89b37809133dfb44faebe5ad88492dc7, type: 3}
+    - {fileID: 6847512453967704785, guid: 89b37809133dfb44faebe5ad88492dc7, type: 3}
+    fps: 16
+    ground: 0
+    halfHeight: 1

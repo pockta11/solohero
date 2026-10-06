@@ -1042,27 +1042,36 @@ namespace SoloHero.Editor
             poke.targetGraphic = stage.GetComponent<Image>();
             UnityEventTools.AddPersistentListener(poke.onClick, flipbook.Poke);
 
-            var slots = new Text[4];
-            var owned = new Text[4];
-            var buttons = new TapGuardButton[4];
-            var icons = new Image[4];
-            var frames = new Image[4];
-            const float slotSize = 150f;
-            for (int i = 0; i < 4; i++)
+            // D-109: eight slots, 2 x 2 on each side of the hero: gear (sword, helm / armor, boots) on the left,
+            // accessories (gloves, necklace / ring, earring) on the right; the owned bonus sits over the hero.
+            int slotCount = SoloHero.Core.Gacha.GachaCatalog.SlotCount;
+            var slots = new Text[slotCount];
+            var owned = new Text[slotCount];
+            var buttons = new TapGuardButton[slotCount];
+            var icons = new Image[slotCount];
+            var frames = new Image[slotCount];
+            const float slotSize = 136f;
+            const float colPitch = 160f;
+            const float rowPitch = 196f;
+            const float edge = 18f;
+            for (int i = 0; i < slotCount; i++)
             {
-                bool left = i < 2;
-                int row = i % 2;
-                // Two rows per side, top row first; the effect line sits under each slot.
+                bool left = i < 4;
+                int k = i % 4;
+                int row = k / 2;
+                int col = k % 2;
+                // Reading order on each side: the left side's first column is the outer one, the right side's the inner one.
+                float x = left ? edge + col * colPitch : -(edge + (1 - col) * colPitch);
                 Vector2 anchor = new Vector2(left ? 0f : 1f, 1f);
-                Vector2 pos = new Vector2(left ? 40f : -40f, -22f - row * (slotSize + 60f));
+                Vector2 pos = new Vector2(x, -20f - row * rowPitch);
                 RectTransform frameRect = Box("Slot" + i, stage, anchor, new Vector2(left ? 0f : 1f, 1f), pos, new Vector2(slotSize, slotSize));
                 frames[i] = Plain(frameRect, UiSkin.SlotEmpty);
                 frames[i].type = Image.Type.Sliced;
                 frames[i].raycastTarget = true;
-                icons[i] = Plain(Box("Icon", frameRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 12f), new Vector2(96f, 96f)), null);
-                slots[i] = InkText(Box("Grade", frameRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(slotSize, 34f)), 26, TextAnchor.MiddleCenter, UiPalette.InkMuted);
+                icons[i] = Plain(Box("Icon", frameRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 12f), new Vector2(88f, 88f)), null);
+                slots[i] = InkText(Box("Grade", frameRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(slotSize, 32f)), 24, TextAnchor.MiddleCenter, UiPalette.InkMuted);
                 slots[i].horizontalOverflow = HorizontalWrapMode.Overflow;
-                owned[i] = InkText(Box("Effect", frameRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(slotSize + 100f, 44f)), 26, TextAnchor.UpperCenter, UiPalette.Ink);
+                owned[i] = InkText(Box("Effect", frameRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, -4f), new Vector2(colPitch, 36f)), 22, TextAnchor.UpperCenter, UiPalette.Ink);
                 owned[i].horizontalOverflow = HorizontalWrapMode.Overflow;
                 owned[i].verticalOverflow = VerticalWrapMode.Overflow;
                 Button button = frameRect.gameObject.AddComponent<Button>();
@@ -1072,6 +1081,12 @@ namespace SoloHero.Editor
                 buttons[i] = frameRect.gameObject.AddComponent<TapGuardButton>();
                 UnityEventTools.AddIntPersistentListener(buttons[i].OnTap, presenter.Swap, i);
             }
+
+            RectTransform ownedPill = Box("OwnedBonus", stage, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(360f, 52f));
+            UiSkin.Sliced(ownedPill.gameObject.AddComponent<Image>(), UiSkin.Pill);
+            ownedPill.GetComponent<Image>().raycastTarget = false;
+            Text ownedBonus = AddText(Inset("Text", ownedPill, 12f, 0f, 12f, 0f), 24, TextAnchor.MiddleCenter);
+            ownedBonus.horizontalOverflow = HorizontalWrapMode.Overflow;
 
             // Under the stage: ATK / HP / DEF chips and the "equip best" button.
             RectTransform footer = BottomBand("Footer", panel, 22f, 88f, PanelPad, PanelPad);
@@ -1100,6 +1115,7 @@ namespace SoloHero.Editor
             SetArray(so, "_slotIcons", icons);
             SetArray(so, "_slotFrames", frames);
             SetArray(so, "_statTexts", statTexts);
+            so.FindProperty("_ownedBonusText").objectReferenceValue = ownedBonus;
             so.FindProperty("_frames").objectReferenceValue = _gradeFrames;
             so.FindProperty("_icons").objectReferenceValue = AssetDatabase.LoadAssetAtPath<EquipmentIconSet>(EquipmentIconsPath);
             so.FindProperty("_session").objectReferenceValue = session;

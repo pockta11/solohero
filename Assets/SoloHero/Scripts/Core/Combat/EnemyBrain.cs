@@ -13,6 +13,8 @@ namespace SoloHero.Core.Combat
         private float _dotTimer;
         private float _dotTickTimer;
         private double _dotDps;
+        private float _markTimer;
+        private double _markFraction;
 
         public EnemyState State { get; private set; }
         public double Hp { get; private set; }
@@ -34,6 +36,11 @@ namespace SoloHero.Core.Combat
 
         /// <summary>Burning or poisoned (a skill damage-over-time is running).</summary>
         public bool HasDot => _dotTimer > 0f && IsAlive;
+
+        /// <summary>D-109: a skill mark is running; every hit on this enemy is multiplied by <see cref="DamageTakenMult"/>.</summary>
+        public bool IsMarked => _markTimer > 0f && IsAlive;
+
+        public double DamageTakenMult => IsMarked ? 1d + _markFraction : 1d;
 
         public bool IsActive => _active;
         public bool IsAlive => _active && State != EnemyState.Dead && Hp > 0d;
@@ -101,12 +108,20 @@ namespace SoloHero.Core.Combat
             if (seconds > _dotTimer) _dotTimer = seconds;
         }
 
-        /// <summary>Runs stun and burn timers; returns the burn damage dealt this tick (0 when none).</summary>
+        /// <summary>D-109 mark: hits on this enemy deal (1 + fraction) times; the stronger mark wins, the longer time wins.</summary>
+        public void Mark(double fraction, float seconds)
+        {
+            if (!IsAlive || fraction <= 0d || seconds <= 0f) return;
+            if (_markTimer <= 0f || fraction > _markFraction) _markFraction = fraction;
+            if (seconds > _markTimer) _markTimer = seconds;
+        }
+
+        /// <summary>Runs stun, mark and burn timers; returns the burn damage dealt this tick (0 when none).</summary>
         public double TickStatus(float dt)
         {
             if (!IsAlive)
             {
-                if (_stunTimer > 0f || _dotTimer > 0f) ClearStatus();
+                if (_stunTimer > 0f || _dotTimer > 0f || _markTimer > 0f) ClearStatus();
                 return 0d;
             }
 
@@ -114,6 +129,16 @@ namespace SoloHero.Core.Combat
             {
                 _stunTimer -= dt;
                 if (_stunTimer < 0f) _stunTimer = 0f;
+            }
+
+            if (_markTimer > 0f)
+            {
+                _markTimer -= dt;
+                if (_markTimer <= 0f)
+                {
+                    _markTimer = 0f;
+                    _markFraction = 0d;
+                }
             }
 
             if (_dotTimer <= 0f) return 0d;
@@ -124,7 +149,7 @@ namespace SoloHero.Core.Combat
             {
                 float tick = _balance.SKILL_DOT_TICK > 0f ? _balance.SKILL_DOT_TICK : 0.5f;
                 _dotTickTimer += tick;
-                dealt = _dotDps * tick;
+                dealt = _dotDps * tick * DamageTakenMult;
                 TakeDamage(dealt);
             }
 
@@ -143,6 +168,8 @@ namespace SoloHero.Core.Combat
             _dotTimer = 0f;
             _dotTickTimer = 0f;
             _dotDps = 0d;
+            _markTimer = 0f;
+            _markFraction = 0d;
         }
 
         public void Tick(float dt, HeroBrain hero)

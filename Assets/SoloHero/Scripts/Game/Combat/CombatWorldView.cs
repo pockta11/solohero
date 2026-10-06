@@ -9,7 +9,7 @@ using UnityEngine;
 namespace SoloHero.Game.Combat
 {
     /// <summary>
-    /// Draws the combat state (E2, E8-02..04): hero and the 6 enemy slots (D-107) follow Core positions and play sprite
+    /// Draws the combat state (E2, E8-02..04): hero and the 8 enemy slots (D-109) follow Core positions and play sprite
     /// clips chosen from Core state - run while advancing, attack on each swing, hit when HP drops, dead on death.
     /// Each enemy takes its look from the chapter roster by spawn order (E8-03); looks without a hit or dead clip
     /// flash / vanish instead. Enemies keep their slot renderer for the death clip after Core frees the slot. The hit
@@ -20,8 +20,8 @@ namespace SoloHero.Game.Combat
     /// </summary>
     public sealed class CombatWorldView : MonoBehaviour
     {
-        /// <summary>D-107: waves of six (SPAWN_MAX_ALIVE); ArtBuilder makes this many renderers, HP bars and shadows.</summary>
-        public const int EnemySlotVisualCount = 6;
+        /// <summary>D-109: waves of eight (SPAWN_MAX_ALIVE); ArtBuilder makes this many renderers, HP bars and shadows.</summary>
+        public const int EnemySlotVisualCount = 8;
         private const float HitFlashSeconds = 0.09f;
         private const float EntranceDistance = 2.6f;
         private const float EntranceSeconds = 0.32f;
@@ -38,6 +38,7 @@ namespace SoloHero.Game.Combat
         private const float BossDrawOffset = 0.4f;
         private static readonly Color FrozenTint = new Color(0.55f, 0.8f, 1f, 1f);
         private static readonly Color BurnTint = new Color(1f, 0.62f, 0.38f, 1f);
+        private static readonly Color MarkTint = new Color(1f, 0.55f, 0.82f, 1f);
         private static readonly Color ShieldTint = new Color(0.78f, 0.92f, 1f, 1f);
         private const float BurnPulseSpeed = 9f;
 
@@ -386,14 +387,23 @@ namespace SoloHero.Game.Combat
             renderer.transform.position = new Vector3(slot.X + fling, slot.Y + hop, 0f);
         }
 
-        /// <summary>D-078 status on the body: frozen / stunned blue, burning or poisoned pulses orange.</summary>
+        /// <summary>
+        /// D-078 status on the body: frozen / stunned blue, burning or poisoned pulses orange; D-109 marked (takes more
+        /// damage) pulses pink, slower.
+        /// </summary>
         private static Color StatusTint(EnemyBrain enemy)
         {
             if (enemy == null || !enemy.IsAlive) return Color.white;
             if (enemy.IsStunned) return FrozenTint;
-            if (!enemy.HasDot) return Color.white;
-            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * BurnPulseSpeed);
-            return Color.Lerp(Color.white, BurnTint, pulse);
+            if (enemy.HasDot)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * BurnPulseSpeed);
+                return Color.Lerp(Color.white, BurnTint, pulse);
+            }
+
+            if (!enemy.IsMarked) return Color.white;
+            float slow = 0.5f + 0.5f * Mathf.Sin(Time.time * BurnPulseSpeed * 0.5f);
+            return Color.Lerp(Color.white, MarkTint, 0.35f + 0.65f * slow);
         }
 
         private void BeginDeath(EnemySlotState slot, SpriteRenderer renderer, SpriteFlipbook book, ref int newKills)

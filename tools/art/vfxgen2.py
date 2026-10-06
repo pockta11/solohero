@@ -4,6 +4,8 @@ Usage: python tools/art/vfxgen2.py [OUT_DIR] [--preview PREVIEW.png]
 Redraws the five white "basic" clips that CombatFx tints per use (spark = hit, slash = basic hit, boom = death puff,
 ring = level up, whirl = spin) and two weak skill clips (cross, tornado), larger and with a darker rim so they read on
 both the snowy and the dark chapter backgrounds. Hard edges (no anti-aliasing), Bayer-dithered fade-outs.
+D-109 adds "mark", the target sigil of the mark skills (armor break, hex, hunter's mark), tinted per skill.
+Name clips on the command line to redraw only those.
 Old strips with another frame count are deleted so ArtBuilder finds exactly one sheet per clip.
 """
 import glob
@@ -17,9 +19,12 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', '..', 'Assets', 'SoloHero', 'Art', 'Vfx')
-args = [a for a in sys.argv[1:] if not a.startswith('--')]
+CLIP_NAMES = ('spark', 'slash', 'boom', 'ring', 'whirl', 'cross', 'tornado', 'mark')
+args = [a for i, a in enumerate(sys.argv[1:], 1)
+        if not a.startswith('--') and sys.argv[i - 1] != '--preview' and a not in CLIP_NAMES]
 if args:
     OUT = args[0]
+ONLY = [a for a in sys.argv[1:] if a in CLIP_NAMES]
 PREVIEW = sys.argv[sys.argv.index('--preview') + 1] if '--preview' in sys.argv else None
 
 # White ramp for tinted clips: core, light, mid, rim (the rim reads on snow, the tint colours all of it).
@@ -360,14 +365,63 @@ def tornado():
     save(frames, 'tornado')
 
 
+def mark():
+    """D-109 mark (tinted): a crosshair ring closes on the target with four arrowheads, flashes, then a rune ring with
+    eight ticks and an X turns and fades while the mark lasts its first moment."""
+    S = 64
+    c = S / 2
+    frames = []
+    for i in range(8):
+        f = Frame(S, S)
+        d = f.dist(c, c)
+        a = f.ang(c, c)
+        if i <= 2:
+            r = [27, 22, 18][i]
+            ring_bands(f, d, r - [1.5, 2.2, 3.0][i], r + [1.5, 2.2, 3.0][i])
+            reach = r + 4
+            for k in range(4):
+                ang = k * math.pi / 2 + math.pi / 4
+                ca, sa = math.cos(ang), math.sin(ang)
+                u = (f.x - c) * ca + (f.y - c) * sa
+                v = -(f.x - c) * sa + (f.y - c) * ca
+                tri = (u >= reach - 2) & (u <= reach + 7) & (np.abs(v) <= (u - (reach - 2)) * 0.6)
+                f.paint(tri & ((u > reach + 5) | (np.abs(v) > (u - (reach - 2)) * 0.6 - 1.2)), RIM)
+                f.paint(tri & (u <= reach + 5) & (np.abs(v) <= (u - (reach - 2)) * 0.6 - 1.2), CORE)
+            if i == 2:
+                f.paint(d <= 3.5, CORE)
+            if i == 0:
+                f.fade(0.7)
+        elif i == 3:
+            ring_bands(f, d, 13, 19)
+            f.paint(star_mask(f, c, c, 16, 16, 3.0, 4, math.pi / 4), CORE)
+            f.paint(d <= 6, CORE)
+        else:
+            spin = (i - 4) * 0.25
+            ring_bands(f, d, 14, 18.5)
+            for k in range(8):
+                ang = spin + k * math.pi / 4
+                ca, sa = math.cos(ang), math.sin(ang)
+                u = (f.x - c) * ca + (f.y - c) * sa
+                v = -(f.x - c) * sa + (f.y - c) * ca
+                tick = (u >= 20) & (u <= 24 + (k % 2) * 2) & (np.abs(v) <= 1.6)
+                f.paint(tick, RIM if k % 2 else LIGHT)
+            for sgn in (1, -1):
+                ang = math.pi / 4 * sgn + spin
+                ca, sa = math.cos(ang), math.sin(ang)
+                u = (f.x - c) * ca + (f.y - c) * sa
+                v = -(f.x - c) * sa + (f.y - c) * ca
+                f.paint((np.abs(u) <= 9) & (np.abs(v) <= 2.6), MID)
+                f.paint((np.abs(u) <= 8) & (np.abs(v) <= 1.2), CORE)
+            f.fade([1, 1, 1, 1, 1.0, 0.8, 0.55, 0.3][i])
+        frames.append(f)
+    save(frames, 'mark')
+
+
 if __name__ == '__main__':
-    spark()
-    slash()
-    boom()
-    ring()
-    whirl()
-    cross()
-    tornado()
+    for name in CLIP_NAMES:
+        if ONLY and name not in ONLY:
+            continue
+        globals()[name]()
     if PREVIEW:
         scale = 4
         rows = []

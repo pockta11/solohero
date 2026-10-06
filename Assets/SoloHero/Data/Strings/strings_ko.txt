@@ -69,7 +69,8 @@ char.percent	{0}%
 char.exp	EXP
 
 # Skills (D-078). Description args: {0} damage % per hit, {1} hits, {2} burn %/s, {3} burn s, {4} stun s,
-# {5} buff amount, {6} buff s, {7} heal %, {8} shield %, {9} shield s, {10} HP threshold %, {11} cooldown s
+# {5} buff amount, {6} buff s, {7} heal %, {8} shield %, {9} shield s, {10} HP threshold %, {11} cooldown s,
+# {12} mark % (D-109: enemies hit take this much more), {13} mark s
 skill.slot_locked	Lv {0}
 skill.lv	Lv{0}
 skill.info	Lv {0}/{1} · 쿨타임 {2}초
@@ -161,6 +162,30 @@ skill.name.storm_arrows	폭풍 화살
 skill.desc.storm_arrows	넓은 범위에 화살 {0}% 피해 {1}회
 skill.name.starfall_arrow	별똥 화살
 skill.desc.starfall_arrow	범위 안 모든 적에게 별빛 화살 {0}% 피해 {1}회
+skill.name.rending_blade	출혈 베기
+skill.desc.rending_blade	가까운 적에게 {0}% 피해, {3}초 동안 초당 {2}% 출혈
+skill.name.armor_break	갑옷 파쇄
+skill.desc.armor_break	주변 적 모두에게 {0}% 피해, {13}초 동안 받는 피해 +{12}%
+skill.name.valor	용맹
+skill.desc.valor	{6}초 동안 스킬 쿨타임 {5}% 빠르게, 보호막 {8}%
+skill.name.titan_crush	거신 강타
+skill.desc.titan_crush	주변 적 모두에게 {0}% 피해, {4}초 기절, {13}초 동안 받는 피해 +{12}%
+skill.name.spark	스파크
+skill.desc.spark	범위 안 모든 적에게 전격 {0}% 피해 {1}회
+skill.name.hex	저주
+skill.desc.hex	범위 안 모든 적에게 {0}% 피해, {3}초 동안 초당 {2}% 저주, 받는 피해 +{12}%
+skill.name.mana_surge	마나 폭주
+skill.desc.mana_surge	{6}초 동안 스킬 쿨타임 {5}% 빠르게
+skill.name.absolute_zero	절대영도
+skill.desc.absolute_zero	넓은 범위에 냉기 {0}% 피해 {1}회, 맞을 때마다 {4}초 빙결
+skill.name.rapid_shot	속사
+skill.desc.rapid_shot	먼 적에게 화살 {0}% 피해 {1}회
+skill.name.hunters_mark	사냥꾼의 표식
+skill.desc.hunters_mark	먼 적 하나에게 {0}% 피해, {13}초 동안 받는 피해 +{12}%
+skill.name.deadeye	데드아이
+skill.desc.deadeye	아주 먼 적 하나에게 공격력의 {0}% 일격
+skill.name.phantom_volley	환영 일제사격
+skill.desc.phantom_volley	넓은 범위에 환영 화살 {0}% 피해 {1}회, {13}초 동안 받는 피해 +{12}%
 
 # Grades and slots
 grade.common	일반
@@ -171,6 +196,10 @@ slot.sword	검
 slot.helm	투구
 slot.armor	갑옷
 slot.boots	신발
+slot.gloves	장갑
+slot.necklace	목걸이
+slot.ring	반지
+slot.earring	귀걸이
 
 # Equipment panel
 equip.slot	{0}: {1}
@@ -427,3 +456,8 @@ equip.effect_atk	공격력 ×{0}
 equip.effect_def	방어력 ×{0}
 equip.effect_hp	체력 ×{0}
 equip.effect_boots	공속+{0}% 치명+{1}%
+equip.effect_ring	치명 피해 +{0}%
+equip.effect_earring	스킬 피해 +{0}%
+equip.owned_bonus	보유 효과  공격력 +{0}%
+equip.gear	장비
+equip.accessory	장신구

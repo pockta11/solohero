@@ -15,29 +15,32 @@ using UnityEngine.UI;
 namespace SoloHero.Game.UI.Panels
 {
     /// <summary>
-    /// Equipment panel (E7-06): 4 slots with the equipped grade in its color, owned grades per slot,
-    /// and a swap button that steps to the next owned item in that slot (downgrades allowed, GDD).
-    /// D-106: the slots stand around the hero (tap a slot to swap), with ATK / HP / DEF and "equip best" below.
+    /// Equipment panel (E7-06): one slot per EquipmentSlot with the equipped grade in its color and a swap on tap that
+    /// steps to the next owned item in that slot (downgrades allowed, GDD).
+    /// D-106: the slots stand around the hero, with ATK / HP / DEF and "equip best" below.
+    /// D-109: 8 slots (gear on the left, accessories on the right) and the collection's owned bonus.
     /// </summary>
     public sealed class EquipmentPanelPresenter : MonoBehaviour
     {
-        [SerializeField] private Text[] _slotTexts = new Text[4];
-        [SerializeField] private Text[] _ownedTexts = new Text[4];
-        [SerializeField] private TapGuardButton[] _swapButtons = new TapGuardButton[4];
+        [SerializeField] private Text[] _slotTexts = new Text[GachaCatalog.SlotCount];
+        [SerializeField] private Text[] _ownedTexts = new Text[GachaCatalog.SlotCount];
+        [SerializeField] private TapGuardButton[] _swapButtons = new TapGuardButton[GachaCatalog.SlotCount];
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
-        [SerializeField] private Image[] _slotIcons = new Image[4];
-        [SerializeField] private Image[] _slotFrames = new Image[4];
+        [SerializeField] private Image[] _slotIcons = new Image[GachaCatalog.SlotCount];
+        [SerializeField] private Image[] _slotFrames = new Image[GachaCatalog.SlotCount];
         [SerializeField] private EquipmentIconSet _icons;
         [SerializeField] private GradeFrameSet _frames;
         [Tooltip("D-106: ATK, HP, DEF of the current loadout.")]
         [SerializeField] private Text[] _statTexts = new Text[3];
+        [Tooltip("D-109: the owned bonus of the whole collection.")]
+        [SerializeField] private Text _ownedBonusText;
 
         private EquipService _equip;
         private SaveDataV2 _save;
         private SoloHero.Core.Config.BalanceValues _balance;
         private int _shownOwnedCount = -1;
-        private string _shownKey = "";
+        private readonly string[] _shownIds = new string[GachaCatalog.SlotCount];
         private int _shownPulls = -1;
 
         private void OnEnable()
@@ -52,9 +55,18 @@ namespace SoloHero.Game.UI.Panels
         private void LateUpdate()
         {
             if (_save == null) return;
-            string key = _save.equippedSword + _save.equippedHelm + _save.equippedArmor + _save.equippedBoots;
-            if (_save.ownedEquipment.Count == _shownOwnedCount && key == _shownKey && _save.totalPullCount == _shownPulls) return;
+            if (_save.ownedEquipment.Count == _shownOwnedCount && _save.totalPullCount == _shownPulls && !EquippedChanged()) return;
             Refresh();
+        }
+
+        private bool EquippedChanged()
+        {
+            for (int s = 0; s < _shownIds.Length; s++)
+            {
+                if (!ReferenceEquals(_shownIds[s], Equipped((EquipmentSlot)s))) return true;
+            }
+
+            return false;
         }
 
         public void Swap(int slotIndex)
@@ -127,7 +139,7 @@ namespace SoloHero.Game.UI.Panels
             if (_save == null) return;
             _shownOwnedCount = _save.ownedEquipment.Count;
             _shownPulls = _save.totalPullCount;
-            _shownKey = _save.equippedSword + _save.equippedHelm + _save.equippedArmor + _save.equippedBoots;
+            for (int s = 0; s < _shownIds.Length; s++) _shownIds[s] = Equipped((EquipmentSlot)s);
             EquipmentBonus bonus = _balance != null ? EquipmentBonus.Resolve(_balance, _save) : default;
 
             for (int s = 0; s < GachaCatalog.SlotCount; s++)
@@ -171,7 +183,12 @@ namespace SoloHero.Game.UI.Panels
             SetStat(0, stats.Atk);
             SetStat(1, stats.Hp);
             SetStat(2, stats.Def);
+            if (_ownedBonusText != null)
+                _ownedBonusText.text = Strings.Format("equip.owned_bonus", Percent(bonus.OwnedAtk));
         }
+
+        private static string Percent(double fraction) =>
+            (fraction * 100d).ToString(fraction * 100d < 10d ? "0.#" : "0", System.Globalization.CultureInfo.InvariantCulture);
 
         private void SetStat(int index, double value)
         {
@@ -181,27 +198,23 @@ namespace SoloHero.Game.UI.Panels
         /// <summary>D-103: what the equipped item does, e.g. "ATK x1.80" (boots: attack speed and crit).</summary>
         private static string Effect(EquipmentSlot slot, EquipmentBonus bonus)
         {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
             switch (slot)
             {
-                case EquipmentSlot.Sword: return Strings.Format("equip.effect_atk", bonus.SwordMult.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
-                case EquipmentSlot.Helm: return Strings.Format("equip.effect_def", bonus.HelmMult.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
-                case EquipmentSlot.Armor: return Strings.Format("equip.effect_hp", bonus.ArmorMult.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+                case EquipmentSlot.Sword: return Strings.Format("equip.effect_atk", bonus.SwordMult.ToString("0.00", inv));
+                case EquipmentSlot.Helm: return Strings.Format("equip.effect_def", bonus.HelmMult.ToString("0.00", inv));
+                case EquipmentSlot.Armor: return Strings.Format("equip.effect_hp", bonus.ArmorMult.ToString("0.00", inv));
+                case EquipmentSlot.Gloves: return Strings.Format("equip.effect_atk", bonus.GlovesMult.ToString("0.00", inv));
+                case EquipmentSlot.Necklace: return Strings.Format("equip.effect_hp", bonus.NecklaceMult.ToString("0.00", inv));
+                case EquipmentSlot.Ring: return Strings.Format("equip.effect_ring", Percent(bonus.RingCritDamage));
+                case EquipmentSlot.Earring: return Strings.Format("equip.effect_earring", Percent(bonus.EarringSkillDamage));
                 default:
                     return Strings.Format("equip.effect_boots",
-                        (bonus.BootsSpeedBonus * 100d).ToString("0", System.Globalization.CultureInfo.InvariantCulture),
-                        bonus.BootsCritBonus.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture));
+                        (bonus.BootsSpeedBonus * 100d).ToString("0", inv),
+                        bonus.BootsCritBonus.ToString("0.#", inv));
             }
         }
 
-        private string Equipped(EquipmentSlot slot)
-        {
-            switch (slot)
-            {
-                case EquipmentSlot.Sword: return _save.equippedSword;
-                case EquipmentSlot.Helm: return _save.equippedHelm;
-                case EquipmentSlot.Armor: return _save.equippedArmor;
-                default: return _save.equippedBoots;
-            }
-        }
+        private string Equipped(EquipmentSlot slot) => EquippedSlots.Get(_save, slot);
     }
 }

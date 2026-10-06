@@ -1,7 +1,7 @@
 """Smooth equipment icons (D-108) -> Assets/SoloHero/Art/UI/Hd/Equipment/equip_{slot}_{grade}.png (128 x 128).
 
-Usage: python tools/art/equipgen3.py [OUT_DIR] [--preview PREVIEW.png]
-Four slots x four grades. Each grade changes material and ornament, not just the hue: common = iron and leather,
+Usage: python tools/art/equipgen3.py [OUT_DIR] [SLOT ...] [--preview PREVIEW.png]
+Eight slots (D-109: gloves, necklace, ring and earring after the gear) x four grades. Each grade changes material and ornament, not just the hue: common = iron and leather,
 rare = polished steel with blue trim, epic = violet steel with gems, legendary = gold with wings, a ruby and a glint.
 """
 import math
@@ -18,7 +18,9 @@ from icongen3 import (BLUE, BROWN, GOLD, INK, OW, PURPLE, RED, SILVER, fill, glo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', '..', 'Assets', 'SoloHero', 'Art', 'UI', 'Hd', 'Equipment')
-args = [a for a in sys.argv[1:] if not a.startswith('--')]
+SLOT_NAMES = ('sword', 'helm', 'armor', 'boots', 'gloves', 'necklace', 'ring', 'earring')
+args = [a for i, a in enumerate(sys.argv[1:], 1)
+        if not a.startswith('--') and sys.argv[i - 1] != '--preview' and a not in SLOT_NAMES]
 if args:
     OUT = args[0]
 PREVIEW = sys.argv[sys.argv.index('--preview') + 1] if '--preview' in sys.argv else None
@@ -244,16 +246,224 @@ def boots_icon(grade):
     return L.image()
 
 
+# D-109 accessories ---------------------------------------------------------------------------------------------------
+PINK = (hexc('#FFD0F8'), hexc('#F050C0'), hexc('#901870'))
+WING = (hexc('#FFFFFF'), hexc('#E4ECFF'), hexc('#98A8D0'))
+BRONZE = (hexc('#F4CC90'), hexc('#C08A4A'), hexc('#6E4622'))
+
+
+def metal_of(grade, common=IRON):
+    return {'common': common, 'rare': STEEL, 'epic': VIOLET, 'legendary': GOLDEN}[grade]
+
+
+def gem_of(grade):
+    return {'common': None, 'rare': BLUE, 'epic': PINK, 'legendary': RED}[grade]
+
+
+def wing_pair(L, cx, cy, span, up=True):
+    """Two small feathered wings either side of (cx, cy); returns their union."""
+    out = None
+    for sgn in (-1, 1):
+        sy = -1 if up else 1
+        w = L.polygon([(cx + sgn * span * 0.25, cy), (cx + sgn * span, cy + sy * span * 0.75), (cx + sgn * span * 0.82, cy + sy * span * 0.3),
+                       (cx + sgn * span * 0.98, cy + sy * span * 0.22), (cx + sgn * span * 0.6, cy - sy * span * 0.1)])
+        out = w if out is None else union(out, w)
+    return out
+
+
+# Gloves -------------------------------------------------------------------------------------------------------------
+def gloves_icon(grade):
+    L = new()
+    metal = metal_of(grade, LEATHER)
+    trim = {'common': (hexc('#C8A070'), hexc('#7A4A24'), hexc('#3E2410')), 'rare': GOLD, 'epic': GOLD, 'legendary': RED}[grade]
+    palm = rrect_at(L.x, L.y, 36, 52, 92, 98, 16)
+    fingers = [seg(L, 45, 56, 43, 26, 7.5), seg(L, 58, 54, 58, 18, 7.5), seg(L, 71, 54, 73, 21, 7.5), seg(L, 83, 58, 88, 32, 7)]
+    thumb = seg(L, 40, 84, 22, 60, 8)
+    cuff = rrect_at(L.x, L.y, 32, 94, 96, 118, 7)
+    hand = union(palm, thumb, *fingers)
+    every = union(hand, cuff)
+    wings = None
+    if grade == 'legendary':
+        wings = wing_pair(L, 64, 104, 50, up=True)
+        every = union(every, wings)
+    outline(L, every)
+    if wings is not None:
+        fill(L, wings, WING)
+    fill(L, hand, metal)
+    # Finger creases / plate joints.
+    joint = shade(metal[2], -0.2)[:3] + (190,)
+    for fx, fy0, fy1 in ((44, 40, 41), (58, 34, 35), (72, 36, 37), (86, 44, 45)):
+        L.over(cov(seg(L, fx - 6, fy0, fx + 6, fy1, 1.2)), joint)
+    if grade == 'common':
+        for t in range(5):
+            sx = 44 + t * 10
+            L.over(cov(seg(L, sx, 88, sx + 5, 88, 1.0)), hexc('#F2D2A6'))
+    else:
+        knuckles = rrect_at(L.x, L.y, 40, 52, 90, 64, 6)
+        fill(L, knuckles, tuple(shade(c, 0.08) for c in metal), hi=False)
+        L.over(band(knuckles, -1.5, 0), shade(metal[2], -0.25)[:3] + (200,))
+    fill(L, cuff, trim, hi=False)
+    L.over(cov(rrect_at(L.x, L.y, 32, 94, 96, 99, 3)), shade(trim[0], 0.25)[:3] + (200,))
+    g = gem_of(grade)
+    if g is not None:
+        gem(L, 64, 76, 9 if grade == 'legendary' else 7, g)
+    if grade == 'legendary':
+        sparkle(L, 104, 26, 10)
+        sparkle(L, 22, 34, 6)
+    gloss(L, palm, 52, 64, 10, 7, 110)
+    return L.image()
+
+
+# Necklace -----------------------------------------------------------------------------------------------------------
+def necklace_icon(grade):
+    L = new()
+    chain_ramp = {'common': IRON, 'rare': STEEL, 'epic': GOLD, 'legendary': GOLDEN}[grade]
+    setting = {'common': BRONZE, 'rare': STEEL, 'epic': GOLD, 'legendary': GOLDEN}[grade]
+    cx, cy, rx, ry = 64, 46, 42, 38
+    # The loop: the back half (top) is a thin dark line, the front half carries the beads.
+    back_chain = inter(np.abs(L.ellipse(cx, cy, rx, ry * 0.55)) - 2.0, L.y - cy)
+    chain = inter(np.abs(L.ellipse(cx, cy, rx, ry)) - 3.2, cy - L.y)
+    beads = None
+    for k in range(9):
+        a = math.pi * (0.04 + 0.92 * k / 8.0)
+        bx, by = cx - math.cos(a) * rx, cy + math.sin(a) * ry
+        b = L.circle(bx, by, 5.4)
+        beads = b if beads is None else union(beads, b)
+    L.over(cov(back_chain - 3), INK[:3] + (150,))
+    L.over(cov(back_chain), shade(chain_ramp[2], -0.25))
+    big = grade in ('epic', 'legendary')
+    pend_y = 98
+    if grade == 'common':
+        pendant = L.circle(64, pend_y, 15)
+    elif grade == 'rare':
+        pendant = union(L.circle(64, pend_y + 4, 14), L.polygon([(64, pend_y - 22), (78, pend_y), (50, pend_y)]))
+    else:
+        pendant = L.polygon(star_pts(64, pend_y, 26 if grade == 'legendary' else 22, 13 if grade == 'legendary' else 11, 8, -math.pi / 2))
+        pendant = union(pendant, L.circle(64, pend_y, 15))
+    bail = rrect_at(L.x, L.y, 58, pend_y - 30, 70, pend_y - 18, 4)
+    every = union(chain, beads, pendant, bail)
+    outline(L, every, 5.0)
+    L.over(cov(chain), chain_ramp[2])
+    fill(L, beads, chain_ramp, hi=False)
+    fill(L, bail, setting, hi=False)
+    fill(L, pendant, setting)
+    g = gem_of(grade)
+    if g is None:
+        L.over(cov(L.circle(64, pend_y, 9)), shade(BRONZE[2], -0.1))
+        L.over(cov(L.polygon(star_pts(64, pend_y, 7, 3, 5))), BRONZE[0])
+    else:
+        gem(L, 64, pend_y + (2 if grade == 'rare' else 0), 12 if big else 9, g)
+    if grade == 'legendary':
+        sparkle(L, 102, 80, 10)
+        sparkle(L, 26, 98, 6)
+    return L.image()
+
+
+# Ring ---------------------------------------------------------------------------------------------------------------
+def ring_icon(grade):
+    L = new()
+    metal = metal_of(grade, BRONZE)
+    cx, cy = 64, 80
+    outer = L.ellipse(cx, cy, 36, 32)
+    hole = L.ellipse(cx, cy + 3, 25, 21)
+    band_d = inter(outer, -hole)
+    head = None
+    g = gem_of(grade)
+    if g is not None:
+        r = {'rare': 13, 'epic': 15, 'legendary': 18}[grade]
+        head = union(L.circle(64, 44, r + 5), rrect_at(L.x, L.y, 52, 44, 76, 60, 6))
+    wings = None
+    if grade == 'legendary':
+        wings = wing_pair(L, 64, 50, 46)
+    every = band_d if head is None else union(band_d, head)
+    if wings is not None:
+        every = union(every, wings)
+    outline(L, every)
+    if wings is not None:
+        fill(L, wings, WING)
+    fill(L, band_d, metal)
+    # Inner shadow on the far side of the band.
+    L.over(cov(inter(band_d, L.y - (cy - 4))) * 0.35, shade(metal[2], -0.3)[:3] + (255,))
+    if head is not None:
+        fill(L, head, tuple(shade(c, 0.05) for c in metal), hi=False)
+        for sgn in (-1, 1):
+            L.over(cov(seg(L, 64 + sgn * 12, 34, 64 + sgn * 8, 52, 2.4)), shade(metal[0], 0.1))
+        gem(L, 64, 44, {'rare': 12, 'epic': 14, 'legendary': 16}[grade], g)
+    else:
+        for t in (-14, 0, 14):
+            L.over(cov(L.circle(cx + t, cy + 26, 2.6)), shade(metal[0], 0.15))
+    gloss(L, band_d, 44, 66, 9, 6, 120)
+    if grade == 'legendary':
+        sparkle(L, 104, 22, 10)
+        sparkle(L, 24, 30, 6)
+    return L.image()
+
+
+# Earring ------------------------------------------------------------------------------------------------------------
+EAR_SIZE = {'common': 9, 'rare': 12, 'epic': 13, 'legendary': 15}
+
+
+def one_earring(L, x, y, grade, dim):
+    """A hoop with a clasp on top and a bead or teardrop gem hanging from its bottom."""
+    metal = tuple(shade(c, dim) for c in metal_of(grade))
+    r = 17
+    hoop = np.abs(L.circle(x, y + r + 4, r)) - 3.4
+    clasp = rrect_at(L.x, L.y, x - 4, y - 4, x + 4, y + 8, 3)
+    size = EAR_SIZE[grade]
+    top = y + 2 * r + 6
+    if grade == 'common':
+        drop = L.circle(x, top + size - 2, size)
+    else:
+        drop = union(L.circle(x, top + size * 1.2, size),
+                     L.polygon([(x, top - 5), (x + size * 0.95, top + size * 1.1), (x - size * 0.95, top + size * 1.1)]))
+    link = seg(L, x, top - 8, x, top, 2.6)
+    cap = L.circle(x, top - 1, 5) if grade != 'common' else None
+    parts = [hoop, clasp, link, drop] + ([cap] if cap is not None else [])
+    return union(*parts), (hoop, clasp, link, drop, cap, metal, (x, top, size))
+
+
+def earring_icon(grade):
+    L = new()
+    back, back_parts = one_earring(L, 86, 18, grade, -0.18)
+    front, front_parts = one_earring(L, 46, 28, grade, 0.0)
+    wings = wing_pair(L, 46, 70, 40, up=True) if grade == "legendary" else None
+    every = union(back, front) if wings is None else union(back, front, wings)
+    outline(L, every, 5.0)
+    if wings is not None:
+        fill(L, wings, WING)
+    g = gem_of(grade)
+    for parts, dim in ((back_parts, -0.18), (front_parts, 0.0)):
+        hoop, clasp, link, drop, cap, metal, (x, top, size) = parts
+        fill(L, hoop, metal, hi=False)
+        L.over(band(hoop, -3.4, -1.6) * (L.y < top - 2 * 17), (255, 255, 255, 120))
+        fill(L, clasp, metal, hi=False)
+        L.over(cov(link), metal[2])
+        fill(L, drop, metal if g is None else tuple(shade(c, dim) for c in g))
+        if cap is not None:
+            fill(L, cap, metal, hi=False)
+        oy = top + (size - 2 if grade == 'common' else size * 1.2)
+        L.over(cov(L.circle(x - size * 0.35, oy - size * 0.35, size * 0.26)), (255, 255, 255, 220))
+    if grade == 'legendary':
+        sparkle(L, 106, 96, 10)
+        sparkle(L, 20, 106, 6)
+    return L.image()
+
+
+ORDER = ['sword', 'helm', 'armor', 'boots', 'gloves', 'necklace', 'ring', 'earring']
+MAKERS = {'sword': sword_icon, 'helm': helm_icon, 'armor': armor_icon, 'boots': boots_icon,
+          'gloves': gloves_icon, 'necklace': necklace_icon, 'ring': ring_icon, 'earring': earring_icon}
+
 if __name__ == '__main__':
-    for g in GRADES:
-        save(sword_icon(g), 'sword', g)
-        save(helm_icon(g), 'helm', g)
-        save(armor_icon(g), 'armor', g)
-        save(boots_icon(g), 'boots', g)
+    only = [a for a in sys.argv[1:] if a in MAKERS]
+    for slot in ORDER:
+        if only and slot not in only:
+            continue
+        for g in GRADES:
+            save(MAKERS[slot](g), slot, g)
     if PREVIEW:
         cell = S + 16
-        sheet = Image.new('RGBA', (4 * cell, 4 * cell), (232, 220, 196, 255))
-        order = ['sword', 'helm', 'armor', 'boots']
+        order = [s for s in ORDER if not only or s in only]
+        sheet = Image.new('RGBA', (4 * cell, len(order) * cell), (232, 220, 196, 255))
         lookup = dict(made)
         for r, slot in enumerate(order):
             for c, g in enumerate(GRADES):

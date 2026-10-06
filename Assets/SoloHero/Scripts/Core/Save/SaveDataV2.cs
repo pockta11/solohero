@@ -42,6 +42,12 @@ namespace SoloHero.Core.Save
         public string equippedHelm = "";
         public string equippedArmor = "";
         public string equippedBoots = "";
+
+        /// <summary>D-109 accessories ("" empty; saves from before D-109 load with all four empty).</summary>
+        public string equippedGloves = "";
+        public string equippedNecklace = "";
+        public string equippedRing = "";
+        public string equippedEarring = "";
         public List<string> ownedEquipment = new List<string>();
         public List<int> ownedEquipmentLevels = new List<int>();
 

@@ -11,6 +11,8 @@ namespace SoloHero.Core.Stage
 {
     /// <summary>
     /// Pushes the saved growth state (level, upgrades, equipment, skill collection and slots, talents) into a running stage.
+    /// D-109: gloves and necklace multiply with sword and armor; ring and earring ride the talent channel; the gear owned
+    /// bonus adds to the skill owned bonus.
     /// Call after boot and after every growth change so combat always uses the current loadout.
     /// </summary>
     public static class CombatLoadout
@@ -33,15 +35,26 @@ namespace SoloHero.Core.Stage
                 save.upgradeAtk + (raised == UpgradeLane.Atk ? 1 : 0),
                 save.upgradeDef + (raised == UpgradeLane.Def ? 1 : 0),
                 save.upgradeSpd + (raised == UpgradeLane.Spd ? 1 : 0),
-                bonus.SwordMult,
-                bonus.ArmorMult,
+                bonus.AtkMult,
+                bonus.HpMult,
                 bonus.HelmMult,
                 bonus.BootsSpeedBonus,
                 bonus.BootsCritBonus,
                 default,
-                SkillService.OwnedAtkBonus(balance, save),
-                JobService.Effects(save),
+                SkillService.OwnedAtkBonus(balance, save) + bonus.OwnedAtk,
+                Effects(balance, save, bonus),
                 JobService.TierOf(save));
+        }
+
+        /// <summary>Talents and job mastery (D-087, D-104) plus the D-109 ring and earring, which share their channel.</summary>
+        public static TalentEffects Effects(BalanceValues balance, SaveDataV2 save) =>
+            Effects(balance, save, EquipmentBonus.Resolve(balance, save));
+
+        private static TalentEffects Effects(BalanceValues balance, SaveDataV2 save, EquipmentBonus bonus)
+        {
+            TalentEffects effects = JobService.Effects(save);
+            bonus.AddTo(effects);
+            return effects;
         }
 
         public static void Apply(StageRunner runner, BalanceValues balance, SaveDataV2 save)
@@ -52,7 +65,7 @@ namespace SoloHero.Core.Stage
             int companion = SoloHero.Core.Companions.CompanionCatalog.IndexOf(save.companionEquipped);
             runner.Companion.Set(companion >= 0 ? SoloHero.Core.Companions.CompanionCatalog.All[companion] : null,
                 SoloHero.Core.Companions.CompanionService.Level(save, companion));
-            runner.SetTalents(JobService.Effects(save));
+            runner.SetTalents(Effects(balance, save));
             int slots = SkillService.SlotCount(balance);
             for (int slot = 0; slot < slots; slot++)
             {
