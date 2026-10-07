@@ -649,6 +649,72 @@ namespace SoloHero.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        /// <summary>
+        /// D-112 hit shards: one world-space ParticleSystem (manual Emit only) with square white particles that fall with
+        /// gravity, shrink and fade; CombatFx bursts it on hits and kills.
+        /// </summary>
+        private static HitParticles WireParticles()
+        {
+            GameObject old = GameObject.Find("HitParticles");
+            if (old != null) Object.DestroyImmediate(old);
+            var go = new GameObject("HitParticles");
+            ParticleSystem ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ParticleSystem.MainModule main = ps.main;
+            main.playOnAwake = false;
+            main.loop = false;
+            main.duration = 1f;
+            main.startLifetime = 0.4f;
+            main.startSpeed = 0f;
+            main.startSize = 0.075f;
+            main.gravityModifier = 0.75f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 400;
+            main.loop = true;
+            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.enabled = false;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.enabled = false;
+            ParticleSystem.SizeOverLifetimeModule size = ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0.35f)));
+            ParticleSystem.ColorOverLifetimeModule color = ps.colorOverLifetime;
+            color.enabled = true;
+            var fade = new Gradient();
+            fade.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 0.6f), new GradientAlphaKey(0f, 1f) });
+            color.color = fade;
+
+            ParticleSystemRenderer renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sortingOrder = 260;
+            renderer.sharedMaterial = ShardMaterial();
+            HitParticles particles = go.AddComponent<HitParticles>();
+            var so = new SerializedObject(particles);
+            so.FindProperty("_system").objectReferenceValue = ps;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return particles;
+        }
+
+        /// <summary>D-112: an unlit sprite material over a plain white texture, so shards are crisp squares in their colour.</summary>
+        private static Material ShardMaterial()
+        {
+            const string path = ArtRoot + "/Materials/HitShard.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            Shader shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+            if (material == null)
+            {
+                material = new Material(shader != null ? shader : Shader.Find("Sprites/Default"));
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            Texture2D white = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtRoot + "/UI/ui_white.png");
+            if (white != null) material.mainTexture = white;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         /// <summary>D-110: one renderer per ranged shot slot (CombatWorld.ShotCapacity) showing the thrown bone.</summary>
         private static void WireShots(CombatWorldView view)
         {
@@ -794,6 +860,7 @@ namespace SoloHero.Editor
             fxSo.FindProperty("_set").objectReferenceValue = set;
             fxSo.FindProperty("_shake").objectReferenceValue = shake;
             fxSo.FindProperty("_themes").objectReferenceValue = themes;
+            fxSo.FindProperty("_particles").objectReferenceValue = WireParticles();
             fxSo.ApplyModifiedPropertiesWithoutUndo();
         }
 

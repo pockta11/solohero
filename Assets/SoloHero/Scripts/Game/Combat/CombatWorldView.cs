@@ -34,6 +34,16 @@ namespace SoloHero.Game.Combat
         private const float HeroLunge = 0.1f;
         private const float HeroLungeReturnRate = 12f;
 
+        // D-112 impact: a hit squashes the enemy (wider and shorter, feet planted) for a moment; crits and combos
+        // squash harder and push twice as far; the hero stretches forward on each swing.
+        private const float SquashSeconds = 0.14f;
+        private const float SquashWide = 0.2f;
+        private const float SquashShort = 0.16f;
+        private const float HeroStretchSeconds = 0.12f;
+        private static readonly Color NormalOutline = new Color(0.1f, 0.08f, 0.19f, 1f);
+        private static readonly Color BossOutline = new Color(0.42f, 0.04f, 0.12f, 1f);
+        private static readonly Color HeroHurtFlash = new Color(1f, 0.32f, 0.3f, 1f);
+
         /// <summary>Bosses are drawn this far behind their Core position so the 2x body does not cover the hero (view only).</summary>
         private const float BossDrawOffset = 0.4f;
         private static readonly Color FrozenTint = new Color(0.55f, 0.8f, 1f, 1f);
@@ -78,6 +88,7 @@ namespace SoloHero.Game.Combat
         private int _lastKills;
         private float _cameraY = float.NaN;
         private float _heroLunge;
+        private float _heroStretch;
         private SoloHero.Core.Save.SaveDataV2 _save;
         private CharacterArt _heroShown;
         private SpriteFlipbook _heroBook;
@@ -104,6 +115,8 @@ namespace SoloHero.Game.Combat
             public float X;
             public float Y;
             public float Push;
+            public float Squash;
+            public float SquashPower;
             public float DeathTime;
             public CharacterArt Art;
         }
@@ -118,7 +131,11 @@ namespace SoloHero.Game.Combat
             _save = SoloHero.Game.UI.Panels.PanelServices.TryGet<SoloHero.Core.Save.SaveDataV2>();
             _heroBook = Book(_heroRenderer);
             if (_heroBook != null) _heroBook.FreezeOnHitStop = true;
-            if (_heroRenderer != null) _heroFlashFx = new SpriteFlash(_heroRenderer);
+            if (_heroRenderer != null)
+            {
+                _heroFlashFx = new SpriteFlash(_heroRenderer);
+                _heroFlashFx.SetFlashColor(HeroHurtFlash);
+            }
             for (int i = 0; i < EnemySlotVisualCount && i < _enemyRenderers.Length; i++)
             {
                 _enemyBooks[i] = Book(_enemyRenderers[i]);
@@ -138,7 +155,27 @@ namespace SoloHero.Game.Combat
 
         private void OnDestroy()
         {
-            if (_hooked != null) _hooked.Hero.AttackRequested -= OnHeroAttack;
+            if (_hooked == null) return;
+            _hooked.Hero.AttackRequested -= OnHeroAttack;
+            _hooked.World.HitLanded -= OnHitLanded;
+        }
+
+        /// <summary>D-112: squash the struck enemy; crits and combos squash harder and knock it back twice as far.</summary>
+        private void OnHitLanded(EnemyBrain target, double amount, HitKind kind)
+        {
+            if (kind == HitKind.Dot || _hooked == null) return;
+            CombatWorld world = _hooked.World;
+            for (int i = 0; i < world.SlotCount && i < _slots.Length; i++)
+            {
+                if (!ReferenceEquals(world.GetSlot(i), target)) continue;
+                bool strong = kind == HitKind.Crit || kind == HitKind.Combo;
+                float power = strong ? 1f : kind == HitKind.Skill ? 0.75f : 0.55f;
+                EnemySlotState slot = _slots[i];
+                if (power >= slot.SquashPower || slot.Squash <= 0f) slot.SquashPower = power;
+                slot.Squash = SquashSeconds;
+                if (strong) slot.Push = Mathf.Min(KnockMax * 1.6f, slot.Push + KnockPerHit);
+                return;
+            }
         }
 
         private void LateUpdate()
@@ -153,9 +190,15 @@ namespace SoloHero.Game.Combat
 
             if (_hooked != runner)
             {
-                if (_hooked != null) _hooked.Hero.AttackRequested -= OnHeroAttack;
+                if (_hooked != null)
+                {
+                    _hooked.Hero.AttackRequested -= OnHeroAttack;
+                    _hooked.World.HitLanded -= OnHitLanded;
+                }
+
                 _hooked = runner;
                 _hooked.Hero.AttackRequested += OnHeroAttack;
+                _hooked.World.HitLanded += OnHitLanded;
                 _heroLastHp = runner.Hero.Hp;
                 _lastKills = runner.Kills;
             }
@@ -257,6 +300,7 @@ namespace SoloHero.Game.Combat
         {
             _heroAttackPending = true;
             _heroLunge = HeroLunge;
+            _heroStretch = HeroStretchSeconds;
         }
 
         private ChapterTheme ThemeFor(int globalStage)
@@ -287,7 +331,9 @@ namespace SoloHero.Game.Combat
 
             if (art != null && book != null)
             {
-                SetScale(_heroRenderer, art.pixelScale);
+                float stretch = _heroStretch > 0f ? _heroStretch / HeroStretchSeconds : 0f;
+                _heroStretch -= HitStop.DeltaTime;
+                SetScale(_heroRenderer, art.pixelScale * (1f + 0.1f * stretch), art.pixelScale * (1f - 0.07f * stretch));
                 if (hero.State == HeroState.Dead)
                 {
                     book.Play(art.dead, art.fps, loop: false);
@@ -350,6 +396,8 @@ namespace SoloHero.Game.Combat
                 {
                     slot.Art = ArtFor(enemy, theme);
                     slot.Push = 0f;
+                    slot.Squash = 0f;
+                    _enemyFlashFx[index]?.SetOutline(enemy.IsBoss ? BossOutline : NormalOutline);
                 }
 
                 CharacterArt art = slot.Art;
@@ -377,7 +425,12 @@ namespace SoloHero.Game.Combat
 
                 if (art != null && book != null)
                 {
-                    SetScale(renderer, art.pixelScale * DepthLanes.Scale(slot.Y) * RoleScale(enemy));
+                    float baseScale = art.pixelScale * DepthLanes.Scale(slot.Y) * RoleScale(enemy);
+                    float squash = slot.Squash > 0f ? slot.Squash / SquashSeconds : 0f;
+                    // Ease out: the squash snaps in on the hit and springs back.
+                    squash *= squash * slot.SquashPower;
+                    slot.Squash -= dt;
+                    SetScale(renderer, baseScale * (1f + SquashWide * squash), baseScale * (1f - SquashShort * squash));
                     bool walking = enemy.IsMoving && art.run.Length > 0;
                     if (fresh) book.Play(walking ? art.run : art.idle, art.fps, loop: true, restart: true);
                     else if (attacked) book.Play(art.attack, art.fps, loop: false, restart: true);
@@ -480,11 +533,16 @@ namespace SoloHero.Game.Combat
             if (renderer.sortingOrder != order) renderer.sortingOrder = order;
         }
 
-        private static void SetScale(SpriteRenderer renderer, float scale)
+        private static void SetScale(SpriteRenderer renderer, float scale) => SetScale(renderer, scale, scale);
+
+        /// <summary>D-112: separate X / Y for squash and stretch; the sprite pivot sits at the feet, so they stay planted.</summary>
+        private static void SetScale(SpriteRenderer renderer, float sx, float sy)
         {
-            float s = scale <= 0f ? 1f : scale;
+            if (sx <= 0f) sx = 1f;
+            if (sy <= 0f) sy = 1f;
             Transform t = renderer.transform;
-            if (t.localScale.x != s) t.localScale = new Vector3(s, s, 1f);
+            Vector3 s = t.localScale;
+            if (s.x != sx || s.y != sy) t.localScale = new Vector3(sx, sy, 1f);
         }
 
         private void FollowCamera(float heroX)

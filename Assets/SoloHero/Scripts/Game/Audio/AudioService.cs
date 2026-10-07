@@ -69,7 +69,23 @@ namespace SoloHero.Game.Audio
             if (source == null) return;
             source.clip = clip;
             source.volume = _bank.sfxVolume;
+            source.pitch = PitchFor(id);
             source.Play();
+        }
+
+        /// <summary>D-112: hits, crits, kills and hurt sounds vary a little in pitch so a stream of them never drones.</summary>
+        private static float PitchFor(SfxId id)
+        {
+            switch (id)
+            {
+                case SfxId.Hit:
+                case SfxId.Crit:
+                case SfxId.EnemyDeath:
+                case SfxId.HeroHurt:
+                    return Random.Range(0.92f, 1.08f);
+                default:
+                    return 1f;
+            }
         }
 
         /// <summary>Starts looping music. The same clip keeps playing instead of restarting.</summary>

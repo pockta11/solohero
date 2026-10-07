@@ -226,6 +226,7 @@ namespace SoloHero.Editor
             heroSo.FindProperty("_art").objectReferenceValue = heroArt;
             heroSo.FindProperty("_scale").floatValue = 6f;
             heroSo.ApplyModifiedPropertiesWithoutUndo();
+            PixelOutline(hero.GetComponent<Image>(), 6f);
             CharacterArt slimeArt = AssetDatabase.LoadAssetAtPath<CharacterArt>(PetSlimePath);
             RectTransform pet = Box("Pet", root, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-170f, 650f), new Vector2(48f, 48f));
             Plain(pet, slimeArt != null && slimeArt.idle.Length > 0 ? slimeArt.idle[0] : null).preserveAspect = false;
@@ -234,6 +235,7 @@ namespace SoloHero.Editor
             petSo.FindProperty("_art").objectReferenceValue = slimeArt;
             petSo.FindProperty("_scale").floatValue = 5f;
             petSo.ApplyModifiedPropertiesWithoutUndo();
+            PixelOutline(pet.GetComponent<Image>(), 5f);
 
             RectTransform logo = Box("Logo", root, new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -430f), new Vector2(805f, 268f));
             Plain(logo, UiSkin.Hd("hd_logo"));
@@ -1038,6 +1040,7 @@ namespace SoloHero.Editor
             SetArray(flipSo, "_jobs", JobArts());
             flipSo.FindProperty("_scale").floatValue = 5f;
             flipSo.ApplyModifiedPropertiesWithoutUndo();
+            PixelOutline(heroRect.GetComponent<Image>(), 5f);
             Button poke = stage.gameObject.AddComponent<Button>();
             poke.transition = Selectable.Transition.None;
             poke.targetGraphic = stage.GetComponent<Image>();
@@ -2206,6 +2209,20 @@ namespace SoloHero.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        /// <summary>
+        /// D-112: the battle's dark sticker outline for a UI character (uGUI Outline copies the sprite one texel each
+        /// way in the outline colour); <paramref name="texel"/> is the flipbook's scale, one sprite pixel in canvas units.
+        /// </summary>
+        private static void PixelOutline(Image image, float texel)
+        {
+            if (image == null) return;
+            Outline outline = image.GetComponent<Outline>();
+            if (outline == null) outline = image.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.1f, 0.08f, 0.19f, 1f);
+            outline.effectDistance = new Vector2(texel, -texel);
+            outline.useGraphicAlpha = true;
+        }
+
         private static Transform FindDeep(Transform parent, string name)
         {
             if (parent == null) return null;
@@ -2327,6 +2344,7 @@ namespace SoloHero.Editor
             SetArray(faceSo, "_jobs", JobArts());
             faceSo.FindProperty("_scale").floatValue = 4f;
             faceSo.ApplyModifiedPropertiesWithoutUndo();
+            PixelOutline(face.GetComponent<Image>(), 4f);
             Plain(Box("Ring", bar, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(12f, -8f), new Vector2(112f, 112f)), UiSkin.AvatarRing);
             RectTransform lvBadge = Box("LevelBadge", bar, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(68f, -116f), new Vector2(100f, 40f));
             UiSkin.Sliced(Plain(lvBadge, null), UiSkin.LevelBadge);

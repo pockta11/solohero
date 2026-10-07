@@ -23,6 +23,7 @@ namespace SoloHero.Game.Combat
     /// information. Skills (D-078): a grade-coloured cast ring and name over the hero, the skill's own clip where its
     /// VfxAt says, a sound per family, shake growing with grade and a screen flash for Epic / Legendary.
     /// D-096: hit-stop on crits, kills and Epic+ skills, a bigger sword wave on the basic skill.
+    /// D-112: pixel shards burst from every hit (more and gold on crits) and a coloured spray from every kill.
     /// </summary>
     public sealed class CombatFx : MonoBehaviour
     {
@@ -47,6 +48,12 @@ namespace SoloHero.Game.Combat
         private static readonly Color LevelTint = new Color(0.55f, 1f, 0.6f, 1f);
         private static readonly Color ComboTint = new Color(0.86f, 0.55f, 1f, 1f);
         private const float ComboFxGap = 0.2f;
+        // Warm, saturated shards read on both the bright meadow and the dark dusk chapters (white vanished on snow).
+        private const float ShardSize = 0.14f;
+        private static readonly Color HitShard = new Color(1f, 0.88f, 0.4f, 1f);
+        private static readonly Color CritShard = new Color(1f, 0.55f, 0.12f, 1f);
+        private static readonly Color KillShardA = new Color(1f, 0.62f, 0.2f, 1f);
+        private static readonly Color KillShardB = new Color(1f, 0.95f, 0.55f, 1f);
         private float _lastComboFx = -1f;
 
         [SerializeField] private CombatSession _session;
@@ -58,6 +65,7 @@ namespace SoloHero.Game.Combat
         [SerializeField] private ToastQueue _toast;
         [SerializeField] private ScreenFlash _flash;
         [SerializeField] private DamageTextPool _labels;
+        [SerializeField] private HitParticles _particles;
 
         private AudioService _audio;
         private SettingsService _settings;
@@ -178,7 +186,12 @@ namespace SoloHero.Game.Combat
 
             if (kind == HitKind.Dot || kind == HitKind.Skill)
             {
-                if (kind == HitKind.Skill && !LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 2f, Color.white, EffectY + DepthLanes.For(target));
+                if (kind == HitKind.Skill && !LowEffect)
+                {
+                    PlayVfx(_set != null ? _set.spark : null, (float)target.X, 2f, Color.white, EffectY + DepthLanes.For(target));
+                    Shards(target, 2, HitShard, 3f);
+                }
+
                 return;
             }
 
@@ -186,6 +199,7 @@ namespace SoloHero.Game.Combat
             Play(crit ? SfxId.Crit : SfxId.Hit);
             if (crit) HitStop.Trigger(CritStop);
             if (LowEffect) return;
+            Shards(target, crit ? 8 : 4, crit ? CritShard : HitShard, crit ? 4.8f : 3.4f);
             // D-108: the slash sheet is 56 px (was 32); 1.0 / 1.6 keeps the old reach with a thicker swing.
             PlayVfx(_set != null ? _set.slash : null, (float)target.X, crit ? 1.6f : 1.0f, crit ? CritTint : Color.white, EffectY + DepthLanes.For(target));
             if (crit) Shake(CritShake, CritShakeSeconds);
@@ -261,7 +275,21 @@ namespace SoloHero.Game.Combat
             // Looks without a death clip vanish into a puff; the others get a small puff over their own clip.
             float scale = boss ? 2f : hasDeathClip ? 0.6f : 1f;
             PlayVfx(_set.boom, position.x, scale, Color.white, 0.2f + position.y);
+            if (_particles != null)
+            {
+                Vector3 at = new Vector3(position.x, position.y + 0.5f, 0f);
+                _particles.Burst(at, boss ? 18 : 7, KillShardA, boss ? 6f : 4.4f, ShardSize, 80f);
+                _particles.Burst(at, boss ? 10 : 4, KillShardB, boss ? 5f : 3.6f, ShardSize * 0.8f, 80f);
+            }
+
             if (boss) Shake(BossShake, 0.4f);
+        }
+
+        /// <summary>D-112: a few pixel shards thrown up from a struck enemy (none in low-effect mode).</summary>
+        private void Shards(EnemyBrain target, int count, Color color, float speed)
+        {
+            if (_particles == null || LowEffect || target == null) return;
+            _particles.Burst(new Vector3((float)target.X, EffectY + DepthLanes.For(target), 0f), count, color, speed, ShardSize);
         }
 
         private void OnHeroHurt() => Play(SfxId.HeroHurt);
