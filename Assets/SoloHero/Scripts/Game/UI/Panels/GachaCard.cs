@@ -30,12 +30,13 @@ namespace SoloHero.Game.UI.Panels
             Rect.localScale = Vector3.one;
         }
 
-        public void ShowFace(Color gradeColor, string grade, string slot, string note, Sprite icon)
+        public void ShowFace(Color gradeColor, string grade, string slot, string note, Sprite icon, float iconScale = 1f)
         {
             if (_icon != null)
             {
                 _icon.sprite = icon;
                 _icon.enabled = icon != null;
+                _icon.rectTransform.localScale = Vector3.one * iconScale;
             }
 
             _image.sprite = _face;

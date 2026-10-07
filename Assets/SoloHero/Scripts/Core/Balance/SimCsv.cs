@@ -50,7 +50,7 @@ namespace SoloHero.Core.Balance
         public static string Days(SimReport r)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("day,highest,label,hero_level,play_min,earned,earned_stage,earned_offline,earned_refund,earned_booster,spent,spent_upgrade,spent_gacha,spent_skill,gold_pulls,gem_pulls,normal_attempts,normal_fails,boss_attempts,boss_fails,gold_end,gem_end");
+            sb.AppendLine("day,highest,label,hero_level,play_min,earned,earned_stage,earned_offline,earned_refund,earned_booster,spent,spent_upgrade,spent_gacha,spent_skill,spent_pet,gold_pulls,gem_pulls,normal_attempts,normal_fails,boss_attempts,boss_fails,gold_end,gem_end");
             for (int i = 0; i < r.Days.Count; i++)
             {
                 SimDayRow d = r.Days[i];
@@ -68,6 +68,7 @@ namespace SoloHero.Core.Balance
                     .Append(N(d.SpentUpgrade)).Append(',')
                     .Append(N(d.SpentGacha)).Append(',')
                     .Append(N(d.SpentSkill)).Append(',')
+                    .Append(N(d.SpentPet)).Append(',')
                     .Append(d.GoldPulls).Append(',')
                     .Append(d.GemPulls).Append(',')
                     .Append(d.NormalAttempts).Append(',')

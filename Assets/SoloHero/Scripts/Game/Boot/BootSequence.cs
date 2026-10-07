@@ -125,7 +125,9 @@ namespace SoloHero.Game.Boot
         {
             Services.Register(new UpgradeService(_data, balance, requester));
             Services.Register(new SoloHero.Core.Jobs.JobService(_data, balance, requester));
-            Services.Register(new SoloHero.Core.Companions.CompanionService(_data, balance, requester));
+            // D-114: an older save gets the pets its cleared stages had unlocked (the D-102 companions).
+            SoloHero.Core.Pets.PetService.EnsureOwned(_data);
+            Services.Register(new SoloHero.Core.Pets.PetService(_data, balance, requester));
             var skills = new SkillService(_data, balance, requester);
             Services.Register(skills);
             // D-107: saves that advanced before the line-only rule get their line's commons and a usable loadout.
@@ -139,6 +141,7 @@ namespace SoloHero.Game.Boot
                 GachaCatalog.Standard(balance));
             Services.Register(gacha);
             Services.Register(new SkillSummonService(balance, GachaTableValues.FromBalance(balance), Services.Get<IRandom>()));
+            Services.Register(new SoloHero.Core.Pets.PetSummonService(balance, GearTableValues.FromBalance(balance), Services.Get<IRandom>()));
             Services.Register(new TutorialService(balance, gacha, requester));
             Services.Register(new SoloHero.Core.Progression.GuideQuestService(balance, _data, requester));
         }

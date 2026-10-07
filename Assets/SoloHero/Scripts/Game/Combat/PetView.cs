@@ -1,5 +1,5 @@
 using SoloHero.Core.Combat;
-using SoloHero.Core.Companions;
+using SoloHero.Core.Pets;
 using SoloHero.Core.Stage;
 using SoloHero.Game.Pooling;
 using SoloHero.Game.View;
@@ -8,11 +8,11 @@ using UnityEngine;
 namespace SoloHero.Game.Combat
 {
     /// <summary>
-    /// D-102: draws the equipped companion floating behind the hero's shoulder with a gentle bob, plays its attack
+    /// D-102 / D-114: draws the equipped pet floating behind the hero's shoulder with a gentle bob, plays its attack
     /// clip and the def's VFX on the target when it strikes. View only - Core decides when and whom it hits.
     /// </summary>
     [DefaultExecutionOrder(50)]
-    public sealed class CompanionView : MonoBehaviour
+    public sealed class PetView : MonoBehaviour
     {
         private const float BehindHero = 0.85f;
         private const float FloatY = 0.35f;
@@ -24,12 +24,12 @@ namespace SoloHero.Game.Combat
         [SerializeField] private VfxPool _vfx;
         [SerializeField] private VfxSet _set;
 
-        [Tooltip("Index-aligned with CompanionCatalog.")]
+        [Tooltip("Index-aligned with PetCatalog.")]
         [SerializeField] private CharacterArt[] _arts = new CharacterArt[0];
 
         private SpriteFlipbook _book;
         private StageRunner _hooked;
-        private CompanionDef _shown;
+        private PetDef _shown;
         private bool _attackPending;
 
         private void Awake()
@@ -43,14 +43,14 @@ namespace SoloHero.Game.Combat
 
         private void Unhook()
         {
-            if (_hooked != null) _hooked.Companion.Attacked -= OnAttacked;
+            if (_hooked != null) _hooked.Pet.Attacked -= OnAttacked;
             _hooked = null;
         }
 
         private void OnAttacked(EnemyBrain target, double damage)
         {
             _attackPending = true;
-            CompanionDef def = _hooked != null ? _hooked.Companion.Def : null;
+            PetDef def = _hooked != null ? _hooked.Pet.Def : null;
             if (def == null || _vfx == null || _set == null) return;
             Color tint = new Color(((def.Tint >> 16) & 0xFF) / 255f, ((def.Tint >> 8) & 0xFF) / 255f, (def.Tint & 0xFF) / 255f, 1f);
             VfxClip clip = _set.Find(def.Vfx);
@@ -66,11 +66,11 @@ namespace SoloHero.Game.Combat
             {
                 Unhook();
                 _hooked = runner;
-                if (runner != null) runner.Companion.Attacked += OnAttacked;
+                if (runner != null) runner.Pet.Attacked += OnAttacked;
             }
 
-            CompanionDef def = runner != null ? runner.Companion.Def : null;
-            int index = def != null ? CompanionCatalog.IndexOf(def.Id) : -1;
+            PetDef def = runner != null ? runner.Pet.Def : null;
+            int index = def != null ? PetCatalog.IndexOf(def.Id) : -1;
             CharacterArt art = index >= 0 && index < _arts.Length ? _arts[index] : null;
             bool show = art != null && runner.Hero.State != HeroState.Dead;
             if (_renderer == null) return;

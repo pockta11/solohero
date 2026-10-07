@@ -17,7 +17,7 @@ sys.path.insert(0, HERE)
 from charkit import hexc
 from pixelize import ART, Entity
 
-ENTITIES = ["knight", "knight1", "knight2", "knight4", "jobmage", "jobpyro", "jobcryo", "jobarcher", "jobranger", "jobsniper", "petslime", "petwisp", "petowl", "petdragon", "goblin", "goblinr", "skeleton", "skeletonv", "mushroom", "mushroomb", "flyeye", "flyeyer",
+ENTITIES = ["knight", "knight1", "knight2", "knight4", "jobmage", "jobpyro", "jobcryo", "jobarcher", "jobranger", "jobsniper", "petslime", "petwisp", "petowl", "petdragon", "petchick", "petbunny", "petfrog", "petbat", "petpiglet", "petfox", "petpenguin", "petcat", "petturtle", "petphoenix", "petgumiho", "petazure", "goblin", "goblinr", "skeleton", "skeletonv", "mushroom", "mushroomb", "flyeye", "flyeyer",
             "ronin", "necro", "ranger", "shadowmage", "firemage", "golem"]
 
 
@@ -59,7 +59,10 @@ def main():
         rows = []
         for entity in entities:
             s = results[entity]
-            pick = [s["idle"][0], s["attack"][min(2, len(s["attack"]) - 1)], s["hit"][0], s["dead"][-1]]
+            # Pets have only idle and attack clips.
+            pick = [s["idle"][0], s["attack"][min(2, len(s["attack"]) - 1)]]
+            pick += [s["hit"][0]] if "hit" in s else []
+            pick += [s["dead"][-1]] if "dead" in s else []
             if "run" in s:
                 pick.insert(1, s["run"][2])
             rows.append(pick)

@@ -97,6 +97,16 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void Table_HasEveryPetName()
+        {
+            Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));
+            foreach (SoloHero.Core.Pets.PetDef def in SoloHero.Core.Pets.PetCatalog.All)
+                Assert.IsTrue(table.ContainsKey(def.NameKey), def.NameKey);
+            foreach (string key in new[] { "guide.pet_pull", "gacha.mode_pet", "gacha.rates_pity_pet", "gacha.pet_locked", "rail.pet" })
+                Assert.IsTrue(table.ContainsKey(key), key);
+        }
+
+        [Test]
         public void Table_HasEveryJobTextAndUltimate()
         {
             Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));

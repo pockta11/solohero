@@ -4,6 +4,7 @@ using SoloHero.Core.Config;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Pets;
 using SoloHero.Core.Save;
 using SoloHero.Core.Skills;
 using SoloHero.Core.Talents;
@@ -12,8 +13,8 @@ namespace SoloHero.Core.Balance
 {
     /// <summary>
     /// Greedy player model: every option (4 upgrade lanes, a level-up for each owned skill, one equipment pull, one
-    /// skill summon) is scored by expected gain in 2 ln(DPS) + ln(EHP) per gold, and the best one is bought when
-    /// affordable. When the best option is not affordable the player saves for it instead of buying a worse one.
+    /// skill summon, D-114: one pet summon and a level for the equipped pet) is scored by expected gain in
+    /// 2 ln(DPS) + ln(EHP) per gold, and the best one is bought when affordable. When the best option is not affordable the player saves for it instead of buying a worse one.
     /// After a skill summon the player auto-equips the strongest skills (the panel's auto-equip button).
     /// Talent points (D-087) are spent as soon as they arrive, following <see cref="TalentPlan"/>.
     /// </summary>
@@ -29,6 +30,8 @@ namespace SoloHero.Core.Balance
         private readonly SaveDataV2 _save;
         private readonly GachaService _gacha;
         private readonly SkillSummonService _summon;
+        private readonly PetSummonService _petSummon;
+        private readonly PetService _pets;
         private readonly GachaTableValues _table;
         private readonly GearTableValues _gearTable;
         private readonly UpgradeService _upgrades;
@@ -43,12 +46,15 @@ namespace SoloHero.Core.Balance
             "last_stand", "venom", "overload"
         };
 
-        public SimSpender(BalanceValues balance, SaveDataV2 save, GachaService gacha, SkillSummonService summon)
+        public SimSpender(BalanceValues balance, SaveDataV2 save, GachaService gacha, SkillSummonService summon,
+            PetSummonService petSummon)
         {
             _b = balance ?? throw new ArgumentNullException(nameof(balance));
             _save = save ?? throw new ArgumentNullException(nameof(save));
             _gacha = gacha ?? throw new ArgumentNullException(nameof(gacha));
             _summon = summon ?? throw new ArgumentNullException(nameof(summon));
+            _petSummon = petSummon ?? throw new ArgumentNullException(nameof(petSummon));
+            _pets = new PetService(save, balance);
             _table = GachaTableValues.FromBalance(balance);
             _gearTable = GearTableValues.FromBalance(balance);
             _upgrades = new UpgradeService(save, balance);
@@ -62,6 +68,10 @@ namespace SoloHero.Core.Balance
         /// <summary>Skill level-ups and skill summons.</summary>
         public double SpentSkill { get; private set; }
         public double EarnedRefund { get; private set; }
+
+        /// <summary>D-114: pet summons and pet level-ups.</summary>
+        public double SpentPet { get; private set; }
+        public int PetPulls { get; private set; }
         public int GoldPulls { get; private set; }
         public int GemPulls { get; private set; }
         public int SkillPulls { get; private set; }
@@ -73,7 +83,7 @@ namespace SoloHero.Core.Balance
 
         public event Action<GearGrade> GradeObtained;
 
-        private enum Kind { None, Lane, Skill, Pull, SkillPull }
+        private enum Kind { None, Lane, Skill, Pull, SkillPull, PetPull, PetLevel }
 
         /// <summary>Spends until the best option is unaffordable. Returns true when anything was bought.</summary>
         public bool Spend(int frontierG, int maxPurchases, double affordableShare = 1d)
@@ -159,6 +169,22 @@ namespace SoloHero.Core.Balance
 
                 Consider(Kind.Pull, -1, null, ExpectedPullRatio(now, baseScore, enemyAtk), _b.GACHA_COST_SINGLE);
                 Consider(Kind.SkillPull, -1, null, ExpectedSkillPullRatio(now, baseScore, enemyAtk), _b.SKILL_SUMMON_COST_SINGLE);
+                Consider(Kind.PetPull, -1, null, ExpectedPetPullRatio(now, baseScore, enemyAtk), _b.PET_SUMMON_COST_SINGLE);
+
+                // D-114: a gold level raises a pet's owned effect, and the equipped pet's attack as well.
+                int equippedPet = _pets.EquippedIndex;
+                for (int pet = 0; pet < PetCatalog.Count; pet++)
+                {
+                    if (!_pets.IsOwned(pet) || _pets.IsMax(pet)) continue;
+                    int level = _pets.Level(pet);
+                    int enhance = _pets.Enhance(pet);
+                    GearGrade grade = PetCatalog.All[pet].Grade;
+                    double cost = _pets.LevelCost(pet);
+                    Snapshot next = now;
+                    next.PetOwned += (PetService.OwnedAtkPercent(_b, grade, enhance, level + 1) - PetService.OwnedAtkPercent(_b, grade, enhance, level)) / 100d;
+                    if (pet == equippedPet) next.PetRate = PetRate(_b, pet, level + 1, enhance);
+                    Consider(Kind.PetLevel, pet, null, (Score(next, enemyAtk) - baseScore) / cost, cost);
+                }
 
                 if (bestKind != Kind.None && _save.gold < bestCost && cheapKind != Kind.None
                     && cheapRatio >= bestRatio * affordableShare)
@@ -188,6 +214,13 @@ namespace SoloHero.Core.Balance
                         break;
                     case Kind.SkillPull:
                         if (!SummonSkill()) return bought;
+                        break;
+                    case Kind.PetPull:
+                        if (!SummonPet()) return bought;
+                        break;
+                    case Kind.PetLevel:
+                        if (!_pets.TryLevelUp(bestIndex).Ok) return bought;
+                        SpentPet += bestCost;
                         break;
                 }
 
@@ -240,13 +273,13 @@ namespace SoloHero.Core.Balance
             HeroStats st = StatAggregator.Compute(
                 _b, s.HeroLevel, s.UpgHp, s.UpgAtk, s.UpgDef, s.UpgSpd,
                 eq.AtkMult, eq.HpMult, eq.HelmMult, eq.BootsSpeedBonus, eq.BootsCritBonus,
-                default, s.Skill.OwnedAtk + eq.OwnedAtk);
+                default, s.Skill.OwnedAtk + eq.OwnedAtk + s.PetOwned);
 
             double crit = Math.Min(1d, (st.CritRate + s.Skill.CritBuff) / 100d);
             double critMult = _b.CRIT_MULT + eq.RingCritDamage;
             double hitsPerSecond = st.AtkSpd * (1d + s.Skill.SpdBuff) * (1d + crit * (critMult - 1d));
-            double dps = st.Atk * (hitsPerSecond + s.Skill.HastedMult * (1d + eq.EarringSkillDamage)) * (1d + s.Skill.AtkBuff)
-                * (1d + s.Skill.Mark);
+            double dps = st.Atk * (hitsPerSecond + s.Skill.HastedMult * (1d + eq.EarringSkillDamage) + s.PetRate)
+                * (1d + s.Skill.AtkBuff) * (1d + s.Skill.Mark);
             double defRef = _b.DEF_REF_MULT * enemyAtk;
             double guard = Math.Min(0.9d, s.Skill.Guard);
             double ehp = st.Hp * (defRef + st.Def) / defRef / (1d - guard);
@@ -305,6 +338,72 @@ namespace SoloHero.Core.Balance
             for (int i = 0; i < r.Items.Length; i++) EarnedRefund += r.Items[i].RefundGold;
             _skills.AutoEquip();
             return true;
+        }
+
+        /// <summary>D-114: a pet summon, ten when affordable; a new pet that outranks the equipped one is equipped by the service.</summary>
+        private bool SummonPet()
+        {
+            bool ten = _save.gold >= _b.PET_SUMMON_COST_TEN;
+            PetSummonResult r = ten ? _petSummon.TryPullTen(_save) : _petSummon.TryPull(_save);
+            if (!r.Status.Ok) return false;
+            SpentPet += ten ? _b.PET_SUMMON_COST_TEN : _b.PET_SUMMON_COST_SINGLE;
+            PetPulls += r.Items.Length;
+            for (int i = 0; i < r.Items.Length; i++) EarnedRefund += r.Items[i].RefundGold;
+            return true;
+        }
+
+        /// <summary>Damage per second of a pet in hero ATK multiples at a level and enhance.</summary>
+        private static double PetRate(BalanceValues b, int index, int level, int enhance) =>
+            index < 0 ? 0d : PetCatalog.All[index].DamagePerSecond * Formulas.PetLevelScale(b, level) * Formulas.PetEnhanceMult(b, enhance);
+
+        /// <summary>
+        /// D-114: expected score gain of one pet summon per net gold. A new pet adds its owned effect and is equipped
+        /// (at its level) when it outranks the equipped one; a duplicate enhances it; a maxed one refunds.
+        /// </summary>
+        private double ExpectedPetPullRatio(Snapshot now, double baseScore, double enemyAtk)
+        {
+            if (!PetSummonService.IsUnlocked(_b, _save)) return 0d;
+            bool pityNext = _save.petPityCount + 1 >= _gearTable.PityCeiling;
+            int equipped = _pets.EquippedIndex;
+            PetDef equippedDef = equipped >= 0 ? PetCatalog.All[equipped] : null;
+            double gain = 0d;
+            double refund = 0d;
+            for (int g = 0; g < GearGrades.Count; g++)
+            {
+                var grade = (GearGrade)g;
+                PetDef[] pool = PetCatalog.OfGrade(grade);
+                if (pool.Length == 0) continue;
+                double p = GearProbability(grade, pityNext) / pool.Length;
+                if (p <= 0d) continue;
+                for (int i = 0; i < pool.Length; i++)
+                {
+                    int index = PetCatalog.IndexOf(pool[i].Id);
+                    Snapshot next = now;
+                    if (_pets.IsOwned(index))
+                    {
+                        int enhance = _pets.Enhance(index);
+                        if (enhance >= _b.PET_MAX_ENHANCE)
+                        {
+                            refund += p * Formulas.PetRefund(_b, grade);
+                            continue;
+                        }
+
+                        int level = _pets.Level(index);
+                        next.PetOwned += (PetService.OwnedAtkPercent(_b, grade, enhance + 1, level) - PetService.OwnedAtkPercent(_b, grade, enhance, level)) / 100d;
+                        if (index == equipped) next.PetRate = PetRate(_b, index, level, enhance + 1);
+                        gain += p * (Score(next, enemyAtk) - baseScore);
+                        continue;
+                    }
+
+                    next.PetOwned += PetService.OwnedAtkPercent(_b, grade, 0, _pets.Level(index)) / 100d;
+                    if (equippedDef == null || grade > equippedDef.Grade) next.PetRate = PetRate(_b, index, _pets.Level(index), 0);
+                    gain += p * (Score(next, enemyAtk) - baseScore);
+                }
+            }
+
+            double net = _b.PET_SUMMON_COST_SINGLE - refund;
+            if (net <= 0d) net = 1d;
+            return gain / net;
         }
 
         private void Collect(GachaBatchResult r)
@@ -434,6 +533,10 @@ namespace SoloHero.Core.Balance
             /// <summary>D-109 gear owned bonus as an ATK fraction.</summary>
             public double OwnedAtk;
 
+            /// <summary>D-114: the equipped pet's damage per second (hero ATK multiples) and the pet owned bonus (ATK fraction).</summary>
+            public double PetRate;
+            public double PetOwned;
+
             public static Snapshot From(BalanceValues b, SaveDataV2 d)
             {
                 var grades = new int[GachaCatalog.SlotCount];
@@ -455,8 +558,17 @@ namespace SoloHero.Core.Balance
                     Skill = SimSkillModel.Compute(b, d),
                     Grades = grades,
                     Levels = levels,
-                    OwnedAtk = EquipmentBonus.OwnedAtkBonus(b, d)
+                    OwnedAtk = EquipmentBonus.OwnedAtkBonus(b, d),
+                    PetRate = EquippedPetRate(b, d),
+                    PetOwned = PetService.OwnedAtkBonus(b, d)
                 };
+            }
+
+            private static double EquippedPetRate(BalanceValues b, SaveDataV2 d)
+            {
+                int index = PetCatalog.IndexOf(d.companionEquipped);
+                if (!PetService.IsOwned(d, index)) return 0d;
+                return PetRate(b, index, PetService.Level(d, index), PetService.Enhance(d, index));
             }
 
             public void AddLane(UpgradeLane lane)

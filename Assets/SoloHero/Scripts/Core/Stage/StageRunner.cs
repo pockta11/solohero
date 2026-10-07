@@ -16,7 +16,7 @@ namespace SoloHero.Core.Stage
         private readonly CombatWorld _world;
         private readonly SpawnScheduler _spawner;
         private readonly SkillAutoCaster _skills;
-        private readonly CompanionCaster _companion;
+        private readonly PetCaster _pet;
         private readonly HeroBrain _hero;
         private HeroStats _stats;
 
@@ -52,7 +52,7 @@ namespace SoloHero.Core.Stage
             _world = new CombatWorld(_balance);
             _spawner = new SpawnScheduler(_balance);
             _skills = new SkillAutoCaster(_balance);
-            _companion = new CompanionCaster(_balance);
+            _pet = new PetCaster(_balance);
             _hero = new HeroBrain(_balance, random, stats);
             _world.BindHero(_hero);
         }
@@ -72,7 +72,7 @@ namespace SoloHero.Core.Stage
         public HeroBrain Hero => _hero;
         public CombatWorld World => _world;
         public SkillAutoCaster Skills => _skills;
-        public CompanionCaster Companion => _companion;
+        public PetCaster Pet => _pet;
 
         public event Action<StageState> StateChanged;
         public event Action<int> StageCleared;
@@ -117,7 +117,7 @@ namespace SoloHero.Core.Stage
             _world.ClearAll();
             _spawner.Reset(int.MaxValue, false);
             _skills.ResetCooldowns();
-            _companion.Reset();
+            _pet.Reset();
             _hero.Reset(_stats);
             _dungeon = kind;
             // No StageStarted: a dungeon run is not a stage attempt (telemetry counts those).
@@ -142,7 +142,7 @@ namespace SoloHero.Core.Stage
             _world.ClearAll();
             _spawner.Reset(_killTarget, _isBoss);
             _skills.ResetCooldowns();
-            _companion.Reset();
+            _pet.Reset();
             _hero.Reset(_stats);
 
             if (_isBoss)
@@ -274,7 +274,7 @@ namespace SoloHero.Core.Stage
             _world.TickEnemies(dt);
             bool bossFight = State == StageState.BossTimer;
             _skills.Tick(dt, _hero, _world, bossFight);
-            _companion.Tick(dt, _hero, _world);
+            _pet.Tick(dt, _hero, _world);
             _hero.SetSkillBuffs(_skills.BuffAtk, _skills.BuffAtkSpd, _skills.BuffCrit, _skills.BuffGuard);
             _hero.Tick(dt, _world);
 
@@ -329,7 +329,7 @@ namespace SoloHero.Core.Stage
             TickSpawns(dt);
             _world.TickEnemies(dt);
             _skills.Tick(dt, _hero, _world, false);
-            _companion.Tick(dt, _hero, _world);
+            _pet.Tick(dt, _hero, _world);
             _hero.SetSkillBuffs(_skills.BuffAtk, _skills.BuffAtkSpd, _skills.BuffCrit, _skills.BuffGuard);
             _hero.Tick(dt, _world);
 

@@ -13,7 +13,7 @@ namespace SoloHero.Core.Combat
         /// <summary>A skill hit that landed a combo (D-098: shatter on a stunned enemy, ignite on a burning one).</summary>
         Combo = 4,
 
-        /// <summary>D-102: the equipped companion's attack.</summary>
-        Companion = 5
+        /// <summary>D-102 / D-114: the equipped pet's attack.</summary>
+        Pet = 5
     }
 }

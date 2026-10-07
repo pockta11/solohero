@@ -26,7 +26,10 @@ namespace SoloHero.Core.Progression
         Talents = 7,
 
         /// <summary>Different gear items owned.</summary>
-        OwnedGear = 8
+        OwnedGear = 8,
+
+        /// <summary>D-114 pet summons made.</summary>
+        PetPulls = 9
     }
 
     public sealed class GuideQuestDef
@@ -60,6 +63,7 @@ namespace SoloHero.Core.Progression
             Q(GuideKind.HeroLevel, 5, gems: 20),
             Q(GuideKind.EquipSkills, 2, gems: 20),
             Q(GuideKind.ClearStage, 10, gems: 50),
+            Q(GuideKind.PetPulls, 3, gems: 30),
             Q(GuideKind.UpgradeTotal, 15, goldStages: 10),
             Q(GuideKind.HeroLevel, 10, gems: 30),
             Q(GuideKind.JobTier, 1, gems: 50),
@@ -72,6 +76,7 @@ namespace SoloHero.Core.Progression
             Q(GuideKind.UpgradeTotal, 40, goldStages: 15),
             Q(GuideKind.HeroLevel, 20, gems: 30),
             Q(GuideKind.GearPulls, 60, gems: 50),
+            Q(GuideKind.PetPulls, 30, gems: 50),
             Q(GuideKind.ClearStage, 25, goldStages: 15),
             Q(GuideKind.EquipSkills, 5, gems: 30),
             Q(GuideKind.ClearStage, 30, gems: 80),

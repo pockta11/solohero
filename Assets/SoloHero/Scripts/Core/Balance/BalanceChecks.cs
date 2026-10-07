@@ -70,6 +70,7 @@ namespace SoloHero.Core.Balance
             list.Add(GachaShare(r));
             list.Add(OfflineShare(r, b));
             list.Add(GachaPace(r));
+            list.Add(PetPace(r));
             list.Add(FirstWall(r));
             list.Add(LongWall(r, b));
             list.Add(BossExtraFarm(r, b));
@@ -144,18 +145,19 @@ namespace SoloHero.Core.Balance
 
         private static SimCheck GachaShare(SimReport r)
         {
-            double upgrade = 0d, gacha = 0d, skill = 0d;
+            double upgrade = 0d, gacha = 0d, skill = 0d, pet = 0d;
             for (int i = 0; i < r.Days.Count; i++)
             {
                 upgrade += r.Days[i].SpentUpgrade;
                 gacha += r.Days[i].SpentGacha;
                 skill += r.Days[i].SpentSkill;
+                pet += r.Days[i].SpentPet;
             }
 
-            double total = upgrade + gacha + skill;
+            double total = upgrade + gacha + skill + pet;
             double share = total > 0d ? gacha / total : 0d;
             return Info("V-3b", "Gacha share of all gold spent (player taste; confirm with analytics)", "30% - 50% in live data",
-                Pct(share) + " (upgrade " + Pct(Safe(upgrade, total)) + ", skill " + Pct(Safe(skill, total)) + ")");
+                Pct(share) + " (upgrade " + Pct(Safe(upgrade, total)) + ", skill " + Pct(Safe(skill, total)) + ", pet " + Pct(Safe(pet, total)) + ")");
         }
 
         private static SimCheck OfflineShare(SimReport r, BalanceValues b)
@@ -180,6 +182,15 @@ namespace SoloHero.Core.Balance
             string perClaim = minutes.Count > 0 ? "; a 6 h claim = " + F1(Median(minutes)) + " online min" : "";
             return Make("V-4", "Offline share of all gold earned (online stays the main income)", "20% - 40%",
                 Pct(share) + perClaim, share >= OfflineShareMin && share <= OfflineShareMax);
+        }
+
+        /// <summary>D-114: how far the pet collection got by the end of the run.</summary>
+        private static SimCheck PetPace(SimReport r)
+        {
+            int pulls = 0;
+            for (int i = 0; i < r.Days.Count; i++) pulls += r.Days[i].PetPulls;
+            return Info("V-5b", "Pet pace: pets owned, equipped pet at the end", "reported",
+                r.PetsOwned + " owned after " + pulls + " pet pulls, equipped " + r.PetEquipped + " Lv " + r.PetLevel + " +" + r.PetEnhance);
         }
 
         private static SimCheck GachaPace(SimReport r)

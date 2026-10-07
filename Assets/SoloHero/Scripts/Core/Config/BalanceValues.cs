@@ -250,12 +250,43 @@ namespace SoloHero.Core.Config
         public int JOB_LV_2 = 30;
         public double JOB_STAT_MULT = 1.05;
 
-        /// <summary>D-102 companions: level cap, damage gain per level, level-up cost (base x grade mult^grade x growth^(level-1)).</summary>
-        public int COMPANION_MAX_LEVEL = 50;
-        public double COMPANION_LEVEL_GAIN = 1.1;
-        public double COMPANION_COST_BASE = 500;
-        public double COMPANION_COST_GRADE_MULT = 2;
-        public double COMPANION_COST_GROWTH = 1.15;
+        /// <summary>
+        /// D-102 / D-114 pets: level cap, damage gain per level, level-up cost (base x grade mult^grade x growth^(level-1));
+        /// the grade is the seven-step gear ladder.
+        /// </summary>
+        public int PET_MAX_LEVEL = 50;
+        public double PET_LEVEL_GAIN = 1.1;
+        public double PET_COST_BASE = 500;
+        public double PET_COST_GRADE_MULT = 1.6;
+        public double PET_COST_GROWTH = 1.15;
+
+        // D-114 pet summon: the gear rate table and pity ceiling (GEAR_RATE_*, GEAR_PITY) on its own counter. It opens
+        // once the first boss is beaten (highest cleared stage >= PET_UNLOCK_STAGE), so the first minutes stay on upgrades.
+        public int PET_UNLOCK_STAGE = 10;
+        public double PET_SUMMON_COST_SINGLE = 300;
+        public double PET_SUMMON_COST_TEN = 2700;
+        public int PET_SUMMON_COST_TEN_GEM = 200;
+
+        // A duplicate enhances the pet (+1, attack and owned effect x(1 + PET_ENHANCE_GAIN) each) up to PET_MAX_ENHANCE,
+        // then refunds PET_REFUND_{grade} gold. Every owned pet adds ATK +PET_OWNED_ATK_{grade}% x enhance
+        // x (1 + PET_LEVEL_OWNED_GAIN x (level - 1)): gold levels raise the owned effect too (genre).
+        public double PET_LEVEL_OWNED_GAIN = 0.1;
+        public double PET_ENHANCE_GAIN = 0.1;
+        public int PET_MAX_ENHANCE = 10;
+        public double PET_REFUND_C = 50;
+        public double PET_REFUND_U = 100;
+        public double PET_REFUND_R = 200;
+        public double PET_REFUND_E = 800;
+        public double PET_REFUND_L = 3000;
+        public double PET_REFUND_M = 12000;
+        public double PET_REFUND_A = 50000;
+        public double PET_OWNED_ATK_C = 2;
+        public double PET_OWNED_ATK_U = 3;
+        public double PET_OWNED_ATK_R = 5;
+        public double PET_OWNED_ATK_E = 8;
+        public double PET_OWNED_ATK_L = 15;
+        public double PET_OWNED_ATK_M = 30;
+        public double PET_OWNED_ATK_A = 60;
         public float SKILL_DOT_TICK = 0.5f;
         public int TALENT_POINTS_PER_LEVEL = 1;
         public int TALENT_TIER_STEP = 5;

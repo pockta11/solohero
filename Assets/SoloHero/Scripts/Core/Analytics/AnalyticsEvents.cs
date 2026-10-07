@@ -19,6 +19,9 @@ namespace SoloHero.Core.Analytics
         public const string Upgrade = "upgrade";
         public const string SkillLevel = "skill_level";
         public const string SkillSummon = "skill_summon";
+
+        /// <summary>D-114 pet summon; same params as gacha_pull.</summary>
+        public const string PetSummon = "pet_summon";
         public const string AdReward = "ad_reward";
         public const string AdFail = "ad_fail";
         public const string OfflineClaim = "offline_claim";

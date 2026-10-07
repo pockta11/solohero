@@ -53,6 +53,14 @@ namespace SoloHero.Game.UI.Common
             return true;
         }
 
+        /// <summary>D-114: shows another character (the pet panel's selected pet) and loops its idle clip.</summary>
+        public void SetArt(CharacterArt art)
+        {
+            if (art == null || (art == _art && art == _baseArt)) return;
+            _art = _baseArt = art;
+            PlayIdle();
+        }
+
         public void Poke()
         {
             if (_art == null || _art.attack == null || _art.attack.Length == 0 || _oneShot) return;

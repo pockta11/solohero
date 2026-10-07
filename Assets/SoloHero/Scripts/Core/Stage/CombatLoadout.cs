@@ -3,6 +3,7 @@ using SoloHero.Core.Config;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Jobs;
+using SoloHero.Core.Pets;
 using SoloHero.Core.Save;
 using SoloHero.Core.Skills;
 using SoloHero.Core.Talents;
@@ -12,7 +13,7 @@ namespace SoloHero.Core.Stage
     /// <summary>
     /// Pushes the saved growth state (level, upgrades, equipment, skill collection and slots, talents) into a running stage.
     /// D-109: gloves and necklace multiply with sword and armor; ring and earring ride the talent channel; the gear owned
-    /// bonus adds to the skill owned bonus.
+    /// bonus adds to the skill owned bonus, and so does the D-114 pet owned bonus. The equipped pet joins the fight.
     /// Call after boot and after every growth change so combat always uses the current loadout.
     /// </summary>
     public static class CombatLoadout
@@ -41,7 +42,7 @@ namespace SoloHero.Core.Stage
                 bonus.BootsSpeedBonus,
                 bonus.BootsCritBonus,
                 default,
-                SkillService.OwnedAtkBonus(balance, save) + bonus.OwnedAtk,
+                SkillService.OwnedAtkBonus(balance, save) + bonus.OwnedAtk + PetService.OwnedAtkBonus(balance, save),
                 Effects(balance, save, bonus),
                 JobService.TierOf(save));
         }
@@ -62,9 +63,8 @@ namespace SoloHero.Core.Stage
             if (runner == null) throw new ArgumentNullException(nameof(runner));
 
             runner.SetHeroStats(ComputeStats(balance, save));
-            int companion = SoloHero.Core.Companions.CompanionCatalog.IndexOf(save.companionEquipped);
-            runner.Companion.Set(companion >= 0 ? SoloHero.Core.Companions.CompanionCatalog.All[companion] : null,
-                SoloHero.Core.Companions.CompanionService.Level(save, companion));
+            int pet = PetCatalog.IndexOf(save.companionEquipped);
+            runner.Pet.Set(PetService.IsOwned(save, pet) ? PetCatalog.All[pet] : null, PetService.AttackScale(balance, save, pet));
             runner.SetTalents(Effects(balance, save));
             int slots = SkillService.SlotCount(balance);
             for (int slot = 0; slot < slots; slot++)

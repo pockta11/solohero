@@ -23,14 +23,37 @@ namespace SoloHero.Core
         /// <summary>D-104: HP / ATK / DEF multiplier of the job tier (0 beginner, 1 first job, 2 second job).</summary>
         public static double JobStatMult(BalanceValues c, int tier) => Math.Pow(c.JOB_STAT_MULT, tier < 0 ? 0 : tier);
 
-        /// <summary>D-102: gold for raising a companion of <paramref name="grade"/> from <paramref name="level"/>.</summary>
-        public static double CompanionLevelCost(BalanceValues c, Grade grade, int level) =>
-            Math.Floor(c.COMPANION_COST_BASE * Math.Pow(c.COMPANION_COST_GRADE_MULT, (int)grade)
-                * Math.Pow(c.COMPANION_COST_GROWTH, level < 1 ? 0 : level - 1));
+        /// <summary>D-102 / D-114: gold for raising a pet of <paramref name="grade"/> from <paramref name="level"/>.</summary>
+        public static double PetLevelCost(BalanceValues c, GearGrade grade, int level) =>
+            Math.Floor(c.PET_COST_BASE * Math.Pow(c.PET_COST_GRADE_MULT, (int)grade)
+                * Math.Pow(c.PET_COST_GROWTH, level < 1 ? 0 : level - 1));
 
-        /// <summary>D-102: companion damage multiplier at <paramref name="level"/>.</summary>
-        public static double CompanionLevelScale(BalanceValues c, int level) =>
-            Math.Pow(c.COMPANION_LEVEL_GAIN, level < 1 ? 0 : level - 1);
+        /// <summary>D-102: pet damage multiplier at <paramref name="level"/>.</summary>
+        public static double PetLevelScale(BalanceValues c, int level) =>
+            Math.Pow(c.PET_LEVEL_GAIN, level < 1 ? 0 : level - 1);
+
+        /// <summary>D-114: a pet's gold level raises its owned effect linearly (x(1 + gain x (level - 1))).</summary>
+        public static double PetLevelOwnedMult(BalanceValues c, int level) =>
+            1d + c.PET_LEVEL_OWNED_GAIN * (level < 1 ? 0 : level - 1);
+
+        /// <summary>D-114: duplicate enhance multiplier of a pet's attack and owned effect.</summary>
+        public static double PetEnhanceMult(BalanceValues c, int enhance) =>
+            Math.Pow(1d + c.PET_ENHANCE_GAIN, enhance < 0 ? 0 : enhance);
+
+        /// <summary>D-114: gold refunded for a duplicate of a pet already at PET_MAX_ENHANCE.</summary>
+        public static double PetRefund(BalanceValues c, GearGrade grade)
+        {
+            switch (grade)
+            {
+                case GearGrade.Common: return c.PET_REFUND_C;
+                case GearGrade.Uncommon: return c.PET_REFUND_U;
+                case GearGrade.Rare: return c.PET_REFUND_R;
+                case GearGrade.Epic: return c.PET_REFUND_E;
+                case GearGrade.Legendary: return c.PET_REFUND_L;
+                case GearGrade.Mythic: return c.PET_REFUND_M;
+                default: return c.PET_REFUND_A;
+            }
+        }
 
         /// <summary>D-100 gold dungeon: gold per kill at stage g.</summary>
         public static double DungeonGoldPerKill(BalanceValues c, int g) =>

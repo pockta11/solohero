@@ -81,8 +81,11 @@ namespace SoloHero.Core.Balance
                 var gacha = new GachaService(balance, GearTableValues.FromBalance(balance), gachaRng, GachaCatalog.Standard(balance));
                 IRandom skillRng = new SystemRandom(new Random(unchecked(settings.Seed * 104729 + 31)));
                 var summon = new SkillSummonService(balance, GachaTableValues.FromBalance(balance), skillRng);
+                IRandom petRng = new SystemRandom(new Random(unchecked(settings.Seed * 15485863 + 47)));
+                var pets = new SoloHero.Core.Pets.PetSummonService(balance, GearTableValues.FromBalance(balance), petRng);
                 SkillBook.EnsureStarters(_save, balance);
-                _spender = new SimSpender(balance, _save, gacha, summon)
+                SoloHero.Core.Pets.PetService.EnsureOwned(_save);
+                _spender = new SimSpender(balance, _save, gacha, summon, pets)
                 {
                     Job1 = settings.Job1, Job2 = settings.Job2, DpsWeight = settings.DpsWeight
                 };
@@ -108,6 +111,8 @@ namespace SoloHero.Core.Balance
                     double spentUpgrade0 = _spender.SpentUpgrade;
                     double spentGacha0 = _spender.SpentGacha;
                     double spentSkill0 = _spender.SpentSkill;
+                    double spentPet0 = _spender.SpentPet;
+                    int petPulls0 = _spender.PetPulls;
                     double refund0 = _spender.EarnedRefund;
                     int goldPulls0 = _spender.GoldPulls;
                     int gemPulls0 = _spender.GemPulls;
@@ -149,6 +154,8 @@ namespace SoloHero.Core.Balance
                     _day.SpentUpgrade = _spender.SpentUpgrade - spentUpgrade0;
                     _day.SpentGacha = _spender.SpentGacha - spentGacha0;
                     _day.SpentSkill = _spender.SpentSkill - spentSkill0;
+                    _day.SpentPet = _spender.SpentPet - spentPet0;
+                    _day.PetPulls = _spender.PetPulls - petPulls0;
                     _day.EarnedRefund = _spender.EarnedRefund - refund0;
                     _day.GoldPulls = _spender.GoldPulls - goldPulls0;
                     _day.GemPulls = _spender.GemPulls - gemPulls0;
@@ -162,6 +169,11 @@ namespace SoloHero.Core.Balance
                 _report.PullValueParity = Median(_spender.PullToUpgradeValue);
                 _report.TotalPlaySeconds = _play;
                 _report.FinalHighestStage = _save.highestStage;
+                int pet = SoloHero.Core.Pets.PetCatalog.IndexOf(_save.companionEquipped);
+                _report.PetsOwned = _save.petOwned.Count;
+                _report.PetEquipped = _save.companionEquipped;
+                _report.PetLevel = SoloHero.Core.Pets.PetService.Level(_save, pet);
+                _report.PetEnhance = SoloHero.Core.Pets.PetService.Enhance(_save, pet);
                 return _report;
             }
 
@@ -422,7 +434,7 @@ namespace SoloHero.Core.Balance
                     Pulls = _save.totalPullCount,
                     Gold = _save.gold,
                     EarnedTotal = _earnedTotal + _spender.EarnedRefund,
-                    SpentTotal = _spender.SpentUpgrade + _spender.SpentGacha + _spender.SpentSkill
+                    SpentTotal = _spender.SpentUpgrade + _spender.SpentGacha + _spender.SpentSkill + _spender.SpentPet
                 };
             }
 

@@ -14,12 +14,16 @@ namespace SoloHero.Game.UI.Panels
         public readonly string Note;
         public readonly Sprite Icon;
 
-        public RevealCard(GearGrade grade, string title, string note, Sprite icon)
+        /// <summary>D-114: pets are small creatures on a 48 px frame with wide margins, drawn larger than item icons.</summary>
+        public readonly float IconScale;
+
+        public RevealCard(GearGrade grade, string title, string note, Sprite icon, float iconScale = 1f)
         {
             Grade = grade;
             Title = title;
             Note = note;
             Icon = icon;
+            IconScale = iconScale;
         }
     }
 }

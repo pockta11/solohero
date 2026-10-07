@@ -218,6 +218,10 @@ gacha.pity	전설까지 {0}회   ({1}/{2})
 gacha.rate_item	{0} {1}%
 gacha.rates_pity_gear	{0}회째는 전설 확정 · 전설 이상을 얻으면 초기화
 gacha.rates_pity_skill	{0}회째는 전설 확정 · 전설을 얻으면 초기화
+gacha.rates_pity_pet	{0}회째는 전설 펫 확정 · 전설 이상을 얻으면 초기화
+gacha.pet_locked	{0} 보스를 처치하면 펫 소환이 열려요
+gacha.pet_new_equipped	NEW! 장착
+gacha.pet_summary	새 펫 {0} · 강화 {1} · 환급 {2}
 gacha.cost_single	1회  {0}
 gacha.cost_ten	10회  {0}
 gacha.cost_gem	10회  {0} 젬
@@ -261,6 +265,7 @@ stage.close	닫기
 # gem shop (E6-02)
 gacha.mode_gear	장비 소환
 gacha.mode_skill	스킬 소환
+gacha.mode_pet	펫 소환
 gacha.skill_new	NEW!
 gacha.skill_up	Lv {0}
 gacha.skill_summary	새 스킬 {0} · 레벨업 {1} · 환급 {2}
@@ -441,19 +446,40 @@ skill.desc.ult_arrow_rain	넓은 범위에 화살비 {0}% 피해 {1}회
 skill.name.ult_death_shot	데스 샷
 skill.desc.ult_death_shot	먼 적 하나에게 공격력의 {0}% 일격
 
-# Companions (D-102)
-rail.companion	동료
-companion.title	동료
-companion.row	{0}  Lv {1}
-companion.attack	공격력 {0}% · {1}초마다
-companion.unlock	{0} 보스 처치 시 합류
-companion.equip	장착
-companion.equipped	장착 중
-companion.close	닫기
-companion.name.slime	슬라임
-companion.name.wisp	정령
-companion.name.owl	부엉이
-companion.name.dragon	아기 용
+# Pets (D-114, the D-102 companions)
+rail.pet	펫
+pet.title	펫
+pet.row	{0}  Lv {1}
+pet.cell	Lv {0}
+pet.tag	장착
+pet.attack	공격력 {0}% · {1}초마다
+pet.effect_burn	화상
+pet.effect_poison	중독
+pet.effect_stun	기절
+pet.with_effect	{0} · {1}
+pet.owned_effect	보유 효과 공격력 +{0}%
+pet.unowned	펫 소환으로 얻을 수 있어요
+pet.equip	장착
+pet.equipped	장착 중
+pet.level_up	레벨업
+pet.summary	보유 효과 공격력 +{0}%   ·   보유 {1}/{2}
+pet.summon	펫 소환
+pet.name.slime	슬라임
+pet.name.wisp	정령
+pet.name.owl	부엉이
+pet.name.dragon	아기 용
+pet.name.chick	병아리
+pet.name.bunny	토끼
+pet.name.frog	개구리
+pet.name.bat	박쥐
+pet.name.piglet	아기 돼지
+pet.name.fox	여우
+pet.name.penguin	펭귄
+pet.name.cat	마법 고양이
+pet.name.turtle	바다거북
+pet.name.phoenix	불사조
+pet.name.gumiho	구미호
+pet.name.azure	청룡
 
 # Equipment effects (D-103)
 equip.owned_line	{0}  보유 {1}종
@@ -477,6 +503,7 @@ guide.equip_skill	스킬 {0}개 장착
 guide.job	{0}차 전직하기
 guide.talent	특성 {0}포인트 배우기
 guide.gear_owned	장비 {0}종 모으기
+guide.pet_pull	펫 소환 {0}회
 guide.progress	{0} / {1}
 guide.claim	보상 받기!
 guide.claimed_gem	퀘스트 완료! 젬 +{0}

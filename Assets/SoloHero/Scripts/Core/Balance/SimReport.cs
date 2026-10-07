@@ -49,6 +49,10 @@ namespace SoloHero.Core.Balance
         public double SpentUpgrade;
         public double SpentGacha;
         public double SpentSkill;
+
+        /// <summary>D-114: pet summons and pet level-ups.</summary>
+        public double SpentPet;
+        public int PetPulls;
         public int GoldPulls;
         public int GemPulls;
         public int NormalAttempts;
@@ -59,7 +63,7 @@ namespace SoloHero.Core.Balance
         public double GemEnd;
 
         public double Earned => EarnedStage + EarnedOffline + EarnedRefund + EarnedBooster + EarnedQuest;
-        public double Spent => SpentUpgrade + SpentGacha + SpentSkill;
+        public double Spent => SpentUpgrade + SpentGacha + SpentSkill + SpentPet;
     }
 
     /// <summary>One offline claim at session start.</summary>
@@ -102,6 +106,12 @@ namespace SoloHero.Core.Balance
         public int FirstEpicDay;
         public double FirstLegendaryPlaySeconds = -1d;
         public int FirstLegendaryDay;
+
+        /// <summary>D-114: pets at the end of the run - owned count, the equipped pet, its level and enhance.</summary>
+        public int PetsOwned;
+        public string PetEquipped = "";
+        public int PetLevel;
+        public int PetEnhance;
 
         /// <summary>Median of gold-pull value per gold divided by the best upgrade value per gold.</summary>
         public double PullValueParity;

@@ -114,6 +114,10 @@ namespace SoloHero.Game.UI.Common
                     Open(_summonTab);
                     if (_gacha != null) _gacha.SetMode(GachaPanelPresenter.ModeSkill);
                     break;
+                case GuideKind.PetPulls:
+                    Open(_summonTab);
+                    if (_gacha != null) _gacha.SetMode(GachaPanelPresenter.ModePet);
+                    break;
                 case GuideKind.EquipSkills:
                     Open(_skillTab);
                     break;
@@ -177,6 +181,7 @@ namespace SoloHero.Game.UI.Common
                 case GuideKind.EquipSkills: return "guide.equip_skill";
                 case GuideKind.JobTier: return "guide.job";
                 case GuideKind.Talents: return "guide.talent";
+                case GuideKind.PetPulls: return "guide.pet_pull";
                 default: return "guide.gear_owned";
             }
         }

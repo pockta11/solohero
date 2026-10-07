@@ -90,6 +90,28 @@ PAL = {
     "beak": ["#d07a20", "#ffb040", "#ffe090"],
     "dragon": ["#a02a30", "#e04848", "#ff9a8a"],
     "belly": ["#d8a860", "#ffd890", "#fff4c8"],
+    # Pets (D-114)
+    "chick": ["#d9a520", "#ffd84a", "#fff3a8"],
+    "bunny": ["#c8b8c8", "#f8eef4", "#ffffff"],
+    "bunny_in": ["#d86a8a", "#ff9ab4", "#ffd0dc"],
+    "frog": ["#3a8a3a", "#6ac85a", "#b8f090"],
+    "frog_belly": ["#b8c880", "#e8f4b8", "#ffffff"],
+    "bat": ["#5a4a7a", "#8a78b0", "#bcaee0"],
+    "bat_wing": ["#3a2a52", "#5a4680", "#8a74b4"],
+    "pig": ["#d8768e", "#ffaac0", "#ffdce6"],
+    "snout": ["#c45a74", "#ee86a0", "#ffbccc"],
+    "fox": ["#c4561c", "#ff8a3a", "#ffc890"],
+    "fur_white": ["#c8c4d0", "#f8f6fc", "#ffffff"],
+    "fur_dark": ["#4a2a1e", "#6e4030", "#9a6048"],
+    "cat": ["#5a4a8a", "#8a78c8", "#c0b0f0"],
+    "turtle": ["#2a8a7a", "#5ac8b0", "#a8f4e0"],
+    "shell": ["#4e6020", "#86a038", "#c4d86a"],
+    "phoenix": ["#c4302a", "#ff6a3a", "#ffc070"],
+    "phoenix_wing": ["#d84a1a", "#ffa030", "#ffe68a"],
+    "gumiho_red": ["#b0203a", "#ff4a6a", "#ffa0b0"],
+    "foxfire": ["#3a8ae0", "#8ad0ff", "#e8fbff"],
+    "azure": ["#14707e", "#2ccdbc", "#a6fff0"],
+    "cloud": ["#c8d8e8", "#f4faff", "#ffffff"],
     # Golem
     "stone": ["#4e4462", "#8a809e", "#c8c0d2"],
     "stone_dark": ["#3e3652", "#6a6284", "#9e96b4"],
@@ -169,9 +191,12 @@ for _name, _over in JOB_LOOKS.items():
     _look["job"] = True
     LOOKS[_name] = _look
 
-# D-102 companions: small creatures that float behind the hero; they face right like the hero (not mirrored).
-for _name, _species in (("petslime", "slime"), ("petwisp", "wisp"), ("petowl", "owl"), ("petdragon", "dragon")):
-    LOOKS[_name] = dict(kind="pet", species=_species, R=8.0, frame=(48, 48), foot_x=24, mirror=False, folder="Pets")
+# D-102 companions and D-114 pets: small creatures that float behind the hero; they face right like the hero (not
+# mirrored). Species are drawn by build_pet.
+PET_SPECIES = ("slime", "wisp", "owl", "dragon", "chick", "bunny", "frog", "bat", "piglet", "fox", "penguin", "cat",
+               "turtle", "phoenix", "gumiho", "azure")
+for _species in PET_SPECIES:
+    LOOKS["pet" + _species] = dict(kind="pet", species=_species, R=8.0, frame=(48, 48), foot_x=24, mirror=False, folder="Pets")
 LOOK = LOOKS[ENTITY]
 if LOOK.get("boss"):
     LOOK.setdefault("frame", (128, 112))
@@ -699,8 +724,71 @@ def pose_humanoid(rig, look, p):
 
 # ---------------------------------------------------------------- flying eye
 
+# D-114: pets that sit and hop on the ground (the rest float and flap).
+HOPPERS = ("slime", "chick", "bunny", "frog", "piglet", "fox", "penguin")
+
+# Body material and radii (x front, y side, z up, in R); the D-102 four keep their original shapes exactly.
+PET_BODY = {
+    "slime": ("slime", (1.1, 1.0, 0.85)),
+    "wisp": ("wisp", (1.0, 0.95, 1.0)),
+    "owl": ("owl", (1.0, 0.95, 1.0)),
+    "dragon": ("dragon", (1.0, 0.95, 1.0)),
+    "chick": ("chick", (1.0, 0.95, 0.95)),
+    "bunny": ("bunny", (1.0, 0.95, 0.92)),
+    "frog": ("frog", (1.1, 1.05, 0.78)),
+    "bat": ("bat", (0.95, 0.9, 0.95)),
+    "piglet": ("pig", (1.05, 1.0, 0.92)),
+    "fox": ("fox", (1.0, 0.92, 0.95)),
+    "penguin": ("navy", (0.9, 0.85, 1.12)),
+    "cat": ("cat", (1.0, 0.95, 0.95)),
+    "turtle": ("turtle", (1.0, 0.92, 0.88)),
+    "phoenix": ("phoenix", (1.0, 0.95, 1.0)),
+    "gumiho": ("fur_white", (1.0, 0.92, 0.95)),
+    "azure": ("azure", (1.0, 0.95, 1.0)),
+}
+
+# Flapping parts: material, size factor, height offset (in R). Wings on the back, flippers low on the sides.
+PET_WINGS = {
+    "wisp": ("white", 1.0, 0.0),
+    "owl": ("owl", 1.0, 0.0),
+    "dragon": ("wing_r", 1.0, 0.0),
+    "chick": ("chick", 0.6, -0.15),
+    "bat": ("bat_wing", 1.25, 0.05),
+    "penguin": ("navy", 0.75, -0.35),
+    "turtle": ("turtle", 0.8, -0.3),
+    "phoenix": ("phoenix_wing", 1.45, 0.1),
+}
+
+
+def ear_pair(material, body, R, x, y, z, r, depth, tilt_y=-10.0, tilt_x=25.0, inner=None):
+    """Two pointed ears (cones) on top of the head; an optional inner colour as a smaller cone in front."""
+    for sgn in (-1, 1):
+        rot = (sgn * rad(-tilt_x), rad(tilt_y), 0)
+        cone(material, body, (x * R, sgn * y * R, z * R), r * R, 0.0, depth * R, rot)
+        if inner is not None:
+            cone(inner, body, ((x + 0.06) * R, sgn * y * R, (z - 0.02) * R), r * 0.55 * R, 0.0, depth * 0.75 * R, rot)
+
+
+def bushy_tail(material, tip, body, R, base, angle, steps, size, curl=25.0, step=0.42):
+    """
+    A tail of overlapping balls from `base` (body frame, in R) toward the viewer's left (body -Y, the pet faces right),
+    leaving at `angle` degrees above the horizontal and curling `curl` degrees further up per ball; the last ball in
+    the tip colour. A tail along body -X would hide behind the body.
+    """
+    x, y, z = base
+    a = angle
+    for i in range(steps):
+        r = size * (1.0 - 0.1 * i) * R
+        if i > 0:
+            x -= 0.12
+            y -= step * math.cos(rad(a))
+            z += step * math.sin(rad(a))
+            a += curl
+        ellip(tip if (tip is not None and i == steps - 1) else material, body, (x * R, y * R, z * R), (r, r * 0.9, r))
+
+
 def build_pet(look):
-    """D-102 companion: a round body with cute eyes and species parts (slime, wisp, owl, baby dragon)."""
+    """D-102 / D-114 pet: a round body with cute eyes and species parts."""
     R = look["R"]
     sp = look["species"]
     rig = Rig()
@@ -708,13 +796,17 @@ def build_pet(look):
     root = empty("root", rot=(0, 0, rad(-78.0)))
     rig.fall = empty("fall", root)
     rig.hip = empty("hip", rig.fall)
-    rig.hip_z = R if sp == "slime" else R + 6.0
+    body_mat, f = PET_BODY[sp]
+    radii = (R * f[0], R * f[1], R * f[2])
+    rig.hip_z = R * f[2] / 0.85 if sp in HOPPERS else R + 6.0
+    if sp == "slime":
+        rig.hip_z = R
     rig.body = empty("body", rig.hip)
-    body_mat = {"slime": "slime", "wisp": "wisp", "owl": "owl", "dragon": "dragon"}[sp]
-    radii = (R * 1.1, R, R * 0.85) if sp == "slime" else (R, R * 0.95, R)
     body_id = new_id()
     ellip(body_mat, rig.body, (0, 0, 0), radii, line_id=body_id)
     face = Face(rig.body, (0, 0, 0), radii, body_id)
+    eye_az, eye_el = 24.0, -6.0
+
     if sp == "owl":
         face_id = new_id()
         fc, fr = (0.45 * R, 0, 0.1 * R), (0.62 * R, 0.8 * R, 0.62 * R)
@@ -731,15 +823,98 @@ def build_pet(look):
     if sp == "wisp":
         for i in range(3):
             ellip("wisp", rig.body, (-(1.1 + i * 0.45) * R, 0, -0.15 * R * i), (0.4 * R * (1 - i * 0.25),) * 3)
-    rig.eyes = Eyes(face, "cute", R, az=24.0, el=-6.0, w=0.2, h=0.3)
+
+    if sp == "chick":
+        cone("beak", rig.body, (0.98 * R, 0, -0.12 * R), 0.16 * R, 0.0, 0.32 * R, (0, rad(95), 0), verts=6, smooth=False)
+        for i, (dy, tilt) in enumerate(((-0.12, -25.0), (0.0, 0.0), (0.12, 25.0))):
+            cone("chick", rig.body, (0.05 * R, dy * R, 0.98 * R), 0.09 * R, 0.0, 0.42 * R, (rad(tilt), rad(-20), 0))
+    if sp == "bunny":
+        for sgn in (-1, 1):
+            rot = (sgn * rad(-12), rad(-22), 0)
+            ellip("bunny", rig.body, (-0.12 * R, sgn * 0.32 * R, 1.35 * R), (0.2 * R, 0.17 * R, 0.62 * R), rot)
+            ellip("bunny_in", rig.body, (-0.04 * R, sgn * 0.32 * R, 1.38 * R), (0.1 * R, 0.09 * R, 0.48 * R), rot)
+        ellip("bunny", rig.body, (-0.98 * R, 0, -0.25 * R), (0.26 * R,) * 3)
+    if sp == "frog":
+        ellip("frog_belly", rig.body, (0.55 * R, 0, -0.32 * R), (0.55 * R, 0.75 * R, 0.42 * R))
+        for sgn in (-1, 1):
+            # Big eye bumps on top: the frog silhouette.
+            ellip("frog", rig.body, (0.3 * R, sgn * 0.5 * R, 0.72 * R), (0.4 * R, 0.38 * R, 0.38 * R))
+            ellip("eye_white", rig.body, (0.58 * R, sgn * 0.52 * R, 0.82 * R), (0.16 * R, 0.24 * R, 0.24 * R))
+        eye_el = 2.0
+    if sp == "bat":
+        ear_pair("bat", rig.body, R, -0.05, 0.42, 0.82, 0.24, 0.62, inner="bunny_in")
+    if sp == "piglet":
+        # The face turns 3/4 to the right, so the snout must be big to read from the side.
+        cyl("snout", rig.body, (1.12 * R, 0, -0.34 * R), 0.46 * R, 0.55 * R, (0, rad(90), 0))
+        for sgn in (-1, 1):
+            ellip("mouth", rig.body, (1.4 * R, sgn * 0.16 * R, -0.34 * R), (0.05 * R, 0.1 * R, 0.14 * R))
+        ear_pair("pig", rig.body, R, 0.05, 0.55, 0.78, 0.26, 0.42, tilt_y=15.0, tilt_x=45.0, inner="snout")
+        torus("pig", rig.body, (-0.3 * R, -1.0 * R, -0.1 * R), 0.2 * R, 0.07 * R, (rad(90), 0, 0))
+        eye_el = 8.0
+    if sp in ("fox", "gumiho"):
+        fur = "fox" if sp == "fox" else "fur_white"
+        mark = "fur_white" if sp == "fox" else "gumiho_red"
+        ellip(mark if sp == "fox" else "fur_white", rig.body, (0.55 * R, 0, -0.32 * R), (0.5 * R, 0.66 * R, 0.5 * R))
+        ear_pair(fur, rig.body, R, -0.05, 0.45, 0.8, 0.27, 0.72, inner="fur_dark" if sp == "fox" else "gumiho_red")
+        if sp == "fox":
+            bushy_tail("fox", "fur_white", rig.body, R, (-0.45, -0.85, -0.35), 20.0, 4, 0.42, curl=28.0)
+        else:
+            # Five tails fanned out on the far side, red tipped, and a blue fox-fire beside the head.
+            for angle in (-10.0, 15.0, 40.0, 65.0, 90.0):
+                bushy_tail("fur_white", "gumiho_red", rig.body, R, (-0.5, -0.75, -0.2), angle, 4, 0.3, curl=12.0, step=0.38)
+            ellip("foxfire", rig.body, (0.5 * R, 1.25 * R, 0.85 * R), (0.24 * R, 0.24 * R, 0.34 * R))
+            face.decal("gumiho_red", 0, 34, (0.04 * R, 0.08 * R, 0.14 * R))
+    if sp == "penguin":
+        face_id = new_id()
+        fc, fr = (0.42 * R, 0, -0.1 * R), (0.55 * R, 0.68 * R, 0.85 * R)
+        ellip("fur_white", rig.body, fc, fr, line_id=face_id)
+        face = Face(rig.body, fc, fr, face_id)
+        cone("beak", rig.body, (fc[0] + 0.55 * R, 0, 0.05 * R), 0.13 * R, 0.0, 0.3 * R, (0, rad(100), 0), verts=6, smooth=False)
+        for sgn in (-1, 1):
+            ellip("beak", rig.body, (0.2 * R, sgn * 0.32 * R, -0.98 * R), (0.28 * R, 0.16 * R, 0.08 * R))
+        eye_el = 18.0
+    if sp == "cat":
+        ear_pair("cat", rig.body, R, -0.05, 0.45, 0.8, 0.26, 0.55, inner="bunny_in")
+        # A little wizard hat between the ears and a tail curling up behind.
+        cone("dark_purple", rig.body, (-0.15 * R, 0, 1.35 * R), 0.38 * R, 0.02 * R, 0.9 * R, (0, rad(-18), 0))
+        torus("gold", rig.body, (-0.1 * R, 0, 0.95 * R), 0.42 * R, 0.07 * R, (0, rad(-18), 0))
+        tube("cat", rig.body, [(-0.85 * R, 0, -0.4 * R), (-1.35 * R, 0, -0.1 * R), (-1.45 * R, 0, 0.5 * R), (-1.2 * R, 0, 0.85 * R)], 0.13 * R)
+    if sp == "turtle":
+        shell_id = new_id()
+        ellip("shell", rig.body, (-0.38 * R, 0, 0.18 * R), (0.95 * R, 1.0 * R, 0.78 * R), line_id=shell_id)
+        torus("shell", rig.body, (-0.35 * R, 0, -0.1 * R), 0.92 * R, 0.1 * R, (0, 0, 0))
+        for i, (dx, dy) in enumerate(((-0.5, 0.0), (-0.25, 0.42), (-0.25, -0.42), (-0.85, 0.3), (-0.85, -0.3))):
+            ellip("turtle", rig.body, ((dx + 0.0) * R, dy * R, 0.88 * R), (0.18 * R, 0.18 * R, 0.06 * R))
+    if sp == "phoenix":
+        ellip("belly", rig.body, (0.55 * R, 0, -0.3 * R), (0.42 * R, 0.58 * R, 0.5 * R))
+        cone("beak", rig.body, (1.0 * R, 0, -0.08 * R), 0.14 * R, 0.0, 0.3 * R, (0, rad(100), 0), verts=6, smooth=False)
+        for i, (dy, tilt, h) in enumerate(((-0.14, -22.0, 0.65), (0.0, 0.0, 0.85), (0.14, 22.0, 0.65))):
+            cone("phoenix_wing", rig.body, (-0.05 * R, dy * R, 1.05 * R), 0.12 * R, 0.0, h * R, (rad(tilt), rad(-35), 0))
+        for i, (dy, h) in enumerate(((-0.25, 1.2), (0.0, 1.5), (0.25, 1.2))):
+            cone("phoenix_wing", rig.body, (-1.2 * R, dy * R, -0.35 * R), 0.16 * R, 0.0, h * R, (rad(dy * 40), rad(-120), 0))
+    if sp == "azure":
+        ellip("belly", rig.body, (0.55 * R, 0, -0.3 * R), (0.42 * R, 0.6 * R, 0.52 * R))
+        for sgn in (-1, 1):
+            # Golden antler horns, a white mane tuft and whiskers trailing to the sides.
+            cone("gold", rig.body, (-0.05 * R, sgn * 0.38 * R, 0.85 * R), 0.13 * R, 0.0, 0.75 * R, (sgn * rad(-18), rad(-30), 0))
+            cone("gold", rig.body, (-0.12 * R, sgn * 0.55 * R, 1.15 * R), 0.07 * R, 0.0, 0.32 * R, (sgn * rad(-60), rad(-10), 0))
+            ellip("cloud", rig.body, (-0.45 * R, sgn * 0.55 * R, 0.55 * R), (0.3 * R, 0.26 * R, 0.24 * R))
+            tube("gold", rig.body, [(0.85 * R, sgn * 0.45 * R, -0.25 * R), (0.7 * R, sgn * 1.05 * R, -0.05 * R),
+                                    (0.45 * R, sgn * 1.45 * R, -0.3 * R)], 0.05 * R)
+        # A serpent body winding off to the far side in an S, with a cloud puff at its tip.
+        tube("azure", rig.body, [(-0.3 * R, -0.75 * R, -0.45 * R), (-0.45 * R, -1.35 * R, -0.75 * R), (-0.55 * R, -1.85 * R, -0.35 * R),
+                                 (-0.6 * R, -2.05 * R, 0.3 * R), (-0.65 * R, -1.8 * R, 0.85 * R)], 0.26 * R)
+        ellip("cloud", rig.body, (-0.65 * R, -1.75 * R, 1.1 * R), (0.32 * R, 0.32 * R, 0.24 * R))
+
+    rig.eyes = Eyes(face, "cute", R, az=eye_az, el=eye_el, w=0.2, h=0.3)
     face.decal("blush", -48, -22, (0.04 * R, 0.17 * R, 0.09 * R))
     face.decal("blush", 48, -22, (0.04 * R, 0.17 * R, 0.09 * R))
     rig.wings = []
-    if sp in ("wisp", "owl", "dragon"):
-        wing_mat = {"wisp": "white", "owl": "owl", "dragon": "wing_r"}[sp]
+    if sp in PET_WINGS:
+        wing_mat, k, dz = PET_WINGS[sp]
         for sgn in (-1, 1):
-            pivot = empty("wing", rig.body, (-0.25 * R, sgn * 0.8 * R, 0.25 * R))
-            ellip(wing_mat, pivot, (-0.2 * R, sgn * 0.6 * R, 0.2 * R), (0.5 * R, 0.75 * R, 0.16 * R), (sgn * rad(-25), 0, 0))
+            pivot = empty("wing", rig.body, (-0.25 * R, sgn * 0.8 * R, (0.25 + dz) * R))
+            ellip(wing_mat, pivot, (-0.2 * R * k, sgn * 0.6 * R * k, 0.2 * R * k), (0.5 * R * k, 0.75 * R * k, 0.16 * R * k), (sgn * rad(-25), 0, 0))
             rig.wings.append((pivot, sgn))
     return rig
 
@@ -755,12 +930,13 @@ def pose_pet(rig, look, p):
 
 
 def pet_clips(look):
-    slime = look["species"] == "slime"
+    hop = look["species"] in HOPPERS
     idle = []
     for i in range(N):
         s = math.sin(i / N * math.tau)
-        if slime:
-            idle.append(pose(by=max(0.0, s) * 2.0, squash=max(0.0, -s) * 0.6, eyes="closed" if i in BLINK else "open"))
+        if hop:
+            idle.append(pose(by=max(0.0, s) * 2.0, squash=max(0.0, -s) * 0.6, wing=math.sin(2 * i / N * math.tau) * 0.5,
+                             eyes="closed" if i in BLINK else "open"))
         else:
             idle.append(pose(by=s * 1.5, wing=math.sin(2 * i / N * math.tau), eyes="closed" if i in BLINK else "open"))
     attack = [pose(bx=-1, lean=-10, squash=0.3), pose(bx=-2, lean=-15, squash=0.5, eyes="angry"),

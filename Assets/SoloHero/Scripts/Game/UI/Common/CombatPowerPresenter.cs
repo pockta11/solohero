@@ -47,7 +47,8 @@ namespace SoloHero.Game.UI.Common
             _shownRevision = _save.saveRevision;
             _shownLevel = _save.heroLevel;
 
-            double power = CombatPower.Of(_balance, CombatLoadout.ComputeStats(_balance, _save));
+            double power = CombatPower.Of(_balance, CombatLoadout.ComputeStats(_balance, _save),
+                SoloHero.Core.Pets.PetService.EquippedRate(_balance, _save));
             if (_value != null) _value.text = BigNumberFormat.Format(power);
             if (_shown >= 0d && power > _shown) ShowGain(power - _shown);
             _shown = power;

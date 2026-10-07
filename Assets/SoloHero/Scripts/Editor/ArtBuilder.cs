@@ -117,11 +117,13 @@ namespace SoloHero.Editor
         {
             ReimportArt();
             CharacterArt hero = BuildCharacter("Hero", "knight", "Hero_Knight", 1);
-            // D-102 companions, index-aligned with CompanionCatalog.
-            string[] pets = { "slime", "wisp", "owl", "dragon" };
-            string[] petAssets = { "Pet_Slime", "Pet_Wisp", "Pet_Owl", "Pet_Dragon" };
-            var petArts = new CharacterArt[pets.Length];
-            for (int p = 0; p < pets.Length; p++) petArts[p] = BuildCharacter("Pets", "pet" + pets[p], petAssets[p], 1);
+            // D-114 pets (D-102 companions), index-aligned with PetCatalog: Art/Pets/pet{id}_* into Data/Art/Pet_{Id}.asset.
+            var petArts = new CharacterArt[SoloHero.Core.Pets.PetCatalog.Count];
+            for (int p = 0; p < petArts.Length; p++)
+            {
+                string id = SoloHero.Core.Pets.PetCatalog.All[p].Id;
+                petArts[p] = BuildCharacter("Pets", "pet" + id, "Pet_" + char.ToUpperInvariant(id[0]) + id.Substring(1), 1);
+            }
             // D-104 job looks, index-aligned with JobCatalog.All (the beginner is the knight above).
             var jobArts = new CharacterArt[SoloHero.Core.Jobs.JobCatalog.Count];
             for (int j = 0; j < jobArts.Length; j++)
@@ -562,7 +564,7 @@ namespace SoloHero.Editor
             WireShadows(view);
             WireShots(view);
             WireCoins(view, camera);
-            WireCompanion(session, vfxSet, petArts);
+            WirePet(session, vfxSet, petArts);
 
             Material flash = FlashMaterial();
             var heroRenderer = (SpriteRenderer)viewSo.FindProperty("_heroRenderer").objectReferenceValue;
@@ -738,19 +740,23 @@ namespace SoloHero.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>D-102: the companion's renderer (flash material, flipbook) and its view, next to the hero.</summary>
-        private static void WireCompanion(CombatSession session, VfxSet vfxSet, CharacterArt[] petArts)
+        /// <summary>D-102 / D-114: the pet's renderer (flash material, flipbook) and its view, next to the hero.</summary>
+        private static void WirePet(CombatSession session, VfxSet vfxSet, CharacterArt[] petArts)
         {
-            GameObject old = GameObject.Find("Companion");
-            if (old != null) Object.DestroyImmediate(old);
-            var go = new GameObject("Companion");
+            foreach (string name in new[] { "Companion", "Pet" })
+            {
+                GameObject old = GameObject.Find(name);
+                if (old != null) Object.DestroyImmediate(old);
+            }
+
+            var go = new GameObject("Pet");
             SpriteRenderer renderer = go.AddComponent<SpriteRenderer>();
             renderer.sortingOrder = 99;
             Material flash = FlashMaterial();
             if (flash != null) renderer.sharedMaterial = flash;
             go.AddComponent<SpriteFlipbook>();
             renderer.enabled = false;
-            CompanionView view = go.AddComponent<CompanionView>();
+            PetView view = go.AddComponent<PetView>();
             var so = new SerializedObject(view);
             so.FindProperty("_session").objectReferenceValue = session;
             so.FindProperty("_renderer").objectReferenceValue = renderer;

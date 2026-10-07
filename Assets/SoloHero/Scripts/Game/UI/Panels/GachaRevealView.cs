@@ -189,7 +189,7 @@ namespace SoloHero.Game.UI.Panels
         private void Face(GachaCard card, RevealCard item)
         {
             card.Rect.localScale = Vector3.one;
-            card.ShowFace(PanelServices.GradeColor(item.Grade), PanelServices.GradeName(item.Grade), item.Title, item.Note, item.Icon);
+            card.ShowFace(PanelServices.GradeColor(item.Grade), PanelServices.GradeName(item.Grade), item.Title, item.Note, item.Icon, item.IconScale);
         }
 
         private void Celebrate(int index)

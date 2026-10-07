@@ -35,13 +35,8 @@ namespace SoloHero.Editor
         private const string SettingsPopupName = "SettingsPopup";
         private const string DailyName = "DailyPopup";
         private const string DungeonName = "DungeonPopup";
-        private const string CompanionName = "CompanionPopup";
+        private const string PetName = "PetPopup";
         private const string JobName = "JobPopup";
-        private static readonly string[] CompanionArtPaths =
-        {
-            "Assets/SoloHero/Data/Art/Pet_Slime.asset", "Assets/SoloHero/Data/Art/Pet_Wisp.asset",
-            "Assets/SoloHero/Data/Art/Pet_Owl.asset", "Assets/SoloHero/Data/Art/Pet_Dragon.asset",
-        };
         private const string SettingsWindowName = "SettingsWindow";
         private const string QuitPopupName = "QuitConfirm";
         private const string SafeAreaName = "SafeArea";
@@ -396,7 +391,7 @@ namespace SoloHero.Editor
             UnwrapSafeArea(hud.transform);
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
-            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, CompanionName, JobName, BossIntroName, FlashName })
+            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, JobName, BossIntroName, FlashName })
             {
                 Transform stale = hud.transform.Find(name);
                 if (stale != null) Object.DestroyImmediate(stale.gameObject);
@@ -441,15 +436,15 @@ namespace SoloHero.Editor
             StageSelectPresenter stageSelect = BuildStageSelect(hud.transform, session);
             DailyPresenter daily = BuildDaily(hud.transform, session, toast);
             DungeonPresenter dungeon = BuildDungeon(hud.transform, session, toast);
-            CompanionPresenter companion = BuildCompanion(hud.transform, session, toast);
-            BuildRails(root, toast, settings, stageSelect, daily, dungeon, companion);
+            PetPresenter pet = BuildPet(hud.transform, session, toast, root.GetComponent<PanelHost>(), gacha.GetComponent<GachaPanelPresenter>());
+            BuildRails(root, toast, settings, stageSelect, daily, dungeon, pet);
             // Built early (the character panel and the rails need them); lift them over the damage numbers like the
             // other popups. The quit confirm (BuildBackKey) stays the very last layer.
             jobPopup.transform.SetAsLastSibling();
             settings.transform.SetAsLastSibling();
             Transform creditsLayer = hud.transform.Find(SettingsPopupName);
             if (creditsLayer != null) creditsLayer.SetAsLastSibling();
-            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily, dungeon, companion, jobPopup);
+            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily, dungeon, pet, jobPopup);
             BuildBossIntro(hud.transform, session);
             ScreenFlash flash = BuildFlash(hud.transform);
             WrapSafeArea(hud.transform);
@@ -1137,16 +1132,18 @@ namespace SoloHero.Editor
             RectTransform panel = Panel("GachaPanel", area);
             var presenter = panel.gameObject.AddComponent<GachaPanelPresenter>();
 
-            var tabImages = new Image[2];
-            string[] modeKeys = { "gacha.mode_gear", "gacha.mode_skill" };
-            string[] modeIcons = { "helm", "book" };
+            // D-114: a third tab for the pet summon.
+            string[] modeKeys = { "gacha.mode_gear", "gacha.mode_skill", "gacha.mode_pet" };
+            string[] modeIcons = { "helm", "book", "paw" };
+            var tabImages = new Image[modeKeys.Length];
             RectTransform modes = TopBand("Modes", panel, 20f, 76f, PanelPad, PanelPad);
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < modeKeys.Length; i++)
             {
-                Button tab = MakeButton("Mode" + i, modes, i * 0.5f, 0f, (i + 1) * 0.5f, 1f, "", 34, out Text tabLabel, Tone.Gold);
+                float w = 1f / modeKeys.Length;
+                Button tab = MakeButton("Mode" + i, modes, i * w, 0f, (i + 1) * w, 1f, "", 30, out Text tabLabel, Tone.Gold);
                 var tabRect = (RectTransform)tab.transform;
-                tabRect.offsetMin = new Vector2(i == 0 ? 0f : 8f, 0f);
-                tabRect.offsetMax = new Vector2(i == 0 ? -8f : 0f, 0f);
+                tabRect.offsetMin = new Vector2(i == 0 ? 0f : 6f, 0f);
+                tabRect.offsetMax = new Vector2(i == modeKeys.Length - 1 ? 0f : -6f, 0f);
                 tab.transition = Selectable.Transition.None;
                 tabImages[i] = tab.GetComponent<Image>();
                 UiSkin.Sliced(tabImages[i], UiSkin.PlateSprite(Tone.Gold));
@@ -1215,6 +1212,7 @@ namespace SoloHero.Editor
             so.FindProperty("_tabIdle").objectReferenceValue = UiSkin.PlateSprite(Tone.Gray);
             so.FindProperty("_tabActive").objectReferenceValue = UiSkin.PlateSprite(Tone.Gold);
             so.FindProperty("_equipmentIcons").objectReferenceValue = AssetDatabase.LoadAssetAtPath<EquipmentIconSet>(EquipmentIconsPath);
+            SetArray(so, "_petArts", PetArts());
             so.FindProperty("_skillIcons").objectReferenceValue = AssetDatabase.LoadAssetAtPath<SkillIconSet>(SkillIconsPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             return panel.gameObject;
@@ -1497,7 +1495,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void WrapSafeArea(Transform hud)
         {
-            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, CompanionName, JobName, BossIntroName, FlashName };
+            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, JobName, BossIntroName, FlashName };
             RectTransform safe = Rect(SafeAreaName, hud, 0f, 0f, 1f, 1f);
             safe.gameObject.AddComponent<SafeAreaFitter>();
             var move = new System.Collections.Generic.List<Transform>();
@@ -1629,7 +1627,7 @@ namespace SoloHero.Editor
         }
 
         /// <summary>E7-14: back key router and the quit confirm popup (last sibling, above every other layer).</summary>
-        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels, DailyPresenter daily, DungeonPresenter dungeon, CompanionPresenter companion, JobPresenter job)
+        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels, DailyPresenter daily, DungeonPresenter dungeon, PetPresenter pet, JobPresenter job)
         {
             RectTransform holder = Rect(QuitPopupName, hud, 0f, 0f, 1f, 1f);
             holder.SetAsLastSibling();
@@ -1658,7 +1656,7 @@ namespace SoloHero.Editor
             so.FindProperty("_stageSelect").objectReferenceValue = stageSelect;
             so.FindProperty("_daily").objectReferenceValue = daily;
             so.FindProperty("_dungeon").objectReferenceValue = dungeon;
-            so.FindProperty("_companion").objectReferenceValue = companion;
+            so.FindProperty("_pet").objectReferenceValue = pet;
             so.FindProperty("_job").objectReferenceValue = job;
             so.FindProperty("_panels").objectReferenceValue = panels;
             so.FindProperty("_quitConfirm").objectReferenceValue = popup.gameObject;
@@ -1677,9 +1675,9 @@ namespace SoloHero.Editor
         /// <summary>
         /// D-089 / D-108 battle-screen rails: rewards on the left (A-3 gold booster, A-2 gems: round candy buttons with
         /// an ad badge and a caption chip), a folding menu on the right (navy tile; the column lists daily rewards,
-        /// dungeons, companions, settings, stage and credits). Both sit under the top bar and above the battle lane.
+        /// dungeons, pets, settings, stage and credits). Both sit under the top bar and above the battle lane.
         /// </summary>
-        private static void BuildRails(RectTransform root, ToastQueue toast, SettingsPresenter settings, StageSelectPresenter stageSelect, DailyPresenter daily, DungeonPresenter dungeon, CompanionPresenter companion)
+        private static void BuildRails(RectTransform root, ToastQueue toast, SettingsPresenter settings, StageSelectPresenter stageSelect, DailyPresenter daily, DungeonPresenter dungeon, PetPresenter pet)
         {
             RectTransform left = Box("LeftRail", root, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(RailInset, -RailTop), new Vector2(RailItem + 40f, RailStep * 2f));
             TapGuardButton booster = RailButton(left, "Booster", 0, "coin", Tone.Gold, out Text boosterLabel);
@@ -1696,7 +1694,7 @@ namespace SoloHero.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
 
             string[] icons = { "gift", "gate", "paw", "cog", "flag", "scroll" };
-            string[] keys = { "rail.daily", "rail.dungeon", "rail.companion", "rail.settings", "rail.stage", "rail.credits" };
+            string[] keys = { "rail.daily", "rail.dungeon", "rail.pet", "rail.settings", "rail.stage", "rail.credits" };
             RectTransform right = Box("RightRail", root, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-RailInset, -RailTop), new Vector2(RailMenuButton + 40f, RailMenuButton + 24f + icons.Length * RailMenuStep));
             RailMenu menu = right.gameObject.AddComponent<RailMenu>();
             Button toggle = MakeButton("Menu", right, 0.5f, 1f, 0.5f, 1f, "", 22, out Text unusedLabel, Tone.Gray);
@@ -1713,7 +1711,7 @@ namespace SoloHero.Editor
             UiSkin.Sliced(column.gameObject.AddComponent<Image>(), UiSkin.RailTile);
             column.gameObject.AddComponent<CanvasGroup>();
             column.gameObject.AddComponent<PopupIntro>();
-            UnityAction[] actions = { daily.Open, dungeon.Open, companion.Open, settings.Open, stageSelect.Open, settings.OpenCredits };
+            UnityAction[] actions = { daily.Open, dungeon.Open, pet.Open, settings.Open, stageSelect.Open, settings.OpenCredits };
             for (int i = 0; i < icons.Length; i++)
             {
                 RectTransform item = Box("Item" + i, column, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -14f - i * RailMenuStep), new Vector2(RailItem + 20f, RailMenuStep - 6f));
@@ -1916,69 +1914,153 @@ namespace SoloHero.Editor
             return presenter;
         }
 
-        /// <summary>D-102 companions popup: four rows (portrait, name and level, attack or unlock stage, equip, level up).</summary>
-        private static CompanionPresenter BuildCompanion(Transform hud, CombatSession session, ToastQueue toast)
+        /// <summary>
+        /// D-114 pet popup (the D-102 companions): the selected pet on a pedestal (grade chip, name and level, attack and
+        /// owned effect, equip and level-up), the owned-effect total, a 4 x 4 grid of every pet (unowned ones as
+        /// silhouettes) and a shortcut to the pet summon.
+        /// </summary>
+        private static PetPresenter BuildPet(Transform hud, CombatSession session, ToastQueue toast, PanelHost panels, GachaPanelPresenter gacha)
         {
-            RectTransform holder = Rect(CompanionName, hud, 0f, 0f, 1f, 1f);
+            RectTransform holder = Rect(PetName, hud, 0f, 0f, 1f, 1f);
             holder.SetAsLastSibling();
-            CompanionPresenter presenter = holder.gameObject.AddComponent<CompanionPresenter>();
-            RectTransform box = PopupWindow(holder, new Vector2(1000f, 1160f), "companion.title", presenter.Close, out RectTransform popup);
+            PetPresenter presenter = holder.gameObject.AddComponent<PetPresenter>();
+            RectTransform box = PopupWindow(holder, new Vector2(1000f, 1640f), "pet.title", presenter.Close, out RectTransform popup);
+            CharacterArt[] arts = PetArts();
 
-            var portraits = new Image[4];
-            var names = new Text[4];
-            var infos = new Text[4];
-            var equips = new Button[4];
-            var equipLabels = new Text[4];
-            var levels = new Button[4];
-            var levelLabels = new Text[4];
-            for (int i = 0; i < 4; i++)
+            RectTransform detail = TopBand("Detail", box, 96f, 400f, 36f, 36f);
+            UiSkin.Sliced(detail.gameObject.AddComponent<Image>(), UiSkin.Card);
+            RectTransform well = Box("Well", detail, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(340f, 360f));
+            UiSkin.Sliced(Plain(well, null), UiSkin.Inset);
+            well.gameObject.AddComponent<RectMask2D>();
+            Image glow = Plain(Box("Glow", well, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), new Vector2(380f, 380f)), UiSkin.Hd("hd_glow"));
+            glow.color = new Color(1f, 0.95f, 0.75f, 0.8f);
+            glow.gameObject.AddComponent<UiPulse>();
+            SubCanvas(glow.gameObject, false);
+            Plain(Box("Pedestal", well, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 16f), new Vector2(260f, 78f)), UiSkin.Hd("hd_pedestal"));
+            CharacterArt first = arts.Length > 0 ? arts[0] : null;
+            RectTransform artRect = Box("Pet", well, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 52f), new Vector2(48f, 48f));
+            Image artImage = Plain(artRect, first != null && first.idle.Length > 0 ? first.idle[0] : null);
+            artImage.preserveAspect = false;
+            UiFlipbook book = artRect.gameObject.AddComponent<UiFlipbook>();
+            var bookSo = new SerializedObject(book);
+            bookSo.FindProperty("_art").objectReferenceValue = first;
+            bookSo.FindProperty("_scale").floatValue = 6f;
+            bookSo.ApplyModifiedPropertiesWithoutUndo();
+            PixelOutline(artImage, 6f);
+
+            RectTransform chip = Box("Grade", detail, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(390f, -26f), new Vector2(120f, 44f));
+            Image gradeChip = Plain(chip, UiSkin.PlateSprite(Tone.Gray));
+            gradeChip.type = Image.Type.Sliced;
+            Text gradeText = AddText(Inset("Label", chip, 0f, 2f, 0f, 0f), 26, TextAnchor.MiddleCenter);
+            Text name = InkText(TopBand("Name", detail, 80f, 52f, 390f, 24f), 38, TextAnchor.MiddleLeft, UiPalette.InkTitle);
+            name.horizontalOverflow = HorizontalWrapMode.Overflow;
+            name.verticalOverflow = VerticalWrapMode.Overflow;
+            Text info = InkText(TopBand("Info", detail, 140f, 120f, 390f, 24f), 27, TextAnchor.UpperLeft, UiPalette.Ink);
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
+            info.verticalOverflow = VerticalWrapMode.Overflow;
+            info.lineSpacing = 1.05f;
+
+            RectTransform actions = BottomBand("Actions", detail, 22f, 100f, 390f, 24f);
+            Button equip = MakeButton("Equip", actions, 0f, 0f, 0.47f, 1f, "", 32, out Text equipLabel, Tone.Blue);
+            TapGuardButton equipGuard = equip.gameObject.AddComponent<TapGuardButton>();
+            UnityEventTools.AddPersistentListener(equipGuard.OnTap, presenter.Equip);
+            Button level = MakeButton("Level", actions, 0.53f, 0f, 1f, 1f, "", 32, out Text levelLabel, Tone.Green);
+            IconButton(level, levelLabel, "coin", 40f);
+            TapGuardButton levelGuard = level.gameObject.AddComponent<TapGuardButton>();
+            level.gameObject.AddComponent<HoldRepeat>();
+            UnityEventTools.AddPersistentListener(levelGuard.OnTap, presenter.LevelUp);
+
+            Text summary = InkText(TopBand("Summary", box, 506f, 48f, 36f, 36f), 30, TextAnchor.MiddleCenter, UiPalette.InkTitle);
+            summary.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+            const float cellSize = 196f;
+            const float rowStep = 214f;
+            int count = SoloHero.Core.Pets.PetCatalog.Count;
+            RectTransform grid = TopBand("Grid", box, 562f, rowStep * ((count + 3) / 4), 36f, 36f);
+            var frames = new Image[count];
+            var icons = new Image[count];
+            var levels = new Text[count];
+            var tags = new GameObject[count];
+            for (int i = 0; i < count; i++)
             {
-                RectTransform row = TopBand("Row" + i, box, 100f + i * 250f, 234f, 36f, 36f);
-                UiSkin.Sliced(row.gameObject.AddComponent<Image>(), UiSkin.Card);
-                RectTransform well = Box("Well", row, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(18f, 2f), new Vector2(190f, 190f));
-                UiSkin.Sliced(Plain(well, null), UiSkin.Inset);
-                Image glow = Plain(Box("Glow", well, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200f, 200f)), UiSkin.Hd("hd_glow"));
-                glow.color = new Color(1f, 0.95f, 0.75f, 0.8f);
-                RectTransform face = Box("Portrait", well, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(192f, 192f));
-                portraits[i] = Plain(face, null);
-                portraits[i].preserveAspect = true;
-                names[i] = InkText(TopBand("Name", row, 30f, 56f, 230f, 300f), 38, TextAnchor.MiddleLeft, UiPalette.InkTitle);
-                names[i].horizontalOverflow = HorizontalWrapMode.Overflow;
-                infos[i] = InkText(TopBand("Info", row, 96f, 100f, 230f, 300f), 26, TextAnchor.UpperLeft, UiPalette.Ink);
-                infos[i].horizontalOverflow = HorizontalWrapMode.Wrap;
-                infos[i].verticalOverflow = VerticalWrapMode.Overflow;
-                equips[i] = MakeButton("Equip", row, 1f, 0.5f, 1f, 1f, "", 30, out equipLabels[i], Tone.Blue);
-                var equipRect = (RectTransform)equips[i].transform;
-                equipRect.offsetMin = new Vector2(-284f, 4f);
-                equipRect.offsetMax = new Vector2(-20f, -20f);
-                UnityEventTools.AddIntPersistentListener(equips[i].onClick, presenter.Equip, i);
-                levels[i] = MakeButton("Level", row, 1f, 0f, 1f, 0.5f, "", 30, out levelLabels[i], Tone.Green);
-                var levelRect = (RectTransform)levels[i].transform;
-                levelRect.offsetMin = new Vector2(-284f, 24f);
-                levelRect.offsetMax = new Vector2(-20f, -4f);
-                IconButton(levels[i], levelLabels[i], "coin", 40f);
-                levels[i].gameObject.AddComponent<HoldRepeat>();
-                UnityEventTools.AddIntPersistentListener(levels[i].onClick, presenter.LevelUp, i);
+                int col = i % 4;
+                int row = i / 4;
+                RectTransform cell = Box("Cell" + i, grid, new Vector2(0.125f + col * 0.25f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -row * rowStep), new Vector2(cellSize, cellSize));
+                frames[i] = cell.gameObject.AddComponent<Image>();
+                UiSkin.Sliced(frames[i], UiSkin.SlotEmpty);
+                // Pet sheets are 48 px frames with the creature in the lower middle: draw them larger than the cell.
+                icons[i] = Plain(Box("Icon", cell, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 10f), new Vector2(240f, 240f)), null);
+                icons[i].preserveAspect = true;
+                icons[i].raycastTarget = false;
+                RectTransform badge = Box("Level", cell, new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(130f, 36f));
+                UiSkin.Sliced(Plain(badge, null), UiSkin.LevelBadge);
+                levels[i] = AddText(Inset("Label", badge, 2f, 2f, 2f, 0f), 23, TextAnchor.MiddleCenter);
+                levels[i].horizontalOverflow = HorizontalWrapMode.Overflow;
+                UiSkin.ButtonText(levels[i], Tone.Blue);
+                RectTransform tag = Box("Tag", cell, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(-8f, 8f), new Vector2(84f, 38f));
+                UiSkin.Sliced(Plain(tag, null), UiSkin.PlateSprite(Tone.Green));
+                Text tagText = AddText(Inset("Label", tag, 0f, 2f, 0f, 0f), 22, TextAnchor.MiddleCenter);
+                UiSkin.ButtonText(tagText, Tone.Green);
+                Localize(tagText, "pet.tag");
+                tags[i] = tag.gameObject;
+                tags[i].SetActive(false);
+                Button tap = cell.gameObject.AddComponent<Button>();
+                tap.transition = Selectable.Transition.None;
+                UnityEventTools.AddIntPersistentListener(tap.onClick, presenter.Select, i);
             }
 
-            var arts = new CharacterArt[CompanionArtPaths.Length];
-            for (int i = 0; i < arts.Length; i++) arts[i] = AssetDatabase.LoadAssetAtPath<CharacterArt>(CompanionArtPaths[i]);
+            RectTransform selection = Rect("Selection", grid, 0f, 0f, 1f, 1f);
+            UiSkin.Sliced(selection.gameObject.AddComponent<Image>(), UiSkin.Selection);
+            selection.GetComponent<Image>().raycastTarget = false;
+            selection.gameObject.AddComponent<UiPulse>();
+            SubCanvas(selection.gameObject, false);
+
+            Button summon = MakeButton("Summon", box, 0.5f, 0f, 0.5f, 0f, "", 34, out Text summonLabel, Tone.Purple);
+            Place((RectTransform)summon.transform, new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(440f, 100f));
+            IconButton(summon, summonLabel, "paw", 46f);
+            Localize(summonLabel, "pet.summon");
+            UnityEventTools.AddPersistentListener(summon.onClick, presenter.OpenSummon);
 
             var so = new SerializedObject(presenter);
             so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
             so.FindProperty("_session").objectReferenceValue = session;
             so.FindProperty("_toast").objectReferenceValue = toast;
+            so.FindProperty("_panels").objectReferenceValue = panels;
+            so.FindProperty("_gacha").objectReferenceValue = gacha;
+            so.FindProperty("_summonTab").intValue = 2;
+            so.FindProperty("_frames").objectReferenceValue = _gradeFrames;
             SetArray(so, "_arts", arts);
-            SetArray(so, "_portraits", portraits);
-            SetArray(so, "_names", names);
-            SetArray(so, "_infos", infos);
-            SetArray(so, "_equipButtons", equips);
-            SetArray(so, "_equipLabels", equipLabels);
-            SetArray(so, "_levelButtons", levels);
-            SetArray(so, "_levelLabels", levelLabels);
+            SetArray(so, "_cellFrames", frames);
+            SetArray(so, "_cellIcons", icons);
+            SetArray(so, "_cellLevels", levels);
+            SetArray(so, "_cellTags", tags);
+            so.FindProperty("_selection").objectReferenceValue = selection;
+            so.FindProperty("_detailArt").objectReferenceValue = book;
+            so.FindProperty("_detailGradeChip").objectReferenceValue = gradeChip;
+            so.FindProperty("_detailGrade").objectReferenceValue = gradeText;
+            so.FindProperty("_detailName").objectReferenceValue = name;
+            so.FindProperty("_detailInfo").objectReferenceValue = info;
+            so.FindProperty("_summary").objectReferenceValue = summary;
+            so.FindProperty("_equipButton").objectReferenceValue = equipGuard;
+            so.FindProperty("_equipLabel").objectReferenceValue = equipLabel;
+            so.FindProperty("_levelButton").objectReferenceValue = levelGuard;
+            so.FindProperty("_levelLabel").objectReferenceValue = levelLabel;
             so.ApplyModifiedPropertiesWithoutUndo();
             popup.gameObject.SetActive(false);
             return presenter;
+        }
+
+        /// <summary>D-114: pet looks index-aligned with PetCatalog (ArtBuilder writes Data/Art/Pet_{Id}.asset).</summary>
+        private static CharacterArt[] PetArts()
+        {
+            var arts = new CharacterArt[SoloHero.Core.Pets.PetCatalog.Count];
+            for (int i = 0; i < arts.Length; i++)
+            {
+                string id = SoloHero.Core.Pets.PetCatalog.All[i].Id;
+                arts[i] = AssetDatabase.LoadAssetAtPath<CharacterArt>("Assets/SoloHero/Data/Art/Pet_" + char.ToUpperInvariant(id[0]) + id.Substring(1) + ".asset");
+            }
+
+            return arts;
         }
 
         /// <summary>
@@ -2126,7 +2208,7 @@ namespace SoloHero.Editor
             so.FindProperty("_skillSize").intValue = 48;
             so.FindProperty("_dotSize").intValue = 34;
             so.FindProperty("_comboSize").intValue = 52;
-            so.FindProperty("_companionSize").intValue = 40;
+            so.FindProperty("_petSize").intValue = 40;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

@@ -82,6 +82,7 @@ namespace SoloHero.Core.Progression
                 case GuideKind.JobTier: return JobService.TierOf(data);
                 case GuideKind.Talents: return TalentService.Spent(data);
                 case GuideKind.OwnedGear: return data.ownedEquipment != null ? data.ownedEquipment.Count : 0;
+                case GuideKind.PetPulls: return data.petPullCount;
                 default: return 0;
             }
         }

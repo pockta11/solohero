@@ -29,9 +29,22 @@ namespace SoloHero.Core.Save
         /// <summary>D-104 job id from JobCatalog; "" is the beginner.</summary>
         public string jobId = "";
 
-        /// <summary>D-102 companions: the equipped id ("" none; every save starts with the slime) and levels index-aligned with CompanionCatalog.</summary>
+        /// <summary>
+        /// D-114 pets (the D-102 companions; these two keep their save names): the equipped pet id ("" none; every save
+        /// starts with the slime) and gold levels index-aligned with PetCatalog.
+        /// </summary>
         public string companionEquipped = "slime";
         public List<int> companionLevels = new List<int>();
+
+        /// <summary>
+        /// D-114: pets obtained (an older save starts empty and PetService.EnsureOwned fills it with the pets its cleared
+        /// stages had unlocked), duplicate enhance levels index-aligned with PetCatalog, and the pet summon's own pity
+        /// and pull counters.
+        /// </summary>
+        public List<string> petOwned = new List<string>();
+        public List<int> petEnhance = new List<int>();
+        public int petPityCount;
+        public int petPullCount;
 
         public int upgradeHp;
         public int upgradeAtk;
