@@ -16,7 +16,9 @@ from uikit import Layer, band, cov, hexc, radial, shade, vgrad  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', '..', 'Assets', 'SoloHero', 'Art', 'UI', 'Hd', 'Icons')
-args = [a for a in sys.argv[1:] if not a.startswith('--')]
+# OUT_DIR is the argument that looks like a path; bare names select icons (D-111).
+args = [a for i, a in enumerate(sys.argv[1:], 1)
+        if not a.startswith('--') and sys.argv[i - 1] != '--preview' and ('/' in a or os.sep in a)]
 if args:
     OUT = args[0]
 PREVIEW = sys.argv[sys.argv.index('--preview') + 1] if '--preview' in sys.argv else None
@@ -611,6 +613,46 @@ def plus():
     return L.image()
 
 
+def hand():
+    """D-111 tutorial pointer: a white glove pointing up-left with its index finger."""
+    L = new()
+    palm = L.ellipse(76, 82, 26, 24)
+    finger = seg(L, 66, 70, 30, 28, 10)
+    knuckles = union(seg(L, 80, 64, 90, 52, 9.5), seg(L, 92, 70, 102, 60, 9), seg(L, 98, 82, 108, 74, 8.5))
+    thumb = seg(L, 56, 88, 42, 74, 9)
+    cuff = rrect_at(L.x, L.y, 70, 100, 112, 122, 7)
+    glove = union(palm, finger, knuckles, thumb)
+    d = union(glove, cuff)
+    outline(L, d)
+    fill(L, glove, (hexc('#FFFFFF'), hexc('#F2F2FA'), hexc('#B8BCD0')))
+    for a, b in (((70, 70), (84, 58)), ((84, 76), (96, 66))):
+        L.over(cov(seg(L, a[0], a[1], b[0], b[1], 1.4)), hexc('#B8BCD0'))
+    fill(L, cuff, GOLD, hi=False)
+    L.over(cov(L.circle(34, 30, 4)), (255, 255, 255, 230))
+    return L.image()
+
+
+def quest():
+    """D-111 guide quest: a parchment scroll with a gold exclamation badge."""
+    L = new()
+    paper = rrect_at(L.x, L.y, 22, 26, 92, 110, 6)
+    top = rrect_at(L.x, L.y, 12, 18, 102, 36, 9)
+    bot = rrect_at(L.x, L.y, 12, 100, 102, 118, 9)
+    d = union(paper, top, bot)
+    outline(L, d)
+    fill(L, paper, (hexc('#FFF8E6'), hexc('#F4E2BC'), hexc('#C9A870')))
+    for y in (50, 64, 78, 90):
+        L.over(cov(seg(L, 34, y, 74 - (y % 3) * 5, y, 2.2)), hexc('#B89870'))
+    fill(L, top, BROWN)
+    fill(L, bot, BROWN)
+    badge = L.circle(96, 32, 22)
+    outline(L, badge, 5)
+    fill(L, badge, GOLD)
+    L.over(cov(rrect_at(L.x, L.y, 92, 18, 100, 38, 3)), hexc('#7A3A10'))
+    L.over(cov(L.circle(96, 45, 4)), hexc('#7A3A10'))
+    return L.image()
+
+
 def make():
     save(coin(), 'coin')
     save(gem(), 'gem')
@@ -643,9 +685,18 @@ def make():
     save(scroll(), 'scroll')
     save(plus(), 'plus')
     save(next_arrow(), 'next')
+    save(hand(), 'hand')
+    save(quest(), 'quest')
 
 
 if __name__ == '__main__':
+    ONLY = [a for i, a in enumerate(sys.argv[1:], 1)
+            if not a.startswith('--') and sys.argv[i - 1] != '--preview' and '/' not in a and os.sep not in a]
+    if ONLY:
+        _save = save
+        def save(img, name):  # noqa: F811 - restrict the run to the named icons
+            if name in ONLY:
+                _save(img, name)
     make()
     if PREVIEW:
         cols = 8

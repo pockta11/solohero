@@ -3,11 +3,18 @@ using SoloHero.Core.Config;
 
 namespace SoloHero.Core.Combat
 {
+    /// <summary>
+    /// One enemy (E2). D-110: it walks in toward the hero at its move speed and stops at <see cref="Stand"/> (the world
+    /// hands out front spots and queue places every tick); arrived and in reach, it attacks every interval. A ranged
+    /// enemy's swing returns the damage instead of dealing it, and the world flies the shot to the hero.
+    /// </summary>
     public sealed class EnemyBrain
     {
         private BalanceValues _balance;
         private float _atkTimer;
         private float _atkInterval;
+        private double _moveSpeed;
+        private double _attackRange;
         private bool _active;
         private float _stunTimer;
         private float _dotTimer;
@@ -22,6 +29,15 @@ namespace SoloHero.Core.Combat
         public double Atk { get; private set; }
         public double X { get; private set; }
         public bool IsBoss { get; private set; }
+
+        /// <summary>D-110 behaviour; views pick the look for it.</summary>
+        public EnemyRole Role { get; private set; }
+
+        /// <summary>D-110: distance in front of the hero where this enemy stops walking (set by the world each tick).</summary>
+        public double Stand { get; set; }
+
+        /// <summary>True on ticks this enemy walked; views play its run clip.</summary>
+        public bool IsMoving { get; private set; }
 
         /// <summary>Order of this enemy within its stage (0-based). Views use it to pick one of the chapter's looks.</summary>
         public int SpawnIndex { get; private set; }
@@ -45,7 +61,9 @@ namespace SoloHero.Core.Combat
         public bool IsActive => _active;
         public bool IsAlive => _active && State != EnemyState.Dead && Hp > 0d;
 
-        public void Reset(BalanceValues balance, double maxHp, double atk, float atkInterval, double x, bool isBoss, int spawnIndex = 0)
+        /// <param name="moveSpeed">D-110 walking speed toward the hero; 0 keeps the enemy where it stands.</param>
+        public void Reset(BalanceValues balance, double maxHp, double atk, float atkInterval, double x, bool isBoss, int spawnIndex = 0,
+            EnemyRole role = EnemyRole.Melee, double moveSpeed = 0d)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
             MaxHp = maxHp;
@@ -55,6 +73,11 @@ namespace SoloHero.Core.Combat
             _atkTimer = atkInterval;
             X = x;
             IsBoss = isBoss;
+            Role = role;
+            _moveSpeed = moveSpeed < 0d ? 0d : moveSpeed;
+            _attackRange = role == EnemyRole.Ranged ? balance.ENEMY_RANGED_RANGE : balance.ATTACK_RANGE;
+            Stand = role == EnemyRole.Ranged ? balance.ENEMY_RANGED_STAND : balance.ENEMY_STAND_MIN;
+            IsMoving = false;
             SpawnIndex = spawnIndex < 0 ? 0 : spawnIndex;
             Generation++;
             State = EnemyState.Idle;
@@ -65,6 +88,7 @@ namespace SoloHero.Core.Combat
         public void Deactivate()
         {
             ClearStatus();
+            IsMoving = false;
             _active = false;
             State = EnemyState.Dead;
             Hp = 0d;
@@ -172,28 +196,45 @@ namespace SoloHero.Core.Combat
             _markFraction = 0d;
         }
 
-        public void Tick(float dt, HeroBrain hero)
+        /// <summary>
+        /// Walks, then attacks once arrived and in reach. Returns the damage of a ranged shot fired this tick (the world
+        /// delivers it when it lands), 0 otherwise; melee hits land at once.
+        /// </summary>
+        public double Tick(float dt, HeroBrain hero)
         {
-            if (!IsAlive || hero == null || hero.State == HeroState.Dead) return;
-            if (_balance == null) return;
-            if (_stunTimer > 0f) return;
+            IsMoving = false;
+            if (!IsAlive || hero == null || hero.State == HeroState.Dead) return 0d;
+            if (_balance == null) return 0d;
+            if (_stunTimer > 0f) return 0d;
+
+            double desired = hero.X + Stand;
+            if (_moveSpeed > 0d && X > desired + 1e-3)
+            {
+                double step = _moveSpeed * dt;
+                X = X - step < desired ? desired : X - step;
+                IsMoving = true;
+                if (State == EnemyState.Attacking) State = EnemyState.Idle;
+                return 0d;
+            }
 
             double dist = X - hero.X;
             if (dist < 0d) dist = -dist;
-            if (dist > _balance.ATTACK_RANGE)
+            if (dist > _attackRange)
             {
                 if (State == EnemyState.Attacking) State = EnemyState.Idle;
-                return;
+                return 0d;
             }
 
             State = EnemyState.Attacking;
             _atkTimer -= dt;
-            if (_atkTimer > 0f) return;
+            if (_atkTimer > 0f) return 0d;
 
             _atkTimer = _atkInterval;
             AttackCount++;
             double damage = DamageCalc.EnemyHit(_balance, Atk, hero.Def);
+            if (Role == EnemyRole.Ranged) return damage;
             hero.ApplyDamage(damage);
+            return 0d;
         }
     }
 }

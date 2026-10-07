@@ -21,8 +21,29 @@ namespace SoloHero.Game.View
         public CharacterArt boss;
         public AudioClip bgm;
 
+        [Header("D-110 role looks (fall back to the roster above)")]
+        public CharacterArt melee;
+        public CharacterArt fast;
+        public CharacterArt tank;
+        public CharacterArt ranged;
+
         /// <summary>The n-th enemy of a stage cycles through the chapter's looks.</summary>
         public CharacterArt EnemyFor(int spawnIndex) =>
             enemies.Length == 0 ? null : enemies[(spawnIndex < 0 ? 0 : spawnIndex) % enemies.Length];
+
+        /// <summary>D-110: the chapter's look for a role, so a behaviour always reads the same (skeletons throw bones).</summary>
+        public CharacterArt EnemyFor(SoloHero.Core.Combat.EnemyRole role, int spawnIndex)
+        {
+            CharacterArt art;
+            switch (role)
+            {
+                case SoloHero.Core.Combat.EnemyRole.Fast: art = fast; break;
+                case SoloHero.Core.Combat.EnemyRole.Tank: art = tank; break;
+                case SoloHero.Core.Combat.EnemyRole.Ranged: art = ranged; break;
+                default: art = melee; break;
+            }
+
+            return art != null ? art : EnemyFor(spawnIndex);
+        }
     }
 }

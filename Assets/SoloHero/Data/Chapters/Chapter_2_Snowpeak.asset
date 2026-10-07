@@ -33,3 +33,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6dab61255f6356c458d448150ad9a282, type: 2}
   boss: {fileID: 11400000, guid: b55ec3c6332c14640bf3603a01e48153, type: 2}
   bgm: {fileID: 8300000, guid: b2b22693745407f46a4949712edd866d, type: 3}
+  melee: {fileID: 11400000, guid: 3be2c010c2c4db84db10e5194c3e885e, type: 2}
+  fast: {fileID: 11400000, guid: 6dab61255f6356c458d448150ad9a282, type: 2}
+  tank: {fileID: 11400000, guid: f6cce1799c627b64f8abc99c748932c3, type: 2}
+  ranged: {fileID: 11400000, guid: 5ea96f424a80e6d44beae6824b1b88a7, type: 2}

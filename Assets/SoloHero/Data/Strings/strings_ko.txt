@@ -461,3 +461,19 @@ equip.effect_earring	스킬 피해 +{0}%
 equip.owned_bonus	보유 효과  공격력 +{0}%
 equip.gear	장비
 equip.accessory	장신구
+# D-111 combat power and guide quests
+cp.label	전투력
+guide.upgrade	능력치 강화 {0}회
+guide.stage	{0} 스테이지 클리어
+guide.level	레벨 {0} 달성
+guide.gear_pull	장비 소환 {0}회
+guide.skill_pull	스킬 소환 {0}회
+guide.equip_skill	스킬 {0}개 장착
+guide.job	{0}차 전직하기
+guide.talent	특성 {0}포인트 배우기
+guide.gear_owned	장비 {0}종 모으기
+guide.progress	{0} / {1}
+guide.claim	보상 받기!
+guide.claimed_gem	퀘스트 완료! 젬 +{0}
+guide.claimed_gold	퀘스트 완료! 골드 +{0}
+guide.keep_fighting	전투를 이어가면 달성돼요

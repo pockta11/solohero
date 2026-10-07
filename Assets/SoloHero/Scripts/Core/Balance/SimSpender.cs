@@ -19,8 +19,11 @@ namespace SoloHero.Core.Balance
     /// </summary>
     public sealed class SimSpender
     {
-        /// <summary>Clear speed counts twice: DPS sets both stage time and survival (fight length), EHP only survival.</summary>
-        private const double DpsWeight = 2d;
+        /// <summary>
+        /// Weight of ln(DPS) against ln(EHP) in the score: DPS sets both stage time and survival (fight length), EHP
+        /// only survival. From <see cref="SimSettings.DpsWeight"/>.
+        /// </summary>
+        public double DpsWeight = 2d;
 
         private readonly BalanceValues _b;
         private readonly SaveDataV2 _save;

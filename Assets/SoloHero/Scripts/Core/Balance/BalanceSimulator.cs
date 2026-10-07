@@ -67,6 +67,7 @@ namespace SoloHero.Core.Balance
             private bool _firstFiveRecorded;
             private bool _tutorialDone;
             private readonly TutorialService _tutorial;
+            private readonly GuideQuestService _guide;
 
             public SimRun(BalanceValues balance, SimSettings settings)
             {
@@ -81,9 +82,13 @@ namespace SoloHero.Core.Balance
                 IRandom skillRng = new SystemRandom(new Random(unchecked(settings.Seed * 104729 + 31)));
                 var summon = new SkillSummonService(balance, GachaTableValues.FromBalance(balance), skillRng);
                 SkillBook.EnsureStarters(_save, balance);
-                _spender = new SimSpender(balance, _save, gacha, summon) { Job1 = settings.Job1, Job2 = settings.Job2 };
+                _spender = new SimSpender(balance, _save, gacha, summon)
+                {
+                    Job1 = settings.Job1, Job2 = settings.Job2, DpsWeight = settings.DpsWeight
+                };
                 _ads = new AdSlotPolicy(balance, _save, _clock);
                 _tutorial = new TutorialService(balance, gacha);
+                _guide = new GuideQuestService(balance, _save);
                 _spender.GradeObtained += OnGradeObtained;
 
                 _runner = new StageRunner(balance, combatRng, CombatLoadout.ComputeStats(balance, _save), _save);
@@ -201,6 +206,17 @@ namespace SoloHero.Core.Balance
                         Spend();
                         CombatLoadout.Apply(_runner, _b, _save);
                     }
+                }
+
+                // D-111: the player claims guide quests as soon as they complete (the bar glows); gems feed gem pulls.
+                double goldBeforeGuide = _save.gold;
+                bool claimedGuide = false;
+                while (_guide.TryClaim().Ok) claimedGuide = true;
+                if (claimedGuide)
+                {
+                    double questGold = _save.gold - goldBeforeGuide;
+                    _day.EarnedQuest += questGold;
+                    _earnedTotal += questGold;
                 }
 
                 if (!_firstFiveRecorded && _play >= FirstSessionCheckSeconds)

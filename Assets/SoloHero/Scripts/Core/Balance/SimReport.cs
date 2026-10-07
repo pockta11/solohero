@@ -43,6 +43,9 @@ namespace SoloHero.Core.Balance
         public double EarnedOffline;
         public double EarnedRefund;
         public double EarnedBooster;
+
+        /// <summary>D-111 guide quest gold.</summary>
+        public double EarnedQuest;
         public double SpentUpgrade;
         public double SpentGacha;
         public double SpentSkill;
@@ -55,7 +58,7 @@ namespace SoloHero.Core.Balance
         public double GoldEnd;
         public double GemEnd;
 
-        public double Earned => EarnedStage + EarnedOffline + EarnedRefund + EarnedBooster;
+        public double Earned => EarnedStage + EarnedOffline + EarnedRefund + EarnedBooster + EarnedQuest;
         public double Spent => SpentUpgrade + SpentGacha + SpentSkill;
     }
 

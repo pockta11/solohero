@@ -14,17 +14,17 @@ namespace SoloHero.Game.Combat
     /// Each enemy takes its look from the chapter roster by spawn order (E8-03); looks without a hit or dead clip
     /// flash / vanish instead. Enemies keep their slot renderer for the death clip after Core frees the slot. The hit
     /// lands on the swing (D-065), so animation timing never changes combat results.
-    /// D-096 game feel, all view offsets on top of the Core position: a new enemy runs in from the right, a hit pushes
-    /// it back a little, a kill flings it back with a hop, the hero lunges on each swing, hits blink white through the
-    /// SpriteFlash shader, and character clips hold still during a <see cref="HitStop"/>.
+    /// D-096 game feel, all view offsets on top of the Core position: a hit pushes an enemy back a little, a kill flings
+    /// it back with a hop, the hero lunges on each swing, hits blink white through the SpriteFlash shader, and character
+    /// clips hold still during a <see cref="HitStop"/>.
+    /// D-110: enemies walk in for real (Core moves them), so they play their run clip while moving; the look and body
+    /// size come from the role (tanks are bigger), and ranged shots fly as spinning bones.
     /// </summary>
     public sealed class CombatWorldView : MonoBehaviour
     {
         /// <summary>D-109: waves of eight (SPAWN_MAX_ALIVE); ArtBuilder makes this many renderers, HP bars and shadows.</summary>
         public const int EnemySlotVisualCount = 8;
         private const float HitFlashSeconds = 0.09f;
-        private const float EntranceDistance = 2.6f;
-        private const float EntranceSeconds = 0.32f;
         private const float KnockPerHit = 0.12f;
         private const float KnockMax = 0.35f;
         private const float KnockReturnRate = 10f;
@@ -58,6 +58,11 @@ namespace SoloHero.Game.Combat
         [SerializeField] private CharacterArt _enemyArt;
         [SerializeField] private CharacterArt _bossArt;
         [SerializeField] private ChapterThemeSet _themes;
+
+        [Header("D-110 ranged shots (CombatWorld.ShotCapacity renderers)")]
+        [SerializeField] private SpriteRenderer[] _shotRenderers = new SpriteRenderer[0];
+        [SerializeField] private float _shotHeight = 0.55f;
+        [SerializeField] private float _shotSpin = -900f;
 
         [Header("Enemy HP bars (shown once hurt; bosses use the HUD bar)")]
         [SerializeField] private SpriteRenderer[] _hpBacks = new SpriteRenderer[EnemySlotVisualCount];
@@ -98,7 +103,6 @@ namespace SoloHero.Game.Combat
             public float Flash;
             public float X;
             public float Y;
-            public float Entrance;
             public float Push;
             public float DeathTime;
             public CharacterArt Art;
@@ -169,10 +173,42 @@ namespace SoloHero.Game.Combat
                 EnemyBrain enemy = i < world.SlotCount ? world.GetSlot(i) : null;
                 DrawEnemy(i, enemy, theme, ref newKills);
                 DrawHpBar(i, enemy);
-                DrawShadow(i + 1, i < _enemyRenderers.Length ? _enemyRenderers[i] : null, _slots[i].Y, (_slots[i].Boss ? 1.6f : 1f) * DepthLanes.Scale(_slots[i].Y));
+                DrawShadow(i + 1, i < _enemyRenderers.Length ? _enemyRenderers[i] : null, _slots[i].Y,
+                    (_slots[i].Boss ? 1.6f : RoleScale(enemy)) * DepthLanes.Scale(_slots[i].Y));
             }
 
             DrawShadow(0, _heroRenderer, 0f, 1f);
+            DrawShots(world);
+        }
+
+        /// <summary>D-110: tanks are drawn bigger, rushers a little smaller (view only).</summary>
+        private static float RoleScale(EnemyBrain enemy)
+        {
+            if (enemy == null || !enemy.IsActive) return 1f;
+            switch (enemy.Role)
+            {
+                case EnemyRole.Tank: return 1.25f;
+                case EnemyRole.Fast: return 0.9f;
+                default: return 1f;
+            }
+        }
+
+        /// <summary>D-110: every shot in flight as a spinning projectile at its shooter's depth lane.</summary>
+        private void DrawShots(CombatWorld world)
+        {
+            for (int i = 0; i < _shotRenderers.Length; i++)
+            {
+                SpriteRenderer r = _shotRenderers[i];
+                if (r == null) continue;
+                bool show = world.TryGetShot(i, out double x, out int lane);
+                if (r.enabled != show) r.enabled = show;
+                if (!show) continue;
+                float y = DepthLanes.ForIndex(lane) + _shotHeight;
+                Transform t = r.transform;
+                t.position = new Vector3((float)x, y, 0f);
+                t.Rotate(0f, 0f, _shotSpin * Time.deltaTime);
+                r.sortingOrder = DepthLanes.Order(y - _shotHeight) + 1;
+            }
         }
 
         /// <summary>A soft blob on the ground line under a drawn character, sized in world units (stays down during a hop).</summary>
@@ -313,7 +349,6 @@ namespace SoloHero.Game.Combat
                 if (fresh)
                 {
                     slot.Art = ArtFor(enemy, theme);
-                    slot.Entrance = EntranceSeconds;
                     slot.Push = 0f;
                 }
 
@@ -333,11 +368,8 @@ namespace SoloHero.Game.Combat
                     slot.Push = Mathf.Min(KnockMax, slot.Push + KnockPerHit);
                 }
 
-                bool entering = slot.Entrance > 0f;
-                if (entering) slot.Entrance -= dt;
                 slot.Push -= slot.Push * Mathf.Min(1f, KnockReturnRate * dt);
-                float run = slot.Entrance > 0f ? slot.Entrance / EntranceSeconds : 0f;
-                slot.X = (float)enemy.X + (enemy.IsBoss ? BossDrawOffset : 0f) + EntranceDistance * run * run + slot.Push;
+                slot.X = (float)enemy.X + (enemy.IsBoss ? BossDrawOffset : 0f) + slot.Push;
                 slot.Y = DepthLanes.For(enemy);
                 renderer.enabled = true;
                 renderer.transform.position = new Vector3(slot.X, slot.Y, 0f);
@@ -345,12 +377,14 @@ namespace SoloHero.Game.Combat
 
                 if (art != null && book != null)
                 {
-                    SetScale(renderer, art.pixelScale * DepthLanes.Scale(slot.Y));
-                    if (fresh) book.Play(art.run, art.fps, loop: true, restart: true);
+                    SetScale(renderer, art.pixelScale * DepthLanes.Scale(slot.Y) * RoleScale(enemy));
+                    bool walking = enemy.IsMoving && art.run.Length > 0;
+                    if (fresh) book.Play(walking ? art.run : art.idle, art.fps, loop: true, restart: true);
                     else if (attacked) book.Play(art.attack, art.fps, loop: false, restart: true);
                     else if (hurt && art.hit.Length > 0 && (book.Current != art.attack || book.Finished)) book.Play(art.hit, art.fps, loop: false, restart: true);
-                    else if (entering && slot.Entrance <= 0f && book.Current == art.run) book.Play(art.idle, art.fps, loop: true);
-                    else if (book.Finished) book.Play(art.idle, art.fps, loop: true);
+                    else if (walking && book.Current != art.run && (book.Current == art.idle || book.Finished)) book.Play(art.run, art.fps, loop: true);
+                    else if (!walking && book.Current == art.run) book.Play(art.idle, art.fps, loop: true);
+                    else if (book.Finished) book.Play(walking ? art.run : art.idle, art.fps, loop: true);
                 }
             }
             else if (slot.Active)
@@ -432,7 +466,7 @@ namespace SoloHero.Game.Combat
         private CharacterArt ArtFor(EnemyBrain enemy, ChapterTheme theme)
         {
             if (enemy.IsBoss) return theme != null && theme.boss != null ? theme.boss : _bossArt;
-            CharacterArt art = theme != null ? theme.EnemyFor(enemy.SpawnIndex) : null;
+            CharacterArt art = theme != null ? theme.EnemyFor(enemy.Role, enemy.SpawnIndex) : null;
             return art != null ? art : _enemyArt;
         }
 
@@ -477,6 +511,11 @@ namespace SoloHero.Game.Combat
             {
                 if (_hpBacks[i] != null) _hpBacks[i].enabled = false;
                 if (i < _hpFills.Length && _hpFills[i] != null) _hpFills[i].enabled = false;
+            }
+
+            for (int i = 0; i < _shotRenderers.Length; i++)
+            {
+                if (_shotRenderers[i] != null) _shotRenderers[i].enabled = false;
             }
 
             if (_enemyRenderers == null) return;

@@ -22,7 +22,13 @@ namespace SoloHero.Game.Combat
         public static float For(EnemyBrain enemy)
         {
             if (enemy == null || enemy.IsBoss) return 0f;
-            int i = enemy.SpawnIndex < 0 ? 0 : enemy.SpawnIndex;
+            return ForIndex(enemy.SpawnIndex);
+        }
+
+        /// <summary>The lane of the n-th enemy of a stage (D-110 shots fly at their shooter's lane).</summary>
+        public static float ForIndex(int spawnIndex)
+        {
+            int i = spawnIndex < 0 ? 0 : spawnIndex;
             return Lanes[i % Lanes.Length];
         }
 

@@ -46,7 +46,7 @@ namespace SoloHero.Tests.EditMode
             SimStageRow first = r.FindStage(1);
             Assert.IsNotNull(first);
             Assert.AreEqual(1, first.Attempts);
-            Assert.That(first.ClearSeconds, Is.InRange(15d, 30d));
+            Assert.That(first.ClearSeconds, Is.InRange(BalanceChecks.StageSecondsMin, BalanceChecks.StageSecondsMax));
             Assert.AreEqual(1, r.Days.Count);
             Assert.Greater(r.Days[0].EarnedStage, 0d);
             Assert.AreEqual(30d * 60d, r.TotalPlaySeconds, 1d);

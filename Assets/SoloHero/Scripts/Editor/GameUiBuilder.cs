@@ -432,7 +432,8 @@ namespace SoloHero.Editor
                 hudSo.FindProperty("_panels").objectReferenceValue = root.GetComponent<PanelHost>();
                 hudSo.ApplyModifiedPropertiesWithoutUndo();
             }
-            BuildTutorial(root, session, toast);
+            BuildTutorial(root, session, toast, character, gacha.GetComponent<GachaPanelPresenter>());
+            WireGuideQuest(hud.transform, root.GetComponent<PanelHost>(), gacha.GetComponent<GachaPanelPresenter>(), toast);
             BuildDamageText(hud.transform, session);
             GachaRevealView reveal = BuildGachaReveal(hud.transform, gacha.GetComponent<GachaPanelPresenter>());
             StageSelectPresenter stageSelect = BuildStageSelect(hud.transform, session);
@@ -2122,7 +2123,103 @@ namespace SoloHero.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void BuildTutorial(RectTransform root, CombatSession session, ToastQueue toast)
+        /// <summary>D-111 combat power pill left of the stage plate; a green "+N" floats up from it on every rise.</summary>
+        private static void BuildCombatPower(Transform hud)
+        {
+            RectTransform pill = Box("CombatPower", hud, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-268f, -(TopBarHeight + 16f)), new Vector2(204f, 92f));
+            UiSkin.Sliced(Plain(pill, null), UiSkin.Pill);
+            pill.GetComponent<Image>().raycastTarget = false;
+            FixedIcon(pill, "atk", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), 46f);
+            Text label = AddText(Box("Label", pill, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(64f, -6f), new Vector2(134f, 32f)), 22, TextAnchor.MiddleLeft);
+            label.color = UiPalette.HudGold;
+            Localize(label, "cp.label");
+            Text value = AddText(Box("Value", pill, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(64f, 8f), new Vector2(134f, 46f)), 34, TextAnchor.MiddleLeft);
+            value.horizontalOverflow = HorizontalWrapMode.Overflow;
+            RectTransform gainRect = Box("Gain", pill, new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(180f, 44f));
+            Text gain = AddText(gainRect, 32, TextAnchor.MiddleLeft);
+            gain.color = UiPalette.HudGood;
+            gain.horizontalOverflow = HorizontalWrapMode.Overflow;
+            CanvasGroup gainGroup = gainRect.gameObject.AddComponent<CanvasGroup>();
+            gainGroup.alpha = 0f;
+            gainGroup.blocksRaycasts = false;
+
+            CombatPowerPresenter presenter = pill.gameObject.AddComponent<CombatPowerPresenter>();
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_value").objectReferenceValue = value;
+            so.FindProperty("_gain").objectReferenceValue = gain;
+            so.FindProperty("_gainGroup").objectReferenceValue = gainGroup;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// D-111 guide quest bar under the left rail: scroll icon, quest and progress, reward on the right. Gold and
+        /// pulsing once done; tap to claim or to jump to where the quest is made. Panels and toast are wired later.
+        /// </summary>
+        private static void BuildGuideQuest(Transform hud)
+        {
+            RectTransform bar = Box("GuideQuest", hud, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(RailInset, -(RailTop + 2f * RailStep + 8f)), new Vector2(476f, 100f));
+            Image background = Plain(bar, null);
+            UiSkin.Sliced(background, UiSkin.Pill);
+            background.raycastTarget = true;
+            FixedIcon(bar, "quest", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(10f, 0f), 70f);
+            Text title = AddText(Box("Title", bar, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(90f, -10f), new Vector2(286f, 42f)), 27, TextAnchor.MiddleLeft);
+            title.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Text progress = AddText(Box("Progress", bar, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(90f, 10f), new Vector2(286f, 38f)), 25, TextAnchor.MiddleLeft);
+            progress.color = UiPalette.HudGold;
+            Image rewardIcon = Plain(Box("RewardIcon", bar, new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-48f, 12f), new Vector2(46f, 46f)), UiSkin.Icon("gem"));
+            rewardIcon.preserveAspect = true;
+            Text reward = AddText(Box("Reward", bar, new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-48f, -24f), new Vector2(96f, 30f)), 24, TextAnchor.MiddleCenter);
+            reward.horizontalOverflow = HorizontalWrapMode.Overflow;
+            UiPulse pulse = bar.gameObject.AddComponent<UiPulse>();
+            pulse.enabled = false;
+            Button button = bar.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            button.targetGraphic = background;
+            bar.gameObject.AddComponent<PressScale>();
+
+            GuideQuestPresenter presenter = bar.gameObject.AddComponent<GuideQuestPresenter>();
+            UnityEventTools.AddPersistentListener(button.onClick, presenter.OnTap);
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_title").objectReferenceValue = title;
+            so.FindProperty("_progress").objectReferenceValue = progress;
+            so.FindProperty("_reward").objectReferenceValue = reward;
+            so.FindProperty("_rewardIcon").objectReferenceValue = rewardIcon;
+            so.FindProperty("_gemSprite").objectReferenceValue = UiSkin.Icon("gem");
+            so.FindProperty("_goldSprite").objectReferenceValue = UiSkin.Icon("coin");
+            so.FindProperty("_background").objectReferenceValue = background;
+            so.FindProperty("_idleSprite").objectReferenceValue = UiSkin.Pill;
+            so.FindProperty("_readySprite").objectReferenceValue = UiSkin.PlateSprite(Tone.Gold);
+            so.FindProperty("_pulse").objectReferenceValue = pulse;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>D-111: hands the guide quest bar the tab host, the summon panel and the toast once they exist.</summary>
+        private static void WireGuideQuest(Transform hud, PanelHost panels, GachaPanelPresenter gacha, ToastQueue toast)
+        {
+            Transform bar = hud.Find("GuideQuest");
+            GuideQuestPresenter presenter = bar != null ? bar.GetComponent<GuideQuestPresenter>() : null;
+            if (presenter == null) return;
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_panels").objectReferenceValue = panels;
+            so.FindProperty("_gacha").objectReferenceValue = gacha;
+            so.FindProperty("_toast").objectReferenceValue = toast;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static Transform FindDeep(Transform parent, string name)
+        {
+            if (parent == null) return null;
+            if (parent.name == name) return parent;
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform found = FindDeep(parent.GetChild(i), name);
+                if (found != null) return found;
+            }
+
+            return null;
+        }
+
+        private static void BuildTutorial(RectTransform root, CombatSession session, ToastQueue toast, GameObject characterPanel, GachaPanelPresenter gacha)
         {
             RectTransform banner = Box("TutorialBanner", root, new Vector2(0.5f, 0.66f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(940f, 84f));
             UiSkin.Sliced(banner.gameObject.AddComponent<Image>(), UiSkin.PlateSprite(Tone.Orange));
@@ -2134,12 +2231,24 @@ namespace SoloHero.Editor
             banner.gameObject.AddComponent<UiPulse>();
             banner.gameObject.SetActive(false);
 
+            // D-111: a bobbing hand over the ATK upgrade button while the upgrade hint is up.
+            RectTransform pointer = Box("TutorialPointer", root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(112f, 112f));
+            Image hand = Plain(pointer, UiSkin.Icon("hand"));
+            hand.raycastTarget = false;
+            pointer.gameObject.SetActive(false);
+            Transform lane = FindDeep(characterPanel != null ? characterPanel.transform : null, "Lane1");
+            Transform buy = lane != null ? lane.Find("Buy") : null;
+            if (buy == null) Debug.LogWarning("[UI] ATK upgrade button not found for the tutorial pointer");
+
             TutorialHints hints = root.gameObject.AddComponent<TutorialHints>();
             var so = new SerializedObject(hints);
             so.FindProperty("_banner").objectReferenceValue = banner.gameObject;
             so.FindProperty("_bannerText").objectReferenceValue = label;
             so.FindProperty("_toast").objectReferenceValue = toast;
             so.FindProperty("_session").objectReferenceValue = session;
+            so.FindProperty("_gacha").objectReferenceValue = gacha;
+            so.FindProperty("_pointer").objectReferenceValue = pointer;
+            so.FindProperty("_pointerTarget").objectReferenceValue = buy as RectTransform;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -2173,7 +2282,7 @@ namespace SoloHero.Editor
 
             Transform oldBar = hud.Find("TopBar");
             if (oldBar != null) Object.DestroyImmediate(oldBar.gameObject);
-            foreach (string stale in new[] { "StagePlate", "BossBar", "GemCount" })
+            foreach (string stale in new[] { "StagePlate", "BossBar", "GemCount", "CombatPower", "GuideQuest" })
             {
                 Transform t = hud.Find(stale);
                 if (t != null) Object.DestroyImmediate(t.gameObject);
@@ -2258,6 +2367,9 @@ namespace SoloHero.Editor
             // The stage number's rect covers the whole plate so a tap anywhere on it opens stage select.
             TopText(hud, "Stage", new Vector2(0.5f, 1f), new Vector2(0f, -(TopBarHeight + 14f)), new Vector2(300f, 104f), 50, TextAnchor.UpperCenter, Color.white);
             TopText(hud, "Kills", new Vector2(0.5f, 1f), new Vector2(0f, -(TopBarHeight + 8f + 112f - 47f)), new Vector2(232f, 30f), 22, TextAnchor.MiddleCenter, Color.white);
+
+            BuildCombatPower(hud);
+            BuildGuideQuest(hud);
 
             // Boss HP bar: name on the left inside a red gauge under the stage plate; the timer sits under it.
             RectTransform bossBar = Box("BossBar", hud, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -(TopBarHeight + 132f)), new Vector2(720f, 62f));

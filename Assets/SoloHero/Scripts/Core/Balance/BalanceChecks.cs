@@ -33,8 +33,10 @@ namespace SoloHero.Core.Balance
         public const int Day3Max = 39; // GDD "a day = half to one chapter": day 1 + 10..20 stages, not into chapter 5
         public const int Day7Min = 40;
         public const int Day7Max = 49;
-        public const double StageSecondsMin = 20d;
-        public const double StageSecondsMax = 30d;
+        // D-110: enemies walk in, so the hero walks 10-30% of a stage instead of 30-45%; the same fight fits in
+        // 12-25 s (was 20-30 s while the hero had to reach every enemy).
+        public const double StageSecondsMin = 12d;
+        public const double StageSecondsMax = 25d;
         public const double StageSecondsShareMin = 0.7d;
         public const double PullParityMin = 0.5d;
         public const double PullParityMax = 2.0d;

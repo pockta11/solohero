@@ -27,10 +27,10 @@ namespace SoloHero.Core.Config
         public double UPG_GAIN_SPD = 0.02;
         public int UPG_MAX_LEVEL_SPD = 100;
         public double UPG_FARM_EXPONENT = 1.31;
-        public double ENEMY_HP_BASE = 60;
-        public double ENEMY_HP_GROWTH = 1.155;
-        public double ENEMY_ATK_BASE = 4.5;
-        public double ENEMY_ATK_GROWTH = 1.155;
+        public double ENEMY_HP_BASE = 45;
+        public double ENEMY_HP_GROWTH = 1.185;
+        public double ENEMY_ATK_BASE = 2.6;
+        public double ENEMY_ATK_GROWTH = 1.185;
         public double ENEMY_DEF = 0;
         public double ENEMY_EXP_BASE = 3.75;
         public double ENEMY_EXP_GROWTH = 1.10;
@@ -41,8 +41,36 @@ namespace SoloHero.Core.Config
         public int SPAWN_MAX_ALIVE = 8;
         public double SPAWN_OFFSET_X = 0.8;
         public int KILL_TARGET_NORMAL = 16;
+        // D-110 enemies walk in: the nearest ENEMY_FRONT_SLOTS stop ENEMY_STAND_MIN + k x ENEMY_STAND_STEP from the hero
+        // and fight, the rest queue ENEMY_QUEUE_SPACING apart behind them and step up as the front falls.
+        public double ENEMY_MOVE_SPEED = 1.6;
+        public int ENEMY_FRONT_SLOTS = 3;
+        public double ENEMY_STAND_MIN = 1.0;
+        public double ENEMY_STAND_STEP = 0.2;
+        public double ENEMY_QUEUE_SPACING = 0.45;
+        public double BOSS_STAND = 1.2;
+        // D-110 roles: HP / ATK / speed multipliers of the plain soldier; ranged ones stop and shoot from afar.
+        public double ENEMY_FAST_HP_MULT = 0.6;
+        public double ENEMY_FAST_ATK_MULT = 0.6;
+        public double ENEMY_FAST_SPEED_MULT = 1.8;
+        public double ENEMY_TANK_HP_MULT = 2.4;
+        public double ENEMY_TANK_ATK_MULT = 0.9;
+        public double ENEMY_TANK_SPEED_MULT = 0.65;
+        public double ENEMY_RANGED_HP_MULT = 0.7;
+        public double ENEMY_RANGED_ATK_MULT = 0.6;
+        public double ENEMY_RANGED_SPEED_MULT = 0.9;
+        public double ENEMY_RANGED_STAND = 3.6;
+        public double ENEMY_RANGED_RANGE = 4.2;
+        public float ENEMY_RANGED_INTERVAL = 1.6f;
+        public double ENEMY_PROJECTILE_SPEED = 9;
         public double BOSS_HP_MULT = 10;
-        public double BOSS_ATK_MULT = 1.1;
+
+        /// <summary>D-110: the chapter 1 boss (the first wall) is softer, so a new player clears it in a try or two.</summary>
+        public double BOSS_HP_MULT_CH1 = 6;
+
+        /// <summary>D-110: the boss walks in at this share of ENEMY_MOVE_SPEED.</summary>
+        public double BOSS_SPEED_MULT = 0.8;
+        public double BOSS_ATK_MULT = 2.5;
         public float BOSS_ATK_INTERVAL = 1.8f;
         public double BOSS_GOLD_MULT = 5.0;
         public double BOSS_EXP_MULT = 5.0;
@@ -52,7 +80,7 @@ namespace SoloHero.Core.Config
         public double STAGE_GOLD_GROWTH = 1.04;
         public int CHAPTER_CLEAR_GEM = 60;
         public int OFFLINE_CAP = 21600;
-        public double OFFLINE_DIVISOR = 3000;
+        public double OFFLINE_DIVISOR = 2000;
         public int OFFLINE_MIN_SECONDS = 60;
         public double OFFLINE_AD_MULT = 2.0;
         public double GACHA_COST_SINGLE = 500;
@@ -68,7 +96,7 @@ namespace SoloHero.Core.Config
         public bool GACHA_PITY_RESET_ON_LEGENDARY = true;
         public int TUTORIAL_FREE_PULLS = 1;
         public double TUTORIAL_GOLD = 1000;
-        public int TUTORIAL_REWARD_STAGE = 2;
+        public int TUTORIAL_REWARD_STAGE = 1;
         public double REFUND_C = 50;
         public double REFUND_R = 200;
         public double REFUND_E = 800;
@@ -166,7 +194,7 @@ namespace SoloHero.Core.Config
         /// <summary>D-100 daily dungeons: run length, entries per dungeon per local day, rewards, result pause.</summary>
         public float DUNGEON_TIME = 30f;
         public int DUNGEON_DAILY_TICKETS = 2;
-        public double DUNGEON_GOLD_PER_KILL = 0.6;
+        public double DUNGEON_GOLD_PER_KILL = 0.5;
         public double DUNGEON_EXP_MULT = 6;
         public float DUNGEON_RESULT_TIME = 2.5f;
 

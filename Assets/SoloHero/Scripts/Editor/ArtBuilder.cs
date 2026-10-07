@@ -65,6 +65,20 @@ namespace SoloHero.Editor
         };
 
         /// <summary>
+        /// D-110 role looks per chapter (index-aligned with <see cref="Chapters"/>): soldier, rusher, tank, shooter.
+        /// The same creature always plays the same role - goblins fight up close, flying eyes rush, mushrooms soak,
+        /// skeletons throw bones - with the chapter's colour variants.
+        /// </summary>
+        private static readonly (string melee, string fast, string tank, string ranged)[] RoleLooks =
+        {
+            ("goblin", "flyeye", "mushroom", "skeleton"),
+            ("goblin", "flyeye", "mushroomb", "skeleton"),
+            ("goblinr", "flyeye", "mushroom", "skeleton"),
+            ("goblinr", "flyeyer", "mushroomb", "skeletonv"),
+            ("goblinr", "flyeyer", "mushroom", "skeletonv"),
+        };
+
+        /// <summary>
         /// Look key -> (asset name, integer pixel scale). D-092: every look is drawn at 1x on the same pixel grid as
         /// the hero; bosses get a larger head in the art instead of a 2x scale.
         /// </summary>
@@ -246,6 +260,10 @@ namespace SoloHero.Editor
                 theme.pixelScale = Mathf.Max(1, Mathf.CeilToInt(ViewHeightPx / height));
                 theme.sky = TopLeftColor(files.Length > 0 ? files[0] : null);
                 theme.enemies = Chapters[c].enemies.Select(e => looks[e]).ToArray();
+                theme.melee = looks[RoleLooks[c].melee];
+                theme.fast = looks[RoleLooks[c].fast];
+                theme.tank = looks[RoleLooks[c].tank];
+                theme.ranged = looks[RoleLooks[c].ranged];
                 theme.boss = looks[Chapters[c].boss];
                 theme.bgm = AssetDatabase.LoadAssetAtPath<AudioClip>(AudioRoot + "/Bgm/" + Chapters[c].bgm + ".ogg");
                 theme.floor = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/Tiles/floor_" + (c + 1) + ".png");
@@ -542,6 +560,7 @@ namespace SoloHero.Editor
             WireVfx(session, view, vfxSet, shake, themes);
             WireHpBars(view);
             WireShadows(view);
+            WireShots(view);
             WireCoins(view, camera);
             WireCompanion(session, vfxSet, petArts);
 
@@ -627,6 +646,29 @@ namespace SoloHero.Editor
             SerializedProperty prop = so.FindProperty("_shadows");
             prop.arraySize = shadows.Length;
             for (int i = 0; i < shadows.Length; i++) prop.GetArrayElementAtIndex(i).objectReferenceValue = shadows[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>D-110: one renderer per ranged shot slot (CombatWorld.ShotCapacity) showing the thrown bone.</summary>
+        private static void WireShots(CombatWorldView view)
+        {
+            GameObject old = GameObject.Find("Shots");
+            if (old != null) Object.DestroyImmediate(old);
+            var root = new GameObject("Shots");
+            Sprite[] frames = Clip(ArtRoot + "/Vfx", "vfxbone", "play", false);
+            Sprite bone = frames.Length > 0 ? frames[0] : null;
+            if (bone == null) Debug.LogWarning("[Art] missing Vfx/vfxbone_play_1.png");
+            var shots = new SpriteRenderer[SoloHero.Core.Combat.CombatWorld.ShotCapacity];
+            for (int i = 0; i < shots.Length; i++)
+            {
+                shots[i] = BarPart(root.transform, "Shot" + i, bone, Color.white, 150);
+                shots[i].enabled = false;
+            }
+
+            var so = new SerializedObject(view);
+            SerializedProperty prop = so.FindProperty("_shotRenderers");
+            prop.arraySize = shots.Length;
+            for (int i = 0; i < shots.Length; i++) prop.GetArrayElementAtIndex(i).objectReferenceValue = shots[i];
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

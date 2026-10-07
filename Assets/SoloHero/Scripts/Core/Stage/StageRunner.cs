@@ -426,17 +426,26 @@ namespace SoloHero.Core.Stage
             double hp = Formulas.EnemyHp(_balance, _g);
             double atk = Formulas.EnemyAtk(_balance, _g);
             float interval = _balance.ENEMY_ATK_INTERVAL;
+            // D-110: the place in the wave sets the role (stats, speed, where it stops); everyone walks in.
+            EnemyRole role = isBoss ? EnemyRole.Melee : EnemyWaves.RoleFor(_g, _spawner.WaveSlot, _balance.STAGES_PER_CHAPTER);
+            double speed = _balance.ENEMY_MOVE_SPEED * EnemyWaves.SpeedMult(_balance, role);
             if (isBoss)
             {
-                hp *= _balance.BOSS_HP_MULT;
+                hp *= Formulas.BossHpMult(_balance, _g);
                 atk *= _balance.BOSS_ATK_MULT;
                 interval = _balance.BOSS_ATK_INTERVAL;
+                speed = _balance.ENEMY_MOVE_SPEED * _balance.BOSS_SPEED_MULT;
+            }
+            else
+            {
+                hp *= EnemyWaves.StageHpMult(_balance, _g, role);
+                atk *= EnemyWaves.AtkMult(_balance, role);
+                if (role == EnemyRole.Ranged) interval = _balance.ENEMY_RANGED_INTERVAL;
             }
 
-            // D-081: a wave stands in a line, front enemy first.
+            // D-081: a wave comes in a line, front enemy first.
             double x = _world.SpawnXAheadOfHero() + (isBoss ? 0 : _spawner.WaveSlot) * _balance.SPAWN_WAVE_SPACING;
-            // SpawnIndex only picks the look (E8-03); every enemy of a stage has the same stats.
-            brain.Reset(_balance, hp, atk, interval, x, isBoss, isBoss ? 0 : _spawner.Spawned - 1);
+            brain.Reset(_balance, hp, atk, interval, x, isBoss, isBoss ? 0 : _spawner.Spawned - 1, role, speed);
             return true;
         }
 

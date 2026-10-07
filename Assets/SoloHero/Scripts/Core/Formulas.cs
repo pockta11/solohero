@@ -13,6 +13,10 @@ namespace SoloHero.Core
         public static double EnemyAtk(BalanceValues c, int g) =>
             c.ENEMY_ATK_BASE * Math.Pow(c.ENEMY_ATK_GROWTH, g - 1);
 
+        /// <summary>Boss HP multiplier at stage g: D-110 softens the chapter 1 boss.</summary>
+        public static double BossHpMult(BalanceValues c, int g) =>
+            g <= c.STAGES_PER_CHAPTER ? c.BOSS_HP_MULT_CH1 : c.BOSS_HP_MULT;
+
         public static double StageGold(BalanceValues c, int g) =>
             c.STAGE_GOLD_BASE * Math.Pow(c.STAGE_GOLD_GROWTH, g - 1);
 

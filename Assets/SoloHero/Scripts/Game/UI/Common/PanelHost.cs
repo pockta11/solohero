@@ -71,6 +71,13 @@ namespace SoloHero.Game.UI.Common
             RefreshTabs();
         }
 
+        /// <summary>D-111: shows a tab (the guide quest's shortcut); nothing happens when it is already open.</summary>
+        public void Open(int index)
+        {
+            if (index == _open) return;
+            Toggle(index);
+        }
+
         public void Toggle(int index)
         {
             if (index < 0 || index >= _panels.Length) return;

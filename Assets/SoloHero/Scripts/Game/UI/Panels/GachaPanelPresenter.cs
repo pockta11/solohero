@@ -80,6 +80,12 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
+        /// <summary>D-111: plays the card reveal for gear pulled elsewhere (the welcome gift's free summon).</summary>
+        public void ShowGearReveal(GachaPullItem[] items)
+        {
+            if (_reveal != null && items != null && items.Length > 0) _reveal.Show(Cards(items));
+        }
+
         public void SetMode(int mode)
         {
             if (mode != ModeGear && mode != ModeSkill) return;

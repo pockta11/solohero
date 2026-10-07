@@ -86,7 +86,7 @@ namespace SoloHero.Tests.EditMode
             EnemyBrain boss = runner.World.NearestEnemyToTheRight();
             Assert.IsNotNull(boss);
             Assert.IsTrue(boss.IsBoss);
-            double expected = Formulas.EnemyHp(c, 10) * c.BOSS_HP_MULT;
+            double expected = Formulas.EnemyHp(c, 10) * Formulas.BossHpMult(c, 10);
             Assert.AreEqual(expected, boss.MaxHp, 1e-6);
             Assert.AreEqual(c.BOSS_TIME_LIMIT, runner.BossTimerRemaining, 1e-4);
         }

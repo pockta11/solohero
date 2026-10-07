@@ -5,6 +5,7 @@ Redraws the five white "basic" clips that CombatFx tints per use (spark = hit, s
 ring = level up, whirl = spin) and two weak skill clips (cross, tornado), larger and with a darker rim so they read on
 both the snowy and the dark chapter backgrounds. Hard edges (no anti-aliasing), Bayer-dithered fade-outs.
 D-109 adds "mark", the target sigil of the mark skills (armor break, hex, hunter's mark), tinted per skill.
+D-110 adds "bone", the one-frame projectile the skeleton shooters throw (the view spins it).
 Name clips on the command line to redraw only those.
 Old strips with another frame count are deleted so ArtBuilder finds exactly one sheet per clip.
 """
@@ -19,7 +20,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', '..', 'Assets', 'SoloHero', 'Art', 'Vfx')
-CLIP_NAMES = ('spark', 'slash', 'boom', 'ring', 'whirl', 'cross', 'tornado', 'mark')
+CLIP_NAMES = ('spark', 'slash', 'boom', 'ring', 'whirl', 'cross', 'tornado', 'mark', 'bone')
 args = [a for i, a in enumerate(sys.argv[1:], 1)
         if not a.startswith('--') and sys.argv[i - 1] != '--preview' and a not in CLIP_NAMES]
 if args:
@@ -415,6 +416,30 @@ def mark():
             f.fade([1, 1, 1, 1, 1.0, 0.8, 0.55, 0.3][i])
         frames.append(f)
     save(frames, 'mark')
+
+
+def bone():
+    """D-110 thrown bone (one frame, untinted): a cream shaft with round knobs at both ends and a dark rim."""
+    W, H = 18, 10
+    f = Frame(W, H)
+    ink = (52, 40, 64)
+    cream = (240, 232, 208)
+    light = (255, 255, 248)
+    shade = (196, 182, 152)
+    shaft = (f.x >= 5) & (f.x <= 13) & (np.abs(f.y - 5) <= 1.6)
+    knobs = np.zeros((H, W), bool)
+    for cx in (3.5, 14.5):
+        for cy in (3.4, 6.6):
+            knobs |= f.dist(cx, cy) <= 2.3
+    body = shaft | knobs
+    rim = np.zeros((H, W), bool)
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        rim |= np.roll(np.roll(body, dy, axis=0), dx, axis=1)
+    f.paint(rim & ~body, ink)
+    f.paint(body, cream)
+    f.paint(body & (f.y > 6.2), shade)
+    f.paint(shaft & (np.abs(f.y - 4.4) <= 0.5), light)
+    save([f], 'bone')
 
 
 if __name__ == '__main__':

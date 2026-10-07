@@ -140,6 +140,7 @@ namespace SoloHero.Game.Boot
             Services.Register(gacha);
             Services.Register(new SkillSummonService(balance, GachaTableValues.FromBalance(balance), Services.Get<IRandom>()));
             Services.Register(new TutorialService(balance, gacha, requester));
+            Services.Register(new SoloHero.Core.Progression.GuideQuestService(balance, _data, requester));
         }
 
         public void NotifyOfflineClaimed()

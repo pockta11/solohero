@@ -97,6 +97,9 @@ namespace SoloHero.Core.Save
 
         public int tutorialStep;
 
+        /// <summary>D-111: index of the current guide quest in GuideQuestCatalog.</summary>
+        public int guideQuest;
+
         public bool bgmMuted;
         public bool sfxMuted;
         public bool lowEffectMode;

@@ -54,6 +54,12 @@ namespace SoloHero.Core.Balance
         /// <summary>Unix seconds of day 1, 00:00 local. The simulation treats local time as UTC.</summary>
         public long StartUtc = 1_800_000_000L;
 
+        /// <summary>
+        /// Player model: how much clear speed counts against survival when buying (score = w ln DPS + ln EHP). Faster
+        /// kills also cut the damage a swarm deals, so damage keeps the larger weight (D-110 checked 1, 1.4 and 2).
+        /// </summary>
+        public double DpsWeight = 2d;
+
         /// <summary>D-104: the jobs the player model picks at the first and second advancement.</summary>
         public string Job1 = "warrior";
         public string Job2 = "knight";
