@@ -18,8 +18,10 @@ namespace SoloHero.Editor
         {
             var config = AssetDatabase.LoadAssetAtPath<BalanceConfig>(ConfigPath);
             BalanceValues balance = config != null ? config.ToValues() : new BalanceValues();
-            GachaVerifier.Report report = GachaVerifier.Run(balance, 100000, 20260928);
-            string markdown = "# Gear gacha rate verification (E5-14, D-113)\n\n" + report.ToMarkdown(balance.GEAR_PITY);
+            // D-123: the pity counts once the summon level opens Legendary; verify at that level.
+            int level = GearTableValues.FromBalance(balance).OpenLevel(GearTableValues.PityGrade);
+            GachaVerifier.Report report = GachaVerifier.Run(balance, 100000, 20260928, level);
+            string markdown = "# Gear gacha rate verification (E5-14, D-113, summon Lv " + level + ")\n\n" + report.ToMarkdown(balance.GEAR_PITY);
             File.WriteAllText(ReportPath, markdown);
             Debug.Log("[Gacha] " + (report.Passed(balance.GEAR_PITY) ? "PASS" : "FAIL") + " - report " + ReportPath);
         }

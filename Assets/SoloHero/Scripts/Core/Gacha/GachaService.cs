@@ -48,6 +48,16 @@ namespace SoloHero.Core.Gacha
             return GachaBatchResult.Ok(items);
         }
 
+        /// <summary>D-120: free pulls (an ad summon); same rates, pity and counters as paid ones.</summary>
+        public GachaBatchResult PullFree(SaveDataV2 data, int count)
+        {
+            if (count < 1) count = 1;
+            var items = new GachaPullItem[count];
+            for (int i = 0; i < count; i++)
+                items[i] = ExecuteOnePull(data);
+            return GachaBatchResult.Ok(items);
+        }
+
         public GachaBatchResult TryPullTenWithGem(SaveDataV2 data)
         {
             if (data.gem < _balance.GACHA_COST_TEN_GEM)
@@ -62,22 +72,26 @@ namespace SoloHero.Core.Gacha
 
         private GachaPullItem ExecuteOnePull(SaveDataV2 data)
         {
-            data.pityCount++;
+            // D-115: the summon level before this pull picks the rate table.
+            GearTableValues table = _table.AtLevel(SummonLevel.Of(_balance, data, SummonKind.Gear));
+            // D-123: the pity starts counting once the summon level has opened its grade.
+            bool pity = table.PityOpen;
+            if (pity) data.pityCount++;
             data.totalPullCount++;
 
             // GDD: pick slot first (uniform over the slots; D-109: 8), then grade from the rate table / pity.
             var slot = (EquipmentSlot)_rng.Next(GachaCatalog.SlotCount);
 
             GearGrade grade;
-            if (data.pityCount >= _table.PityCeiling)
+            if (pity && data.pityCount >= table.PityCeiling)
             {
                 grade = GearTableValues.PityGrade;
                 data.pityCount = 0;
             }
             else
             {
-                grade = _table.PickGrade(_rng.NextDouble());
-                if (grade >= GearTableValues.PityGrade && _table.ResetOnPityGrade)
+                grade = table.PickGrade(_rng.NextDouble());
+                if (grade >= GearTableValues.PityGrade && table.ResetOnPityGrade)
                     data.pityCount = 0;
             }
 

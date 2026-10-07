@@ -19,6 +19,7 @@ namespace SoloHero.Game.UI.Panels
     /// steps to the next owned item in that slot (downgrades allowed, GDD).
     /// D-106: the slots stand around the hero, with ATK / HP / DEF and "equip best" below.
     /// D-109: 8 slots (gear on the left, accessories on the right) and the collection's owned bonus.
+    /// D-116: "promote all" turns every max-level item into its next grade (up to Epic) while gold lasts.
     /// </summary>
     public sealed class EquipmentPanelPresenter : MonoBehaviour
     {
@@ -35,6 +36,8 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text[] _statTexts = new Text[3];
         [Tooltip("D-109: the owned bonus of the whole collection.")]
         [SerializeField] private Text _ownedBonusText;
+        [SerializeField] private TapGuardButton _promoteButton;
+        [SerializeField] private Text _promoteLabel;
 
         private EquipService _equip;
         private SaveDataV2 _save;
@@ -42,6 +45,7 @@ namespace SoloHero.Game.UI.Panels
         private int _shownOwnedCount = -1;
         private readonly string[] _shownIds = new string[GachaCatalog.SlotCount];
         private int _shownPulls = -1;
+        private double _shownGold = -1d;
 
         private void OnEnable()
         {
@@ -55,6 +59,7 @@ namespace SoloHero.Game.UI.Panels
         private void LateUpdate()
         {
             if (_save == null) return;
+            if (_save.gold != _shownGold) DrawPromote();
             if (_save.ownedEquipment.Count == _shownOwnedCount && _save.totalPullCount == _shownPulls && !EquippedChanged()) return;
             Refresh();
         }
@@ -102,6 +107,38 @@ namespace SoloHero.Game.UI.Panels
 
             if (_session != null) _session.RefreshLoadout();
             Refresh();
+        }
+
+        /// <summary>D-116: promotes every max-level item it can, lowest grade first, while gold lasts.</summary>
+        public void PromoteAll()
+        {
+            if (_save == null || _balance == null) return;
+            EquipPromotion.TotalCost(_balance, _save, out int eligible);
+            int made = EquipPromotion.PromoteAll(_balance, _save, out double spent);
+            if (made > 0)
+            {
+                PanelServices.TryGet<SoloHero.Core.Growth.ISaveRequester>()?.RequestSave();
+                if (_session != null) _session.RefreshLoadout();
+                PanelServices.TryGet<AudioService>()?.Play(SfxId.Upgrade);
+                if (_toast != null) _toast.Show(Strings.Format("equip.promoted", made, BigNumberFormat.Format(spent)));
+            }
+            else if (_toast != null)
+            {
+                if (eligible > 0) _toast.ShowFailure(FailReason.NotEnoughGold);
+                else _toast.Show(Strings.Get("equip.promote_none"));
+            }
+
+            Refresh();
+        }
+
+        private void DrawPromote()
+        {
+            if (_save == null || _balance == null) return;
+            _shownGold = _save.gold;
+            EquipPromotion.TotalCost(_balance, _save, out int count);
+            if (_promoteLabel != null)
+                _promoteLabel.text = count > 0 ? Strings.Format("equip.promote_n", count) : Strings.Get("equip.promote");
+            if (_promoteButton != null) _promoteButton.SetAvailable(true);
         }
 
         /// <summary>D-106: equips the highest owned grade in every slot.</summary>
@@ -185,6 +222,7 @@ namespace SoloHero.Game.UI.Panels
             SetStat(2, stats.Def);
             if (_ownedBonusText != null)
                 _ownedBonusText.text = Strings.Format("equip.owned_bonus", Percent(bonus.OwnedAtk));
+            DrawPromote();
         }
 
         private static string Percent(double fraction) =>

@@ -31,6 +31,7 @@ namespace SoloHero.Game.Boot
 
         private SaveService _save;
         private SaveDataV2 _data;
+        private BalanceValues _balanceValues;
         private bool _offlinePopupPending;
 
         private async void Start()
@@ -72,6 +73,9 @@ namespace SoloHero.Game.Boot
             RegisterAds(balance, clock, requester);
             RegisterSettingsAndAudio();
             Services.Register<IAnalytics>(new AnalyticsService(auth.FirebaseReady));
+            _balanceValues = balance;
+            // D-119: the game is open, so pending reminders go away (and the channel exists for the next leave).
+            SoloHero.Game.Infrastructure.LocalNotifications.Init(_data);
 
             if (report.LoadFailed)
             {
@@ -144,6 +148,7 @@ namespace SoloHero.Game.Boot
             Services.Register(new SoloHero.Core.Pets.PetSummonService(balance, GearTableValues.FromBalance(balance), Services.Get<IRandom>()));
             Services.Register(new TutorialService(balance, gacha, requester));
             Services.Register(new SoloHero.Core.Progression.GuideQuestService(balance, _data, requester));
+            Services.Register(new SoloHero.Core.Progression.AchievementService(_data, requester));
         }
 
         public void NotifyOfflineClaimed()
@@ -214,11 +219,20 @@ namespace SoloHero.Game.Boot
 
         private void OnApplicationPause(bool paused)
         {
-            if (paused) SaveOnQuit();
+            if (paused)
+            {
+                SoloHero.Game.Infrastructure.LocalNotifications.ScheduleOnLeave(_data, _balanceValues);
+                SaveOnQuit();
+            }
+            else
+            {
+                SoloHero.Game.Infrastructure.LocalNotifications.CancelAll();
+            }
         }
 
         private void OnApplicationQuit()
         {
+            SoloHero.Game.Infrastructure.LocalNotifications.ScheduleOnLeave(_data, _balanceValues);
             SaveOnQuit();
         }
 

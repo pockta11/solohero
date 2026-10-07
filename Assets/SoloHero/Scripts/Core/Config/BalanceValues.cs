@@ -28,9 +28,11 @@ namespace SoloHero.Core.Config
         public int UPG_MAX_LEVEL_SPD = 100;
         public double UPG_FARM_EXPONENT = 1.31;
         public double ENEMY_HP_BASE = 45;
-        public double ENEMY_HP_GROWTH = 1.185;
+        // D-123 / D-124: 1.185 -> 1.165 (HP) and 1.175 (ATK); the summon ladder now paces gear, so enemies grow a
+        // little slower to keep day 7 in chapter 5.
+        public double ENEMY_HP_GROWTH = 1.165;
         public double ENEMY_ATK_BASE = 2.6;
-        public double ENEMY_ATK_GROWTH = 1.185;
+        public double ENEMY_ATK_GROWTH = 1.175;
         public double ENEMY_DEF = 0;
         public double ENEMY_EXP_BASE = 3.75;
         public double ENEMY_EXP_GROWTH = 1.10;
@@ -63,21 +65,24 @@ namespace SoloHero.Core.Config
         public double ENEMY_RANGED_RANGE = 4.2;
         public float ENEMY_RANGED_INTERVAL = 1.6f;
         public double ENEMY_PROJECTILE_SPEED = 9;
-        public double BOSS_HP_MULT = 10;
+        // D-124: a boss is a wall of HP against the 30 s clock, not a hard hitter (user: the boss should not kill the
+        // hero in a few hits). HP 10 -> 26 (chapter 1: 6 -> 14), attack 2.5 -> 0.5 of a normal enemy's.
+        public double BOSS_HP_MULT = 26;
 
         /// <summary>D-110: the chapter 1 boss (the first wall) is softer, so a new player clears it in a try or two.</summary>
-        public double BOSS_HP_MULT_CH1 = 6;
+        public double BOSS_HP_MULT_CH1 = 14;
 
         /// <summary>D-110: the boss walks in at this share of ENEMY_MOVE_SPEED.</summary>
         public double BOSS_SPEED_MULT = 0.8;
-        public double BOSS_ATK_MULT = 2.5;
+        public double BOSS_ATK_MULT = 0.5;
         public float BOSS_ATK_INTERVAL = 1.8f;
         public double BOSS_GOLD_MULT = 5.0;
         public double BOSS_EXP_MULT = 5.0;
         public int BOSS_TIME_LIMIT = 30;
         public float BOSS_INTRO_TIME = 1.5f;
         public double STAGE_GOLD_BASE = 50;
-        public double STAGE_GOLD_GROWTH = 1.04;
+        // D-122: 1.04 -> 1.035 so gold alone climbs a little slower (day one nearly the same, later chapters slower).
+        public double STAGE_GOLD_GROWTH = 1.035;
         public int CHAPTER_CLEAR_GEM = 60;
         public int OFFLINE_CAP = 21600;
         public double OFFLINE_DIVISOR = 2000;
@@ -106,24 +111,63 @@ namespace SoloHero.Core.Config
         public double GEAR_RATE_A = 0.005;
         public int GEAR_PITY = 200;
 
+        // D-115 summon level: each summon (gear, skill, pet) levels up with its own cumulative pulls - level L needs
+        // STEP x (L - 1) x L / 2 pulls - and every level multiplies the good grades (gear and pets: Rare and up;
+        // skills: Epic and up) by 1 + SUMMON_LV_RATE_GAIN x (L - 1); the lowest grade gives up the difference.
+        public int SUMMON_LV_MAX = 10;
+        // D-123: hundreds of pulls per level (gear 100, 300, 600, 1000, ...), MapleStory Idle style.
+        public int SUMMON_LV_STEP_GEAR = 100;
+        public int SUMMON_LV_STEP_SKILL = 20;
+        public int SUMMON_LV_STEP_PET = 50;
+        public double SUMMON_LV_RATE_GAIN = 0.12;
+
+        // D-121 / D-123 grade gates (MapleStory Idle: the summon level opens the next grade): the summon level from which
+        // a grade can drop. Below it the grade's rate is 0 and Common takes it. Level 1 gives Common only and every level
+        // opens the next grade (gear and pets: Uncommon 2 .. Ancient 7; skills: Rare 2, Epic 3, Legendary 4). The pity
+        // only counts once its grade (Legendary) is open.
+        public int SUMMON_OPEN_U = 2;
+        public int SUMMON_OPEN_R = 3;
+        public int SUMMON_OPEN_E = 4;
+        public int SUMMON_OPEN_L = 5;
+        public int SUMMON_OPEN_M = 6;
+        public int SUMMON_OPEN_A = 7;
+        public int SKILL_SUMMON_OPEN_R = 2;
+        public int SKILL_SUMMON_OPEN_E = 3;
+        public int SKILL_SUMMON_OPEN_L = 4;
+
         public int TUTORIAL_FREE_PULLS = 10;
         public double TUTORIAL_GOLD = 1000;
         public int TUTORIAL_REWARD_STAGE = 1;
-        public double REFUND_C = 50;
-        public double REFUND_U = 100;
-        public double REFUND_R = 200;
-        public double REFUND_E = 800;
-        public double REFUND_L = 3000;
-        public double REFUND_M = 12000;
-        public double REFUND_A = 50000;
+        // Gold for a duplicate of a max-level item. D-115: even at the top summon level a maxed collection returns
+        // under half of the ten-pull price per pull, so pulling never pays for itself.
+        public double REFUND_C = 20;
+        public double REFUND_U = 40;
+        public double REFUND_R = 80;
+        public double REFUND_E = 250;
+        public double REFUND_L = 1000;
+        public double REFUND_M = 4000;
+        public double REFUND_A = 15000;
         public double EQUIP_ENHANCE_GAIN = 0.1;
         public int EQUIP_MAX_LEVEL = 10;
+
+        // D-116 equipment promotion (genre "promotion"): an item at EQUIP_MAX_LEVEL goes back to +0 and gives the same slot's
+        // next grade at +EQUIP_PROMOTE_ENHANCE (an owned copy gains that many levels, capped), up to EQUIP_PROMOTE_MAX_GRADE
+        // (3 = Epic; Legendary and above only come from summons). Cost EQUIP_PROMOTE_COST x EQUIP_PROMOTE_COST_GROWTH^grade.
+        public int EQUIP_PROMOTE_MAX_GRADE = 3;
+        public int EQUIP_PROMOTE_ENHANCE = 5;
+        public double EQUIP_PROMOTE_COST = 500;
+        public double EQUIP_PROMOTE_COST_GROWTH = 3;
         public int AD_OFFLINE_DAILY = 5;
         public int AD_GEM_DAILY = 5;
         public double AD_GEM_REWARD = 5;
         public int AD_BOOSTER_DAILY = 1;
         public double AD_BOOSTER_SECONDS = 600;
         public double AD_BOOSTER_GOLD_MULT = 2.0;
+
+        // D-120 ad summons (genre "watch an ad, summon free"): free ten-pulls a day; the caller makes the pulls.
+        public int AD_FREE_GEAR_DAILY = 2;
+        public int AD_FREE_PET_DAILY = 1;
+        public int AD_FREE_SUMMON_PULLS = 10;
         // Gear effects per grade, C U R E L M A (D-113 added U, M and A).
         public double SWORD_ATK_C = 1.10;
         public double SWORD_ATK_U = 1.18;
@@ -273,13 +317,13 @@ namespace SoloHero.Core.Config
         public double PET_LEVEL_OWNED_GAIN = 0.1;
         public double PET_ENHANCE_GAIN = 0.1;
         public int PET_MAX_ENHANCE = 10;
-        public double PET_REFUND_C = 50;
-        public double PET_REFUND_U = 100;
-        public double PET_REFUND_R = 200;
-        public double PET_REFUND_E = 800;
-        public double PET_REFUND_L = 3000;
-        public double PET_REFUND_M = 12000;
-        public double PET_REFUND_A = 50000;
+        public double PET_REFUND_C = 30;
+        public double PET_REFUND_U = 60;
+        public double PET_REFUND_R = 120;
+        public double PET_REFUND_E = 500;
+        public double PET_REFUND_L = 2000;
+        public double PET_REFUND_M = 8000;
+        public double PET_REFUND_A = 30000;
         public double PET_OWNED_ATK_C = 2;
         public double PET_OWNED_ATK_U = 3;
         public double PET_OWNED_ATK_R = 5;
@@ -293,6 +337,13 @@ namespace SoloHero.Core.Config
         public int TALENT_RESET_GEM = 100;
         public int STAGES_PER_CHAPTER = 10;
         public int MVP_CHAPTERS = 5;
+
+        // D-117 rebirth: permanent boosts bought with Soul (RebirthService). Gold x(1 + GOLD_GAIN)^level, ATK
+        // x(1 + ATK_GAIN)^level, offline gold +OFFLINE_GAIN x level; level n -> n + 1 costs COST_BASE + n Soul.
+        public double REBIRTH_GOLD_GAIN = 0.1;
+        public double REBIRTH_ATK_GAIN = 0.1;
+        public double REBIRTH_OFFLINE_GAIN = 0.1;
+        public int REBIRTH_COST_BASE = 1;
         public float STAGE_CLEAR_DELAY = 2f;
         public float STAGE_RETRY_DELAY = 3f;
         public float BOSS_FAIL_AUTO_RETREAT = 5f;

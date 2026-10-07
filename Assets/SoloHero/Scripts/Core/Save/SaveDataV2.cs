@@ -90,6 +90,10 @@ namespace SoloHero.Core.Save
         public int adCountA1;
         public int adCountA2;
         public int adCountA3;
+
+        /// <summary>D-120: free gear and pet summons watched today.</summary>
+        public int adCountA4;
+        public int adCountA5;
         public string adCountResetDate = "";
 
         public long goldBoosterEndUtc;
@@ -119,7 +123,20 @@ namespace SoloHero.Core.Save
         public bool fps30Mode;
         public bool skillManualMode;
 
+        /// <summary>D-119: reminders switched off in the settings, and whether Android's permission was asked.</summary>
+        public bool notificationsOff;
+        public bool notifyAsked;
+
         public int rebirthCount;
+
+        /// <summary>D-117: the best stage and hero level of any run (a rebirth resets the run's own).</summary>
+        public int bestStageEver;
+        public int bestHeroLevel;
+
+        /// <summary>D-118: lifetime enemy and boss kills, and the achievement tiers claimed (index-aligned with AchievementCatalog).</summary>
+        public long totalKills;
+        public int bossKills;
+        public List<int> achievementTiers = new List<int>();
         public double soul;
         public int permGoldLevel;
         public int permAtkLevel;

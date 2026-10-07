@@ -55,11 +55,17 @@ namespace SoloHero.Core.Combat
         /// <summary>D-087 Last Stand fired: a lethal hit left the hero alive.</summary>
         public event Action LastStandTriggered;
 
-        public void Reset(HeroStats stats)
+        public void Reset(HeroStats stats) => Reset(stats, false);
+
+        /// <summary>
+        /// Full heal and fresh timers for a new stage. D-125: <paramref name="keepPosition"/> keeps X, so running on into
+        /// the next normal stage does not jump the camera (and the background) back to the start.
+        /// </summary>
+        public void Reset(HeroStats stats, bool keepPosition)
         {
             _stats = stats;
             Hp = stats.Hp;
-            X = 0d;
+            if (!keepPosition) X = 0d;
             _attackTimer = 0f;
             _attackPending = false;
             Shield = 0d;
@@ -314,6 +320,14 @@ namespace SoloHero.Core.Combat
             Hp = 0d;
             _attackPending = false;
             SetState(HeroState.Dead);
+        }
+
+        /// <summary>D-125: the pause after a clear - nothing left to fight, the hero runs on toward the next wave.</summary>
+        public void RunOn(float dt)
+        {
+            if (State == HeroState.Dead) return;
+            if (State != HeroState.Advance) SetState(HeroState.Advance);
+            X += _balance.MOVE_SPEED * dt;
         }
 
         private void TickAdvance(float dt, ICombatWorld world)

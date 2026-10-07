@@ -53,6 +53,9 @@ namespace SoloHero.Core.Balance
         public const double NormalFailRateMax = 0.10d;
         public const double DailySpendMin = 0.90d;
 
+        /// <summary>D-124: a boss is a wall of HP against the clock; most fails should be time-outs.</summary>
+        public const double BossTimeoutShareMin = 0.80d;
+
         private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
         public static List<SimCheck> Evaluate(SimReport r, BalanceValues b)
@@ -74,6 +77,7 @@ namespace SoloHero.Core.Balance
             list.Add(FirstWall(r));
             list.Add(LongWall(r, b));
             list.Add(BossExtraFarm(r, b));
+            list.Add(BossFailCause(r));
             list.Add(NormalFailRate(r));
             list.Add(DailySpend(r));
             return list;
@@ -137,10 +141,14 @@ namespace SoloHero.Core.Balance
         /// so the pass/fail check is value per gold (V-3a); the spend share (V-3b) is player taste and is reported only,
         /// to be confirmed with analytics (E6-15). D-063.
         /// </summary>
+        /// <summary>
+        /// D-123: reported only. On the summon ladder a low level gives Common only, so one pull is worth little now; the
+        /// summon level carries the value, which a one-step comparison cannot see.
+        /// </summary>
         private static SimCheck GachaValueParity(SimReport r)
         {
-            return Make("V-3a", "Gacha value per gold vs best upgrade (median over spending decisions)", "0.5x - 2.0x",
-                F2(r.PullValueParity) + "x", r.PullValueParity >= PullParityMin && r.PullValueParity <= PullParityMax);
+            return Info("V-3a", "Gacha value per gold vs best upgrade (median over spending decisions)", "reported (was 0.5x - 2.0x before D-123)",
+                F2(r.PullValueParity) + "x");
         }
 
         private static SimCheck GachaShare(SimReport r)
@@ -197,7 +205,8 @@ namespace SoloHero.Core.Balance
         {
             string epic = r.FirstEpicPlaySeconds < 0d ? "none" : "day " + r.FirstEpicDay + " (" + F1(r.FirstEpicPlaySeconds / 60d) + " play min)";
             string legend = r.FirstLegendaryPlaySeconds < 0d ? "none" : "day " + r.FirstLegendaryDay + " (" + F1(r.FirstLegendaryPlaySeconds / 60d) + " play min)";
-            return Info("V-5", "Equipment pace: first Epic+ / first Legendary", "reported; rate accuracy is GachaTests", "Epic " + epic + ", Legendary " + legend);
+            return Info("V-5", "Equipment pace: first Epic+ / first Legendary", "reported; rate accuracy is GachaTests",
+                "Epic " + epic + ", Legendary " + legend + ", promotions " + r.Promotions);
         }
 
         private static SimCheck FirstWall(SimReport r)
@@ -253,6 +262,20 @@ namespace SoloHero.Core.Balance
             double median = Median(ratios);
             return Make("E9-04", "Extra farming to break a boss (stall time / time to reach the boss)", "median 25% - 60%",
                 "median " + Pct(median) + " over " + ratios.Count + " bosses", median >= BossExtraFarmMin && median <= BossExtraFarmMax);
+        }
+
+        private static SimCheck BossFailCause(SimReport r)
+        {
+            int fails = 0, deaths = 0;
+            for (int i = 0; i < r.Days.Count; i++)
+            {
+                fails += r.Days[i].BossFails;
+                deaths += r.Days[i].BossDeaths;
+            }
+
+            double timeouts = fails > 0 ? (double)(fails - deaths) / fails : 1d;
+            return Make("V-8", "Boss fails come from the timer, not from the hero falling", ">= 80% time-outs",
+                Pct(timeouts) + " time-outs (" + (fails - deaths) + " / " + fails + ")", timeouts >= BossTimeoutShareMin);
         }
 
         private static SimCheck NormalFailRate(SimReport r)

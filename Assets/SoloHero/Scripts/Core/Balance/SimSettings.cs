@@ -21,6 +21,13 @@ namespace SoloHero.Core.Balance
     {
         public string Name = "no-ads";
         public int Days = 7;
+
+        /// <summary>
+        /// D-117: the player model reborn at a session start once past the chapter 5 boss and the run's best stage has
+        /// not moved for this much play time (a day's play), then spends the Soul on the permanent boosts.
+        /// </summary>
+        public bool Rebirth;
+        public double RebirthStallMinutes = 30d;
         public int Seed = 1;
         public float DeltaTime = 1f / 30f;
 

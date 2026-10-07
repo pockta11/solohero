@@ -13,6 +13,7 @@ hud.retreat	후퇴
 hud.challenge	도전
 hud.farming	파밍으로 돌아갑니다...
 hud.auto_retreat	{0}초 후 자동 후퇴
+hud.time_up_retreat	시간 초과! {0}초 후 자동 후퇴
 hud.skill_cooldown	{0} {1}
 hud.skill_auto	AUTO
 
@@ -210,15 +211,28 @@ equip.empty	{0}: 없음
 equip.owned	보유 {0}
 equip.none	-
 equip.swap	교체
-equip.best	최고 등급 장착
+equip.best	최고 장착
+equip.promote	일괄 승급
+equip.promote_n	승급 {0}
+equip.promoted	장비 {0}개 승급! (골드 -{1})
+equip.promote_none	+10 장비만 다음 등급으로 승급할 수 있어요 (영웅까지)
 equip.best_already	이미 최고 등급을 장착했습니다
 
 # Summon panel
 gacha.pity	전설까지 {0}회   ({1}/{2})
 gacha.rate_item	{0} {1}%
+gacha.level	소환 Lv {0}  ·  다음 단계까지 {1}회
+gacha.level_max	소환 Lv {0} (최대)
+gacha.level_up	{0} Lv {1} 달성! 좋은 등급이 더 잘 나와요
+gacha.level_open	소환 Lv {0}  ·  {1}회 더 뽑으면 {2} 등급 개방
+gacha.level_up_open	{0} Lv {1} 달성! {2} 등급이 열렸어요
+gacha.rate_locked	{0} Lv{1} 개방
 gacha.rates_pity_gear	{0}회째는 전설 확정 · 전설 이상을 얻으면 초기화
 gacha.rates_pity_skill	{0}회째는 전설 확정 · 전설을 얻으면 초기화
 gacha.rates_pity_pet	{0}회째는 전설 펫 확정 · 전설 이상을 얻으면 초기화
+gacha.rates_pity_locked	전설 등급이 열리면(소환 Lv {0}) {1}회째 전설 확정
+gacha.level_progress	소환 Lv {0}  ·  다음 단계까지 {1}회
+gacha.next_open	소환 Lv {0}에서 {1} 등급 개방
 gacha.pet_locked	{0} 보스를 처치하면 펫 소환이 열려요
 gacha.pet_new_equipped	NEW! 장착
 gacha.pet_summary	새 펫 {0} · 강화 {1} · 환급 {2}
@@ -238,6 +252,12 @@ settings.bgm	배경음
 settings.sfx	효과음
 settings.low_effect	이펙트 축소
 settings.fps30	30fps 모드
+settings.notify	알림
+notify.channel	게임 알림
+notify.offline_title	오프라인 보상이 가득 찼어요!
+notify.offline_body	{0}시간 동안 모은 골드를 받으러 오세요
+notify.daily_title	새로운 하루가 시작됐어요
+notify.daily_body	출석 보상과 일일 미션, 던전이 기다려요
 settings.on	켜짐
 settings.off	꺼짐
 settings.close	닫기
@@ -270,6 +290,7 @@ gacha.skill_new	NEW!
 gacha.skill_up	Lv {0}
 gacha.skill_summary	새 스킬 {0} · 레벨업 {1} · 환급 {2}
 gacha.gold_pack	젬 {0} → 골드 {1}
+ad.free_summon	광고 보고 무료 {0}회 ({1}/{2})
 toast.gold_pack	골드 {0} 획득!
 
 # boss intro (E7-11, D-082 boss looks)
@@ -448,6 +469,26 @@ skill.desc.ult_death_shot	먼 적 하나에게 공격력의 {0}% 일격
 
 # Pets (D-114, the D-102 companions)
 rail.pet	펫
+rail.achieve	업적
+achieve.title	업적
+achieve.tier	{0} {1}단계
+achieve.progress	{0} / {1}
+achieve.reward	{0}
+achieve.claim	받기
+achieve.done	완료
+achieve.claim_all	모두 받기
+achieve.claimed	업적 달성! 젬 +{0}
+achieve.name.kills	몬스터 처치
+achieve.name.bosses	보스 처치
+achieve.name.stage	최고 스테이지
+achieve.name.level	영웅 레벨
+achieve.name.gear_pulls	장비 소환
+achieve.name.skill_pulls	스킬 소환
+achieve.name.pet_pulls	펫 소환
+achieve.name.gear_owned	장비 수집
+achieve.name.pets_owned	펫 수집
+achieve.name.skills_owned	스킬 수집
+toast.not_enough_soul	소울이 부족합니다
 pet.title	펫
 pet.row	{0}  Lv {1}
 pet.cell	Lv {0}

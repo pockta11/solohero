@@ -68,6 +68,10 @@ namespace SoloHero.Core.Balance
             private bool _tutorialDone;
             private readonly TutorialService _tutorial;
             private readonly GuideQuestService _guide;
+            private readonly RebirthService _rebirth;
+            private readonly AchievementService _achievements;
+            private int _runHighest;
+            private double _lastStageUpPlay;
 
             public SimRun(BalanceValues balance, SimSettings settings)
             {
@@ -92,6 +96,8 @@ namespace SoloHero.Core.Balance
                 _ads = new AdSlotPolicy(balance, _save, _clock);
                 _tutorial = new TutorialService(balance, gacha);
                 _guide = new GuideQuestService(balance, _save);
+                _rebirth = new RebirthService(balance);
+                _achievements = new AchievementService(_save);
                 _spender.GradeObtained += OnGradeObtained;
 
                 _runner = new StageRunner(balance, combatRng, CombatLoadout.ComputeStats(balance, _save), _save);
@@ -133,8 +139,10 @@ namespace SoloHero.Core.Balance
                                 _ads.Complete(AdSlot.Gem, AdOutcome.Rewarded);
                             if (_ads.CanUse(AdSlot.GoldBooster).Ok)
                                 _ads.Complete(AdSlot.GoldBooster, AdOutcome.Rewarded);
+                            _spender.PullAdFree(_ads);
                         }
 
+                        TryRebirth();
                         Spend();
                         // Resume rule (E2-12): coming back restarts the current farming stage.
                         _runner.Resume(_save.farmingStage < 1 ? 1 : _save.farmingStage, _save.retreatMode);
@@ -159,7 +167,8 @@ namespace SoloHero.Core.Balance
                     _day.EarnedRefund = _spender.EarnedRefund - refund0;
                     _day.GoldPulls = _spender.GoldPulls - goldPulls0;
                     _day.GemPulls = _spender.GemPulls - gemPulls0;
-                    _day.HighestStage = _save.highestStage;
+                    // D-117: progress is the best stage of any run (a rebirth starts the run over at 1-1).
+                    _day.HighestStage = RebirthService.BestStage(_save);
                     _day.HeroLevel = _save.heroLevel;
                     _day.GoldEnd = _save.gold;
                     _day.GemEnd = _save.gem;
@@ -168,12 +177,17 @@ namespace SoloHero.Core.Balance
 
                 _report.PullValueParity = Median(_spender.PullToUpgradeValue);
                 _report.TotalPlaySeconds = _play;
-                _report.FinalHighestStage = _save.highestStage;
+                _report.FinalHighestStage = RebirthService.BestStage(_save);
+                _report.Rebirths = _save.rebirthCount;
+                _report.PermGold = _save.permGoldLevel;
+                _report.PermAtk = _save.permAtkLevel;
+                _report.PermOffline = _save.permOfflineLevel;
                 int pet = SoloHero.Core.Pets.PetCatalog.IndexOf(_save.companionEquipped);
                 _report.PetsOwned = _save.petOwned.Count;
                 _report.PetEquipped = _save.companionEquipped;
                 _report.PetLevel = SoloHero.Core.Pets.PetService.Level(_save, pet);
                 _report.PetEnhance = SoloHero.Core.Pets.PetService.Enhance(_save, pet);
+                _report.Promotions = _spender.Promotions;
                 return _report;
             }
 
@@ -187,6 +201,12 @@ namespace SoloHero.Core.Balance
                 _runner.Tick(dt);
                 _play += dt;
                 _day.PlaySeconds += dt;
+
+                if (_save.highestStage > _runHighest)
+                {
+                    _runHighest = _save.highestStage;
+                    _lastStageUpPlay = _play;
+                }
 
                 double gained = _save.gold - goldBefore;
                 if (gained > 0d)
@@ -270,6 +290,31 @@ namespace SoloHero.Core.Balance
                 }
             }
 
+            /// <summary>
+            /// D-117 player model: at a session start, past the chapter 5 boss and stalled for a day's play, start over;
+            /// the Soul goes to the cheapest of ATK and gold (ATK on ties), the offline boost while it lags half behind.
+            /// </summary>
+            private void TryRebirth()
+            {
+                if (!_s.Rebirth || !_rebirth.CanRebirth(_save)) return;
+                if (_play - _lastStageUpPlay < _s.RebirthStallMinutes * 60d) return;
+                double soulBefore = _save.soul;
+                if (!_rebirth.TryRebirth(_save).Ok) return;
+                _report.SoulEarned += _save.soul - soulBefore;
+                for (int guard = 0; guard < 200; guard++)
+                {
+                    RebirthService.PermLane lane = _save.permOfflineLevel * 2 < _save.permGoldLevel
+                        ? RebirthService.PermLane.Offline
+                        : _save.permAtkLevel <= _save.permGoldLevel ? RebirthService.PermLane.Atk : RebirthService.PermLane.Gold;
+                    if (!_rebirth.TryUpgradePerm(_save, lane).Ok) break;
+                }
+
+                _runHighest = _save.highestStage;
+                _lastStageUpPlay = _play;
+                _lastHeroLevel = _save.heroLevel;
+                CombatLoadout.Apply(_runner, _b, _save);
+            }
+
             private void ProcessAttemptStart()
             {
                 if (!_attemptStarted) return;
@@ -325,8 +370,15 @@ namespace SoloHero.Core.Balance
                 int g = _runner.GlobalStage;
                 Track(g).Fails++;
                 bool isBoss = _runner.IsBoss;
-                if (isBoss) _day.BossFails++;
-                else _day.NormalFails++;
+                if (isBoss)
+                {
+                    _day.BossFails++;
+                    if (_runner.Hero.Hp <= 0d) _day.BossDeaths++;
+                }
+                else
+                {
+                    _day.NormalFails++;
+                }
 
                 Spend();
 
@@ -349,6 +401,8 @@ namespace SoloHero.Core.Balance
 
             private void Spend()
             {
+                // D-118: the player claims finished achievements before spending; the gems feed gem pulls.
+                _achievements.ClaimAll();
                 if (_spender.Spend(_save.highestStage + 1, _s.MaxPurchasesPerDecision, _s.SpendAffordableShare))
                     CombatLoadout.Apply(_runner, _b, _save);
             }
@@ -357,7 +411,8 @@ namespace SoloHero.Core.Balance
             {
                 if (_save.lastQuitTimeUtc <= 0) return;
 
-                OfflineReward reward = OfflineReward.Compute(_b, _save.farmingStage, _save.lastQuitTimeUtc, _sessionStartUtc);
+                OfflineReward reward = OfflineReward.Compute(_b, _save.farmingStage, _save.lastQuitTimeUtc, _sessionStartUtc,
+                    RebirthService.OfflineMult(_b, _save));
                 if (reward.ResetQuitTime)
                 {
                     _save.lastQuitTimeUtc = _sessionStartUtc;

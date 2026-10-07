@@ -45,6 +45,11 @@ namespace SoloHero.Core.Settings
 
         public void SetSkillManual(bool value) => Set(ref _data.skillManualMode, value);
 
+        /// <summary>D-119: local reminders (offline reward full, a new day). On by default.</summary>
+        public bool Notifications => !_data.notificationsOff;
+
+        public void SetNotifications(bool value) => Set(ref _data.notificationsOff, !value);
+
         private void Set(ref bool field, bool value)
         {
             if (field == value) return;

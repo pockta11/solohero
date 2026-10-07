@@ -5,6 +5,12 @@ namespace SoloHero.Core.Economy
     {
         OfflineDouble = 0,
         Gem = 1,
-        GoldBooster = 2
+        GoldBooster = 2,
+
+        /// <summary>D-120: a free gear ten-pull for an ad.</summary>
+        FreeGearSummon = 3,
+
+        /// <summary>D-120: a free pet ten-pull for an ad (after the pet summon opens).</summary>
+        FreePetSummon = 4
     }
 }

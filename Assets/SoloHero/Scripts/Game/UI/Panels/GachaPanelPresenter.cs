@@ -44,6 +44,9 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private GachaRevealView _reveal;
         [SerializeField] private TapGuardButton _goldPackButton;
         [SerializeField] private Text _goldPackText;
+        [Tooltip("D-120: watch an ad for a free ten-pull (gear and pet pages).")]
+        [SerializeField] private TapGuardButton _adButton;
+        [SerializeField] private Text _adLabel;
 
         [Header("Tabs (D-078)")]
         [SerializeField] private Image[] _tabImages = new Image[3];
@@ -56,10 +59,15 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private CharacterArt[] _petArts = new CharacterArt[0];
 
         private readonly StringBuilder _sb = new StringBuilder();
+        private GearTableValues _gearTable;
+        private GachaTableValues _skillTable;
         private GachaService _gacha;
         private SkillSummonService _skillSummon;
         private PetSummonService _petSummon;
         private GemShop _shop;
+        private AdSlotPolicy _adPolicy;
+        private IAdGateway _ads;
+        private bool _adBusy;
         private int _shownFarmingStage = -1;
         private BalanceValues _balance;
         private SaveDataV2 _save;
@@ -75,6 +83,8 @@ namespace SoloHero.Game.UI.Panels
             _skillSummon = PanelServices.TryGet<SkillSummonService>();
             _petSummon = PanelServices.TryGet<PetSummonService>();
             _shop = PanelServices.TryGet<GemShop>();
+            _adPolicy = PanelServices.TryGet<AdSlotPolicy>();
+            _ads = PanelServices.TryGet<IAdGateway>();
             _balance = PanelServices.TryGet<BalanceValues>();
             _save = PanelServices.TryGet<SaveDataV2>();
             _requester = PanelServices.TryGet<ISaveRequester>();
@@ -106,25 +116,132 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
+        /// <summary>D-115: which summon level the shown page uses.</summary>
+        private SummonKind Kind => _mode == ModePet ? SummonKind.Pet : _mode == ModeSkill ? SummonKind.Skill : SummonKind.Gear;
+
+        private int CurrentLevel => _balance != null && _save != null ? SummonLevel.Of(_balance, _save, Kind) : 1;
+
+        /// <summary>
+        /// D-115: a toast when the pull just raised the summon level (and the rate table with it); D-121: it names the
+        /// grade that level opened.
+        /// </summary>
+        private void AnnounceLevel(int before)
+        {
+            int after = CurrentLevel;
+            if (after <= before) return;
+            int opened = -1;
+            for (int level = before + 1; level <= after; level++)
+            {
+                int g = SummonLevel.GradeOpeningAt(OpenLevels(_mode), level);
+                if (g >= 0) opened = g;
+            }
+
+            if (_toast != null)
+            {
+                string summon = Strings.Get(ModeKeys[_mode]);
+                _toast.Show(opened >= 0
+                    ? Strings.Format("gacha.level_up_open", summon, after, PanelServices.GradeName(LadderGrade(_mode, opened)))
+                    : Strings.Format("gacha.level_up", summon, after));
+            }
+
+            DrawStatic();
+        }
+
+        private GearTableValues GearTable => _gearTable ??= GearTableValues.FromBalance(_balance);
+
+        private GachaTableValues SkillTable => _skillTable ??= GachaTableValues.FromBalance(_balance);
+
+        /// <summary>D-121: open levels of the page's grades (the gear ladder for gear and pets, four grades for skills).</summary>
+        private int[] OpenLevels(int mode) => mode == ModeSkill ? SkillTable.OpenLevels : GearTable.OpenLevels;
+
+        /// <summary>D-123: whether the page's summon level already opened the pity grade (Legendary).</summary>
+        private bool PityOpen(int mode)
+        {
+            SummonKind kind = mode == ModePet ? SummonKind.Pet : mode == ModeSkill ? SummonKind.Skill : SummonKind.Gear;
+            int level = SummonLevel.Of(_balance, _save, kind);
+            return mode == ModeSkill ? SkillTable.AtLevel(level).PityOpen : GearTable.AtLevel(level).PityOpen;
+        }
+
+        /// <summary>The ladder grade (name and colour) of a grade index of the page's table.</summary>
+        private static GearGrade LadderGrade(int mode, int index) => mode == ModeSkill ? ((Grade)index).ToGearGrade() : (GearGrade)index;
+
+        private static readonly string[] ModeKeys = { "gacha.mode_gear", "gacha.mode_skill", "gacha.mode_pet" };
+
         public void PullSingle()
+        {
+            int before = CurrentLevel;
+            PullSingleNow();
+            AnnounceLevel(before);
+        }
+
+        public void PullTen()
+        {
+            int before = CurrentLevel;
+            PullTenNow();
+            AnnounceLevel(before);
+        }
+
+        public void PullTenWithGem()
+        {
+            int before = CurrentLevel;
+            PullTenWithGemNow();
+            AnnounceLevel(before);
+        }
+
+        private void PullSingleNow()
         {
             if (_mode == ModePet) ApplyPet(_petSummon != null && _save != null ? _petSummon.TryPull(_save) : default, "pet_gold_single");
             else if (_mode == ModeSkill) ApplySkill(_skillSummon != null && _save != null ? _skillSummon.TryPull(_save) : default, "skill_gold_single");
             else Apply(_gacha != null && _save != null ? _gacha.TryPull(_save) : default, "gold_single");
         }
 
-        public void PullTen()
+        private void PullTenNow()
         {
             if (_mode == ModePet) ApplyPet(_petSummon != null && _save != null ? _petSummon.TryPullTen(_save) : default, "pet_gold_ten");
             else if (_mode == ModeSkill) ApplySkill(_skillSummon != null && _save != null ? _skillSummon.TryPullTen(_save) : default, "skill_gold_ten");
             else Apply(_gacha != null && _save != null ? _gacha.TryPullTen(_save) : default, "gold_ten");
         }
 
-        public void PullTenWithGem()
+        private void PullTenWithGemNow()
         {
             if (_mode == ModePet) ApplyPet(_petSummon != null && _save != null ? _petSummon.TryPullTenWithGem(_save) : default, "pet_gem_ten");
             else if (_mode == ModeSkill) ApplySkill(_skillSummon != null && _save != null ? _skillSummon.TryPullTenWithGem(_save) : default, "skill_gem_ten");
             else Apply(_gacha != null && _save != null ? _gacha.TryPullTenWithGem(_save) : default, "gem_ten");
+        }
+
+        /// <summary>D-120: an ad for a free ten-pull of the shown page (gear or pet).</summary>
+        public void WatchAdSummon()
+        {
+            if (_adPolicy == null || _ads == null || _save == null || _adBusy || _mode == ModeSkill) return;
+            AdSlot slot = _mode == ModePet ? AdSlot.FreePetSummon : AdSlot.FreeGearSummon;
+            Result can = _adPolicy.CanUse(slot);
+            if (can.Ok && _mode == ModePet && !PetSummonService.IsUnlocked(_balance, _save)) can = Result.Fail(FailReason.Locked);
+            if (!can.Ok)
+            {
+                if (_toast != null) _toast.ShowFailure(can.Reason);
+                return;
+            }
+
+            int mode = _mode;
+            _adBusy = true;
+            _ads.Show(outcome =>
+            {
+                _adBusy = false;
+                Result r = _adPolicy.Complete(slot, outcome);
+                GameAnalytics.Log(r.Ok ? AnalyticsEvents.AdReward : AnalyticsEvents.AdFail, AnalyticsParam.Of(AnalyticsEvents.PSlot, slot.ToString()));
+                if (!r.Ok)
+                {
+                    if (_toast != null) _toast.ShowFailure(r.Reason);
+                    Refresh();
+                    return;
+                }
+
+                int before = CurrentLevel;
+                int pulls = _balance.AD_FREE_SUMMON_PULLS;
+                if (mode == ModePet) ApplyPet(_petSummon != null ? _petSummon.TryPullFree(_save, pulls) : default, "pet_ad_free");
+                else Apply(_gacha != null ? _gacha.PullFree(_save, pulls) : default, "ad_free");
+                AnnounceLevel(before);
+            });
         }
 
         /// <summary>E6-02: gems for an instant gold package worth 100 clears of the farming stage.</summary>
@@ -303,14 +420,32 @@ namespace SoloHero.Game.UI.Panels
             int pity = skill ? _balance.GACHA_PITY : _balance.GEAR_PITY;
             int count = skill ? _save.skillPityCount : pet ? _save.petPityCount : _save.pityCount;
             int left = pity - count;
-            if (_pityText != null)
-                _pityText.text = locked ? Strings.Format("gacha.pet_locked", StageLabel(_balance.PET_UNLOCK_STAGE)) : Strings.Format("gacha.pity", left, count, pity);
-            if (_pityFill != null)
+            float ratio = pity > 0 ? Mathf.Clamp01((float)count / pity) : 0f;
+            string top;
+            if (locked)
             {
-                // Width by anchor: a Filled image without a sprite ignores fillAmount.
-                float ratio = pity > 0 ? Mathf.Clamp01((float)count / pity) : 0f;
-                _pityFill.rectTransform.anchorMax = new Vector2(ratio, 1f);
+                top = Strings.Format("gacha.pet_locked", StageLabel(_balance.PET_UNLOCK_STAGE));
+                ratio = 0f;
             }
+            else if (PityOpen(_mode))
+            {
+                top = Strings.Format("gacha.pity", left, count, pity);
+            }
+            else
+            {
+                // D-123: before the pity grade opens, the gauge is the summon level (MapleStory Idle style).
+                SummonKind kind = Kind;
+                int level = CurrentLevel;
+                int from = SummonLevel.PullsFor(_balance, kind, level);
+                int to = SummonLevel.PullsFor(_balance, kind, level + 1);
+                int pulls = SummonLevel.Pulls(_save, kind);
+                top = Strings.Format("gacha.level_progress", level, to - pulls);
+                ratio = to > from ? Mathf.Clamp01((float)(pulls - from) / (to - from)) : 1f;
+            }
+
+            if (_pityText != null) _pityText.text = top;
+            // Width by anchor: a Filled image without a sprite ignores fillAmount.
+            if (_pityFill != null) _pityFill.rectTransform.anchorMax = new Vector2(ratio, 1f);
 
             if (_singleButton != null) _singleButton.SetAvailable(!locked && _save.gold >= SingleCost);
             if (_tenButton != null) _tenButton.SetAvailable(!locked && _save.gold >= TenCost);
@@ -319,6 +454,7 @@ namespace SoloHero.Game.UI.Panels
             if (_shop != null && _goldPackText != null)
                 _goldPackText.text = Strings.Format("gacha.gold_pack", _balance.GEM_GOLD_PACK_COST, BigNumberFormat.Format(_shop.GoldPackAmount(_save)));
             if (_goldPackButton != null) _goldPackButton.SetAvailable(_save.gem >= _balance.GEM_GOLD_PACK_COST);
+            DrawAdButton(locked);
         }
 
         /// <summary>
@@ -328,26 +464,65 @@ namespace SoloHero.Game.UI.Panels
         private string RatesText(int mode)
         {
             _sb.Clear();
-            if (mode == ModeSkill)
+            // D-115: the summon level and the pulls to the next one head the table it selects.
+            SummonKind kind = mode == ModePet ? SummonKind.Pet : mode == ModeSkill ? SummonKind.Skill : SummonKind.Gear;
+            int level = SummonLevel.Of(_balance, _save, kind);
+            int[] open = OpenLevels(mode);
+            bool pityOpen = PityOpen(mode);
+            int opening = level < _balance.SUMMON_LV_MAX ? SummonLevel.GradeOpeningAt(open, level + 1) : -1;
+            if (level >= _balance.SUMMON_LV_MAX)
             {
-                GachaTableValues table = GachaTableValues.FromBalance(_balance);
-                double[] rates = { table.RateC, table.RateR, table.RateE, table.RateL };
-                for (int g = 0; g < rates.Length; g++) AppendRate(g, ((Grade)g).ToGearGrade(), rates[g]);
-                _sb.Append('\n').Append(Strings.Format("gacha.rates_pity_skill", table.PityCeiling));
+                _sb.Append(Strings.Format("gacha.level_max", level));
+            }
+            else if (!pityOpen && opening >= 0)
+            {
+                // D-123: the gauge above already counts to the next level; this line names what it opens.
+                _sb.Append(Strings.Format("gacha.next_open", level + 1, PanelServices.GradeName(LadderGrade(mode, opening))));
             }
             else
             {
-                GearTableValues table = GearTableValues.FromBalance(_balance);
-                for (int g = 0; g < table.Rates.Length; g++) AppendRate(g, (GearGrade)g, table.Rates[g]);
-                _sb.Append('\n').Append(Strings.Format(mode == ModePet ? "gacha.rates_pity_pet" : "gacha.rates_pity_gear", table.PityCeiling));
+                // D-121: when the next level opens a grade, the line says which.
+                int left = SummonLevel.PullsFor(_balance, kind, level + 1) - SummonLevel.Pulls(_save, kind);
+                _sb.Append(opening >= 0
+                    ? Strings.Format("gacha.level_open", level, left, PanelServices.GradeName(LadderGrade(mode, opening)))
+                    : Strings.Format("gacha.level", level, left));
+            }
+
+            _sb.Append('\n');
+            if (mode == ModeSkill)
+            {
+                GachaTableValues table = SkillTable.AtLevel(level);
+                double[] rates = { table.RateC, table.RateR, table.RateE, table.RateL };
+                for (int g = 0; g < rates.Length; g++) AppendRate(g, LadderGrade(mode, g), rates[g], open[g] > level ? open[g] : 0);
+                _sb.Append('\n').Append(pityOpen
+                    ? Strings.Format("gacha.rates_pity_skill", table.PityCeiling)
+                    : Strings.Format("gacha.rates_pity_locked", SkillTable.OpenLevel(Grade.Legendary), table.PityCeiling));
+            }
+            else
+            {
+                GearTableValues table = GearTable.AtLevel(level);
+                for (int g = 0; g < table.Rates.Length; g++) AppendRate(g, (GearGrade)g, table.Rates[g], open[g] > level ? open[g] : 0);
+                _sb.Append('\n').Append(pityOpen
+                    ? Strings.Format(mode == ModePet ? "gacha.rates_pity_pet" : "gacha.rates_pity_gear", table.PityCeiling)
+                    : Strings.Format("gacha.rates_pity_locked", GearTable.OpenLevel(GearTableValues.PityGrade), table.PityCeiling));
             }
 
             return _sb.ToString();
         }
 
-        private void AppendRate(int index, GearGrade grade, double percent)
+        /// <summary>One disclosed grade: its rate in its colour, or (D-121) the summon level that opens it, dimmed.</summary>
+        private void AppendRate(int index, GearGrade grade, double percent, int opensAt)
         {
             if (index > 0) _sb.Append(index % 4 == 0 ? "\n" : "  ");
+            if (opensAt > 0)
+            {
+                _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(UiPalette.InkMuted)).Append('>')
+                    .Append(Strings.Format("gacha.rate_locked", PanelServices.GradeName(grade), opensAt))
+                    .Append("</color>");
+                return;
+            }
+
+            percent = System.Math.Round(percent, 4);
             _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(UiPalette.GradeInk(grade))).Append('>')
                 .Append(Strings.Format("gacha.rate_item", PanelServices.GradeName(grade), percent.ToString("0.###", CultureInfo.InvariantCulture)))
                 .Append("</color>");
@@ -418,6 +593,18 @@ namespace SoloHero.Game.UI.Panels
             AppendGradeCounts(counts);
             _sb.Append('\n').Append(Strings.Format("gacha.pet_summary", fresh, up, refunded));
             _resultText.text = _sb.ToString();
+        }
+
+        private void DrawAdButton(bool locked)
+        {
+            if (_adButton == null) return;
+            bool show = _mode != ModeSkill && _adPolicy != null;
+            if (_adButton.gameObject.activeSelf != show) _adButton.gameObject.SetActive(show);
+            if (!show) return;
+            AdSlot slot = _mode == ModePet ? AdSlot.FreePetSummon : AdSlot.FreeGearSummon;
+            int left = _adPolicy.Remaining(slot);
+            if (_adLabel != null) _adLabel.text = Strings.Format("ad.free_summon", _balance.AD_FREE_SUMMON_PULLS, left, _adPolicy.DailyLimit(slot));
+            _adButton.SetAvailable(!locked && !_adBusy && left > 0);
         }
 
         /// <summary>"c-s" label of a global stage index.</summary>

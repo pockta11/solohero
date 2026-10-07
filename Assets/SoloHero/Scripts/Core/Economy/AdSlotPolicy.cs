@@ -36,6 +36,8 @@ namespace SoloHero.Core.Economy
                 case AdSlot.OfflineDouble: return _balance.AD_OFFLINE_DAILY;
                 case AdSlot.Gem: return _balance.AD_GEM_DAILY;
                 case AdSlot.GoldBooster: return _balance.AD_BOOSTER_DAILY;
+                case AdSlot.FreeGearSummon: return _balance.AD_FREE_GEAR_DAILY;
+                case AdSlot.FreePetSummon: return _balance.AD_FREE_PET_DAILY;
                 default: throw new ArgumentOutOfRangeException(nameof(slot));
             }
         }
@@ -56,7 +58,8 @@ namespace SoloHero.Core.Economy
 
         /// <summary>
         /// Applies the result of one ad. Only <see cref="AdOutcome.Rewarded"/> grants and counts. For
-        /// <see cref="AdSlot.OfflineDouble"/> the caller claims the doubled gold itself (OfflineClaim) after Ok.
+        /// <see cref="AdSlot.OfflineDouble"/> the caller claims the doubled gold itself (OfflineClaim) after Ok, and for
+        /// the D-120 free summons it makes the free pulls itself.
         /// </summary>
         public Result Complete(AdSlot slot, AdOutcome outcome)
         {
@@ -99,6 +102,8 @@ namespace SoloHero.Core.Economy
             _data.adCountA1 = 0;
             _data.adCountA2 = 0;
             _data.adCountA3 = 0;
+            _data.adCountA4 = 0;
+            _data.adCountA5 = 0;
         }
 
         private int Used(AdSlot slot)
@@ -107,6 +112,8 @@ namespace SoloHero.Core.Economy
             {
                 case AdSlot.OfflineDouble: return _data.adCountA1;
                 case AdSlot.Gem: return _data.adCountA2;
+                case AdSlot.FreeGearSummon: return _data.adCountA4;
+                case AdSlot.FreePetSummon: return _data.adCountA5;
                 default: return _data.adCountA3;
             }
         }
@@ -117,6 +124,8 @@ namespace SoloHero.Core.Economy
             {
                 case AdSlot.OfflineDouble: _data.adCountA1 = value; break;
                 case AdSlot.Gem: _data.adCountA2 = value; break;
+                case AdSlot.FreeGearSummon: _data.adCountA4 = value; break;
+                case AdSlot.FreePetSummon: _data.adCountA5 = value; break;
                 default: _data.adCountA3 = value; break;
             }
         }

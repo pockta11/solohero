@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Ads**: Google Mobile Ads Unity 11.5.0 (Android `play-services-ads` 25.4.0), 보상형만
 - **Async**: UniTask v2.5.11 · **Tween**: DOTween · **JSON**: Newtonsoft 3.2.1 · **UI**: uGUI + TMP
 
-## 현재 상태 (2026-10-07)
+## 현재 상태 (2026-10-08)
 
 **2D 리빌드 — E1~E8 구현 완료(대부분 review), E9 출시 준비·QA 진행 중.** 3D 쿼터뷰 구현은 2026-09-19에 전면 폐기했다. 1-09(빌드 파이프라인·API 36·16 KB, JDK 11 확정)와 1-03(정리·구조 이행) 완료. 레거시 격리 폴더는 2026-09-28 이식 완료로 삭제.
 
@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|---|
 | **GDD** | `_bmad-output/planning-artifacts/gdds/gdd-solohero-2026-09-20/gdd.md` | 설계 단일 출처. `Number Balancing` 상수표가 모든 수치의 원본 |
 | Epics | 같은 폴더 `epics.md` | 9 에픽 / 132 스토리 |
-| Decision log | 같은 폴더 `decision-log.md` | D-001~D-114 |
+| Decision log | 같은 폴더 `decision-log.md` | D-001~D-125 |
 | **Architecture** | `_bmad-output/planning-artifacts/architecture/arch-solohero-2026-09-20/game-architecture.md` | 결정 D1~D15, ADR 1~7, 구조, 패턴(코드 예시), 검증 |
 | **Project context** | `_bmad-output/project-context.md` | **코드를 만지기 전에 읽는 규칙 62개.** 아키텍처와 충돌 시 아키텍처가 우선 |
 
@@ -51,6 +51,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **2026-10-07 테두리·타격감** (D-112): `SoloHero/SpriteFlash` 셰이더가 캐릭터 실루엣 바깥 1텍셀 테두리(남색, 보스 진홍)를 그리고 피격 번쩍임에 함께 번쩍인다. UI 큰 영웅은 uGUI Outline. 피격 찌그러짐(치명타·콤보 더 세게 + 넉백 2배)·영웅 휘두름 늘어남·픽셀 파편(`HitParticles`, 원점 파티클은 `AlwaysSimulate` 필수 — 자동 컬링이면 카메라가 멀어질 때 멈춰 안 보인다)·영웅 피격 빨간 번쩍임·타격음 ±8% 음높이
 - **2026-10-07 장비 7등급** (D-113): 장비만 일반·고급·희귀·영웅·전설·신화·고대 7단계(`GearGrade`; 스킬·동료·직업은 4단계 `Grade`, UI는 `ToGearGrade()`로 같은 색·테두리). 확률 60/28/9/2.5/0.45/0.045/0.005 %(`GEAR_RATE_*`, `GearTableValues`), 천장 200회 전설(`GEAR_PITY`), 뽑기 150골드/10연 1,350, 환영 선물 무료 10연. 장비 56종 아이콘(`equipgen3.py`의 `VARIANTS`: 기존 모양에 재질 교체)·테두리 7종(`uigen3.py` `hd9_slot{c,u,r,e,l,m,a}`). 시뮬 무광고 7일 5-3~6-6. 보스 실패 후 직전 일반 스테이지 반복은 D-077 그대로
 - **2026-10-07 펫** (D-114): 동료를 펫으로 이름을 바꾸고 16종으로(`Core/Pets` `PetCatalog`·`PetService`·`PetSummonService`, 전투 `PetCaster`, 뷰 `PetView`, 창 `PetPresenter`; 저장 키 `companionEquipped`·`companionLevels`는 유지, 새 키 `petOwned`·`petEnhance`·`petPityCount`). 소환 화면 세 번째 탭 "펫 소환"(300 / 10연 2,700 / 젬 200, 장비 7등급표·200회 천장, 1-10 처치 후 개방), 중복 강화·레벨업·보유 효과, 펫 창은 상세 + 4×4 도감. 신규 12종 그림은 `chibi3d.py` `build_pet`(`PET_BODY`·`PET_WINGS`·`HOPPERS`; 꼬리는 화면 왼쪽인 몸 −Y로 펼쳐야 보인다), `python tools/art/build3d.py pet...`. 시뮬 무광고 7일 5-6~6-8
+- **2026-10-07~08 성장 축·리텐션** (D-115~D-125): 소환 단계(장비·스킬·펫 각각, 누적 뽑기로 Lv 10까지, `Core/Gacha/SummonLevel`)가 **메이플 키우기식으로 등급을 연다**(D-123: 1단계 일반만, 단계마다 한 등급 — 장비·펫 고급 2·희귀 3·영웅 4·전설 5·신화 6·고대 7, 스킬 희귀 2·영웅 3·전설 4; 장비 단계 100회 단위로 누적 100/300/600/1,000…) 희귀 이상 확률도 올린다. 확률표는 `AtLevel`에서만 계산 — 새 뽑기 경로도 반드시 `AtLevel`을 거칠 것. 천장은 전설이 열린 단계부터만 센다(`PityOpen`). 시뮬 플레이어는 지출의 30 %를 장비·10 %를 스킬 소환에 쓴다(`GearPullShare`·`SkillPullShare`; 한 번의 가치로는 단계 투자를 못 본다). 환급은 소환 레벨 최대에서도 10연 단가의 ½ 미만으로(그 이상이면 뽑을수록 골드가 남는다). 장비 승급(+10 → 한 등급 위 +5, 영웅까지, 장비 창 `일괄 승급`, `Core/Equipment/EquipPromotion`), 업적 10계열(`Core/Progression/Achievement*`, 메뉴 "업적"), 로컬 알림(Unity Mobile Notifications 2.3.2, `Game/Infrastructure/LocalNotifications`, 설정 `알림`), 광고 무료 소환(장비 10회 ×2·펫 10회 ×1/일, `AdSlot.FreeGearSummon/FreePetSummon`). 골드만으로는 조금 더디게: `STAGE_GOLD_GROWTH` 1.035(D-122). 보스는 체력의 벽(D-124: 공격 ×0.5·체력 ×26, 1장 ×14, 실패 대부분 시간 초과 — 판정 V-8). 일반 스테이지는 이어 달린다(D-125: 클리어 대기 중 `HeroBrain.RunOn`, 다음 일반 스테이지는 `Reset(stats, keepPosition)`으로 x 유지; 보스·새 챕터·재시작은 0). 환생은 Core만 있고 화면 없이 보류(D-117, 시뮬상 순손해). 시뮬 무광고 1일 2-7~2-9 · 3일 3-6~3-9 · 7일 4-10~5-6, 광고 7일 5-4~6-1, 14일 5-6~6-9
 - 빌드는 `libFirebaseCppApp` 포함을 자동 검사하고, EDM4U가 pom을 `srcaar`로 바꾸면 빌드 전에 되돌린다
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 
@@ -103,10 +104,10 @@ Assets/SoloHero/            # 프로젝트 소유 전부. 벤더(Firebase·Googl
 E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트는 `Scripts/Legacy/`에 격리했다가 2026-09-28 전부 이식·삭제했다(장비 SO 16종도 코드 카탈로그 `GachaCatalog`로 대체되어 삭제). Addressables·Input System·collab-proxy 패키지, `StreamingAssets/JSON`, `AddressableAssetsData`는 제거됨. `Assets/Resources/DOTweenSettings.asset`은 벤더 필수 예외.
 
 ### 게임 규칙 요약 (GDD 상수표가 원본)
-- 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(10배 HP, 30초). 킬 목표 16 고정(8마리 무리 × 2, D-109). 적은 걸어와 앞 3마리가 동시에 공격(D-110). 적 HP 기준 45·ATK 기준 2.6, 성장 1.185, 보스 ATK ×2.5·1장 보스 HP ×6 (D-110), 골드 `50×1.04^(g−1)`, 보스 격파 골드·EXP ×5 (D-053·D-059). 일반 스테이지 사망 → 자동 한 칸 아래 파밍, `도전`으로 복귀 (D-058)
+- 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(26배 HP, 30초, D-124). 킬 목표 16 고정(8마리 무리 × 2, D-109). 적은 걸어와 앞 3마리가 동시에 공격(D-110). 적 HP 기준 45·ATK 기준 2.6, 성장 HP 1.165·ATK 1.175 (D-123), 보스 ATK ×0.5·HP ×26·1장 보스 HP ×14 (D-124), 골드 `50×1.035^(g−1)` (D-122), 보스 격파 골드·EXP ×5 (D-053·D-059). 일반 스테이지 사망 → 자동 한 칸 아래 파밍, `도전`으로 복귀 (D-058)
 - 강화: HP·ATK·DEF **승산 ×1.16/레벨·상한 없음**, 공격속도 가산 +0.02·최대 100. 비용 `baseCost × 1.12^level` (base 300/450/450/600)
 - 방어: `DEF_REF = 3 × 적ATK`, `피격 = max(1, 적ATK × DEF_REF / (DEF_REF + DEF))`
-- 가챠 (D-113): 150골드 / 10연 1,350 / 젬 200. 장비 확률 **일반 60 / 고급 28 / 희귀 9 / 영웅 2.5 / 전설 0.45 / 신화 0.045 / 고대 0.005 %**, 200회 천장(전설), 전설 이상 획득 시 pity 리셋. 중복 = 장비 강화 +1(최대 10, ×1.10/레벨), 최대 레벨만 환급 (D-062). 장비 **8슬롯 × 7등급 = 56종**(검·투구·갑옷·신발 + 장신구 장갑·목걸이·반지·귀걸이), 보유 효과 ATK +0.5/0.75/1/2/4/8/15 %×강화 (D-109)
+- 가챠 (D-113): 150골드 / 10연 1,350 / 젬 200. 장비 확률 **일반 60 / 고급 28 / 희귀 9 / 영웅 2.5 / 전설 0.45 / 신화 0.045 / 고대 0.005 %**, 200회 천장(전설), 전설 이상 획득 시 pity 리셋. 중복 = 장비 강화 +1(최대 10, ×1.10/레벨), 최대 레벨만 환급 20~15,000 (D-062, D-115). **소환 단계**(장비 단계 100·펫 50·스킬 20, Lv 10): 1단계 일반만, 단계마다 한 등급 개방(고급 2·희귀 3·영웅 4·전설 5·신화 6·고대 7, 스킬 희귀 2·영웅 3·전설 4), 희귀 이상 ×(1 + 0.12×(L−1)), 천장은 전설 개방 후부터 (D-115, D-123). 승급 +10 → 윗등급 +5, `500 × 3^등급`, 영웅까지 (D-116). 광고 무료 소환 장비 10회 ×2·펫 10회 ×1/일 (D-120). 장비 **8슬롯 × 7등급 = 56종**(검·투구·갑옷·신발 + 장신구 장갑·목걸이·반지·귀걸이), 보유 효과 ATK +0.5/0.75/1/2/4/8/15 %×강화 (D-109)
 - 스킬 (D-078~D-080, D-107, D-109): **시작 3종 + 계열당 16종(등급별 4) = 51종 도감** + 스킬 소환(4등급 표 C 55 / R 33 / E 10 / L 2 %·100회 천장, 카운터 별도, 5,000 / 10연 45,000 / 젬 200) + **6슬롯**(해금 Lv 1/5/12/20/30/45) 슬롯 순 자동 발동. 중복 = 레벨 +1(최대 10, ×1.9), 골드 레벨업 병행, 보유 효과 ATK +0.25/0.5/1/2 %×레벨 배율. 스킬 수치 원본은 `Core/Skills/SkillCatalog`. 화상/중독·기절(보스 ½)·버프 5종(가속 포함)·보호막·표식(받는 피해 +%)
 - 펫 (D-114): 16종(일반 3·고급 3·희귀 3·영웅 3·전설 2·신화 1·고대 1), 펫 소환 300 / 10연 2,700 / 젬 200(장비 확률표·천장 공유, 카운터 별도, 1-10 처치 후). 장착 1마리가 공격(영웅 공격력 × 배율 × 1.1^레벨 × 1.1^강화), 보유 효과 ATK +2/3/5/8/15/30/60 % × 강화 × 레벨
 - 오프라인: `파밍스테이지_골드 / 2000` 초당 (D-055, D-110), 상한 21,600초, 60초 미만 팝업 없음, 음수·상한 2배 초과 → 0. 광고 2배

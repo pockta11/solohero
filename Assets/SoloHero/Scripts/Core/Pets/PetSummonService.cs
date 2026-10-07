@@ -66,7 +66,7 @@ namespace SoloHero.Core.Pets
         public bool IsUnlocked(SaveDataV2 data) => IsUnlocked(_balance, data);
 
         public static bool IsUnlocked(BalanceValues balance, SaveDataV2 data) =>
-            data != null && balance != null && data.highestStage >= balance.PET_UNLOCK_STAGE;
+            data != null && balance != null && SoloHero.Core.Progression.RebirthService.BestStage(data) >= balance.PET_UNLOCK_STAGE;
 
         public PetSummonResult TryPull(SaveDataV2 data)
         {
@@ -82,6 +82,13 @@ namespace SoloHero.Core.Pets
             if (data.gold < _balance.PET_SUMMON_COST_TEN) return PetSummonResult.Fail(FailReason.NotEnoughGold);
             data.gold -= _balance.PET_SUMMON_COST_TEN;
             return Pull(data, 10);
+        }
+
+        /// <summary>D-120: free pulls (an ad summon); same rates, pity and counters as paid ones.</summary>
+        public PetSummonResult TryPullFree(SaveDataV2 data, int count)
+        {
+            if (!IsUnlocked(data)) return PetSummonResult.Fail(FailReason.Locked);
+            return Pull(data, count < 1 ? 1 : count);
         }
 
         public PetSummonResult TryPullTenWithGem(SaveDataV2 data)
@@ -102,19 +109,23 @@ namespace SoloHero.Core.Pets
 
         private PetPullItem PullOne(SaveDataV2 data)
         {
-            data.petPityCount++;
+            // D-115: the summon level before this pull picks the rate table.
+            GearTableValues table = _table.AtLevel(SummonLevel.Of(_balance, data, SummonKind.Pet));
+            // D-123: the pity starts counting once the summon level has opened its grade.
+            bool pity = table.PityOpen;
+            if (pity) data.petPityCount++;
             data.petPullCount++;
 
             GearGrade grade;
-            if (data.petPityCount >= _table.PityCeiling)
+            if (pity && data.petPityCount >= table.PityCeiling)
             {
                 grade = GearTableValues.PityGrade;
                 data.petPityCount = 0;
             }
             else
             {
-                grade = _table.PickGrade(_rng.NextDouble());
-                if (grade >= GearTableValues.PityGrade && _table.ResetOnPityGrade) data.petPityCount = 0;
+                grade = table.PickGrade(_rng.NextDouble());
+                if (grade >= GearTableValues.PityGrade && table.ResetOnPityGrade) data.petPityCount = 0;
             }
 
             PetDef[] pool = PetCatalog.OfGrade(grade);

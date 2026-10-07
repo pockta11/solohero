@@ -125,7 +125,16 @@ namespace SoloHero.Core.Stage
             return true;
         }
 
-        public void Begin(int g)
+        /// <summary>D-125: a run past this x restarts the next stage from 0 (keeps positions small over hours of farming).</summary>
+        private const double MaxRunX = 20000d;
+
+        public void Begin(int g) => Begin(g, false);
+
+        /// <summary>
+        /// Starts stage <paramref name="g"/>. D-125: <paramref name="keepPosition"/> (a clear running on into the next
+        /// normal stage) keeps the hero where it is, so the field scrolls on; every other start begins at x = 0.
+        /// </summary>
+        private void Begin(int g, bool keepPosition)
         {
             if (g < 1) g = 1;
             _dungeon = DungeonKind.None;
@@ -143,7 +152,7 @@ namespace SoloHero.Core.Stage
             _spawner.Reset(_killTarget, _isBoss);
             _skills.ResetCooldowns();
             _pet.Reset();
-            _hero.Reset(_stats);
+            _hero.Reset(_stats, keepPosition);
 
             if (_isBoss)
                 SetState(StageState.BossIntro);
@@ -285,6 +294,7 @@ namespace SoloHero.Core.Stage
             if (gained > 0)
             {
                 _kills += gained;
+                _save.totalKills += gained;
                 for (int i = 0; i < gained; i++)
                     KillExp.Grant(_save, _balance, _g, _isBoss);
             }
@@ -298,7 +308,9 @@ namespace SoloHero.Core.Stage
                     _clearTimer = 0f;
                     FailStreak = 0;
                     _challenging = false;
-                    _stageReward.ApplyClear(_g, ClearGoldMultiplier);
+                    // D-117: the permanent rebirth gold boost multiplies every clear.
+                    _stageReward.ApplyClear(_g, ClearGoldMultiplier * SoloHero.Core.Progression.RebirthService.GoldMult(_balance, _save));
+                    if (_isBoss) _save.bossKills++;
                     StageCleared?.Invoke(_g);
                 }
                 return;
@@ -337,9 +349,10 @@ namespace SoloHero.Core.Stage
             for (int i = 0; i < gained; i++)
             {
                 _kills++;
+                _save.totalKills++;
                 if (_dungeon == DungeonKind.Gold)
                 {
-                    double gold = Formulas.DungeonGoldPerKill(_balance, _g);
+                    double gold = Formulas.DungeonGoldPerKill(_balance, _g) * SoloHero.Core.Progression.RebirthService.GoldMult(_balance, _save);
                     _save.gold += gold;
                     DungeonEarned += gold;
                 }
@@ -367,15 +380,14 @@ namespace SoloHero.Core.Stage
         private void TickClearing(float dt)
         {
             _clearTimer += dt;
+            // D-125: after a normal stage the hero runs on through the pause (the camera and the background scroll
+            // with it) and the next normal stage starts where it is. A boss stage or a new chapter starts over at 0.
+            bool runOn = !_isBoss;
+            if (runOn) _hero.RunOn(dt);
             if (_clearTimer < _balance.STAGE_CLEAR_DELAY) return;
 
-            if (_retreatMode)
-            {
-                Begin(_g);
-                return;
-            }
-
-            Begin(_g + 1);
+            int next = _retreatMode ? _g : _g + 1;
+            Begin(next, runOn && !StageIndex.IsBoss(next, _balance.STAGES_PER_CHAPTER) && _hero.X < MaxRunX);
         }
 
         /// <summary>Seconds until a failed boss auto-retreats (D-077); 0 when not waiting on a boss fail.</summary>

@@ -130,21 +130,40 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void TryUpgradePerm_NoCostOrMaxInBalance_StaysLocked()
+        public void TryUpgradePerm_CostsBasePlusLevelSoul_AndBoosts()
+        {
+            var b = new BalanceValues();
+            var data = SaveDataV2.CreateNew();
+            data.soul = RebirthService.Cost(b, 0) + RebirthService.Cost(b, 1);
+            var save = new FakeSaveRequester();
+            var service = new RebirthService(b, save);
+
+            Assert.IsTrue(service.TryUpgradePerm(data, RebirthService.PermLane.Atk).Ok);
+            Assert.IsTrue(service.TryUpgradePerm(data, RebirthService.PermLane.Atk).Ok);
+
+            Assert.AreEqual(0d, data.soul, 1e-9);
+            Assert.AreEqual(2, data.permAtkLevel);
+            Assert.AreEqual(2, save.RequestCount);
+            Assert.AreEqual(System.Math.Pow(1d + b.REBIRTH_ATK_GAIN, 2), RebirthService.AtkMult(b, data), 1e-12);
+            Assert.AreEqual(FailReason.NotEnoughSoul, service.TryUpgradePerm(data, RebirthService.PermLane.Gold).Reason);
+        }
+
+        [Test]
+        public void TryRebirth_KeepsBestStageForUnlocks_AndClearsTalents()
         {
             var data = SaveDataV2.CreateNew();
-            data.soul = 100d;
-            data.permGoldLevel = 0;
-            var save = new FakeSaveRequester();
-            var service = new RebirthService(new BalanceValues(), save);
+            data.highestStage = 57;
+            data.heroLevel = 44;
+            data.talentIds.Add("sharpness");
+            data.talentRanks.Add(3);
 
-            Result result = service.TryUpgradePerm(data, RebirthService.PermLane.Gold);
+            Assert.IsTrue(new RebirthService(new BalanceValues()).TryRebirth(data).Ok);
 
-            Assert.IsFalse(result.Ok);
-            Assert.AreEqual(FailReason.Locked, result.Reason);
-            Assert.AreEqual(100d, data.soul);
-            Assert.AreEqual(0, data.permGoldLevel);
-            Assert.AreEqual(0, save.RequestCount);
+            Assert.AreEqual(57, data.bestStageEver);
+            Assert.AreEqual(57, RebirthService.BestStage(data));
+            Assert.AreEqual(44, data.bestHeroLevel);
+            Assert.AreEqual(0, data.talentIds.Count);
+            Assert.IsTrue(SoloHero.Core.Pets.PetSummonService.IsUnlocked(new BalanceValues(), data), "the pet summon stays open");
         }
     }
 }

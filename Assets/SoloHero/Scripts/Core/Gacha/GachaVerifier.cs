@@ -71,20 +71,24 @@ namespace SoloHero.Core.Gacha
             }
         }
 
-        public static Report Run(BalanceValues balance, int pulls, int seed)
+        /// <param name="level">D-115 summon level held for the whole run (its own disclosed table).</param>
+        public static Report Run(BalanceValues balance, int pulls, int seed, int level = 1)
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             GearTableValues table = GearTableValues.FromBalance(balance);
             var service = new GachaService(balance, table, new SystemRandom(new Random(seed)), GachaCatalog.Standard(balance));
             SaveDataV2 data = SaveDataV2.CreateNew();
             var report = new Report { Pulls = pulls };
-            for (int g = 0; g < report.Disclosed.Length; g++) report.Disclosed[g] = table.Rates[g];
+            GearTableValues disclosed = table.AtLevel(level);
+            for (int g = 0; g < report.Disclosed.Length; g++) report.Disclosed[g] = disclosed.Rates[g];
+            int levelPulls = SummonLevel.PullsFor(balance, SummonKind.Gear, level);
 
             int dry = 0;
             for (int i = 0; i < pulls; i++)
             {
                 data.gold = balance.GACHA_COST_SINGLE;
-                bool forced = data.pityCount + 1 >= table.PityCeiling;
+                data.totalPullCount = levelPulls;
+                bool forced = disclosed.PityOpen && data.pityCount + 1 >= table.PityCeiling;
                 GachaBatchResult result = service.TryPull(data);
                 GearGrade grade = result.Items[0].Grade;
                 report.Total[(int)grade]++;

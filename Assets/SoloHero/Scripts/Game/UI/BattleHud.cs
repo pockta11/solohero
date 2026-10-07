@@ -75,6 +75,7 @@ namespace SoloHero.Game.UI
 
         private const string FarmingKey = "hud.farming";
         private const string AutoRetreatKey = "hud.auto_retreat";
+        private const string TimeUpRetreatKey = "hud.time_up_retreat";
         private const float GoldCountSeconds = 0.4f;
 
         private BalanceValues _balance;
@@ -571,8 +572,9 @@ namespace SoloHero.Game.UI
             GameObject promptObject = _retreatPrompt != null ? _retreatPrompt.gameObject : null;
             SetShown(promptObject, show, ref _retreatPromptVisible);
             if (!show || _retreatPrompt == null) return;
+            // D-124: a boss mostly ends by the clock; say so when the hero is still standing.
             string text = bossFail
-                ? Strings.Format(AutoRetreatKey, Mathf.CeilToInt(runner.BossAutoRetreatRemaining))
+                ? Strings.Format(runner.Hero.Hp > 0d ? TimeUpRetreatKey : AutoRetreatKey, Mathf.CeilToInt(runner.BossAutoRetreatRemaining))
                 : Strings.Get(FarmingKey);
             if (_retreatPrompt.text == text) return;
             _retreatPrompt.text = text;

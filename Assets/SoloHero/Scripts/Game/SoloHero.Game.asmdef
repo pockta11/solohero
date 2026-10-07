@@ -2,7 +2,8 @@
     "name": "SoloHero.Game",
     "rootNamespace": "SoloHero.Game",
     "references": [
-        "SoloHero.Core"
+        "SoloHero.Core",
+        "Unity.Notifications.Android"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -11,6 +12,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.mobile.notifications",
+            "expression": "2.0.0",
+            "define": "SOLOHERO_NOTIFICATIONS"
+        }
+    ],
     "noEngineReferences": false
 }

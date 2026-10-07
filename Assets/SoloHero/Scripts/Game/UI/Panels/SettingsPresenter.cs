@@ -15,8 +15,8 @@ namespace SoloHero.Game.UI.Panels
         private static readonly Color OnColor = new Color(0.25f, 0.45f, 0.3f, 1f);
         private static readonly Color OffColor = new Color(0.3f, 0.3f, 0.34f, 1f);
 
-        [SerializeField] private Text[] _stateTexts = new Text[4];
-        [SerializeField] private Image[] _stateImages = new Image[4];
+        [SerializeField] private Text[] _stateTexts = new Text[5];
+        [SerializeField] private Image[] _stateImages = new Image[5];
         [SerializeField] private GameObject _window;
         [SerializeField] private GameObject _creditsPopup;
         [SerializeField] private Text _creditsText;
@@ -73,7 +73,7 @@ namespace SoloHero.Game.UI.Panels
             if (_window != null) _window.SetActive(false);
         }
 
-        /// <summary>Row order: 0 BGM, 1 SFX, 2 low effect, 3 30 fps. BGM / SFX rows show "on" while sound plays.</summary>
+        /// <summary>Row order: 0 BGM, 1 SFX, 2 low effect, 3 30 fps, 4 notifications (D-119). BGM / SFX rows show "on" while sound plays.</summary>
         public void Toggle(int row)
         {
             if (_settings == null) _settings = PanelServices.TryGet<SettingsService>();
@@ -84,6 +84,7 @@ namespace SoloHero.Game.UI.Panels
                 case 1: _settings.SetSfxMuted(!_settings.SfxMuted); break;
                 case 2: _settings.SetLowEffect(!_settings.LowEffect); break;
                 case 3: _settings.SetFps30(!_settings.Fps30); break;
+                case 4: _settings.SetNotifications(!_settings.Notifications); break;
             }
 
             Refresh();
@@ -96,6 +97,7 @@ namespace SoloHero.Game.UI.Panels
             SetRow(1, !_settings.SfxMuted);
             SetRow(2, _settings.LowEffect);
             SetRow(3, _settings.Fps30);
+            SetRow(4, _settings.Notifications);
         }
 
         private void SetRow(int row, bool on)

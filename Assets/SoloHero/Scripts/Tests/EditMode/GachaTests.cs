@@ -33,7 +33,7 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void TryPull_PityCeiling_ForcesLegendary()
         {
-            BalanceValues balance = new BalanceValues();
+            BalanceValues balance = AllGradesOpen();
             SaveDataV2 data = SaveDataV2.CreateNew();
             data.gold = balance.GACHA_COST_SINGLE;
             data.pityCount = balance.GEAR_PITY - 1;
@@ -54,7 +54,7 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void TryPull_NaturalLegendary_ResetsPity()
         {
-            BalanceValues balance = new BalanceValues();
+            BalanceValues balance = AllGradesOpen();
             SaveDataV2 data = SaveDataV2.CreateNew();
             data.gold = balance.GACHA_COST_SINGLE;
             data.pityCount = 40;
@@ -74,7 +74,7 @@ namespace SoloHero.Tests.EditMode
         [TestCase(0.99999, GearGrade.Ancient)]
         public void TryPull_NaturalAboveLegendary_AlsoResetsPity(double sample, GearGrade expected)
         {
-            BalanceValues balance = new BalanceValues();
+            BalanceValues balance = AllGradesOpen();
             SaveDataV2 data = SaveDataV2.CreateNew();
             data.gold = balance.GACHA_COST_SINGLE;
             data.pityCount = 150;
@@ -90,7 +90,7 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void TryPull_NaturalEpic_KeepsPityCounting()
         {
-            BalanceValues balance = new BalanceValues();
+            BalanceValues balance = AllGradesOpen();
             SaveDataV2 data = SaveDataV2.CreateNew();
             data.gold = balance.GACHA_COST_SINGLE;
             data.pityCount = 40;
@@ -106,7 +106,7 @@ namespace SoloHero.Tests.EditMode
         public void TryPull_HigherGrade_ReplacesEquippedLowerGrade()
         {
             // The seven-grade order decides auto-equip: an Uncommon replaces a Common, a Common never replaces it back.
-            BalanceValues balance = new BalanceValues();
+            BalanceValues balance = AllGradesOpen();
             SaveDataV2 data = SaveDataV2.CreateNew();
             data.gold = balance.GACHA_COST_SINGLE * 2d;
             EquipmentLevels.AddOwned(data, "Equipment_Sword_Common");
@@ -352,6 +352,13 @@ namespace SoloHero.Tests.EditMode
             Assert.IsNotEmpty(data.equippedEarring);
             Assert.AreEqual(EquipmentSlot.Ring, GachaCatalog.Standard(balance)[(int)EquipmentSlot.Ring * GachaCatalog.GradeCount].Slot);
         }
+
+        /// <summary>D-121 / D-123 gates off, so a new summon uses the base table's bands (the gates have their own tests).</summary>
+        internal static BalanceValues AllGradesOpen() => new BalanceValues
+        {
+            SUMMON_OPEN_U = 1, SUMMON_OPEN_R = 1, SUMMON_OPEN_E = 1, SUMMON_OPEN_L = 1, SUMMON_OPEN_M = 1, SUMMON_OPEN_A = 1,
+            SKILL_SUMMON_OPEN_R = 1, SKILL_SUMMON_OPEN_E = 1, SKILL_SUMMON_OPEN_L = 1
+        };
 
         private static GachaService CreateService(BalanceValues balance, IRandom rng)
         {

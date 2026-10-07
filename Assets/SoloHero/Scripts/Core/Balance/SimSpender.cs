@@ -1,6 +1,7 @@
 using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Economy;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
@@ -85,6 +86,25 @@ namespace SoloHero.Core.Balance
 
         private enum Kind { None, Lane, Skill, Pull, SkillPull, PetPull, PetLevel }
 
+        /// <summary>
+        /// D-116: the player promotes every max-level item whose promotion costs at most this share of the gold in hand
+        /// (the value of a promotion is mostly that later duplicates enhance instead of refunding, which the one-step
+        /// score cannot see).
+        /// </summary>
+        public const double PromoteShare = 0.2d;
+
+        public int Promotions { get; private set; }
+
+        /// <summary>
+        /// D-123: summon levels open the grades (level 1 gives Common only), so the one-step value of a pull cannot see
+        /// why to keep pulling. The player model keeps at least this share of all spending on gear pulls (the GDD V-3b
+        /// band is 30-50 %).
+        /// </summary>
+        public double GearPullShare = 0.3d;
+
+        /// <summary>D-123: the same for skill pulls once the job allows them (a skill pull costs ~33 gear pulls).</summary>
+        public double SkillPullShare = 0.1d;
+
         /// <summary>Spends until the best option is unaffordable. Returns true when anything was bought.</summary>
         public bool Spend(int frontierG, int maxPurchases, double affordableShare = 1d)
         {
@@ -101,6 +121,8 @@ namespace SoloHero.Core.Balance
 
             AllocateTalents();
             Advance();
+            PromoteCheap();
+            if (PullToShare()) bought = true;
 
             // New slots open with hero levels; the player fills them.
             if (_skills.FirstEmptyUnlockedSlot() >= 0) _skills.AutoEquip();
@@ -222,6 +244,7 @@ namespace SoloHero.Core.Balance
                         if (!_pets.TryLevelUp(bestIndex).Ok) return bought;
                         SpentPet += bestCost;
                         break;
+
                 }
 
                 bought = true;
@@ -352,6 +375,77 @@ namespace SoloHero.Core.Balance
             return true;
         }
 
+        /// <summary>Free pulls from D-120 ad summons (gear and pets).</summary>
+        public int AdPulls { get; private set; }
+
+        /// <summary>D-120: an ad player watches every free summon of the day (pets once their summon opens).</summary>
+        public void PullAdFree(AdSlotPolicy ads)
+        {
+            while (ads.CanUse(AdSlot.FreeGearSummon).Ok && ads.Complete(AdSlot.FreeGearSummon, AdOutcome.Rewarded).Ok)
+            {
+                GachaBatchResult r = _gacha.PullFree(_save, _b.AD_FREE_SUMMON_PULLS);
+                AdPulls += r.Items.Length;
+                Collect(r);
+            }
+
+            if (!PetSummonService.IsUnlocked(_b, _save)) return;
+            while (ads.CanUse(AdSlot.FreePetSummon).Ok && ads.Complete(AdSlot.FreePetSummon, AdOutcome.Rewarded).Ok)
+            {
+                PetSummonResult r = _petSummon.TryPullFree(_save, _b.AD_FREE_SUMMON_PULLS);
+                if (!r.Status.Ok) break;
+                AdPulls += r.Items.Length;
+                for (int i = 0; i < r.Items.Length; i++) EarnedRefund += r.Items[i].RefundGold;
+            }
+        }
+
+        /// <summary>D-123: gear pulls (ten when affordable) until they are GearPullShare of everything spent so far, then skill pulls to SkillPullShare.</summary>
+        private bool PullToShare()
+        {
+            bool pulled = false;
+            for (int guard = 0; guard < 500; guard++)
+            {
+                double total = SpentUpgrade + SpentGacha + SpentSkill + SpentPet;
+                if (SpentGacha >= GearPullShare * total || _save.gold < _b.GACHA_COST_SINGLE) break;
+                if (!PullGold()) break;
+                pulled = true;
+            }
+
+            if (SoloHero.Core.Jobs.JobService.LineOf(_save) == SoloHero.Core.Jobs.JobLine.None) return pulled;
+            for (int guard = 0; guard < 100; guard++)
+            {
+                double total = SpentUpgrade + SpentGacha + SpentSkill + SpentPet;
+                if (SpentSkill >= SkillPullShare * total || _save.gold < _b.SKILL_SUMMON_COST_SINGLE) break;
+                if (!SummonSkill()) break;
+                pulled = true;
+            }
+
+            return pulled;
+        }
+
+        /// <summary>D-116: promotes max-level items, lowest grade first, while each costs at most PromoteShare of the gold.</summary>
+        private void PromoteCheap()
+        {
+            for (int guard = 0; guard < 64; guard++)
+            {
+                string best = null;
+                GearGrade bestGrade = default;
+                for (int i = 0; i < _save.ownedEquipment.Count; i++)
+                {
+                    if (!EquipPromotion.Target(_b, _save, _save.ownedEquipment[i], out _, out GearGrade from)) continue;
+                    if (best != null && from >= bestGrade) continue;
+                    best = _save.ownedEquipment[i];
+                    bestGrade = from;
+                }
+
+                if (best == null) return;
+                double cost = EquipPromotion.Cost(_b, bestGrade);
+                if (cost > _save.gold * PromoteShare || !EquipPromotion.TryPromote(_b, _save, best).Ok) return;
+                // Gear spending: counted with the gear summon.
+                SpentGacha += cost;
+                Promotions++;
+            }
+        }
+
         /// <summary>Damage per second of a pet in hero ATK multiples at a level and enhance.</summary>
         private static double PetRate(BalanceValues b, int index, int level, int enhance) =>
             index < 0 ? 0d : PetCatalog.All[index].DamagePerSecond * Formulas.PetLevelScale(b, level) * Formulas.PetEnhanceMult(b, enhance);
@@ -363,7 +457,8 @@ namespace SoloHero.Core.Balance
         private double ExpectedPetPullRatio(Snapshot now, double baseScore, double enemyAtk)
         {
             if (!PetSummonService.IsUnlocked(_b, _save)) return 0d;
-            bool pityNext = _save.petPityCount + 1 >= _gearTable.PityCeiling;
+            GearTableValues table = _gearTable.AtLevel(SummonLevel.Of(_b, _save, SummonKind.Pet));
+            bool pityNext = table.PityOpen && _save.petPityCount + 1 >= _gearTable.PityCeiling;
             int equipped = _pets.EquippedIndex;
             PetDef equippedDef = equipped >= 0 ? PetCatalog.All[equipped] : null;
             double gain = 0d;
@@ -373,7 +468,7 @@ namespace SoloHero.Core.Balance
                 var grade = (GearGrade)g;
                 PetDef[] pool = PetCatalog.OfGrade(grade);
                 if (pool.Length == 0) continue;
-                double p = GearProbability(grade, pityNext) / pool.Length;
+                double p = GearProbability(table, grade, pityNext) / pool.Length;
                 if (p <= 0d) continue;
                 for (int i = 0; i < pool.Length; i++)
                 {
@@ -418,7 +513,8 @@ namespace SoloHero.Core.Balance
 
         private double ExpectedPullRatio(Snapshot now, double baseScore, double enemyAtk)
         {
-            bool pityNext = _save.pityCount + 1 >= _gearTable.PityCeiling;
+            GearTableValues table = _gearTable.AtLevel(SummonLevel.Of(_b, _save, SummonKind.Gear));
+            bool pityNext = table.PityOpen && _save.pityCount + 1 >= _gearTable.PityCeiling;
             double gain = 0d;
             double refund = 0d;
 
@@ -428,7 +524,7 @@ namespace SoloHero.Core.Balance
                 for (int g = 0; g < GachaCatalog.GradeCount; g++)
                 {
                     var grade = (GearGrade)g;
-                    double p = GearProbability(grade, pityNext) / GachaCatalog.SlotCount;
+                    double p = GearProbability(table, grade, pityNext) / GachaCatalog.SlotCount;
                     if (p <= 0d) continue;
 
                     string id = GachaCatalog.IdOf(slot, grade);
@@ -466,7 +562,8 @@ namespace SoloHero.Core.Balance
             // D-107: the pool is the hero's own line; the beginner cannot summon skills at all.
             var line = SoloHero.Core.Jobs.JobService.LineOf(_save);
             if (line == SoloHero.Core.Jobs.JobLine.None) return 0d;
-            bool pityNext = _save.skillPityCount + 1 >= _table.PityCeiling;
+            GachaTableValues skillTable = _table.AtLevel(SummonLevel.Of(_b, _save, SummonKind.Skill));
+            bool pityNext = skillTable.PityOpen && _save.skillPityCount + 1 >= _table.PityCeiling;
             double gain = 0d;
             double refund = 0d;
             for (int g = 0; g < SkillCatalog.GradeCount; g++)
@@ -474,7 +571,7 @@ namespace SoloHero.Core.Balance
                 var grade = (Grade)g;
                 SkillDef[] pool = SkillCatalog.OfLine(line, grade);
                 if (pool.Length == 0) continue;
-                double p = GradeProbability(grade, pityNext) / pool.Length;
+                double p = GradeProbability(skillTable, grade, pityNext) / pool.Length;
                 if (p <= 0d) continue;
                 for (int i = 0; i < pool.Length; i++)
                 {
@@ -496,22 +593,22 @@ namespace SoloHero.Core.Balance
             return gain / net;
         }
 
-        /// <summary>D-113: one gear pull's chance of a grade; the pity pull is a sure Legendary.</summary>
-        private double GearProbability(GearGrade grade, bool pityNext)
+        /// <summary>D-113: one gear (or pet) pull's chance of a grade at its summon level; the pity pull is a sure Legendary.</summary>
+        private static double GearProbability(GearTableValues table, GearGrade grade, bool pityNext)
         {
             if (pityNext) return grade == GearTableValues.PityGrade ? 1d : 0d;
-            return _gearTable.Rate(grade) / 100d;
+            return table.Rate(grade) / 100d;
         }
 
-        private double GradeProbability(Grade grade, bool pityNext)
+        private static double GradeProbability(GachaTableValues table, Grade grade, bool pityNext)
         {
             if (pityNext) return grade == Grade.Legendary ? 1d : 0d;
             switch (grade)
             {
-                case Grade.Common: return _table.RateC / 100d;
-                case Grade.Rare: return _table.RateR / 100d;
-                case Grade.Epic: return _table.RateE / 100d;
-                default: return _table.RateL / 100d;
+                case Grade.Common: return table.RateC / 100d;
+                case Grade.Rare: return table.RateR / 100d;
+                case Grade.Epic: return table.RateE / 100d;
+                default: return table.RateL / 100d;
             }
         }
 

@@ -33,6 +33,7 @@ namespace SoloHero.Core.Growth
             {
                 _data.heroExp -= ExpRequired(_balance, _data.heroLevel);
                 _data.heroLevel++;
+                if (_data.heroLevel > _data.bestHeroLevel) _data.bestHeroLevel = _data.heroLevel;
                 gained++;
                 HeroLeveledUp?.Invoke(_data.heroLevel);
             }

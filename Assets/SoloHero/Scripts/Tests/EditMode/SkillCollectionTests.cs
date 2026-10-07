@@ -223,7 +223,8 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void Summon_NewSkill_OwnedAtLevelOneAndAutoEquippedIntoEmptySlot()
         {
-            var b = new BalanceValues();
+            // Every grade open (D-121 / D-123 gates have their own tests), so 0.995 is a Legendary on a new summon.
+            BalanceValues b = GachaTests.AllGradesOpen();
             var save = SaveDataV2.CreateNew();
             save.heroLevel = b.SKILL_UNLOCK_LV_4;
             save.jobId = "mage";
@@ -267,7 +268,7 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void Summon_PityCeilingGuaranteesLegendaryWithOwnCounter()
         {
-            var b = new BalanceValues();
+            BalanceValues b = GachaTests.AllGradesOpen();
             var save = SaveDataV2.CreateNew();
             save.skillPityCount = b.GACHA_PITY - 1;
             save.pityCount = 5;

@@ -194,7 +194,7 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void Summon_PityCeiling_GivesALegendaryPet_AndResets()
         {
-            var b = new BalanceValues();
+            BalanceValues b = GachaTests.AllGradesOpen();
             SaveDataV2 save = Unlocked(b);
             save.gold = b.PET_SUMMON_COST_SINGLE;
             save.petPityCount = b.GEAR_PITY - 1;
@@ -209,7 +209,7 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void Summon_NewPetOutranking_IsEquipped_DuplicateEnhances_MaxRefunds()
         {
-            var b = new BalanceValues();
+            BalanceValues b = GachaTests.AllGradesOpen();
             SaveDataV2 save = Unlocked(b);
             save.gold = b.PET_SUMMON_COST_SINGLE * 3;
             // Uncommon band (0.6 - 0.88): the first uncommon pet, three times.
@@ -252,13 +252,14 @@ namespace SoloHero.Tests.EditMode
         [Test]
         public void Refunds_StayBelowThePullPriceOnAverage()
         {
-            // Guards the D-114 money-printer bug: a maxed collection must not pay out more than a pull costs.
+            // Guards the D-114 money-printer bug: a maxed collection must not pay out more than a pull costs, even at
+            // the top summon level (D-115), where the rare grades with the big refunds come twice as often.
             var b = new BalanceValues();
-            GearTableValues table = GearTableValues.FromBalance(b);
+            GearTableValues table = GearTableValues.FromBalance(b).AtLevel(b.SUMMON_LV_MAX);
             double expected = 0d;
             for (int g = 0; g < GearGrades.Count; g++)
                 expected += table.Rates[g] / 100d * Formulas.PetRefund(b, (GearGrade)g);
-            Assert.Less(expected, b.PET_SUMMON_COST_SINGLE * 0.5d);
+            Assert.Less(expected, b.PET_SUMMON_COST_TEN / 10d * 0.5d);
         }
 
         [Test]

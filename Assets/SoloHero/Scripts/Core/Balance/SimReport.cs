@@ -59,6 +59,9 @@ namespace SoloHero.Core.Balance
         public int NormalFails;
         public int BossAttempts;
         public int BossFails;
+
+        /// <summary>D-124: boss fails where the hero fell (the rest ran out of time).</summary>
+        public int BossDeaths;
         public double GoldEnd;
         public double GemEnd;
 
@@ -112,6 +115,16 @@ namespace SoloHero.Core.Balance
         public string PetEquipped = "";
         public int PetLevel;
         public int PetEnhance;
+
+        /// <summary>D-116: equipment promotions made.</summary>
+        public int Promotions;
+
+        /// <summary>D-117: rebirths, Soul earned in total, and the permanent boost levels at the end.</summary>
+        public int Rebirths;
+        public double SoulEarned;
+        public int PermGold;
+        public int PermAtk;
+        public int PermOffline;
 
         /// <summary>Median of gold-pull value per gold divided by the best upgrade value per gold.</summary>
         public double PullValueParity;

@@ -98,19 +98,23 @@ namespace SoloHero.Core.Skills
 
         private SkillPullItem PullOne(SaveDataV2 data)
         {
-            data.skillPityCount++;
+            // D-115: the summon level before this pull picks the rate table.
+            GachaTableValues table = _table.AtLevel(SummonLevel.Of(_balance, data, SummonKind.Skill));
+            // D-123: the pity starts counting once the summon level has opened its grade.
+            bool pity = table.PityOpen;
+            if (pity) data.skillPityCount++;
             data.skillPullCount++;
 
             Grade grade;
-            if (data.skillPityCount >= _table.PityCeiling)
+            if (pity && data.skillPityCount >= table.PityCeiling)
             {
                 grade = Grade.Legendary;
                 data.skillPityCount = 0;
             }
             else
             {
-                grade = _table.PickGrade(_rng.NextDouble());
-                if (grade == Grade.Legendary && _table.ResetOnLegendary) data.skillPityCount = 0;
+                grade = table.PickGrade(_rng.NextDouble());
+                if (grade == Grade.Legendary && table.ResetOnLegendary) data.skillPityCount = 0;
             }
 
             SkillDef[] pool = SkillCatalog.OfLine(JobService.LineOf(data), grade);
