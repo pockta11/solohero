@@ -78,7 +78,7 @@ namespace SoloHero.Core.Balance
 
                 IRandom combatRng = new SystemRandom(new Random(settings.Seed));
                 IRandom gachaRng = new SystemRandom(new Random(unchecked(settings.Seed * 7919 + 17)));
-                var gacha = new GachaService(balance, GachaTableValues.FromBalance(balance), gachaRng, GachaCatalog.Standard(balance));
+                var gacha = new GachaService(balance, GearTableValues.FromBalance(balance), gachaRng, GachaCatalog.Standard(balance));
                 IRandom skillRng = new SystemRandom(new Random(unchecked(settings.Seed * 104729 + 31)));
                 var summon = new SkillSummonService(balance, GachaTableValues.FromBalance(balance), skillRng);
                 SkillBook.EnsureStarters(_save, balance);
@@ -377,15 +377,15 @@ namespace SoloHero.Core.Balance
                 _earnedTotal += gold;
             }
 
-            private void OnGradeObtained(Grade grade)
+            private void OnGradeObtained(GearGrade grade)
             {
-                if (grade >= Grade.Epic && _report.FirstEpicPlaySeconds < 0d)
+                if (grade >= GearGrade.Epic && _report.FirstEpicPlaySeconds < 0d)
                 {
                     _report.FirstEpicPlaySeconds = _play;
                     _report.FirstEpicDay = _day != null ? _day.Day : 1;
                 }
 
-                if (grade == Grade.Legendary && _report.FirstLegendaryPlaySeconds < 0d)
+                if (grade >= GearGrade.Legendary && _report.FirstLegendaryPlaySeconds < 0d)
                 {
                     _report.FirstLegendaryPlaySeconds = _play;
                     _report.FirstLegendaryDay = _day != null ? _day.Day : 1;

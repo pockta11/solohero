@@ -1161,11 +1161,13 @@ namespace SoloHero.Editor
             RectTransform fillRect = Gauge(gauge, UiSkin.FillGold, UiSkin.GaugeLight);
             Image fill = fillRect.GetComponent<Image>();
 
-            Text rates = InkText(TopBand("Rates", panel, 186f, 64f, PanelPad, PanelPad), 24, TextAnchor.MiddleCenter, UiPalette.InkMuted);
+            // D-113: gear discloses seven grades (two coloured lines) plus the pity line.
+            Text rates = InkText(TopBand("Rates", panel, 184f, 88f, PanelPad, PanelPad), 23, TextAnchor.MiddleCenter, UiPalette.InkMuted);
             rates.verticalOverflow = VerticalWrapMode.Overflow;
+            rates.supportRichText = true;
 
             // D-103 / D-108: a turning summon circle fills the middle; the last result is written over it.
-            RectTransform middle = Inset("Middle", panel, PanelPad, 22f + 104f + 10f + 70f, PanelPad, 254f);
+            RectTransform middle = Inset("Middle", panel, PanelPad, 22f + 104f + 10f + 70f, PanelPad, 276f);
             RectTransform circleRect = Rect("SummonCircle", middle, 0.5f, 0f, 0.5f, 1f);
             Image circle = Plain(circleRect, UiSkin.Hd("hd_summon_circle"));
             circle.color = new Color(0.62f, 0.45f, 1f, 0.55f);
@@ -1229,7 +1231,9 @@ namespace SoloHero.Editor
             }
 
             set.frames = new Sprite[4];
-            for (int g = 0; g < set.frames.Length; g++) set.frames[g] = UiSkin.GradeFrame((SoloHero.Core.Gacha.Grade)g);
+            // D-113: seven gear grades (an older asset still holds four).
+            set.frames = new Sprite[SoloHero.Core.Gacha.GearGrades.Count];
+            for (int g = 0; g < set.frames.Length; g++) set.frames[g] = UiSkin.GradeFrame((SoloHero.Core.Gacha.GearGrade)g);
             set.empty = UiSkin.SlotEmpty;
             set.emptyDark = UiSkin.SlotDark;
             EditorUtility.SetDirty(set);

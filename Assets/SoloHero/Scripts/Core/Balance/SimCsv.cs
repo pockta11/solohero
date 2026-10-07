@@ -144,9 +144,12 @@ namespace SoloHero.Core.Balance
             switch (grade)
             {
                 case 0: return "C";
-                case 1: return "R";
-                case 2: return "E";
-                case 3: return "L";
+                case 1: return "U";
+                case 2: return "R";
+                case 3: return "E";
+                case 4: return "L";
+                case 5: return "M";
+                case 6: return "A";
                 default: return "-";
             }
         }

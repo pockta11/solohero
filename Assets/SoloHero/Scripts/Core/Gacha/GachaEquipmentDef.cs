@@ -3,6 +3,6 @@ namespace SoloHero.Core.Gacha
     public sealed record GachaEquipmentDef(
         string Id,
         EquipmentSlot Slot,
-        Grade Grade,
+        GearGrade Grade,
         double RefundGold);
 }

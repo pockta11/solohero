@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
@@ -138,7 +139,7 @@ namespace SoloHero.Game.UI.Panels
 
             if (_requester != null) _requester.RequestSave();
             if (_session != null) _session.RefreshLoadout();
-            LogPull(AnalyticsEvents.GachaPull, BestGrade(result.Items), result.Items.Length, kind, _save.pityCount);
+            LogPull(AnalyticsEvents.GachaPull, (long)BestGrade(result.Items), result.Items.Length, kind, _save.pityCount);
             DrawResult(result.Items);
             if (_reveal != null) _reveal.Show(Cards(result.Items));
             Refresh();
@@ -160,7 +161,7 @@ namespace SoloHero.Game.UI.Panels
                 if (result.Items[i].Grade > best) best = result.Items[i].Grade;
             }
 
-            LogPull(AnalyticsEvents.SkillSummon, best, result.Items.Length, kind, _save.skillPityCount);
+            LogPull(AnalyticsEvents.SkillSummon, (long)best, result.Items.Length, kind, _save.skillPityCount);
             DrawSkillResult(result.Items);
             if (_reveal != null) _reveal.Show(Cards(result.Items));
             Refresh();
@@ -187,7 +188,7 @@ namespace SoloHero.Game.UI.Panels
                 SkillPullItem item = items[i];
                 SkillDef def = SkillCatalog.Find(item.Id);
                 Sprite icon = _skillIcons != null ? _skillIcons.Get(item.Id) : null;
-                cards[i] = new RevealCard(item.Grade, def != null ? Strings.Get(def.NameKey) : item.Id, SkillNote(item), icon);
+                cards[i] = new RevealCard(item.Grade.ToGearGrade(), def != null ? Strings.Get(def.NameKey) : item.Id, SkillNote(item), icon);
             }
 
             return cards;
@@ -203,18 +204,12 @@ namespace SoloHero.Game.UI.Panels
         private void DrawStatic()
         {
             if (_balance == null) return;
-            if (_rateText != null)
-            {
-                // The disclosure is drawn from the same table the draw uses (GDD rate disclosure rule); skills share it.
-                _rateText.text = Strings.Format("gacha.rates",
-                    _balance.GACHA_RATE_C, _balance.GACHA_RATE_R, _balance.GACHA_RATE_E, _balance.GACHA_RATE_L, _balance.GACHA_PITY);
-            }
-
             bool skill = _mode == ModeSkill;
+            if (_rateText != null) _rateText.text = RatesText(skill);
             if (_singleCostText != null)
-                _singleCostText.text = Strings.Format("gacha.cost_single", BigNumberFormat.Format(skill ? _balance.SKILL_SUMMON_COST_SINGLE : _balance.GACHA_COST_SINGLE));
+                _singleCostText.text = Strings.Format("gacha.cost_single", Price(skill ? _balance.SKILL_SUMMON_COST_SINGLE : _balance.GACHA_COST_SINGLE));
             if (_tenCostText != null)
-                _tenCostText.text = Strings.Format("gacha.cost_ten", BigNumberFormat.Format(skill ? _balance.SKILL_SUMMON_COST_TEN : _balance.GACHA_COST_TEN));
+                _tenCostText.text = Strings.Format("gacha.cost_ten", Price(skill ? _balance.SKILL_SUMMON_COST_TEN : _balance.GACHA_COST_TEN));
             if (_gemCostText != null)
                 _gemCostText.text = Strings.Format("gacha.cost_gem", skill ? _balance.SKILL_SUMMON_COST_TEN_GEM : _balance.GACHA_COST_TEN_GEM);
             for (int i = 0; i < _tabImages.Length; i++)
@@ -234,7 +229,7 @@ namespace SoloHero.Game.UI.Panels
             _shownGem = _save.gem;
             bool skill = _mode == ModeSkill;
 
-            int pity = _balance.GACHA_PITY;
+            int pity = skill ? _balance.GACHA_PITY : _balance.GEAR_PITY;
             int count = skill ? _save.skillPityCount : _save.pityCount;
             int left = pity - count;
             if (_pityText != null) _pityText.text = Strings.Format("gacha.pity", left, count, pity);
@@ -257,9 +252,45 @@ namespace SoloHero.Game.UI.Panels
             if (_goldPackButton != null) _goldPackButton.SetAvailable(_save.gem >= _balance.GEM_GOLD_PACK_COST);
         }
 
-        private static Grade BestGrade(GachaPullItem[] items)
+        /// <summary>
+        /// The disclosure, drawn from the same table the draw uses (GDD rate disclosure rule): every grade in its colour,
+        /// four to a line, then the pity rule. Gear has seven grades (D-113); skills keep their four.
+        /// </summary>
+        private string RatesText(bool skill)
         {
-            Grade best = Grade.Common;
+            _sb.Clear();
+            if (skill)
+            {
+                GachaTableValues table = GachaTableValues.FromBalance(_balance);
+                double[] rates = { table.RateC, table.RateR, table.RateE, table.RateL };
+                for (int g = 0; g < rates.Length; g++) AppendRate(g, ((Grade)g).ToGearGrade(), rates[g]);
+                _sb.Append('\n').Append(Strings.Format("gacha.rates_pity_skill", table.PityCeiling));
+            }
+            else
+            {
+                GearTableValues table = GearTableValues.FromBalance(_balance);
+                for (int g = 0; g < table.Rates.Length; g++) AppendRate(g, (GearGrade)g, table.Rates[g]);
+                _sb.Append('\n').Append(Strings.Format("gacha.rates_pity_gear", table.PityCeiling));
+            }
+
+            return _sb.ToString();
+        }
+
+        private void AppendRate(int index, GearGrade grade, double percent)
+        {
+            if (index > 0) _sb.Append(index % 4 == 0 ? "\n" : "  ");
+            _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(UiPalette.GradeInk(grade))).Append('>')
+                .Append(Strings.Format("gacha.rate_item", PanelServices.GradeName(grade), percent.ToString("0.###", CultureInfo.InvariantCulture)))
+                .Append("</color>");
+        }
+
+        /// <summary>D-113: prices stay exact below 100K ("1,350", not "1.4K"); larger ones use the K/M notation.</summary>
+        private static string Price(double gold) =>
+            gold < 100000d ? gold.ToString("#,0", CultureInfo.InvariantCulture) : BigNumberFormat.Format(gold);
+
+        private static GearGrade BestGrade(GachaPullItem[] items)
+        {
+            GearGrade best = GearGrade.Common;
             for (int i = 0; i < items.Length; i++)
             {
                 if (items[i].Grade > best) best = items[i].Grade;
@@ -268,12 +299,13 @@ namespace SoloHero.Game.UI.Panels
             return best;
         }
 
-        private static void LogPull(string eventName, Grade best, int count, string kind, int pity)
+        /// <summary>best_grade is the gear ladder index (0 Common .. 6 Ancient) for gear and the skill grade for skills.</summary>
+        private static void LogPull(string eventName, long best, int count, string kind, int pity)
         {
             GameAnalytics.Log(eventName,
                 AnalyticsParam.Of(AnalyticsEvents.PKind, kind),
                 AnalyticsParam.Of(AnalyticsEvents.PCount, count),
-                AnalyticsParam.Of(AnalyticsEvents.PBestGrade, (long)best),
+                AnalyticsParam.Of(AnalyticsEvents.PBestGrade, best),
                 AnalyticsParam.Of(AnalyticsEvents.PPity, pity));
         }
 
@@ -308,7 +340,7 @@ namespace SoloHero.Game.UI.Panels
             int fresh = 0, up = 0, refunded = 0;
             for (int i = 0; i < items.Length; i++)
             {
-                counts[(int)items[i].Grade]++;
+                counts[(int)items[i].Grade.ToGearGrade()]++;
                 if (items[i].WasNew) fresh++;
                 else if (items[i].RefundGold > 0d) refunded++;
                 else up++;
@@ -326,8 +358,8 @@ namespace SoloHero.Game.UI.Panels
             {
                 if (counts[g] == 0) continue;
                 if (_sb.Length > 0) _sb.Append("   ");
-                _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(UiPalette.GradeInk((Grade)g))).Append('>')
-                    .Append(PanelServices.GradeName((Grade)g)).Append(' ').Append(counts[g]).Append("</color>");
+                _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(UiPalette.GradeInk((GearGrade)g))).Append('>')
+                    .Append(PanelServices.GradeName((GearGrade)g)).Append(' ').Append(counts[g]).Append("</color>");
             }
         }
     }

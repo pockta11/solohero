@@ -38,6 +38,9 @@ namespace SoloHero.Core.Balance
         public const double StageSecondsMin = 12d;
         public const double StageSecondsMax = 25d;
         public const double StageSecondsShareMin = 0.7d;
+
+        private static readonly string StageSecondsTarget =
+            "median in [" + StageSecondsMin.ToString(CultureInfo.InvariantCulture) + ", " + StageSecondsMax.ToString(CultureInfo.InvariantCulture) + "] s";
         public const double PullParityMin = 0.5d;
         public const double PullParityMax = 2.0d;
         public const double OfflineShareMin = 0.20d;
@@ -112,7 +115,7 @@ namespace SoloHero.Core.Balance
             }
 
             if (samples.Count == 0)
-                return Make("V-2", "Normal stage duration at the frontier", "median 20-30 s", "no clears", false);
+                return Make("V-2", "Normal stage duration at the frontier", StageSecondsTarget, "no clears", false);
 
             int inside = 0;
             for (int i = 0; i < samples.Count; i++)
@@ -124,7 +127,7 @@ namespace SoloHero.Core.Balance
             double share = (double)inside / samples.Count;
             bool ok = median >= StageSecondsMin && median <= StageSecondsMax && share >= StageSecondsShareMin;
             return Make("V-2", "Normal stage duration at the frontier (first clear)",
-                "median in [20, 30] s and >= 70% of stages inside",
+                StageSecondsTarget + " and >= " + Pct(StageSecondsShareMin) + " of stages inside",
                 "median " + F1(median) + " s, inside " + Pct(share), ok);
         }
 

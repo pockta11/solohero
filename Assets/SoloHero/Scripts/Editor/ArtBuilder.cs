@@ -374,7 +374,7 @@ namespace SoloHero.Editor
             AssetDatabase.SaveAssets();
         }
 
-        /// <summary>E8-07: Art/Icons/Equipment/equip_{slot}_{grade}.png into the icon set (D-109: 8 slots x 4 grades).</summary>
+        /// <summary>E8-07: Art/Icons/Equipment/equip_{slot}_{grade}.png into the icon set (D-109: 8 slots; D-113: x 7 grades).</summary>
         private static void BuildEquipmentIcons()
         {
             string path = DataArt + "/EquipmentIcons.asset";
@@ -386,7 +386,7 @@ namespace SoloHero.Editor
             }
 
             string[] slots = { "sword", "helm", "armor", "boots", "gloves", "necklace", "ring", "earring" };
-            string[] grades = { "common", "rare", "epic", "legendary" };
+            string[] grades = { "common", "uncommon", "rare", "epic", "legendary", "mythic", "ancient" };
             set.icons = new Sprite[slots.Length * grades.Length];
             for (int s = 0; s < slots.Length; s++)
             {

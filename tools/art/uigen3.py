@@ -50,13 +50,19 @@ TONES = {
     'orange': (hexc('#FFC27A'), hexc('#FF8A2A'), hexc('#C2561A')),
 }
 
-# Grade frames (light, mid, dark, inner centre, inner edge).
+# Grade frames (light, mid, dark, inner centre, inner edge). D-113 gear ladder: c u r e l m a
+# (common, uncommon, rare, epic, legendary, mythic, ancient).
 GRADES = {
     'c': (hexc('#F2F4F8'), hexc('#AEB6C4'), hexc('#6F7788'), hexc('#F4F1EC'), hexc('#D5D0C8')),
+    'u': (hexc('#DDF8D2'), hexc('#5CC75A'), hexc('#2C8A3A'), hexc('#EEFBE8'), hexc('#B5E6A6')),
     'r': (hexc('#CDE7FF'), hexc('#4C9DFF'), hexc('#2556B8'), hexc('#E6F3FF'), hexc('#A9CFFA')),
     'e': (hexc('#F0D6FF'), hexc('#B067FF'), hexc('#6A2FC0'), hexc('#F5E8FF'), hexc('#D4AFFA')),
     'l': (hexc('#FFF6C2'), hexc('#FFB72E'), hexc('#C2650E'), hexc('#FFF6D8'), hexc('#FFD27A')),
+    'm': (hexc('#FFD8D8'), hexc('#FF4D5E'), hexc('#A81F35'), hexc('#FFEDED'), hexc('#FFB2B8')),
+    'a': (hexc('#D8FFF8'), hexc('#2FD9C6'), hexc('#127A86'), hexc('#EAFFFB'), hexc('#9EEFE4')),
 }
+# Sparkle stars on the top grades: legendary two, mythic three, ancient four.
+GRADE_STARS = {'l': 2, 'm': 3, 'a': 4}
 
 made = []
 
@@ -338,7 +344,7 @@ def caption(w=72, h=36):
 
 # Slots ---------------------------------------------------------------------------------------------------------------
 def slot(key, size=88, r=20):
-    """Grade item frame: ink outline, bevelled grade ring, tinted radial centre (legendary: gold sparkles)."""
+    """Grade item frame: ink outline, bevelled grade ring, tinted radial centre (legendary and up: sparkles)."""
     light, mid, dark, centre, edge = GRADES[key]
     L = Layer(size, size)
     L.over(cov(L.rrect(0, 0, size, size, r)), INK)
@@ -348,8 +354,9 @@ def slot(key, size=88, r=20):
     L.over(cov(L.rrect(8, 8, size - 8, size - 8, r - 8)), shade(dark, -0.35))
     L.over(cov(inner), radial(L, size / 2, size * 0.42, size * 0.62, centre, edge))
     L.over(band(ring, -2.5, -0.5) * (L.y < size * 0.4), (255, 255, 255, 190))
-    if key == 'l':
-        for (cx, cy, s) in [(15, 15, 4.5), (size - 15, size - 15, 3.5)]:
+    stars = [(15, 15, 4.5), (size - 15, size - 15, 3.5), (size - 15, 15, 3.5), (15, size - 15, 3.0)]
+    if key in GRADE_STARS:
+        for (cx, cy, s) in stars[:GRADE_STARS[key]]:
             star = L.polygon([(cx, cy - s * 2), (cx + s * 0.45, cy - s * 0.45), (cx + s * 2, cy), (cx + s * 0.45, cy + s * 0.45),
                               (cx, cy + s * 2), (cx - s * 0.45, cy + s * 0.45), (cx - s * 2, cy), (cx - s * 0.45, cy - s * 0.45)])
             L.over(cov(star), (255, 255, 255, 235))

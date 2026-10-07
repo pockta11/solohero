@@ -11,20 +11,32 @@ namespace SoloHero.Tests.EditMode
     public sealed class GachaTests
     {
         [Test]
-        public void Rates_DefaultTable_SumsTo100()
+        public void Rates_DefaultTables_SumTo100()
         {
-            GachaTableValues table = GachaTableValues.FromBalance(new BalanceValues());
-
-            Assert.AreEqual(100d, table.RatesSum, 1e-9);
+            Assert.AreEqual(100d, GearTableValues.FromBalance(new BalanceValues()).RatesSum, 1e-9);
+            Assert.AreEqual(100d, GachaTableValues.FromBalance(new BalanceValues()).RatesSum, 1e-9);
         }
 
         [Test]
-        public void TryPull_PityAt100_ForcesLegendary()
+        public void GearRates_EveryGradeRarerThanTheOneBelow_TopTiersExtremelyRare()
+        {
+            // D-113: seven grades, each rarer than the last; Mythic and Ancient together stay under 0.1 %.
+            GearTableValues table = GearTableValues.FromBalance(new BalanceValues());
+
+            Assert.AreEqual(GachaCatalog.GradeCount, table.Rates.Length);
+            for (int g = 1; g < table.Rates.Length; g++)
+                Assert.Less(table.Rates[g], table.Rates[g - 1], ((GearGrade)g).ToString());
+            Assert.Less(table.Rate(GearGrade.Mythic) + table.Rate(GearGrade.Ancient), 0.1d);
+            Assert.Less(table.Rate(GearGrade.Legendary), 1d);
+        }
+
+        [Test]
+        public void TryPull_PityCeiling_ForcesLegendary()
         {
             BalanceValues balance = new BalanceValues();
             SaveDataV2 data = SaveDataV2.CreateNew();
             data.gold = balance.GACHA_COST_SINGLE;
-            data.pityCount = balance.GACHA_PITY - 1;
+            data.pityCount = balance.GEAR_PITY - 1;
 
             // Slot only - grade roll is skipped on pity.
             var rng = new ScriptedRandom(doubles: new double[0], ints: new[] { 0 });
@@ -35,7 +47,7 @@ namespace SoloHero.Tests.EditMode
             Assert.IsTrue(result.Status.Ok);
             Assert.IsTrue(result.RequestSave);
             Assert.AreEqual(1, result.Items.Length);
-            Assert.AreEqual(Grade.Legendary, result.Items[0].Grade);
+            Assert.AreEqual(GearGrade.Legendary, result.Items[0].Grade);
             Assert.AreEqual(0, data.pityCount);
         }
 
@@ -47,19 +59,71 @@ namespace SoloHero.Tests.EditMode
             data.gold = balance.GACHA_COST_SINGLE;
             data.pityCount = 40;
 
-            // Slot Sword, then unit sample in Legendary band [0.98, 1).
-            var rng = new ScriptedRandom(doubles: new[] { 0.99 }, ints: new[] { 0 });
+            // Slot Sword, then unit sample in the Legendary band [0.995, 0.9995).
+            var rng = new ScriptedRandom(doubles: new[] { 0.996 }, ints: new[] { 0 });
             GachaService service = CreateService(balance, rng);
 
             GachaBatchResult result = service.TryPull(data);
 
             Assert.IsTrue(result.Status.Ok);
-            Assert.AreEqual(Grade.Legendary, result.Items[0].Grade);
+            Assert.AreEqual(GearGrade.Legendary, result.Items[0].Grade);
+            Assert.AreEqual(0, data.pityCount);
+        }
+
+        [TestCase(0.9996, GearGrade.Mythic)]
+        [TestCase(0.99999, GearGrade.Ancient)]
+        public void TryPull_NaturalAboveLegendary_AlsoResetsPity(double sample, GearGrade expected)
+        {
+            BalanceValues balance = new BalanceValues();
+            SaveDataV2 data = SaveDataV2.CreateNew();
+            data.gold = balance.GACHA_COST_SINGLE;
+            data.pityCount = 150;
+            GachaService service = CreateService(balance, new ScriptedRandom(doubles: new[] { sample }, ints: new[] { 1 }));
+
+            GachaBatchResult result = service.TryPull(data);
+
+            Assert.AreEqual(expected, result.Items[0].Grade);
+            Assert.AreEqual(EquipmentSlot.Helm, result.Items[0].Slot);
             Assert.AreEqual(0, data.pityCount);
         }
 
         [Test]
-        public void TryPull_EnoughGold_Costs500()
+        public void TryPull_NaturalEpic_KeepsPityCounting()
+        {
+            BalanceValues balance = new BalanceValues();
+            SaveDataV2 data = SaveDataV2.CreateNew();
+            data.gold = balance.GACHA_COST_SINGLE;
+            data.pityCount = 40;
+            GachaService service = CreateService(balance, new ScriptedRandom(doubles: new[] { 0.98 }, ints: new[] { 0 }));
+
+            GachaBatchResult result = service.TryPull(data);
+
+            Assert.AreEqual(GearGrade.Epic, result.Items[0].Grade);
+            Assert.AreEqual(41, data.pityCount);
+        }
+
+        [Test]
+        public void TryPull_HigherGrade_ReplacesEquippedLowerGrade()
+        {
+            // The seven-grade order decides auto-equip: an Uncommon replaces a Common, a Common never replaces it back.
+            BalanceValues balance = new BalanceValues();
+            SaveDataV2 data = SaveDataV2.CreateNew();
+            data.gold = balance.GACHA_COST_SINGLE * 2d;
+            EquipmentLevels.AddOwned(data, "Equipment_Sword_Common");
+            data.equippedSword = "Equipment_Sword_Common";
+            GachaService service = CreateService(balance, new ScriptedRandom(doubles: new[] { 0.7, 0.0 }, ints: new[] { 0, 0 }));
+
+            GachaPullItem uncommon = service.TryPull(data).Items[0];
+            GachaPullItem common = service.TryPull(data).Items[0];
+
+            Assert.AreEqual(GearGrade.Uncommon, uncommon.Grade);
+            Assert.IsTrue(uncommon.AutoEquipped);
+            Assert.IsFalse(common.AutoEquipped);
+            Assert.AreEqual("Equipment_Sword_Uncommon", data.equippedSword);
+        }
+
+        [Test]
+        public void TryPull_EnoughGold_CostsSinglePrice()
         {
             BalanceValues balance = new BalanceValues();
             SaveDataV2 data = SaveDataV2.CreateNew();
@@ -76,7 +140,7 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void TryPullTen_EnoughGold_Costs4500AndRollsTen()
+        public void TryPullTen_EnoughGold_CostsTenPriceAndRollsTen()
         {
             BalanceValues balance = new BalanceValues();
             SaveDataV2 data = SaveDataV2.CreateNew();
@@ -234,7 +298,7 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void PickGrade_Boundaries_MapToExpectedGrades()
+        public void PickGrade_SkillTableBoundaries_MapToExpectedGrades()
         {
             GachaTableValues table = GachaTableValues.FromBalance(new BalanceValues());
 
@@ -243,6 +307,26 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(Grade.Epic, table.PickGrade(0.88));
             Assert.AreEqual(Grade.Legendary, table.PickGrade(0.98));
             Assert.AreEqual(Grade.Legendary, table.PickGrade(0.999));
+        }
+
+        // Cumulative gear bands: C [0, 60) U [60, 88) R [88, 97) E [97, 99.5) L [99.5, 99.95) M [99.95, 99.995) A [99.995, 100).
+        [TestCase(0.0, GearGrade.Common)]
+        [TestCase(0.5999, GearGrade.Common)]
+        [TestCase(0.6001, GearGrade.Uncommon)]
+        [TestCase(0.8799, GearGrade.Uncommon)]
+        [TestCase(0.8801, GearGrade.Rare)]
+        [TestCase(0.9699, GearGrade.Rare)]
+        [TestCase(0.9701, GearGrade.Epic)]
+        [TestCase(0.9949, GearGrade.Epic)]
+        [TestCase(0.9951, GearGrade.Legendary)]
+        [TestCase(0.9994, GearGrade.Legendary)]
+        [TestCase(0.9996, GearGrade.Mythic)]
+        [TestCase(0.99994, GearGrade.Mythic)]
+        [TestCase(0.99996, GearGrade.Ancient)]
+        [TestCase(0.9999999, GearGrade.Ancient)]
+        public void PickGrade_GearTableBands_MapToExpectedGrades(double sample, GearGrade expected)
+        {
+            Assert.AreEqual(expected, GearTableValues.FromBalance(new BalanceValues()).PickGrade(sample));
         }
 
         [Test]
@@ -273,26 +357,30 @@ namespace SoloHero.Tests.EditMode
         {
             return new GachaService(
                 balance,
-                GachaTableValues.FromBalance(balance),
+                GearTableValues.FromBalance(balance),
                 rng,
                 BuildCatalog(balance));
         }
 
         private static GachaEquipmentDef[] BuildCatalog(BalanceValues balance)
         {
-            var list = new List<GachaEquipmentDef>(32);
+            var list = new List<GachaEquipmentDef>(56);
             EquipmentSlot[] slots =
             {
                 EquipmentSlot.Sword, EquipmentSlot.Helm, EquipmentSlot.Armor, EquipmentSlot.Boots,
                 EquipmentSlot.Gloves, EquipmentSlot.Necklace, EquipmentSlot.Ring, EquipmentSlot.Earring
             };
-            Grade[] grades = { Grade.Common, Grade.Rare, Grade.Epic, Grade.Legendary };
+            GearGrade[] grades =
+            {
+                GearGrade.Common, GearGrade.Uncommon, GearGrade.Rare, GearGrade.Epic, GearGrade.Legendary, GearGrade.Mythic,
+                GearGrade.Ancient
+            };
 
             for (int s = 0; s < slots.Length; s++)
             {
                 for (int g = 0; g < grades.Length; g++)
                 {
-                    Grade grade = grades[g];
+                    GearGrade grade = grades[g];
                     list.Add(new GachaEquipmentDef(
                         "Equipment_" + slots[s] + "_" + grade,
                         slots[s],
@@ -304,14 +392,17 @@ namespace SoloHero.Tests.EditMode
             return list.ToArray();
         }
 
-        private static double RefundFor(BalanceValues balance, Grade grade)
+        private static double RefundFor(BalanceValues balance, GearGrade grade)
         {
             switch (grade)
             {
-                case Grade.Common: return balance.REFUND_C;
-                case Grade.Rare: return balance.REFUND_R;
-                case Grade.Epic: return balance.REFUND_E;
-                case Grade.Legendary: return balance.REFUND_L;
+                case GearGrade.Common: return balance.REFUND_C;
+                case GearGrade.Uncommon: return balance.REFUND_U;
+                case GearGrade.Rare: return balance.REFUND_R;
+                case GearGrade.Epic: return balance.REFUND_E;
+                case GearGrade.Legendary: return balance.REFUND_L;
+                case GearGrade.Mythic: return balance.REFUND_M;
+                case GearGrade.Ancient: return balance.REFUND_A;
                 default: return 0d;
             }
         }

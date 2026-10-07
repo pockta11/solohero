@@ -1,4 +1,3 @@
-using System.Text;
 using SoloHero.Core.Common;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Progression;
@@ -34,7 +33,6 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private float _bobHeight = 18f;
         [SerializeField] private float _bobSpeed = 7f;
 
-        private readonly StringBuilder _sb = new StringBuilder();
         private TutorialService _tutorial;
         private SaveDataV2 _save;
         private float _poll;
@@ -101,14 +99,8 @@ namespace SoloHero.Game.UI.Common
             if (_pointer != null && _pointer.gameObject.activeSelf != show) _pointer.gameObject.SetActive(show);
         }
 
-        private string RewardText(GachaPullItem[] items)
-        {
-            _sb.Clear();
-            _sb.Append(Strings.Get("tutorial.welcome"));
-            for (int i = 0; i < items.Length; i++)
-                _sb.Append(i == 0 ? " - " : ", ").Append(PanelServices.GradeName(items[i].Grade)).Append(' ').Append(PanelServices.SlotName(items[i].Slot));
-            return _sb.ToString();
-        }
+        /// <summary>D-113: the welcome gift is a free ten-pull; the reveal shows every card, the toast only the count.</summary>
+        private static string RewardText(GachaPullItem[] items) => Strings.Format("tutorial.welcome", items.Length);
 
         private void SetBanner(bool show, string text)
         {

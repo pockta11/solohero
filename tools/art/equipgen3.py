@@ -1,8 +1,10 @@
 """Smooth equipment icons (D-108) -> Assets/SoloHero/Art/UI/Hd/Equipment/equip_{slot}_{grade}.png (128 x 128).
 
 Usage: python tools/art/equipgen3.py [OUT_DIR] [SLOT ...] [--preview PREVIEW.png]
-Eight slots (D-109: gloves, necklace, ring and earring after the gear) x four grades. Each grade changes material and ornament, not just the hue: common = iron and leather,
-rare = polished steel with blue trim, epic = violet steel with gems, legendary = gold with wings, a ruby and a glint.
+Eight slots (D-109: gloves, necklace, ring and earring after the gear) x seven grades (D-113). Each grade changes
+material and ornament, not just the hue: common = iron and leather, uncommon = the same shapes in green-trimmed steel,
+rare = polished steel with blue trim, epic = violet steel with gems, legendary = gold with wings, a ruby and a glint,
+mythic = the legendary shapes in crimson with gold gems, ancient = the legendary shapes in jade with golden wings.
 """
 import math
 import os
@@ -31,7 +33,9 @@ STEEL = (hexc('#FFFFFF'), hexc('#C8DCF6'), hexc('#6E86B4'))
 VIOLET = (hexc('#F4DCFF'), hexc('#B98AF0'), hexc('#6A3CB8'))
 GOLDEN = (hexc('#FFF8C8'), hexc('#FFCF4A'), hexc('#C47A10'))
 LEATHER = (hexc('#E8B888'), hexc('#A8703E'), hexc('#5E3A1E'))
-GRADES = ['common', 'rare', 'epic', 'legendary']
+PAD_LEATHER = (hexc('#D8A878'), hexc('#8E5A30'), hexc('#4E2E14'))
+GRADES = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'ancient']
+AURA_L = (255, 220, 120, 150)
 
 made = []
 
@@ -88,7 +92,7 @@ def sword_icon(grade):
     every = union(blade, guard, grip, pommel)
     if grade == 'legendary':
         aura = np.clip(1 - np.maximum(every, 0) / 16.0, 0, 1) ** 2 * (every > 0)
-        L.over(aura, (255, 220, 120, 150))
+        L.over(aura, AURA_L)
     if grade == 'epic':
         aura = np.clip(1 - np.maximum(every, 0) / 12.0, 0, 1) ** 2 * (every > 0)
         L.over(aura, (200, 140, 255, 120))
@@ -138,7 +142,7 @@ def helm_icon(grade):
         for sgn in (-1, 1):
             wing = L.polygon([(64 + sgn * 34, 58), (64 + sgn * 62, 22), (64 + sgn * 58, 40), (64 + sgn * 64, 44), (64 + sgn * 54, 56),
                               (64 + sgn * 60, 62), (64 + sgn * 44, 70)])
-            extras.append((wing, (hexc('#FFFFFF'), hexc('#E4ECFF'), hexc('#98A8D0'))))
+            extras.append((wing, WING))
     if grade == 'common':
         dome = union(inter(L.circle(64, 72, 46), L.y - 86.0), rrect_at(L.x, L.y, 16, 76, 112, 96, 10))
     else:
@@ -186,14 +190,14 @@ def armor_icon(grade):
     if grade == 'legendary':
         for sgn in (-1, 1):
             wing = L.polygon([(64 + sgn * 46, 34), (64 + sgn * 64, 6), (64 + sgn * 60, 26), (64 + sgn * 64, 30), (64 + sgn * 52, 46)])
-            fill(L, wing, (hexc('#FFFFFF'), hexc('#E4ECFF'), hexc('#98A8D0')))
+            fill(L, wing, WING)
     fill(L, body, metal)
     L.over(cov(neck), shade(metal[2], -0.35))
     belt = rrect_at(L.x, L.y, 34, 84, 94, 96, 3)
     fill(L, belt, trim, hi=False)
     L.over(cov(rrect_at(L.x, L.y, 58, 82, 70, 98, 2)), shade(trim[0], 0.2))
     for p in pads:
-        fill(L, p, metal if grade != 'common' else (hexc('#D8A878'), hexc('#8E5A30'), hexc('#4E2E14')))
+        fill(L, p, metal if grade != 'common' else PAD_LEATHER)
     if grade == 'common':
         for (x0, y0, x1, y1) in [(46, 46, 49, 76), (79, 46, 82, 76)]:
             L.over(cov(rrect_at(L.x, L.y, x0, y0, x1, y1, 1)), shade(LEATHER[2], -0.1))
@@ -217,7 +221,7 @@ def boot_shape(L, x0, y0):
 def boots_icon(grade):
     L = new()
     metal = {'common': LEATHER, 'rare': STEEL, 'epic': VIOLET, 'legendary': GOLDEN}[grade]
-    trim = {'common': (hexc('#C8A070'), hexc('#7A4A24'), hexc('#3E2410')), 'rare': GOLD, 'epic': GOLD, 'legendary': (hexc('#FFFFFF'), hexc('#E4ECFF'), hexc('#98A8D0'))}[grade]
+    trim = {'common': (hexc('#C8A070'), hexc('#7A4A24'), hexc('#3E2410')), 'rare': GOLD, 'epic': GOLD, 'legendary': WING}[grade]
     back = boot_shape(L, 54, 30)
     front = boot_shape(L, 24, 44)
     every = union(back, front)
@@ -229,7 +233,7 @@ def boots_icon(grade):
             every = union(every, w)
     outline(L, every)
     for w in wings:
-        fill(L, w, (hexc('#FFFFFF'), hexc('#E4ECFF'), hexc('#98A8D0')))
+        fill(L, w, WING)
     for d, dim in ((back, -0.18), (front, 0.0)):
         ramp = tuple(shade(c, dim) for c in metal)
         fill(L, d, ramp)
@@ -252,8 +256,9 @@ WING = (hexc('#FFFFFF'), hexc('#E4ECFF'), hexc('#98A8D0'))
 BRONZE = (hexc('#F4CC90'), hexc('#C08A4A'), hexc('#6E4622'))
 
 
-def metal_of(grade, common=IRON):
-    return {'common': common, 'rare': STEEL, 'epic': VIOLET, 'legendary': GOLDEN}[grade]
+def metal_of(grade, common=None):
+    # Looked up at call time (not as a default argument) so the D-113 palette swaps reach it.
+    return {'common': common if common is not None else IRON, 'rare': STEEL, 'epic': VIOLET, 'legendary': GOLDEN}[grade]
 
 
 def gem_of(grade):
@@ -453,17 +458,59 @@ ORDER = ['sword', 'helm', 'armor', 'boots', 'gloves', 'necklace', 'ring', 'earri
 MAKERS = {'sword': sword_icon, 'helm': helm_icon, 'armor': armor_icon, 'boots': boots_icon,
           'gloves': gloves_icon, 'necklace': necklace_icon, 'ring': ring_icon, 'earring': earring_icon}
 
+# D-113: the grades between and above the four drawn ones reuse a drawn shape in their own materials. The swap
+# rebinds this module's palette names while one icon is drawn: (shape grade, palette swaps, extra sparkles).
+VARIANTS = {
+    'uncommon': ('common', {
+        'IRON': (hexc('#F4FBF0'), hexc('#B2D8A8'), hexc('#4F7C4E')),
+        'LEATHER': (hexc('#C4E8A8'), hexc('#62A44C'), hexc('#2C5C26')),
+        'BRONZE': (hexc('#E4F4C8'), hexc('#8EBE62'), hexc('#44702E')),
+        'PAD_LEATHER': (hexc('#B4DC98'), hexc('#548E40'), hexc('#264E20')),
+    }, 0),
+    'mythic': ('legendary', {
+        'GOLDEN': (hexc('#FFE6DE'), hexc('#F25A5E'), hexc('#981A36')),
+        'RED': (hexc('#FFF8B8'), hexc('#FFC83A'), hexc('#B86E0A')),
+        'WING': (hexc('#FFF6F6'), hexc('#FFC4CA'), hexc('#B0506A')),
+        'AURA_L': (255, 110, 120, 165),
+    }, 1),
+    'ancient': ('legendary', {
+        'GOLDEN': (hexc('#E8FFFA'), hexc('#5CE2CE'), hexc('#127A88')),
+        'RED': (hexc('#FFFFFF'), hexc('#FFE98A'), hexc('#C88A10')),
+        'WING': (hexc('#FFFDF0'), hexc('#FFDF76'), hexc('#BE8E1C')),
+        'AURA_L': (110, 255, 225, 175),
+    }, 2),
+}
+EXTRA_SPARKLES = [(20, 22, 7), (108, 108, 6)]
+
+
+def render(slot, grade):
+    shape, swaps, extra = VARIANTS.get(grade, (grade, {}, 0))
+    names = globals()
+    saved = {k: names[k] for k in swaps}
+    names.update(swaps)
+    try:
+        img = MAKERS[slot](shape)
+    finally:
+        names.update(saved)
+    if extra:
+        L = new()
+        for (cx, cy, size) in EXTRA_SPARKLES[:extra]:
+            sparkle(L, cx, cy, size)
+        img.alpha_composite(L.image())
+    return img
+
+
 if __name__ == '__main__':
     only = [a for a in sys.argv[1:] if a in MAKERS]
     for slot in ORDER:
         if only and slot not in only:
             continue
         for g in GRADES:
-            save(MAKERS[slot](g), slot, g)
+            save(render(slot, g), slot, g)
     if PREVIEW:
         cell = S + 16
         order = [s for s in ORDER if not only or s in only]
-        sheet = Image.new('RGBA', (4 * cell, len(order) * cell), (232, 220, 196, 255))
+        sheet = Image.new('RGBA', (len(GRADES) * cell, len(order) * cell), (232, 220, 196, 255))
         lookup = dict(made)
         for r, slot in enumerate(order):
             for c, g in enumerate(GRADES):

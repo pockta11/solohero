@@ -50,7 +50,7 @@ offline.ad_failed	광고를 불러올 수 없습니다
 
 # Tutorial
 tutorial.upgrade_tip	팁: 캐릭터 탭에서 능력치를 강화하세요
-tutorial.welcome	환영 선물: 골드와 무료 소환
+tutorial.welcome	환영 선물: 골드와 무료 장비 소환 {0}회!
 tutorial.skill_unlocked	스킬 슬롯 2 해금! Lv 10에 전직하면 직업 스킬을 소환할 수 있어요
 
 # Stats and character panel
@@ -189,9 +189,12 @@ skill.desc.phantom_volley	넓은 범위에 환영 화살 {0}% 피해 {1}회, {13
 
 # Grades and slots
 grade.common	일반
+grade.uncommon	고급
 grade.rare	희귀
 grade.epic	영웅
 grade.legendary	전설
+grade.mythic	신화
+grade.ancient	고대
 slot.sword	검
 slot.helm	투구
 slot.armor	갑옷
@@ -212,7 +215,9 @@ equip.best_already	이미 최고 등급을 장착했습니다
 
 # Summon panel
 gacha.pity	전설까지 {0}회   ({1}/{2})
-gacha.rates	일반 {0}%  희귀 {1}%  영웅 {2}%  전설 {3}%\n{4}회째는 전설 확정. 전설을 얻으면 횟수가 초기화됩니다.
+gacha.rate_item	{0} {1}%
+gacha.rates_pity_gear	{0}회째는 전설 확정 · 전설 이상을 얻으면 초기화
+gacha.rates_pity_skill	{0}회째는 전설 확정 · 전설을 얻으면 초기화
 gacha.cost_single	1회  {0}
 gacha.cost_ten	10회  {0}
 gacha.cost_gem	10회  {0} 젬

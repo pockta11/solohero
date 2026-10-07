@@ -14,7 +14,9 @@ namespace SoloHero.Game.UI.Panels
     /// flip (one card 0.4 s; ten cards 0.15 s apart), an Epic+ result gets grade particles, a shake and a fanfare
     /// (ten-pull: only the best card), then a tap closes the overlay. `Skip all` jumps to the end. The pull is
     /// already settled and saved before this runs, so closing early loses nothing. Runs on unscaled time.
-    /// Equipment and skill summons (D-078) both hand in ready-made <see cref="RevealCard"/>s.
+    /// Equipment and skill summons (D-078) both hand in ready-made <see cref="RevealCard"/>s. D-113: a Legendary or
+    /// better result tints the summon circle in its grade colour before the cards turn (the genre's tell), and a
+    /// Mythic or Ancient card bursts twice and shakes harder.
     /// </summary>
     public sealed class GachaRevealView : MonoBehaviour
     {
@@ -25,6 +27,7 @@ namespace SoloHero.Game.UI.Panels
         private const float TenInterval = 0.15f;
         private const float ShakePixels = 18f;
         private const float ShakeSeconds = 0.35f;
+        private const float TopShakeScale = 1.6f;
 
         [SerializeField] private GameObject _root;
         [SerializeField] private RectTransform _circle;
@@ -43,12 +46,14 @@ namespace SoloHero.Game.UI.Panels
         private bool _done;
         private AudioService _audio;
         private SettingsService _settings;
+        private Color _circleBase = Color.white;
 
         public bool IsShowing => _root != null && _root.activeSelf;
 
         private void Awake()
         {
             if (_root != null) _root.SetActive(false);
+            if (_circleImage != null) _circleImage.color = _circleBase = _circleImage.color;
         }
 
         public void Show(RevealCard[] items)
@@ -93,8 +98,16 @@ namespace SoloHero.Game.UI.Panels
             if (_closeHint != null) _closeHint.SetActive(false);
             for (int i = 0; i < _cards.Length; i++) _cards[i].Hide();
 
-            // Step 2: summon circle.
+            // Step 2: summon circle, tinted by the best grade when it is Legendary or better.
             float summon = ten ? SummonTen : SummonSingle;
+            GearGrade top = _items[Best()].Grade;
+            if (_circleImage != null)
+            {
+                Color tint = top >= GearGrade.Legendary ? PanelServices.GradeColor(top) : _circleBase;
+                tint.a = _circleImage.color.a;
+                _circleImage.color = tint;
+            }
+
             if (_circle != null) _circle.gameObject.SetActive(true);
             for (float t = 0f; t < summon && !_skip; t += Time.unscaledDeltaTime)
             {
@@ -184,25 +197,34 @@ namespace SoloHero.Game.UI.Panels
             if (_celebrated) return;
             _celebrated = true;
             RevealCard item = _items[index];
-            Sound(item.Grade == Grade.Legendary ? SfxId.GradeLegendary : SfxId.GradeEpic);
+            bool top = item.Grade >= GearGrade.Mythic;
+            Sound(item.Grade >= GearGrade.Legendary ? SfxId.GradeLegendary : SfxId.GradeEpic);
             UiPunch punch = _cards[index].GetComponent<UiPunch>();
-            if (punch != null) punch.Play(2f);
+            if (punch != null) punch.Play(top ? 2.6f : 2f);
             if (_settings != null && _settings.LowEffect) return;
             if (_burst != null)
             {
                 Vector2 local = (Vector2)_burst.transform.InverseTransformPoint(_cards[index].Rect.position);
                 _burst.Play(local, PanelServices.GradeColor(item.Grade));
+                if (top) StartCoroutine(SecondBurst(local, PanelServices.GradeColor(item.Grade)));
             }
 
-            StartCoroutine(Shake());
+            StartCoroutine(Shake(top ? TopShakeScale : 1f));
         }
 
-        private IEnumerator Shake()
+        private IEnumerator SecondBurst(Vector2 local, Color color)
+        {
+            for (float t = 0f; t < 0.22f; t += Time.unscaledDeltaTime) yield return null;
+            if (_burst != null) _burst.Play(local, Color.Lerp(color, Color.white, 0.5f));
+        }
+
+        private IEnumerator Shake(float scale)
         {
             if (_cardArea == null) yield break;
-            for (float t = 0f; t < ShakeSeconds; t += Time.unscaledDeltaTime)
+            float seconds = ShakeSeconds * scale;
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
             {
-                float s = ShakePixels * (1f - t / ShakeSeconds);
+                float s = ShakePixels * scale * (1f - t / seconds);
                 _cardArea.anchoredPosition = new Vector2(Random.Range(-s, s), Random.Range(-s, s));
                 yield return null;
             }
@@ -221,7 +243,7 @@ namespace SoloHero.Game.UI.Panels
             return best;
         }
 
-        private static bool IsHigh(Grade grade) => grade >= Grade.Epic;
+        private static bool IsHigh(GearGrade grade) => grade >= GearGrade.Epic;
 
         private void Layout(int count)
         {

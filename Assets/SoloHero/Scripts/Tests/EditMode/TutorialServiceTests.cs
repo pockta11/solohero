@@ -19,7 +19,7 @@ namespace SoloHero.Tests.EditMode
 
         private static TutorialService Create(BalanceValues b, ISaveRequester requester = null)
         {
-            var gacha = new GachaService(b, GachaTableValues.FromBalance(b), new SystemRandom(new System.Random(1)), GachaCatalog.Standard(b));
+            var gacha = new GachaService(b, GearTableValues.FromBalance(b), new SystemRandom(new System.Random(1)), GachaCatalog.Standard(b));
             return new TutorialService(b, gacha, requester);
         }
 
@@ -52,7 +52,11 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(b.TUTORIAL_GOLD, goldAfter, 1e-9);
             Assert.AreEqual(b.TUTORIAL_FREE_PULLS, save.totalPullCount);
             Assert.AreEqual(b.TUTORIAL_FREE_PULLS, tutorial.LastRewardItems.Length);
-            Assert.AreEqual(1, save.ownedEquipment.Count);
+            // D-113: the welcome gift is a free ten-pull; duplicates enhance instead of adding a copy.
+            int fresh = 0;
+            foreach (GachaPullItem item in tutorial.LastRewardItems) if (!item.WasDuplicate) fresh++;
+            Assert.AreEqual(fresh, save.ownedEquipment.Count);
+            Assert.GreaterOrEqual(fresh, 1);
             Assert.AreEqual(1, requester.Count);
             Assert.AreEqual(TutorialEvent.HintUpgrade, second);
             Assert.AreEqual(b.TUTORIAL_GOLD, save.gold, 1e-9);

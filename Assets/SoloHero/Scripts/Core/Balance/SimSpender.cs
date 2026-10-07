@@ -30,6 +30,7 @@ namespace SoloHero.Core.Balance
         private readonly GachaService _gacha;
         private readonly SkillSummonService _summon;
         private readonly GachaTableValues _table;
+        private readonly GearTableValues _gearTable;
         private readonly UpgradeService _upgrades;
         private readonly SkillService _skills;
         private readonly TalentService _talents;
@@ -49,6 +50,7 @@ namespace SoloHero.Core.Balance
             _gacha = gacha ?? throw new ArgumentNullException(nameof(gacha));
             _summon = summon ?? throw new ArgumentNullException(nameof(summon));
             _table = GachaTableValues.FromBalance(balance);
+            _gearTable = GearTableValues.FromBalance(balance);
             _upgrades = new UpgradeService(save, balance);
             _skills = new SkillService(save, balance);
             _talents = new TalentService(save, balance);
@@ -69,7 +71,7 @@ namespace SoloHero.Core.Balance
         /// <summary>Gold pull value per gold / best upgrade-lane value per gold, one sample per spending decision.</summary>
         public readonly System.Collections.Generic.List<double> PullToUpgradeValue = new System.Collections.Generic.List<double>();
 
-        public event Action<Grade> GradeObtained;
+        public event Action<GearGrade> GradeObtained;
 
         private enum Kind { None, Lane, Skill, Pull, SkillPull }
 
@@ -317,7 +319,7 @@ namespace SoloHero.Core.Balance
 
         private double ExpectedPullRatio(Snapshot now, double baseScore, double enemyAtk)
         {
-            bool pityNext = _save.pityCount + 1 >= _table.PityCeiling;
+            bool pityNext = _save.pityCount + 1 >= _gearTable.PityCeiling;
             double gain = 0d;
             double refund = 0d;
 
@@ -326,8 +328,8 @@ namespace SoloHero.Core.Balance
                 var slot = (EquipmentSlot)s;
                 for (int g = 0; g < GachaCatalog.GradeCount; g++)
                 {
-                    var grade = (Grade)g;
-                    double p = GradeProbability(grade, pityNext) / GachaCatalog.SlotCount;
+                    var grade = (GearGrade)g;
+                    double p = GearProbability(grade, pityNext) / GachaCatalog.SlotCount;
                     if (p <= 0d) continue;
 
                     string id = GachaCatalog.IdOf(slot, grade);
@@ -368,7 +370,7 @@ namespace SoloHero.Core.Balance
             bool pityNext = _save.skillPityCount + 1 >= _table.PityCeiling;
             double gain = 0d;
             double refund = 0d;
-            for (int g = 0; g < GachaCatalog.GradeCount; g++)
+            for (int g = 0; g < SkillCatalog.GradeCount; g++)
             {
                 var grade = (Grade)g;
                 SkillDef[] pool = SkillCatalog.OfLine(line, grade);
@@ -393,6 +395,13 @@ namespace SoloHero.Core.Balance
             double net = _b.SKILL_SUMMON_COST_SINGLE - refund;
             if (net <= 0d) net = 1d;
             return gain / net;
+        }
+
+        /// <summary>D-113: one gear pull's chance of a grade; the pity pull is a sure Legendary.</summary>
+        private double GearProbability(GearGrade grade, bool pityNext)
+        {
+            if (pityNext) return grade == GearTableValues.PityGrade ? 1d : 0d;
+            return _gearTable.Rate(grade) / 100d;
         }
 
         private double GradeProbability(Grade grade, bool pityNext)

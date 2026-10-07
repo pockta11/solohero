@@ -4,7 +4,7 @@ namespace SoloHero.Core.Gacha
     {
         public readonly string EquipmentId;
         public readonly EquipmentSlot Slot;
-        public readonly Grade Grade;
+        public readonly GearGrade Grade;
         public readonly bool WasDuplicate;
         public readonly double RefundGold;
         public readonly bool AutoEquipped;
@@ -15,7 +15,7 @@ namespace SoloHero.Core.Gacha
         public GachaPullItem(
             string equipmentId,
             EquipmentSlot slot,
-            Grade grade,
+            GearGrade grade,
             bool wasDuplicate,
             double refundGold,
             bool autoEquipped,

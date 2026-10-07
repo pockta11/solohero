@@ -65,7 +65,7 @@ namespace SoloHero.Tests.EditMode
             data.equippedSword = "garbage";
             data.equippedHelm = null;
             data.equippedArmor = "Equipment_Helm_Legendary";
-            data.equippedBoots = "Equipment_Boots_Mythic";
+            data.equippedBoots = "Equipment_Boots_Divine";
 
             EquipmentBonus bonus = EquipmentBonus.Resolve(balance, data);
 

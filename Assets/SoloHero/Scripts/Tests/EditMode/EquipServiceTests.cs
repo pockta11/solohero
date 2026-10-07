@@ -112,7 +112,7 @@ namespace SoloHero.Tests.EditMode
             EquipmentSlot[] slots = { EquipmentSlot.Gloves, EquipmentSlot.Necklace, EquipmentSlot.Ring, EquipmentSlot.Earring };
             foreach (EquipmentSlot slot in slots)
             {
-                string id = GachaCatalog.IdOf(slot, Grade.Rare);
+                string id = GachaCatalog.IdOf(slot, GearGrade.Rare);
                 data.ownedEquipment.Add(id);
                 Assert.IsTrue(service.TryEquip(data, slot, id).Ok);
                 Assert.AreEqual(id, EquippedSlots.Get(data, slot));

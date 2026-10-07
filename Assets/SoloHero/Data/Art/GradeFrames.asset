@@ -14,8 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   frames:
   - {fileID: 21300000, guid: 4a44c52eb6de615449188fb5489ca9be, type: 3}
+  - {fileID: 21300000, guid: 1f09ae8c1c79fc34b865a287313ff977, type: 3}
   - {fileID: 21300000, guid: 271daa843ed84cd41aaa02103cc7f9bf, type: 3}
   - {fileID: 21300000, guid: 80e5e2730dd70da49a134c28f10e2eff, type: 3}
   - {fileID: 21300000, guid: a823fa9d0d1badf4d9888c3bd2cf917d, type: 3}
+  - {fileID: 21300000, guid: 4fdd0fc7f9304f5489f17c723cba1a3b, type: 3}
+  - {fileID: 21300000, guid: ee3fee61ba3d76740b70721631f51f2b, type: 3}
   empty: {fileID: 21300000, guid: be66197bf362f724cac0ad6859c3b389, type: 3}
   emptyDark: {fileID: 21300000, guid: fd91c3ddcaaa1c747bee475039a8180f, type: 3}

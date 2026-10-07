@@ -9,13 +9,13 @@ namespace SoloHero.Core.Gacha
     public sealed class GachaService
     {
         private readonly BalanceValues _balance;
-        private readonly GachaTableValues _table;
+        private readonly GearTableValues _table;
         private readonly IRandom _rng;
         private readonly GachaEquipmentDef[] _catalog;
 
         public GachaService(
             BalanceValues balance,
-            GachaTableValues table,
+            GearTableValues table,
             IRandom rng,
             GachaEquipmentDef[] catalog)
         {
@@ -68,16 +68,16 @@ namespace SoloHero.Core.Gacha
             // GDD: pick slot first (uniform over the slots; D-109: 8), then grade from the rate table / pity.
             var slot = (EquipmentSlot)_rng.Next(GachaCatalog.SlotCount);
 
-            Grade grade;
+            GearGrade grade;
             if (data.pityCount >= _table.PityCeiling)
             {
-                grade = Grade.Legendary;
+                grade = GearTableValues.PityGrade;
                 data.pityCount = 0;
             }
             else
             {
                 grade = _table.PickGrade(_rng.NextDouble());
-                if (grade == Grade.Legendary && _table.ResetOnLegendary)
+                if (grade >= GearTableValues.PityGrade && _table.ResetOnPityGrade)
                     data.pityCount = 0;
             }
 
@@ -125,7 +125,7 @@ namespace SoloHero.Core.Gacha
             return false;
         }
 
-        private GachaEquipmentDef Find(EquipmentSlot slot, Grade grade)
+        private GachaEquipmentDef Find(EquipmentSlot slot, GearGrade grade)
         {
             for (int i = 0; i < _catalog.Length; i++)
             {

@@ -78,7 +78,7 @@ namespace SoloHero.Game.UI.Panels
             string next = null;
             for (int step = 1; step <= GachaCatalog.GradeCount; step++)
             {
-                var grade = (Grade)((current + step + GachaCatalog.GradeCount) % GachaCatalog.GradeCount);
+                var grade = (GearGrade)((current + step + GachaCatalog.GradeCount) % GachaCatalog.GradeCount);
                 string id = GachaCatalog.IdOf(slot, grade);
                 if (_save.ownedEquipment.Contains(id))
                 {
@@ -114,7 +114,7 @@ namespace SoloHero.Game.UI.Panels
                 var slot = (EquipmentSlot)s;
                 for (int g = GachaCatalog.GradeCount - 1; g >= 0; g--)
                 {
-                    string id = GachaCatalog.IdOf(slot, (Grade)g);
+                    string id = GachaCatalog.IdOf(slot, (GearGrade)g);
                     if (!_save.ownedEquipment.Contains(id)) continue;
                     if (id != Equipped(slot) && _equip.TryEquip(_save, slot, id).Ok) changed = true;
                     break;
@@ -149,7 +149,7 @@ namespace SoloHero.Game.UI.Panels
                 int owned = 0;
                 for (int g = 0; g < GachaCatalog.GradeCount; g++)
                 {
-                    if (!_save.ownedEquipment.Contains(GachaCatalog.IdOf(slot, (Grade)g))) continue;
+                    if (!_save.ownedEquipment.Contains(GachaCatalog.IdOf(slot, (GearGrade)g))) continue;
                     owned++;
                 }
 
@@ -158,19 +158,19 @@ namespace SoloHero.Game.UI.Panels
                     int level = grade < 0 ? 0 : EquipmentLevels.Get(_save, Equipped(slot));
                     _slotTexts[s].text = grade < 0
                         ? PanelServices.SlotName(slot)
-                        : PanelServices.GradeName((Grade)grade) + (level > 0 ? " +" + level : "");
-                    _slotTexts[s].color = grade < 0 ? UiPalette.InkMuted : UiPalette.GradeInk((Grade)grade);
+                        : PanelServices.GradeName((GearGrade)grade) + (level > 0 ? " +" + level : "");
+                    _slotTexts[s].color = grade < 0 ? UiPalette.InkMuted : UiPalette.GradeInk((GearGrade)grade);
                 }
 
                 if (s < _slotIcons.Length && _slotIcons[s] != null && _icons != null)
                 {
                     // Empty slot: the common icon as a dim silhouette, so the slot still reads at a glance (E8-07).
-                    _slotIcons[s].sprite = _icons.Get(slot, grade < 0 ? Grade.Common : (Grade)grade);
+                    _slotIcons[s].sprite = _icons.Get(slot, grade < 0 ? GearGrade.Common : (GearGrade)grade);
                     _slotIcons[s].color = grade < 0 ? UiPalette.Silhouette : Color.white;
                 }
 
                 if (s < _slotFrames.Length && _slotFrames[s] != null && _frames != null)
-                    _slotFrames[s].sprite = grade < 0 ? _frames.empty : _frames.Get((Grade)grade);
+                    _slotFrames[s].sprite = grade < 0 ? _frames.empty : _frames.Get((GearGrade)grade);
 
                 if (s < _ownedTexts.Length && _ownedTexts[s] != null)
                     _ownedTexts[s].text = grade < 0 ? Strings.Get("equip.none") : Effect(slot, bonus);

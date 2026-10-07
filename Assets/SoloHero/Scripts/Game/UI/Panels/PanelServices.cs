@@ -20,28 +20,41 @@ namespace SoloHero.Game.UI.Panels
             }
         }
 
-        /// <summary>GDD grade colors: Common #9E9E9E, Rare #3D8BFF, Epic #A24BFF, Legendary #FFC531.</summary>
-        public static Color GradeColor(Grade grade)
+        /// <summary>
+        /// GDD grade colours on the D-113 seven-grade ladder: Common #9E9E9E, Uncommon #4CC35A, Rare #3D8BFF,
+        /// Epic #A24BFF, Legendary #FFC531, Mythic #FF4D5E, Ancient #2FE0CC. Skills use the same colours for their four.
+        /// </summary>
+        public static Color GradeColor(GearGrade grade)
         {
             switch (grade)
             {
-                case Grade.Common: return new Color32(0x9E, 0x9E, 0x9E, 0xFF);
-                case Grade.Rare: return new Color32(0x3D, 0x8B, 0xFF, 0xFF);
-                case Grade.Epic: return new Color32(0xA2, 0x4B, 0xFF, 0xFF);
+                case GearGrade.Common: return new Color32(0x9E, 0x9E, 0x9E, 0xFF);
+                case GearGrade.Uncommon: return new Color32(0x4C, 0xC3, 0x5A, 0xFF);
+                case GearGrade.Rare: return new Color32(0x3D, 0x8B, 0xFF, 0xFF);
+                case GearGrade.Epic: return new Color32(0xA2, 0x4B, 0xFF, 0xFF);
+                case GearGrade.Mythic: return new Color32(0xFF, 0x4D, 0x5E, 0xFF);
+                case GearGrade.Ancient: return new Color32(0x2F, 0xE0, 0xCC, 0xFF);
                 default: return new Color32(0xFF, 0xC5, 0x31, 0xFF);
             }
         }
 
-        public static string GradeName(Grade grade)
+        public static Color GradeColor(Grade grade) => GradeColor(grade.ToGearGrade());
+
+        public static string GradeName(GearGrade grade)
         {
             switch (grade)
             {
-                case Grade.Common: return Strings.Get("grade.common");
-                case Grade.Rare: return Strings.Get("grade.rare");
-                case Grade.Epic: return Strings.Get("grade.epic");
+                case GearGrade.Common: return Strings.Get("grade.common");
+                case GearGrade.Uncommon: return Strings.Get("grade.uncommon");
+                case GearGrade.Rare: return Strings.Get("grade.rare");
+                case GearGrade.Epic: return Strings.Get("grade.epic");
+                case GearGrade.Mythic: return Strings.Get("grade.mythic");
+                case GearGrade.Ancient: return Strings.Get("grade.ancient");
                 default: return Strings.Get("grade.legendary");
             }
         }
+
+        public static string GradeName(Grade grade) => GradeName(grade.ToGearGrade());
 
         public static string SlotName(EquipmentSlot slot)
         {

@@ -134,7 +134,7 @@ namespace SoloHero.Game.Boot
             Services.Register(new EquipService(requester));
             var gacha = new GachaService(
                 balance,
-                GachaTableValues.FromBalance(balance),
+                GearTableValues.FromBalance(balance),
                 Services.Get<IRandom>(),
                 GachaCatalog.Standard(balance));
             Services.Register(gacha);

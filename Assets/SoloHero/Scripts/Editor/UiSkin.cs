@@ -107,7 +107,10 @@ namespace SoloHero.Editor
         public static Sprite Selection => Hd("hd9_select");
         public static Sprite Veil => Hd("hd9_veil");
 
-        public static Sprite GradeFrame(SoloHero.Core.Gacha.Grade grade) => Hd("hd9_slot" + "crel"[(int)grade]);
+        /// <summary>D-113: one frame per gear grade, c u r e l m a (common .. ancient); skills use the frame of the same name.</summary>
+        public static Sprite GradeFrame(SoloHero.Core.Gacha.GearGrade grade) => Hd("hd9_slot" + "curelma"[(int)grade]);
+
+        public static Sprite GradeFrame(SoloHero.Core.Gacha.Grade grade) => GradeFrame(SoloHero.Core.Gacha.GearGrades.ToGearGrade(grade));
 
         // Kept from the pixel skin: plain white, radial glow and the summon / card art.
         public static Sprite White => Get("ui_white");

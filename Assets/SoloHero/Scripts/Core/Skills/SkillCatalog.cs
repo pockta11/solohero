@@ -17,6 +17,9 @@ namespace SoloHero.Core.Skills
     /// </summary>
     public static class SkillCatalog
     {
+        /// <summary>Skills use the four-tier <see cref="Grade"/> (gear has its own seven, D-113).</summary>
+        public const int GradeCount = 4;
+
         public const string PowerStrike = "power_strike";
         public const string Whirlwind = "whirlwind";
         public const string BattleCry = "battle_cry";
@@ -373,7 +376,7 @@ namespace SoloHero.Core.Skills
             int l = (int)line;
             int g = (int)grade;
             if (l < 0 || l >= ByLine.Length) throw new ArgumentOutOfRangeException(nameof(line));
-            if (g < 0 || g >= GachaCatalog.GradeCount) throw new ArgumentOutOfRangeException(nameof(grade));
+            if (g < 0 || g >= GradeCount) throw new ArgumentOutOfRangeException(nameof(grade));
             return ByLine[l][g];
         }
 
@@ -382,8 +385,8 @@ namespace SoloHero.Core.Skills
             var result = new SkillDef[4][][];
             for (int l = 0; l < result.Length; l++)
             {
-                result[l] = new SkillDef[GachaCatalog.GradeCount][];
-                for (int g = 0; g < GachaCatalog.GradeCount; g++)
+                result[l] = new SkillDef[GradeCount][];
+                for (int g = 0; g < GradeCount; g++)
                 {
                     var list = new System.Collections.Generic.List<SkillDef>();
                     for (int i = 0; i < All.Length; i++)
@@ -397,7 +400,7 @@ namespace SoloHero.Core.Skills
 
         private static SkillDef[][] BuildByGrade()
         {
-            var result = new SkillDef[GachaCatalog.GradeCount][];
+            var result = new SkillDef[GradeCount][];
             for (int g = 0; g < result.Length; g++)
             {
                 int n = 0;

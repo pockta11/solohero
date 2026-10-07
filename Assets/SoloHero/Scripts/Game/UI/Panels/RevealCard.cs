@@ -3,15 +3,18 @@ using UnityEngine;
 
 namespace SoloHero.Game.UI.Panels
 {
-    /// <summary>What one reveal card shows (equipment or skill summon): grade, title, note and icon.</summary>
+    /// <summary>
+    /// What one reveal card shows (equipment or skill summon): grade, title, note and icon. The grade is on the gear
+    /// ladder (D-113); a skill's four grades map onto it by name.
+    /// </summary>
     public readonly struct RevealCard
     {
-        public readonly Grade Grade;
+        public readonly GearGrade Grade;
         public readonly string Title;
         public readonly string Note;
         public readonly Sprite Icon;
 
-        public RevealCard(Grade grade, string title, string note, Sprite icon)
+        public RevealCard(GearGrade grade, string title, string note, Sprite icon)
         {
             Grade = grade;
             Title = title;

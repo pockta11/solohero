@@ -43,6 +43,7 @@ namespace SoloHero.Core.Progression
     /// D-111 guide quests (genre "main quest" bar): one quest at a time, front-loaded so the first hours always show
     /// the next step - upgrade, summon, beat the boss, advance the job. After the hand-made chain the quests repeat
     /// in a cycle with growing targets, so the bar never runs dry. The index is saved (SaveDataV2.guideQuest).
+    /// D-113: gear pull and collection targets sit above the welcome ten-pull, since pulls got cheap and there are 56 items.
     /// </summary>
     public static class GuideQuestCatalog
     {
@@ -54,7 +55,7 @@ namespace SoloHero.Core.Progression
             Q(GuideKind.UpgradeTotal, 1, gems: 20),
             Q(GuideKind.ClearStage, 3, goldStages: 5),
             Q(GuideKind.UpgradeTotal, 5, gems: 20),
-            Q(GuideKind.GearPulls, 3, gems: 30),
+            Q(GuideKind.GearPulls, 15, gems: 30),
             Q(GuideKind.ClearStage, 5, goldStages: 8),
             Q(GuideKind.HeroLevel, 5, gems: 20),
             Q(GuideKind.EquipSkills, 2, gems: 20),
@@ -65,19 +66,19 @@ namespace SoloHero.Core.Progression
             Q(GuideKind.SkillPulls, 3, gems: 30),
             Q(GuideKind.EquipSkills, 3, gems: 20),
             Q(GuideKind.ClearStage, 15, goldStages: 12),
-            Q(GuideKind.OwnedGear, 10, gems: 30),
+            Q(GuideKind.OwnedGear, 15, gems: 30),
             Q(GuideKind.Talents, 3, gems: 20),
             Q(GuideKind.ClearStage, 20, gems: 80),
             Q(GuideKind.UpgradeTotal, 40, goldStages: 15),
             Q(GuideKind.HeroLevel, 20, gems: 30),
-            Q(GuideKind.GearPulls, 30, gems: 50),
+            Q(GuideKind.GearPulls, 60, gems: 50),
             Q(GuideKind.ClearStage, 25, goldStages: 15),
             Q(GuideKind.EquipSkills, 5, gems: 30),
             Q(GuideKind.ClearStage, 30, gems: 80),
             Q(GuideKind.HeroLevel, 30, gems: 50),
             Q(GuideKind.JobTier, 2, gems: 100),
             Q(GuideKind.ClearStage, 35, goldStages: 20),
-            Q(GuideKind.OwnedGear, 20, gems: 50),
+            Q(GuideKind.OwnedGear, 30, gems: 50),
             Q(GuideKind.ClearStage, 40, gems: 100),
         };
 
@@ -98,7 +99,7 @@ namespace SoloHero.Core.Progression
             {
                 case GuideKind.ClearStage: return Q(GuideKind.ClearStage, 40 + 5 * round, gems: 80);
                 case GuideKind.UpgradeTotal: return Q(GuideKind.UpgradeTotal, 40 + 15 * round, goldStages: 20);
-                case GuideKind.GearPulls: return Q(GuideKind.GearPulls, 30 + 20 * round, gems: 50);
+                case GuideKind.GearPulls: return Q(GuideKind.GearPulls, 60 + 40 * round, gems: 50);
                 default: return Q(GuideKind.HeroLevel, 30 + 3 * round, gems: 40);
             }
         }

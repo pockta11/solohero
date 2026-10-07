@@ -19,9 +19,9 @@ namespace SoloHero.Editor
             var config = AssetDatabase.LoadAssetAtPath<BalanceConfig>(ConfigPath);
             BalanceValues balance = config != null ? config.ToValues() : new BalanceValues();
             GachaVerifier.Report report = GachaVerifier.Run(balance, 100000, 20260928);
-            string markdown = "# Gacha rate verification (E5-14)\n\n" + report.ToMarkdown(balance.GACHA_PITY);
+            string markdown = "# Gear gacha rate verification (E5-14, D-113)\n\n" + report.ToMarkdown(balance.GEAR_PITY);
             File.WriteAllText(ReportPath, markdown);
-            Debug.Log("[Gacha] " + (report.Passed(balance.GACHA_PITY) ? "PASS" : "FAIL") + " - report " + ReportPath);
+            Debug.Log("[Gacha] " + (report.Passed(balance.GEAR_PITY) ? "PASS" : "FAIL") + " - report " + ReportPath);
         }
     }
 }
