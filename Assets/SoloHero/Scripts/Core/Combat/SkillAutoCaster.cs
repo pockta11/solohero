@@ -65,6 +65,12 @@ namespace SoloHero.Core.Combat
         /// <summary>Raised for every impact the skill's VfxAt asks for: skill, world X.</summary>
         public event Action<SkillDef, double> SkillImpact;
 
+        /// <summary>
+        /// D-146: the skill whose wave is landing right now (set while its hits are reported, null otherwise), so the
+        /// view can colour a skill hit by the skill's element.
+        /// </summary>
+        public SkillDef ActiveDef { get; private set; }
+
         public double BuffAtk => BuffSum(SkillBuff.Atk) / 100d;
         public double BuffAtkSpd => BuffSum(SkillBuff.AtkSpd) / 100d;
         public double BuffCrit => BuffSum(SkillBuff.Crit);
@@ -121,6 +127,7 @@ namespace SoloHero.Core.Combat
             _cooldown[slot] = seconds < 0f ? 0f : seconds;
         }
 
+        /// <summary>A boss fight's start (D-147): every skill ready, no buff, no pending wave, the Overload count from 0.</summary>
         public void ResetCooldowns()
         {
             for (int i = 0; i < _cooldown.Length; i++)
@@ -132,6 +139,15 @@ namespace SoloHero.Core.Combat
             for (int i = 0; i < MaxPending; i++) ClearPending(i);
             _sequenceGap = 0f;
             _damageCasts = 0;
+        }
+
+        /// <summary>
+        /// D-147: any other fight's start drops only the waves still due from the last fight; cooldowns, buffs and the
+        /// Overload count carry on.
+        /// </summary>
+        public void ClearPendingWaves()
+        {
+            for (int i = 0; i < MaxPending; i++) ClearPending(i);
         }
 
         public void Tick(float dt, HeroBrain hero, ICombatWorld world, bool isBossFight)
@@ -291,6 +307,19 @@ namespace SoloHero.Core.Combat
 
         /// <summary>One wave: Strike hits the nearest enemy in range, Area every enemy from the hero to the range.</summary>
         private void Wave(SkillDef def, double damage, double dot, double mark, ICombatWorld world)
+        {
+            ActiveDef = def;
+            try
+            {
+                WaveHits(def, damage, dot, mark, world);
+            }
+            finally
+            {
+                ActiveDef = null;
+            }
+        }
+
+        private void WaveHits(SkillDef def, double damage, double dot, double mark, ICombatWorld world)
         {
             if (def.Kind == SkillKind.Strike)
             {

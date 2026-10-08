@@ -2,10 +2,8 @@ using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Jobs;
-using SoloHero.Core.Gacha;
 using SoloHero.Core.Save;
 using SoloHero.Core.Settings;
-using SoloHero.Core.Skills;
 using SoloHero.Core.Stage;
 using SoloHero.Game.Audio;
 using SoloHero.Game.Pooling;
@@ -20,10 +18,10 @@ namespace SoloHero.Game.Combat
     /// Combat juice (E8-08, E8-11, E8-13): listens to Core and the combat view and plays pooled VFX, SFX, camera
     /// shake and music. It never changes combat. Low-effect mode (E8-15) drops hit sparks, death puffs, shake and
     /// the skill screen flash; damage numbers, hit flashes, skill and level-up effects stay because they carry
-    /// information. Skills (D-078): a grade-coloured cast ring and name over the hero, the skill's own clip where its
-    /// VfxAt says, a sound per family, shake growing with grade and a screen flash for Epic / Legendary.
-    /// D-096: hit-stop on crits, kills and Epic+ skills, a bigger sword wave on the basic skill.
+    /// information. D-096: hit-stop on crits and kills, a bigger sword wave on the basic skill.
     /// D-112: pixel shards burst from every hit (more and gold on crits) and a coloured spray from every kill.
+    /// D-146: skills (casts, impacts, skill hits and their crits) moved to SkillFx; the job's main attack draws over a
+    /// faint additive glow.
     /// </summary>
     public sealed class CombatFx : MonoBehaviour
     {
@@ -34,16 +32,10 @@ namespace SoloHero.Game.Combat
         private const float CritStop = 0.045f;
         private const float KillStop = 0.06f;
         private const float BossKillStop = 0.18f;
-        private const float BigSkillStop = 0.08f;
         private const float CritShake = 0.06f;
         private const float CritShakeSeconds = 0.12f;
         private const float BossShake = 0.18f;
-        private const float SkillNameY = 1.9f;
-        private const int SkillNameSize = 44;
-        private const float EpicFlashAlpha = 0.14f;
-        private const float LegendaryFlashAlpha = 0.24f;
-        private const float FlashSeconds = 0.35f;
-        private static readonly float[] GradeShake = { 0.04f, 0.07f, 0.11f, 0.17f };
+        private const float MainGlowAlpha = 0.38f;
         private static readonly Color CritTint = new Color(1f, 0.85f, 0.3f, 1f);
         private static readonly Color LevelTint = new Color(0.55f, 1f, 0.6f, 1f);
         private static readonly Color ComboTint = new Color(0.86f, 0.55f, 1f, 1f);
@@ -55,7 +47,6 @@ namespace SoloHero.Game.Combat
         private static readonly Color KillShardA = new Color(1f, 0.62f, 0.2f, 1f);
         private static readonly Color KillShardB = new Color(1f, 0.95f, 0.55f, 1f);
         private float _lastComboFx = -1f;
-        private float _lastSkillCritFx = -1f;
 
         [SerializeField] private CombatSession _session;
         [SerializeField] private CombatWorldView _view;
@@ -64,8 +55,6 @@ namespace SoloHero.Game.Combat
         [SerializeField] private CameraShake _shake;
         [SerializeField] private ChapterThemeSet _themes;
         [SerializeField] private ToastQueue _toast;
-        [SerializeField] private ScreenFlash _flash;
-        [SerializeField] private DamageTextPool _labels;
         [SerializeField] private HitParticles _particles;
 
         private AudioService _audio;
@@ -127,8 +116,6 @@ namespace SoloHero.Game.Combat
             if (runner == null) return;
             runner.World.HitLanded += OnHitLanded;
             runner.Hero.AttackRequested += OnBasicSwing;
-            runner.Skills.SkillCast += OnSkillCast;
-            runner.Skills.SkillImpact += OnSkillImpact;
             runner.StateChanged += OnStateChanged;
             runner.StageCleared += OnStageCleared;
             _shownLevel = _save != null ? _save.heroLevel : -1;
@@ -139,8 +126,6 @@ namespace SoloHero.Game.Combat
             if (_hooked == null) return;
             _hooked.World.HitLanded -= OnHitLanded;
             _hooked.Hero.AttackRequested -= OnBasicSwing;
-            _hooked.Skills.SkillCast -= OnSkillCast;
-            _hooked.Skills.SkillImpact -= OnSkillImpact;
             _hooked.StateChanged -= OnStateChanged;
             _hooked.StageCleared -= OnStageCleared;
             _hooked = null;
@@ -160,6 +145,13 @@ namespace SoloHero.Game.Combat
             float x = (float)_hooked.Hero.X + (main != null && main.Range > 3d ? (float)main.Range * 0.4f : BasicWaveOffset);
             float y = clip.ground ? clip.halfHeight * scale : EffectY;
             Color tint = main != null && main.Tint != 0 ? Tint(main.Tint) : Color.white;
+            if (clip.glow != null && clip.glow.Length > 0)
+            {
+                Color glow = tint;
+                glow.a = MainGlowAlpha;
+                _vfx.Play(clip.glow, clip.fps, new Vector3(x, y, 0f), scale, glow, VfxPool.SortingOrder - 1, true);
+            }
+
             _vfx.Play(clip.frames, clip.fps, new Vector3(x, y, 0f), scale, tint);
         }
 
@@ -185,35 +177,8 @@ namespace SoloHero.Game.Combat
                 return;
             }
 
-            if (kind == HitKind.SkillCrit)
-            {
-                // D-142: a skill crit keeps the light skill effects in the crit colours, with one crit sound per moment
-                // (an area skill can crit a whole wave at once).
-                if (Time.time - _lastSkillCritFx >= ComboFxGap)
-                {
-                    _lastSkillCritFx = Time.time;
-                    Play(SfxId.Crit);
-                }
-
-                if (!LowEffect)
-                {
-                    PlayVfx(_set != null ? _set.spark : null, (float)target.X, 2.2f, CritTint, EffectY + DepthLanes.For(target));
-                    Shards(target, 3, CritShard, 3.6f);
-                }
-
-                return;
-            }
-
-            if (kind == HitKind.Dot || kind == HitKind.Skill)
-            {
-                if (kind == HitKind.Skill && !LowEffect)
-                {
-                    PlayVfx(_set != null ? _set.spark : null, (float)target.X, 2f, Color.white, EffectY + DepthLanes.For(target));
-                    Shards(target, 2, HitShard, 3f);
-                }
-
-                return;
-            }
+            // D-146: skill hits and skill crits are SkillFx's (element sparks); burn ticks stay quiet.
+            if (kind == HitKind.Dot || kind == HitKind.Skill || kind == HitKind.SkillCrit) return;
 
             bool crit = kind == HitKind.Crit;
             Play(crit ? SfxId.Crit : SfxId.Hit);
@@ -225,67 +190,8 @@ namespace SoloHero.Game.Combat
             if (crit) Shake(CritShake, CritShakeSeconds);
         }
 
-        private void OnSkillCast(int slot, SkillDef def)
-        {
-            if (_hooked == null || def == null) return;
-            float heroX = (float)_hooked.Hero.X;
-            Color gradeColor = PanelServices.GradeColor(def.Grade);
-            Play(SoundOf(def));
-            if (_set != null) PlayVfx(_set.ring, heroX, (1.2f + (int)def.Grade * 0.4f) * 0.75f, gradeColor, 0.5f);
-            if (_labels != null)
-                _labels.ShowLabel(new Vector3(heroX, SkillNameY, 0f), Strings.Get(def.NameKey), Color.Lerp(gradeColor, Color.white, 0.35f), SkillNameSize);
-
-            if (def.VfxAt == SkillVfxAt.Hero) PlaySkillClip(def, heroX);
-            else if (def.VfxAt == SkillVfxAt.Front) PlaySkillClip(def, heroX + (float)def.Range * 0.5f);
-
-            int grade = (int)def.Grade;
-            if (def.DealsDamage) Shake(GradeShake[grade], 0.12f + grade * 0.08f);
-            if (def.DealsDamage && def.Grade >= Grade.Epic) HitStop.Trigger(BigSkillStop);
-            if (_flash == null || LowEffect || def.Grade < Grade.Epic) return;
-            Color flash = gradeColor;
-            flash.a = def.Grade == Grade.Legendary ? LegendaryFlashAlpha : EpicFlashAlpha;
-            _flash.Flash(flash, FlashSeconds);
-        }
-
-        private void OnSkillImpact(SkillDef def, double x)
-        {
-            if (def == null) return;
-            PlaySkillClip(def, (float)x);
-        }
-
-        /// <summary>The skill's named clip (coloured art) or a tinted basic clip; ground clips stand on the floor.</summary>
-        private void PlaySkillClip(SkillDef def, float x)
-        {
-            if (_vfx == null || _set == null) return;
-            Color tint = Tint(def.Tint);
-            VfxClip clip = _set.Find(def.Vfx);
-            if (clip != null)
-            {
-                float y = clip.ground ? clip.halfHeight * def.VfxScale : EffectY;
-                _vfx.Play(clip.frames, clip.fps, new Vector3(x, y, 0f), def.VfxScale, tint);
-                return;
-            }
-
-            PlayVfx(_set.Basic(def.Vfx), x, def.VfxScale, tint);
-        }
-
         private static Color Tint(uint rgb) =>
             new Color(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f, 1f);
-
-        private static SfxId SoundOf(SkillDef def)
-        {
-            switch (def.Sound)
-            {
-                case "whoosh": return SfxId.Skill2;
-                case "cry": return SfxId.Skill3;
-                case "fire": return SfxId.SkillFire;
-                case "thunder": return SfxId.SkillThunder;
-                case "ice": return SfxId.SkillIce;
-                case "heal": return SfxId.SkillHeal;
-                case "magic": return SfxId.SkillMagic;
-                default: return SfxId.Skill1;
-            }
-        }
 
         private void OnEnemyDied(Vector3 position, bool boss, bool hasDeathClip)
         {

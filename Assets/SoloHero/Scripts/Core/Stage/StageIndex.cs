@@ -39,5 +39,16 @@ namespace SoloHero.Core.Stage
             if (bossG < 2) return 1;
             return bossG - 1;
         }
+
+        /// <summary>
+        /// D-058 step-down target: the stage one below <paramref name="g"/>, skipping a boss stage (bosses are never
+        /// farmed, so a fall at 2-1 farms 1-9), never below 1.
+        /// </summary>
+        public static int NormalStageBelow(int g, int stagesPerChapter)
+        {
+            int below = g - 1;
+            if (below > 1 && IsBoss(below, stagesPerChapter)) below--;
+            return below < 1 ? 1 : below;
+        }
     }
 }

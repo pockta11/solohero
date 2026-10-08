@@ -194,6 +194,39 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void NormalStageBelow_SkipsBossStages()
+        {
+            Assert.AreEqual(9, StageIndex.NormalStageBelow(11, 10));
+            Assert.AreEqual(4, StageIndex.NormalStageBelow(5, 10));
+            Assert.AreEqual(1, StageIndex.NormalStageBelow(2, 10));
+            Assert.AreEqual(1, StageIndex.NormalStageBelow(1, 10));
+        }
+
+        [Test]
+        public void DeathStreak_AtAChaptersFirstStage_FarmsBelowTheBoss()
+        {
+            // D-058 step-down never lands on a boss: a fall streak at 2-1 farms 1-9, not the 1-10 boss.
+            var c = new BalanceValues { FAIL_STREAK_STEP_DOWN = 3 };
+            StageRunner runner = CreateRunner(c);
+            runner.Begin(c.STAGES_PER_CHAPTER + 1);
+            for (int i = 0; i < c.FAIL_STREAK_STEP_DOWN; i++)
+                FailByHeroDeath(runner, c);
+
+            runner.Tick(c.STAGE_RETRY_DELAY);
+            Assert.AreEqual(c.STAGES_PER_CHAPTER - 1, runner.GlobalStage);
+            Assert.IsFalse(runner.IsBoss);
+            Assert.IsTrue(runner.RetreatMode);
+
+            StageRunner manual = CreateRunner(c);
+            manual.Begin(c.STAGES_PER_CHAPTER + 1);
+            for (int i = 0; i < c.FAIL_STREAK_STEP_DOWN; i++)
+                FailByHeroDeath(manual, c);
+
+            Assert.IsTrue(manual.StepDown());
+            Assert.AreEqual(c.STAGES_PER_CHAPTER - 1, manual.GlobalStage);
+        }
+
+        [Test]
         public void Tick_StageClear_ResetsFailStreak()
         {
             var c = new BalanceValues { FAIL_STREAK_STEP_DOWN = 3 };
@@ -338,6 +371,68 @@ namespace SoloHero.Tests.EditMode
             runner.Tick(c.STAGE_CLEAR_DELAY);
             Assert.AreEqual(2, runner.GlobalStage);
             Assert.AreEqual(StageState.Running, runner.State);
+        }
+
+        [Test]
+        public void ClearingANormalStage_RunsOnWithTheSkillCooldowns()
+        {
+            // D-147: only a boss fight resets the skills; the next normal stage keeps what is still cooling down.
+            var c = new BalanceValues();
+            StageRunner runner = CreateRunner(c);
+            runner.Begin(1);
+            runner.Skills.SetCooldown(0, 999f);
+
+            int guard = 0;
+            while (runner.State != StageState.Clearing && guard++ < 500)
+            {
+                for (int i = 0; i < runner.World.SlotCount; i++)
+                {
+                    EnemyBrain e = runner.World.GetSlot(i);
+                    if (e.IsAlive) e.TakeDamage(e.Hp);
+                }
+
+                runner.Tick(0f);
+                if (runner.State == StageState.Running)
+                    runner.Tick(c.SPAWN_WAVE_GAP);
+            }
+
+            runner.Tick(c.STAGE_CLEAR_DELAY);
+            Assert.AreEqual(2, runner.GlobalStage);
+            Assert.Greater(runner.Skills.CooldownRemaining(0), 900f);
+        }
+
+        [Test]
+        public void Begin_NormalStage_KeepsCooldowns_BossStageResetsThem()
+        {
+            var c = new BalanceValues();
+            StageRunner runner = CreateRunner(c);
+            runner.Begin(8);
+            runner.Skills.SetCooldown(0, 12f);
+
+            runner.Begin(9);
+            Assert.AreEqual(12f, runner.Skills.CooldownRemaining(0), 1e-6, "next normal stage");
+            runner.Begin(9);
+            Assert.AreEqual(12f, runner.Skills.CooldownRemaining(0), 1e-6, "restart after falling");
+
+            runner.Begin(c.STAGES_PER_CHAPTER);
+            Assert.AreEqual(0f, runner.Skills.CooldownRemaining(0), 1e-6, "a boss fight starts with every skill ready");
+        }
+
+        [Test]
+        public void Dungeon_KeepsCooldowns_TowerFloorResetsThem()
+        {
+            var c = new BalanceValues();
+            StageRunner dungeon = CreateRunner(c);
+            dungeon.Begin(5);
+            dungeon.Skills.SetCooldown(0, 12f);
+            Assert.IsTrue(dungeon.StartDungeon(DungeonKind.Gold));
+            Assert.AreEqual(12f, dungeon.Skills.CooldownRemaining(0), 1e-6, "a dungeon is not a boss fight");
+
+            StageRunner tower = CreateRunner(c);
+            tower.Begin(5);
+            tower.Skills.SetCooldown(0, 12f);
+            Assert.IsTrue(tower.StartTower(1));
+            Assert.AreEqual(0f, tower.Skills.CooldownRemaining(0), 1e-6, "every tower floor is a boss fight");
         }
 
         [Test]

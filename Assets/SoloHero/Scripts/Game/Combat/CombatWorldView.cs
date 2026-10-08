@@ -85,6 +85,9 @@ namespace SoloHero.Game.Combat
         private bool _heroAttackPending;
         private double _heroLastHp;
         private float _heroFlash;
+        private float _heroCastFlash;
+        private float _heroCastSeconds = 1f;
+        private Color _heroCastColor = Color.white;
         private int _lastKills;
         private float _cameraY = float.NaN;
         private float _heroLunge;
@@ -96,6 +99,18 @@ namespace SoloHero.Game.Combat
         private readonly SpriteFlipbook[] _enemyBooks = new SpriteFlipbook[EnemySlotVisualCount];
         private readonly SpriteFlash[] _enemyFlashFx = new SpriteFlash[EnemySlotVisualCount];
         private readonly EnemySlotState[] _slots = new EnemySlotState[EnemySlotVisualCount];
+
+        /// <summary>
+        /// D-146: the hero glows <paramref name="color"/> for <paramref name="seconds"/> as a skill is cast (a hit's red
+        /// flash wins while both run).
+        /// </summary>
+        public void FlashHero(Color color, float seconds)
+        {
+            if (seconds <= 0f) return;
+            _heroCastColor = color;
+            _heroCastSeconds = seconds;
+            _heroCastFlash = seconds;
+        }
 
         /// <summary>A killed enemy (not one cleared by a stage reset): world position, boss, whether it has a death clip.</summary>
         public event Action<Vector3, bool, bool> EnemyDied;
@@ -362,8 +377,19 @@ namespace SoloHero.Game.Combat
             }
 
             _heroFlash -= Time.deltaTime;
+            _heroCastFlash -= Time.deltaTime;
             _heroRenderer.color = hero.Shield > 0d ? ShieldTint : Color.white;
-            _heroFlashFx?.Set(_heroFlash / HitFlashSeconds);
+            if (_heroFlashFx == null) return;
+            if (_heroFlash > 0f || _heroCastFlash <= 0f)
+            {
+                _heroFlashFx.SetFlashColor(HeroHurtFlash);
+                _heroFlashFx.Set(_heroFlash / HitFlashSeconds);
+                return;
+            }
+
+            // A cast glow fades from 70 % toward the sprite's own colours.
+            _heroFlashFx.SetFlashColor(_heroCastColor);
+            _heroFlashFx.Set(0.7f * _heroCastFlash / _heroCastSeconds);
         }
 
         private static bool IsLoop(CharacterArt art, Sprite[] clip) =>

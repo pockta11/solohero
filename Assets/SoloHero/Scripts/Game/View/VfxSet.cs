@@ -16,11 +16,19 @@ namespace SoloHero.Game.View
 
         /// <summary>Half the frame height in world units at scale 1 (ground clips are raised by this x scale).</summary>
         public float halfHeight = 0.5f;
+
+        /// <summary>
+        /// D-146: the clip's halo (Art/Vfx/vfx{name}glow, tools/art/vfxgen3.py), drawn additively under it at the same
+        /// centre; its frames are padded, not shifted. Empty when the clip has none.
+        /// </summary>
+        public Sprite[] glow = new Sprite[0];
     }
 
     /// <summary>
     /// Sprite clips for combat VFX (E8-08, D-078). The five white clips are tinted per use (crit gold, heal green, ...);
-    /// <see cref="clips"/> holds the coloured skill clips looked up by the SkillDef.Vfx name.
+    /// <see cref="clips"/> holds the coloured skill clips looked up by the SkillDef.Vfx name. D-146: clips carry their
+    /// glow, the basic five are in <see cref="clips"/> too, and the cast layers (circle1..4, pillar, flash, shock) are
+    /// found by name like any clip.
     /// </summary>
     [CreateAssetMenu(menuName = "SoloHero/Art/Vfx Set")]
     public sealed class VfxSet : ScriptableObject

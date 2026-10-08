@@ -47,6 +47,7 @@ namespace SoloHero.Editor
         private const string StageSelectName = "StageSelect";
         private const string BossIntroName = "BossIntro";
         private const string FlashName = "ScreenFlash";
+        private const string CutInName = "SkillCutIn";
         private const string SkillBarName = "SkillBar";
         private const string SkillAutoName = "SkillAuto";
         private const string BasicSkillName = "BasicSkill";
@@ -396,7 +397,7 @@ namespace SoloHero.Editor
             UnwrapSafeArea(hud.transform);
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
-            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, AccountPopupName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, ShopName, JobName, BossIntroName, FlashName })
+            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, AccountPopupName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, ShopName, JobName, BossIntroName, FlashName, CutInName })
             {
                 Transform stale = hud.transform.Find(name);
                 if (stale != null) Object.DestroyImmediate(stale.gameObject);
@@ -457,6 +458,7 @@ namespace SoloHero.Editor
             BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily, dungeon, pet, achievements, tower, shop, jobPopup);
             BuildBossIntro(hud.transform, session);
             ScreenFlash flash = BuildFlash(hud.transform);
+            BuildSkillCutIn(hud.transform);
             WrapSafeArea(hud.transform);
             // The boss banner sits right above the HUD controls and under numbers and popups.
             Transform bossIntro = hud.transform.Find(BossIntroName);
@@ -464,6 +466,9 @@ namespace SoloHero.Editor
             // D-078 skill flash: over the battle and the HUD, under the damage numbers and popups.
             Transform damageLayer = hud.transform.Find(DamageLayerName);
             if (damageLayer != null) flash.transform.SetSiblingIndex(damageLayer.GetSiblingIndex());
+            // D-146 cut-in band: over the damage numbers, under every popup.
+            Transform cutIn = hud.transform.Find(CutInName);
+            if (cutIn != null && damageLayer != null) cutIn.SetSiblingIndex(damageLayer.GetSiblingIndex() + 1);
             WireJuice(hud, toast, flash);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -1453,6 +1458,82 @@ namespace SoloHero.Editor
             return rect.gameObject.AddComponent<ScreenFlash>();
         }
 
+        /// <summary>
+        /// D-146 skill cut-ins (SkillCutIn): a dim over the battle, a slanted navy band with a grade stripe, speed lines,
+        /// the job portrait and the ultimate's name for job ultimates; a gold name ribbon for legendary skills.
+        /// Nothing in it takes taps.
+        /// </summary>
+        private static void BuildSkillCutIn(Transform hud)
+        {
+            RectTransform holder = Rect(CutInName, hud, 0f, 0f, 1f, 1f);
+            SkillCutIn cutIn = holder.gameObject.AddComponent<SkillCutIn>();
+
+            RectTransform dimRect = Rect("Dim", holder, 0f, PanelTop, 1f, 1f);
+            Image dim = Plain(dimRect, UiSkin.White);
+            dim.preserveAspect = false;
+            dim.color = new Color(0.03f, 0.02f, 0.08f, 0f);
+            dim.enabled = false;
+
+            RectTransform band = Box("Band", holder, new Vector2(0.5f, 0.72f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1500f, 250f));
+            band.localRotation = Quaternion.Euler(0f, 0f, 6f);
+            Image back = Plain(Inset("Back", band, 0f, 0f, 0f, 0f), UiSkin.White);
+            back.preserveAspect = false;
+            back.color = new Color(0.07f, 0.05f, 0.17f, 0.92f);
+            Image accent = Plain(Rect("Accent", band, 0f, 0.86f, 1f, 0.97f), UiSkin.White);
+            accent.preserveAspect = false;
+            Image edge = Plain(Rect("Edge", band, 0f, 0.04f, 1f, 0.1f), UiSkin.White);
+            edge.preserveAspect = false;
+            edge.color = new Color(1f, 1f, 1f, 0.75f);
+            var lines = new RectTransform[7];
+            for (int i = 0; i < lines.Length; i++)
+            {
+                RectTransform line = Box("Line" + i, band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                    new Vector2(0f, -90f + i * 30f), new Vector2(180f + (i % 3) * 90f, i % 2 == 0 ? 6f : 4f));
+                Image lineImage = Plain(line, UiSkin.White);
+                lineImage.preserveAspect = false;
+                lineImage.color = new Color(1f, 1f, 1f, i % 2 == 0 ? 0.45f : 0.28f);
+                lines[i] = line;
+            }
+
+            Image portrait = Plain(Box("Portrait", band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-330f, 30f), new Vector2(430f, 430f)), null);
+            Text sub = AddText(Box("Sub", band, new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(-90f, 62f), new Vector2(700f, 50f)), 36, TextAnchor.MiddleLeft);
+            sub.color = UiPalette.HudGold;
+            sub.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Localize(sub, "hud.ultimate");
+            Text name = AddText(Box("Name", band, new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(-90f, -12f), new Vector2(780f, 110f)), 86, TextAnchor.MiddleLeft);
+            name.horizontalOverflow = HorizontalWrapMode.Overflow;
+            name.verticalOverflow = VerticalWrapMode.Overflow;
+            band.gameObject.SetActive(false);
+
+            RectTransform banner = Box("Banner", holder, new Vector2(0.5f, 0.745f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 112f));
+            CanvasGroup bannerGroup = banner.gameObject.AddComponent<CanvasGroup>();
+            bannerGroup.blocksRaycasts = false;
+            bannerGroup.interactable = false;
+            Image bannerGlow = Plain(Box("Glow", banner, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980f, 300f)), UiSkin.Hd("hd_glow"));
+            bannerGlow.preserveAspect = false;
+            UiSkin.Sliced(Plain(Inset("Ribbon", banner, 0f, 0f, 0f, 0f), null), UiSkin.Ribbon);
+            Text bannerName = AddText(Inset("Name", banner, 50f, 30f, 50f, 6f), 50, TextAnchor.MiddleCenter);
+            bannerName.horizontalOverflow = HorizontalWrapMode.Overflow;
+            bannerName.verticalOverflow = VerticalWrapMode.Overflow;
+            UiSkin.ButtonText(bannerName, Tone.Orange);
+            banner.gameObject.SetActive(false);
+
+            foreach (Graphic g in holder.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
+            var so = new SerializedObject(cutIn);
+            so.FindProperty("_dim").objectReferenceValue = dim;
+            so.FindProperty("_band").objectReferenceValue = band;
+            so.FindProperty("_bandAccent").objectReferenceValue = accent;
+            so.FindProperty("_portrait").objectReferenceValue = portrait;
+            so.FindProperty("_name").objectReferenceValue = name;
+            SetArray(so, "_lines", lines);
+            SetArray(so, "_jobArts", JobArts());
+            so.FindProperty("_banner").objectReferenceValue = banner;
+            so.FindProperty("_bannerGroup").objectReferenceValue = bannerGroup;
+            so.FindProperty("_bannerAccent").objectReferenceValue = bannerGlow;
+            so.FindProperty("_bannerName").objectReferenceValue = bannerName;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         /// <summary>E8-09 gold punch on the HUD gold label; toast, skill flash and skill-name labels for CombatFx.</summary>
         private static void WireJuice(GameObject hud, ToastQueue toast, ScreenFlash flash)
         {
@@ -1475,8 +1556,17 @@ namespace SoloHero.Editor
             {
                 var so = new SerializedObject(fx);
                 so.FindProperty("_toast").objectReferenceValue = toast;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            // D-146: the skill layer reaches the screen flash, the name labels and the cut-in band.
+            SkillFx skillFx = Object.FindObjectOfType<SkillFx>();
+            if (skillFx != null)
+            {
+                var so = new SerializedObject(skillFx);
                 so.FindProperty("_flash").objectReferenceValue = flash;
                 so.FindProperty("_labels").objectReferenceValue = hud.GetComponentInChildren<DamageTextPool>(true);
+                so.FindProperty("_cutIn").objectReferenceValue = hud.GetComponentInChildren<SkillCutIn>(true);
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
         }
@@ -1826,7 +1916,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void WrapSafeArea(Transform hud)
         {
-            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, AccountPopupName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, ShopName, JobName, BossIntroName, FlashName };
+            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, AccountPopupName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, ShopName, JobName, BossIntroName, FlashName, CutInName };
             RectTransform safe = Rect(SafeAreaName, hud, 0f, 0f, 1f, 1f);
             safe.gameObject.AddComponent<SafeAreaFitter>();
             var move = new System.Collections.Generic.List<Transform>();
@@ -3143,6 +3233,7 @@ namespace SoloHero.Editor
             var times = new Text[total];
             var locks = new Text[total];
             var punches = new UiPunch[total];
+            var castGlows = new Image[total];
             var readyMarks = new GameObject[total];
             Sprite lockSprite = UiSkin.Icon("lock");
             float firstX = (1080f - (count - 1) * slotStep) / 2f;
@@ -3194,6 +3285,11 @@ namespace SoloHero.Editor
                 ready.gameObject.AddComponent<UiPulse>();
                 ready.gameObject.SetActive(false);
                 readyMarks[i] = ready.gameObject;
+
+                // D-146: a soft burst over the slot when its skill goes off (BattleHud fades and grows it).
+                RectTransform castGlow = Box("CastGlow", slot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(slotSize + 70f, slotSize + 70f));
+                castGlows[i] = Plain(castGlow, UiSkin.Hd("hd_glow"));
+                castGlows[i].enabled = false;
 
                 locks[i] = MakeText("Lock", slot, 0f, 0.04f, 1f, 0.42f, "", 26, TextAnchor.MiddleCenter);
                 RectTransform lockIcon = Rect("LockIcon", locks[i].transform, 0.3f, 1.05f, 0.7f, 2.1f);
@@ -3266,6 +3362,7 @@ namespace SoloHero.Editor
             SetArray(so, "_skillTimes", times);
             SetArray(so, "_skillLocks", locks);
             SetArray(so, "_skillPunches", punches);
+            SetArray(so, "_skillCastGlows", castGlows);
         }
 
         /// <summary>D-106: a currency pill in the top bar, x from the left edge, with its icon overlapping the left end.</summary>

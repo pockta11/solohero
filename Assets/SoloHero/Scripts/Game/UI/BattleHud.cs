@@ -53,6 +53,8 @@ namespace SoloHero.Game.UI
         [SerializeField] private Text[] _skillTimes = new Text[0];
         [SerializeField] private Text[] _skillLocks = new Text[0];
         [SerializeField] private UiPunch[] _skillPunches = new UiPunch[0];
+        [Tooltip("D-146: a burst of light over a slot as its skill is cast, auto or tapped (grade coloured).")]
+        [SerializeField] private Image[] _skillCastGlows = new Image[0];
         [Header("Skill auto / manual toggle (D-085)")]
         [SerializeField] private Image _autoImage;
         [SerializeField] private Text _autoLabel;
@@ -100,6 +102,9 @@ namespace SoloHero.Game.UI
         private bool _retreatPromptVisible;
         private SkillDef[] _shownDefs = new SkillDef[0];
         private int[] _shownSeconds = new int[0];
+        private float[] _shownRemaining = new float[0];
+        private float[] _castGlowAge = new float[0];
+        private const float CastGlowSeconds = 0.5f;
         private bool[] _shownLocked = new bool[0];
         private int _shownSkillLevel = -1;
         private StageRunner _skillRunner;
@@ -265,8 +270,38 @@ namespace SoloHero.Game.UI
                 return;
             }
 
-            if (runner.Skills.TryCast(slot, runner.Hero, runner.World).Ok && slot < _skillPunches.Length && _skillPunches[slot] != null)
-                _skillPunches[slot].Play();
+            // The slot punches when its cooldown restarts (OnSlotCast), for taps and auto casts alike.
+            runner.Skills.TryCast(slot, runner.Hero, runner.World);
+        }
+
+        private void OnSlotCast(int slot, SkillDef def)
+        {
+            if (slot < _skillPunches.Length && _skillPunches[slot] != null) _skillPunches[slot].Play();
+            if (slot >= _skillCastGlows.Length || _skillCastGlows[slot] == null) return;
+            _castGlowAge[slot] = 0f;
+            Color color = Color.Lerp(SoloHero.Game.UI.Panels.PanelServices.GradeColor(def.Grade), Color.white, 0.3f);
+            _skillCastGlows[slot].color = color;
+        }
+
+        private void DrawCastGlow(int slot)
+        {
+            if (slot >= _skillCastGlows.Length || _skillCastGlows[slot] == null || _castGlowAge[slot] < 0f) return;
+            Image glow = _skillCastGlows[slot];
+            _castGlowAge[slot] += Time.unscaledDeltaTime;
+            float t = _castGlowAge[slot] / CastGlowSeconds;
+            if (t >= 1f)
+            {
+                _castGlowAge[slot] = -1f;
+                glow.enabled = false;
+                return;
+            }
+
+            glow.enabled = true;
+            Color c = glow.color;
+            c.a = (1f - t) * (1f - t);
+            glow.color = c;
+            float scale = 0.8f + 0.6f * t;
+            glow.rectTransform.localScale = new Vector3(scale, scale, 1f);
         }
 
         /// <summary>Index of the skill tab in the bottom tab bar (character, equipment, summon, skill, talent).</summary>
@@ -497,6 +532,14 @@ namespace SoloHero.Game.UI
                 _shownDefs = new SkillDef[count];
                 _shownSeconds = new int[count];
                 _shownLocked = new bool[count];
+                _shownRemaining = new float[count];
+                _castGlowAge = new float[count];
+                for (int i = 0; i < count; i++)
+                {
+                    // A slot already cooling down when the bar (re)builds is not a fresh cast.
+                    _shownRemaining[i] = float.MaxValue;
+                    _castGlowAge[i] = -1f;
+                }
                 for (int i = 0; i < count; i++)
                 {
                     _shownSeconds[i] = -1;
@@ -516,6 +559,8 @@ namespace SoloHero.Game.UI
                 bool locked = i != runner.Skills.UltimateSlot && _save != null && _balance != null && !SkillService.IsSlotUnlocked(_balance, i, _save.heroLevel);
                 if (def != _shownDefs[i] || locked != _shownLocked[i] || levelChanged)
                 {
+                    // A newly equipped skill's cooldown is not a cast.
+                    if (def != _shownDefs[i]) _shownRemaining[i] = float.MaxValue;
                     _shownDefs[i] = def;
                     _shownLocked[i] = locked;
                     DrawSkillSlot(i, def, locked);
@@ -524,6 +569,10 @@ namespace SoloHero.Game.UI
 
                 float remaining = def != null ? runner.Skills.CooldownRemaining(i) : 0f;
                 float total = def != null ? runner.Skills.CooldownTotal(i) : 0f;
+                // D-146: a cooldown that jumps back up means the skill just went off (auto or tapped).
+                if (def != null && remaining > _shownRemaining[i] + 0.5f) OnSlotCast(i, def);
+                _shownRemaining[i] = remaining;
+                DrawCastGlow(i);
                 Image overlay = i < _skillCooldowns.Length ? _skillCooldowns[i] : null;
                 if (overlay != null)
                 {

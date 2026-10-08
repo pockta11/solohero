@@ -332,7 +332,9 @@ namespace SoloHero.Editor
                     frames = frames,
                     fps = fps,
                     ground = ground,
-                    halfHeight = frames[0].rect.height * 0.5f / frames[0].pixelsPerUnit
+                    halfHeight = frames[0].rect.height * 0.5f / frames[0].pixelsPerUnit,
+                    // D-146: the additive halo of tools/art/vfxgen3.py, optional.
+                    glow = Clip(dir, "vfx" + name + "glow", "play", false)
                 });
             }
 
@@ -352,7 +354,11 @@ namespace SoloHero.Editor
             // D-098 unique clips: glacier spear, judgement sword, quick slash cross, time stop clock.
             ("spear", false, 18f), ("judge", true, 16f), ("cross", false, 22f), ("clock", false, 14f),
             // D-109 mark skills' target sigil.
-            ("mark", false, 16f)
+            ("mark", false, 16f),
+            // D-146: the basic white clips by name (so they carry their glow too) and the cast layers of SkillFx.
+            ("slash", false, 18f), ("whirl", false, 18f), ("ring", false, 18f), ("boom", false, 18f), ("spark", false, 18f),
+            ("circle1", false, 16f), ("circle2", false, 16f), ("circle3", false, 16f), ("circle4", false, 16f),
+            ("pillar", true, 16f), ("flash", false, 20f), ("shock", false, 18f)
         };
 
         /// <summary>D-078: Art/Icons/Skills/skill_{id}.png for every catalog skill, plus the lock icon.</summary>
@@ -897,6 +903,90 @@ namespace SoloHero.Editor
             fxSo.FindProperty("_themes").objectReferenceValue = themes;
             fxSo.FindProperty("_particles").objectReferenceValue = WireParticles();
             fxSo.ApplyModifiedPropertiesWithoutUndo();
+
+            // D-146: additive glows from the pool, and the skill layer (GameUiBuilder wires its screen flash, labels
+            // and cut-in band from the HUD).
+            poolSo.Update();
+            poolSo.FindProperty("_additive").objectReferenceValue = AdditiveMaterial("VfxAdditive", null);
+            poolSo.ApplyModifiedPropertiesWithoutUndo();
+            SkillFx skillFx = root.AddComponent<SkillFx>();
+            var skillSo = new SerializedObject(skillFx);
+            skillSo.FindProperty("_session").objectReferenceValue = session;
+            skillSo.FindProperty("_view").objectReferenceValue = view;
+            skillSo.FindProperty("_vfx").objectReferenceValue = pool;
+            skillSo.FindProperty("_set").objectReferenceValue = set;
+            skillSo.FindProperty("_shake").objectReferenceValue = shake;
+            skillSo.FindProperty("_particles").objectReferenceValue = WireSkillParticles();
+            skillSo.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>D-146: a material on SoloHero/SpriteAdditive (Art/Materials/{name}.mat), with a texture for particles.</summary>
+        private static Material AdditiveMaterial(string name, Texture2D texture)
+        {
+            string path = ArtRoot + "/Materials/" + name + ".mat";
+            Shader shader = Shader.Find("SoloHero/SpriteAdditive");
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.shader = shader;
+            if (texture != null) material.mainTexture = texture;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        /// <summary>
+        /// D-146 skill light: an additive ParticleSystem without gravity (manual Emit only) whose square motes shrink and
+        /// fade; SkillFx gives every burst its own speed and colour (embers rise, sparks spray, snow falls).
+        /// </summary>
+        private static SkillParticles WireSkillParticles()
+        {
+            GameObject old = GameObject.Find("SkillParticles");
+            if (old != null) Object.DestroyImmediate(old);
+            var go = new GameObject("SkillParticles");
+            ParticleSystem ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ParticleSystem.MainModule main = ps.main;
+            main.playOnAwake = false;
+            main.duration = 1f;
+            main.startLifetime = 0.6f;
+            main.startSpeed = 0f;
+            main.startSize = 0.1f;
+            main.gravityModifier = 0f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 600;
+            main.loop = true;
+            main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.enabled = false;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.enabled = false;
+            ParticleSystem.LimitVelocityOverLifetimeModule limit = ps.limitVelocityOverLifetime;
+            limit.enabled = true;
+            limit.limit = 8f;
+            limit.dampen = 0.08f;
+            ParticleSystem.SizeOverLifetimeModule size = ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(0.6f, 0.8f), new Keyframe(1f, 0.2f)));
+            ParticleSystem.ColorOverLifetimeModule color = ps.colorOverLifetime;
+            color.enabled = true;
+            var fade = new Gradient();
+            fade.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.85f, 0.55f), new GradientAlphaKey(0f, 1f) });
+            color.color = fade;
+
+            ParticleSystemRenderer renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sortingOrder = 262;
+            renderer.sharedMaterial = AdditiveMaterial("SkillParticle", AssetDatabase.LoadAssetAtPath<Texture2D>(ArtRoot + "/UI/ui_white.png"));
+            SkillParticles particles = go.AddComponent<SkillParticles>();
+            var so = new SerializedObject(particles);
+            so.FindProperty("_system").objectReferenceValue = ps;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return particles;
         }
 
         private static void PrepareActor(SpriteRenderer renderer, CharacterArt art, int sortingOrder, Material material)

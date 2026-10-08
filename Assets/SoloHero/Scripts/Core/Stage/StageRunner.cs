@@ -132,7 +132,8 @@ namespace SoloHero.Core.Stage
             DungeonStones = 0;
             _world.ClearAll();
             _spawner.Reset(int.MaxValue, false);
-            _skills.ResetCooldowns();
+            // D-147: a dungeon is not a boss fight, so the skills keep their cooldowns.
+            _skills.ClearPendingWaves();
             _pet.Reset();
             _hero.Reset(_stats);
             _dungeon = kind;
@@ -177,6 +178,7 @@ namespace SoloHero.Core.Stage
             _introTimer = _balance.TOWER_FLOOR_INTRO;
             _world.ClearAll();
             _spawner.Reset(1, true);
+            // D-147: every floor is a boss fight and starts with every skill ready.
             _skills.ResetCooldowns();
             _pet.Reset();
         }
@@ -206,7 +208,10 @@ namespace SoloHero.Core.Stage
             _retryTimer = 0f;
             _world.ClearAll();
             _spawner.Reset(_killTarget, _isBoss);
-            _skills.ResetCooldowns();
+            // D-147: only a boss fight starts with every skill ready. Between normal stages (running on, a restart after
+            // falling, the way back from a boss, a dungeon or the tower) cooldowns and buffs carry on.
+            if (_isBoss) _skills.ResetCooldowns();
+            else _skills.ClearPendingWaves();
             _pet.Reset();
             _hero.Reset(_stats, keepPosition);
 
@@ -235,7 +240,7 @@ namespace SoloHero.Core.Stage
             FailStreak = 0;
             _retreatMode = true;
             _challenging = false;
-            Begin(_g - 1);
+            Begin(StageIndex.NormalStageBelow(_g, _balance.STAGES_PER_CHAPTER));
             return true;
         }
 
@@ -518,7 +523,7 @@ namespace SoloHero.Core.Stage
                 _challenging = false;
                 _retreatMode = true;
                 FailStreak = 0;
-                Begin(_failedG - 1);
+                Begin(StageIndex.NormalStageBelow(_failedG, _balance.STAGES_PER_CHAPTER));
                 return;
             }
 

@@ -23,6 +23,7 @@ namespace SoloHero.Game.Diagnostics
         private float _sinceLog;
         private long _peakDrawCalls;
         private long _peakBatches;
+        private long _logPeakDrawCalls;
         private string _text = "";
         private GUIStyle _style;
         private ProfilerRecorder _drawCalls;
@@ -65,6 +66,7 @@ namespace SoloHero.Game.Diagnostics
             long drawCalls = _drawCalls.Valid ? _drawCalls.LastValue : -1;
             long batches = _batches.Valid ? _batches.LastValue : -1;
             if (drawCalls > _peakDrawCalls) _peakDrawCalls = drawCalls;
+            if (drawCalls > _logPeakDrawCalls) _logPeakDrawCalls = drawCalls;
             if (batches > _peakBatches) _peakBatches = batches;
             if (_elapsed < Window) return;
 
@@ -75,9 +77,11 @@ namespace SoloHero.Game.Diagnostics
                 + (_setPass.Valid ? _setPass.LastValue : -1) + " pass  " + memory + " MB";
             if (_sinceLog >= LogEvery)
             {
+                // windowPeak: the highest frame since the previous line (peakDrawCalls is since launch).
                 Debug.Log("[Perf] fps=" + fps + " worstMs=" + worst + " drawCalls=" + drawCalls + " peakDrawCalls=" + _peakDrawCalls
-                    + " batches=" + batches + " peakBatches=" + _peakBatches + " memMB=" + memory);
+                    + " windowPeak=" + _logPeakDrawCalls + " batches=" + batches + " peakBatches=" + _peakBatches + " memMB=" + memory);
                 _sinceLog = 0f;
+                _logPeakDrawCalls = 0;
             }
 
             _elapsed = 0f;
