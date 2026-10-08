@@ -45,11 +45,6 @@ namespace SoloHero.Tests.EditMode
             Assert.IsFalse(data.sfxMuted);
             Assert.IsFalse(data.lowEffectMode);
             Assert.IsFalse(data.fps30Mode);
-            Assert.AreEqual(0, data.rebirthCount);
-            Assert.AreEqual(0d, data.soul);
-            Assert.AreEqual(0, data.permGoldLevel);
-            Assert.AreEqual(0, data.permAtkLevel);
-            Assert.AreEqual(0, data.permOfflineLevel);
             Assert.AreEqual(SaveDataV2.CurrentVersion, data.dataVersion);
         }
     }

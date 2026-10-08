@@ -337,13 +337,6 @@ namespace SoloHero.Core.Config
         public int TALENT_RESET_GEM = 100;
         public int STAGES_PER_CHAPTER = 10;
         public int MVP_CHAPTERS = 5;
-
-        // D-117 rebirth: permanent boosts bought with Soul (RebirthService). Gold x(1 + GOLD_GAIN)^level, ATK
-        // x(1 + ATK_GAIN)^level, offline gold +OFFLINE_GAIN x level; level n -> n + 1 costs COST_BASE + n Soul.
-        public double REBIRTH_GOLD_GAIN = 0.1;
-        public double REBIRTH_ATK_GAIN = 0.1;
-        public double REBIRTH_OFFLINE_GAIN = 0.1;
-        public int REBIRTH_COST_BASE = 1;
         public float STAGE_CLEAR_DELAY = 2f;
         public float STAGE_RETRY_DELAY = 3f;
         public float BOSS_FAIL_AUTO_RETREAT = 5f;

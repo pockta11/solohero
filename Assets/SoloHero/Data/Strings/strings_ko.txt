@@ -488,7 +488,6 @@ achieve.name.pet_pulls	펫 소환
 achieve.name.gear_owned	장비 수집
 achieve.name.pets_owned	펫 수집
 achieve.name.skills_owned	스킬 수집
-toast.not_enough_soul	소울이 부족합니다
 pet.title	펫
 pet.row	{0}  Lv {1}
 pet.cell	Lv {0}

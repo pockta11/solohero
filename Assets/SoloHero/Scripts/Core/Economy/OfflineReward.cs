@@ -22,8 +22,7 @@ namespace SoloHero.Core.Economy
             CountedSeconds = countedSeconds;
         }
 
-        /// <param name="goldMult">D-117: the permanent rebirth boosts (RebirthService.OfflineMult).</param>
-        public static OfflineReward Compute(BalanceValues balance, int farmingStage, long lastQuitTimeUtc, long nowUtc, double goldMult = 1d)
+        public static OfflineReward Compute(BalanceValues balance, int farmingStage, long lastQuitTimeUtc, long nowUtc)
         {
             if (lastQuitTimeUtc <= 0 || balance.OFFLINE_DIVISOR == 0d) return new OfflineReward(0d, false, false, false);
 
@@ -33,7 +32,7 @@ namespace SoloHero.Core.Economy
 
             long counted = elapsed > balance.OFFLINE_CAP ? balance.OFFLINE_CAP : elapsed;
             int stage = farmingStage < 1 ? 1 : farmingStage;
-            double gold = Formulas.StageGold(balance, stage) / balance.OFFLINE_DIVISOR * counted * (goldMult > 0d ? goldMult : 1d);
+            double gold = Formulas.StageGold(balance, stage) / balance.OFFLINE_DIVISOR * counted;
             bool showPopup = elapsed >= balance.OFFLINE_MIN_SECONDS;
             return new OfflineReward(gold, showPopup, !showPopup && counted > 0, false, counted);
         }

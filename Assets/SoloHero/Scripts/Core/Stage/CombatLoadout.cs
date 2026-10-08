@@ -36,7 +36,7 @@ namespace SoloHero.Core.Stage
                 save.upgradeAtk + (raised == UpgradeLane.Atk ? 1 : 0),
                 save.upgradeDef + (raised == UpgradeLane.Def ? 1 : 0),
                 save.upgradeSpd + (raised == UpgradeLane.Spd ? 1 : 0),
-                bonus.AtkMult * SoloHero.Core.Progression.RebirthService.AtkMult(balance, save),
+                bonus.AtkMult,
                 bonus.HpMult,
                 bonus.HelmMult,
                 bonus.BootsSpeedBonus,

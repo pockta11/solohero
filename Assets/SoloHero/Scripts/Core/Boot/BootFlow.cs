@@ -73,8 +73,7 @@ namespace SoloHero.Core.Boot
             OfflineReward offline;
             try
             {
-                offline = OfflineReward.Compute(balance, data.farmingStage, data.lastQuitTimeUtc, clock.UtcNowSeconds,
-                    SoloHero.Core.Progression.RebirthService.OfflineMult(balance, data));
+                offline = OfflineReward.Compute(balance, data.farmingStage, data.lastQuitTimeUtc, clock.UtcNowSeconds);
                 if (offline.GrantNow)
                 {
                     data.gold += offline.Gold;

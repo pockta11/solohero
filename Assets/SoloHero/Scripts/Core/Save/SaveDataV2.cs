@@ -127,20 +127,10 @@ namespace SoloHero.Core.Save
         public bool notificationsOff;
         public bool notifyAsked;
 
-        public int rebirthCount;
-
-        /// <summary>D-117: the best stage and hero level of any run (a rebirth resets the run's own).</summary>
-        public int bestStageEver;
-        public int bestHeroLevel;
-
         /// <summary>D-118: lifetime enemy and boss kills, and the achievement tiers claimed (index-aligned with AchievementCatalog).</summary>
         public long totalKills;
         public int bossKills;
         public List<int> achievementTiers = new List<int>();
-        public double soul;
-        public int permGoldLevel;
-        public int permAtkLevel;
-        public int permOfflineLevel;
 
         public int dataVersion = CurrentVersion;
 

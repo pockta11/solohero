@@ -66,7 +66,7 @@ namespace SoloHero.Core.Pets
         public bool IsUnlocked(SaveDataV2 data) => IsUnlocked(_balance, data);
 
         public static bool IsUnlocked(BalanceValues balance, SaveDataV2 data) =>
-            data != null && balance != null && SoloHero.Core.Progression.RebirthService.BestStage(data) >= balance.PET_UNLOCK_STAGE;
+            data != null && balance != null && data.highestStage >= balance.PET_UNLOCK_STAGE;
 
         public PetSummonResult TryPull(SaveDataV2 data)
         {

@@ -50,13 +50,11 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void Progress_ReadsBestOfAnyRun_AndCollections()
+        public void Progress_ReadsTheSavesTotals_AndCollections()
         {
             var save = SaveDataV2.CreateNew();
-            save.highestStage = 12;
-            save.bestStageEver = 57;
-            save.heroLevel = 3;
-            save.bestHeroLevel = 41;
+            save.highestStage = 57;
+            save.heroLevel = 41;
             save.petOwned.Add("slime");
             save.petOwned.Add("wisp");
 

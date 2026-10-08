@@ -317,7 +317,7 @@ users/{uid}/v2         ← v2. 이후 모든 읽기/쓰기
 ```
 
 **DTO 규약**
-- `SaveDataV2` — 평면 필드 + `List<string> ownedEquipment` + `List<bool> chapterFirstClearFlags`. 필드명은 GDD `저장 상태와 화면 대응` 표의 영문 식별자를 **그대로** 쓴다 (`gold`, `gem`, `highestStage`, `farmingStage`, `retreatMode`, `heroLevel`, `heroExp`, `upgradeHp/Atk/Def/Spd`, `equippedSword/Helm/Armor/Boots`, `pityCount`, `totalPullCount`, `skillLevel1~3`, `lastQuitTimeUtc`, `adCountA1~A3`, `adCountResetDate`, `goldBoosterEndUtc`, `tutorialStep`, `bgmMuted`, `sfxMuted`, `lowEffectMode`, `fps30Mode`, `rebirthCount`, `soul`, `permGoldLevel`, `permAtkLevel`, `permOfflineLevel`, `dataVersion = 2`).
+- `SaveDataV2` — 평면 필드 + `List<string> ownedEquipment` + `List<bool> chapterFirstClearFlags`. 필드명은 GDD `저장 상태와 화면 대응` 표의 영문 식별자를 **그대로** 쓴다 (`gold`, `gem`, `highestStage`, `farmingStage`, `retreatMode`, `heroLevel`, `heroExp`, `upgradeHp/Atk/Def/Spd`, `equippedSword/Helm/Armor/Boots`, `pityCount`, `totalPullCount`, `skillLevel1~3`, `lastQuitTimeUtc`, `adCountA1~A3`, `adCountResetDate`, `goldBoosterEndUtc`, `tutorialStep`, `bgmMuted`, `sfxMuted`, `lowEffectMode`, `fps30Mode`, `dataVersion = 2`; 프레스티지 예약 필드는 D-126에서 삭제).
 - 수치형은 D3에 따라 `double`/`int`. 스테이지는 전역 인덱스 `g`(int) 하나로 저장하고 (챕터, 스테이지)는 표시 시 계산한다.
 - `PlayerDataV1`(As-Is `PlayerData.cs` 개명)은 JsonUtility로만 읽고 쓰지 않는다.
 - Newtonsoft: `MissingMemberHandling.Ignore`, 누락 필드는 C# 기본값. IL2CPP 스트리핑 대비 `link.xml`에 `SaveDataV2` 보존.

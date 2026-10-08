@@ -31,8 +31,8 @@ namespace SoloHero.Core.Progression
             {
                 case AchievementKind.Kills: return data.totalKills;
                 case AchievementKind.BossKills: return data.bossKills;
-                case AchievementKind.BestStage: return RebirthService.BestStage(data);
-                case AchievementKind.HeroLevel: return Math.Max(data.heroLevel, data.bestHeroLevel);
+                case AchievementKind.BestStage: return data.highestStage;
+                case AchievementKind.HeroLevel: return data.heroLevel;
                 case AchievementKind.GearPulls: return data.totalPullCount;
                 case AchievementKind.SkillPulls: return data.skillPullCount;
                 case AchievementKind.PetPulls: return data.petPullCount;

@@ -210,10 +210,6 @@ namespace SoloHero.Game.Config
         public int TALENT_RESET_GEM = 100;
         public int STAGES_PER_CHAPTER = 10;
         public int MVP_CHAPTERS = 5;
-        public double REBIRTH_GOLD_GAIN = 0.1;
-        public double REBIRTH_ATK_GAIN = 0.1;
-        public double REBIRTH_OFFLINE_GAIN = 0.1;
-        public int REBIRTH_COST_BASE = 1;
         public float STAGE_CLEAR_DELAY = 2f;
         public float STAGE_RETRY_DELAY = 3f;
         public float BOSS_FAIL_AUTO_RETREAT = 5f;
@@ -504,10 +500,6 @@ namespace SoloHero.Game.Config
                 TALENT_RESET_GEM = TALENT_RESET_GEM,
                 STAGES_PER_CHAPTER = STAGES_PER_CHAPTER,
                 MVP_CHAPTERS = MVP_CHAPTERS,
-                REBIRTH_GOLD_GAIN = REBIRTH_GOLD_GAIN,
-                REBIRTH_ATK_GAIN = REBIRTH_ATK_GAIN,
-                REBIRTH_OFFLINE_GAIN = REBIRTH_OFFLINE_GAIN,
-                REBIRTH_COST_BASE = REBIRTH_COST_BASE,
                 STAGE_CLEAR_DELAY = STAGE_CLEAR_DELAY,
                 STAGE_RETRY_DELAY = STAGE_RETRY_DELAY,
                 BOSS_FAIL_AUTO_RETREAT = BOSS_FAIL_AUTO_RETREAT,

@@ -308,8 +308,7 @@ namespace SoloHero.Core.Stage
                     _clearTimer = 0f;
                     FailStreak = 0;
                     _challenging = false;
-                    // D-117: the permanent rebirth gold boost multiplies every clear.
-                    _stageReward.ApplyClear(_g, ClearGoldMultiplier * SoloHero.Core.Progression.RebirthService.GoldMult(_balance, _save));
+                    _stageReward.ApplyClear(_g, ClearGoldMultiplier);
                     if (_isBoss) _save.bossKills++;
                     StageCleared?.Invoke(_g);
                 }
@@ -352,7 +351,7 @@ namespace SoloHero.Core.Stage
                 _save.totalKills++;
                 if (_dungeon == DungeonKind.Gold)
                 {
-                    double gold = Formulas.DungeonGoldPerKill(_balance, _g) * SoloHero.Core.Progression.RebirthService.GoldMult(_balance, _save);
+                    double gold = Formulas.DungeonGoldPerKill(_balance, _g);
                     _save.gold += gold;
                     DungeonEarned += gold;
                 }
