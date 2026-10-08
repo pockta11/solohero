@@ -105,6 +105,9 @@ namespace SoloHero.Game.Boot
             Services.Register(new GemShop(balance, requester));
             Services.Register(new SoloHero.Core.Daily.DailyService(balance, _data, clock, requester));
             Services.Register(new SoloHero.Core.Stage.DungeonService(balance, _data, clock, requester));
+            // D-128 daily shop, D-130 infinite tower.
+            Services.Register(new ShopService(balance, _data, clock, requester));
+            Services.Register(new SoloHero.Core.Stage.TowerService(balance, _data, requester));
         }
 
         private void RegisterSettingsAndAudio()

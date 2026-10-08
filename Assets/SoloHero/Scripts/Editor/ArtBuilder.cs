@@ -62,6 +62,12 @@ namespace SoloHero.Editor
             ("Ch3_Forest", "Forest", new[] { "mushroom", "flyeye", "goblinr" }, "golem", "bgm_ch3"),
             ("Ch4_Dusk", "Dusk", new[] { "skeletonv", "flyeyer", "mushroomb" }, "shadowmage", "bgm_ch4"),
             ("Ch5_Sunset", "Sunset", new[] { "goblinr", "skeletonv", "flyeyer" }, "firemage", "bgm_ch5"),
+            // D-131 chapters 6-10 (new bosses and recolours; music reused).
+            ("Ch6_Desert", "Desert", new[] { "goblins", "skeleton", "flyeye" }, "sandking", "bgm_ch5"),
+            ("Ch7_Volcano", "Volcano", new[] { "goblinr", "skeletonr", "flyeyer" }, "lavagolem", "bgm_ch4"),
+            ("Ch8_Swamp", "Swamp", new[] { "mushroomg", "goblin", "flyeye" }, "swampwitch", "bgm_ch3"),
+            ("Ch9_Crystal", "Crystal", new[] { "flyeyec", "skeletonv", "mushroomb" }, "crystalgolem", "bgm_ch2"),
+            ("Ch10_Castle", "Castle", new[] { "skeletonr", "goblinr", "flyeyer" }, "demonknight", "bgm_ch4"),
         };
 
         /// <summary>
@@ -76,6 +82,11 @@ namespace SoloHero.Editor
             ("goblinr", "flyeye", "mushroom", "skeleton"),
             ("goblinr", "flyeyer", "mushroomb", "skeletonv"),
             ("goblinr", "flyeyer", "mushroom", "skeletonv"),
+            ("goblins", "flyeye", "mushroom", "skeleton"),
+            ("goblinr", "flyeyer", "mushroomb", "skeletonr"),
+            ("goblin", "flyeye", "mushroomg", "skeleton"),
+            ("goblinr", "flyeyec", "mushroomb", "skeletonv"),
+            ("goblinr", "flyeyer", "mushroomb", "skeletonr"),
         };
 
         /// <summary>
@@ -90,6 +101,11 @@ namespace SoloHero.Editor
             { "flyeye", ("Enemy_FlyingEye", 1) }, { "flyeyer", ("Enemy_FlyingEyeRed", 1) },
             { "ronin", ("Boss_Ronin", 1) }, { "necro", ("Boss_Necromancer", 1) }, { "ranger", ("Boss_Ranger", 1) },
             { "shadowmage", ("Boss_ShadowMage", 1) }, { "firemage", ("Boss_FireMage", 1) }, { "golem", ("Boss_Golem", 1) },
+            // D-131 chapters 6-10.
+            { "goblins", ("Enemy_GoblinSand", 1) }, { "skeletonr", ("Enemy_SkeletonRed", 1) },
+            { "mushroomg", ("Enemy_MushroomGreen", 1) }, { "flyeyec", ("Enemy_FlyingEyeCyan", 1) },
+            { "sandking", ("Boss_SandKing", 1) }, { "lavagolem", ("Boss_LavaGolem", 1) }, { "swampwitch", ("Boss_SwampWitch", 1) },
+            { "crystalgolem", ("Boss_CrystalGolem", 1) }, { "demonknight", ("Boss_DemonKnight", 1) },
         };
 
         [MenuItem("Tools/Setup/Build Art")]

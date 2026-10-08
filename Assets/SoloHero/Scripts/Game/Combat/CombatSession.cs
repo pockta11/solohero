@@ -95,6 +95,7 @@ namespace SoloHero.Game.Combat
 
         private void OnDestroy()
         {
+            Time.timeScale = 1f;
             if (_telemetry != null)
             {
                 _telemetry.Flush();
@@ -110,8 +111,11 @@ namespace SoloHero.Game.Combat
         {
             if (!enabled || _runner == null) return;
             _runner.ClearGoldMultiplier = _ads != null ? _ads.StageGoldMultiplier : 1d;
+            // D-129: the speed booster scales game time (logic, animation, effects); timers in real time stay real.
+            float speed = _ads != null ? _ads.BattleSpeedMultiplier : 1f;
+            if (!Mathf.Approximately(Time.timeScale, speed)) Time.timeScale = speed;
             _runner.Tick(Time.deltaTime);
-            _telemetry?.Tick(Time.deltaTime);
+            _telemetry?.Tick(Time.unscaledDeltaTime);
             if (_save.heroLevel != _appliedHeroLevel) RefreshLoadout();
         }
 

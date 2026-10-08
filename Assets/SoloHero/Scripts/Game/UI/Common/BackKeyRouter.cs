@@ -18,6 +18,8 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private DungeonPresenter _dungeon;
         [SerializeField] private PetPresenter _pet;
         [SerializeField] private AchievementPresenter _achievements;
+        [SerializeField] private TowerPresenter _tower;
+        [SerializeField] private ShopPresenter _shop;
         [SerializeField] private JobPresenter _job;
         [SerializeField] private PanelHost _panels;
         [SerializeField] private GameObject _quitConfirm;
@@ -84,6 +86,18 @@ namespace SoloHero.Game.UI.Common
             if (_achievements != null && _achievements.IsOpen)
             {
                 _achievements.Close();
+                return;
+            }
+
+            if (_tower != null && _tower.IsOpen)
+            {
+                _tower.Close();
+                return;
+            }
+
+            if (_shop != null && _shop.IsOpen)
+            {
+                _shop.Close();
                 return;
             }
 

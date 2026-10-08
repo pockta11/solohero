@@ -168,6 +168,40 @@ namespace SoloHero.Core.Config
         public int AD_FREE_GEAR_DAILY = 2;
         public int AD_FREE_PET_DAILY = 1;
         public int AD_FREE_SUMMON_PULLS = 10;
+
+        // D-129 ad speed booster (A-6, genre "2x speed"): the battle runs AD_SPEED_MULT times faster for AD_SPEED_SECONDS of
+        // real time, AD_SPEED_DAILY times a day (once: three a day put ad players two to three chapters ahead by day 7).
+        public int AD_SPEED_DAILY = 1;
+        public double AD_SPEED_SECONDS = 1800;
+        public float AD_SPEED_MULT = 2f;
+
+        // D-127 recommended combat power (calibrated on the sim's first clears): REC_CP_BASE x REC_CP_GROWTH^(g - 1),
+        // bosses x REC_CP_BOSS_MULT. Shown next to the hero's combat power, green once met.
+        public double REC_CP_BASE = 150;
+        public double REC_CP_GROWTH = 1.15;
+        public double REC_CP_BOSS_MULT = 1.1;
+
+        // D-128 summon tickets and the daily shop: one ticket is one pull of its summon. Every day one free gear bundle
+        // and one discounted bundle per summon (gems); the gold package moved here from the summon page.
+        public int SHOP_FREE_GEAR_TICKETS = 5;
+        public int SHOP_DEAL_TICKETS = 10;
+        public int SHOP_DEAL_GEAR_GEM = 150;
+        public int SHOP_DEAL_SKILL_GEM = 180;
+        public int SHOP_DEAL_PET_GEM = 180;
+
+        // D-130 infinite tower: floor f fights the boss of stage TOWER_G_OFFSET + f against the boss timer; winning heals
+        // and climbs on, losing returns to the stage. Every floor pays gems, every TOWER_TICKET_EVERY floors gear
+        // tickets, every TOWER_RARE_EVERY floors skill and pet tickets.
+        public int TOWER_UNLOCK_STAGE = 10;
+        public int TOWER_G_OFFSET = 4;
+        public double TOWER_GEM_BASE = 3;
+        public double TOWER_GEM_PER_FLOOR = 0.1;
+        public int TOWER_TICKET_EVERY = 5;
+        public int TOWER_GEAR_TICKETS = 5;
+        public int TOWER_RARE_EVERY = 10;
+        public int TOWER_SKILL_TICKETS = 2;
+        public int TOWER_PET_TICKETS = 2;
+        public float TOWER_FLOOR_INTRO = 0.8f;
         // Gear effects per grade, C U R E L M A (D-113 added U, M and A).
         public double SWORD_ATK_C = 1.10;
         public double SWORD_ATK_U = 1.18;

@@ -82,7 +82,6 @@ namespace SoloHero.Game.UI
         private SaveDataV2 _save;
         private bool _goldShown;
         private double _shownGold;
-        private static readonly string[] BossNameKeys = { "boss.name.1", "boss.name.2", "boss.name.3", "boss.name.4", "boss.name.5" };
         private double _shownGem = -1d;
         private bool _bossBarVisible;
         private int _bossBarStage = -1;
@@ -320,7 +319,9 @@ namespace SoloHero.Game.UI
         /// <summary>Boss fight: name and a big HP bar under the ad row (GDD boss rule 12).</summary>
         private void RefreshBossBar(StageRunner runner)
         {
-            bool show = runner.IsBoss && (runner.State == StageState.BossIntro || runner.State == StageState.BossTimer);
+            // D-130: a tower floor is a boss fight too.
+            bool show = runner.IsBoss && (runner.State == StageState.BossIntro || runner.State == StageState.BossTimer
+                || (runner.InTower && runner.State == StageState.Dungeon));
             SetShown(_bossBar, show, ref _bossBarVisible);
             if (!show) return;
 
@@ -328,7 +329,7 @@ namespace SoloHero.Game.UI
             {
                 _bossBarStage = runner.GlobalStage;
                 StageIndex.FromGlobal(runner.GlobalStage, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
-                _bossName.text = Strings.Get(BossNameKeys[(chapter - 1) % BossNameKeys.Length]);
+                _bossName.text = Strings.Get(BossNames.KeyFor(chapter));
             }
 
             float ratio = 1f;
@@ -355,21 +356,29 @@ namespace SoloHero.Game.UI
         private void RefreshStage(StageRunner runner)
         {
             if (_stageText == null || _balance == null) return;
-            if (_shownGlobalStage == runner.GlobalStage) return;
+            // D-130: the plate reads "tower N" while climbing (a negative key keeps it apart from stage numbers).
+            int key = runner.InTower ? -runner.TowerFloor : runner.GlobalStage;
+            if (_shownGlobalStage == key) return;
+            _shownGlobalStage = key;
+            if (runner.InTower)
+            {
+                _stageText.text = Strings.Format("tower.plate", runner.TowerFloor);
+                return;
+            }
 
             int perChapter = _balance.STAGES_PER_CHAPTER;
             if (perChapter < 1) perChapter = 1;
             StageIndex.FromGlobal(runner.GlobalStage, perChapter, out int chapter, out int stageNumber);
-            _shownGlobalStage = runner.GlobalStage;
             _stageText.text = chapter.ToString() + "-" + stageNumber.ToString();
         }
 
         private void RefreshKills(StageRunner runner)
         {
             if (_killsText == null) return;
-            if (_shownKills == runner.Kills && _shownKillTarget == runner.KillTarget) return;
+            int kills = runner.InTower ? runner.TowerCleared : runner.Kills;
+            if (_shownKills == kills && _shownKillTarget == runner.KillTarget) return;
 
-            _shownKills = runner.Kills;
+            _shownKills = kills;
             _shownKillTarget = runner.KillTarget;
             // D-100: a dungeon has no kill target, only a running count.
             _killsText.text = runner.InDungeon ? _shownKills.ToString() : _shownKills.ToString() + " / " + _shownKillTarget.ToString();

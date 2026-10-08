@@ -653,6 +653,76 @@ def quest():
     return L.image()
 
 
+def tower():
+    """D-130 infinite tower: a stone tower with battlements, a lit window and a pennant."""
+    L = new()
+    body = rrect_at(L.x, L.y, 38, 46, 90, 118, 6)
+    crown = rrect_at(L.x, L.y, 28, 32, 100, 52, 6)
+    merlons = union(rrect_at(L.x, L.y, 28, 20, 44, 36, 3), rrect_at(L.x, L.y, 56, 20, 72, 36, 3),
+                    rrect_at(L.x, L.y, 84, 20, 100, 36, 3))
+    pole = seg(L, 64, 20, 64, 4, 2.5)
+    flag = L.polygon([(66, 4), (90, 10), (66, 16)])
+    d = union(body, crown, merlons, pole)
+    outline(L, union(d, flag))
+    stone = (hexc('#E4DCF0'), hexc('#A79BBE'), hexc('#655A80'))
+    fill(L, union(body, crown, merlons), stone)
+    L.over(cov(pole), hexc('#6A3E1E'))
+    L.over(cov(flag), RED[1])
+    for (x0, y0, x1, y1) in [(44, 64, 56, 72), (72, 82, 84, 90), (46, 98, 58, 106)]:
+        L.over(cov(rrect_at(L.x, L.y, x0, y0, x1, y1, 2)), (255, 255, 255, 60))
+    win = union(L.circle(64, 66, 9), rrect_at(L.x, L.y, 55, 66, 73, 80, 1))
+    L.over(cov(win + 2), INK)
+    L.over(cov(win), vgrad(L, 56, 80, hexc('#FFE890'), hexc('#FF9C2A')))
+    door = union(L.circle(64, 104, 11), rrect_at(L.x, L.y, 53, 104, 75, 118, 1))
+    L.over(cov(door), hexc('#4A2A1E'))
+    return L.image()
+
+
+def shop():
+    """D-128 shop: a shopping bag with a coin badge."""
+    L = new()
+    bag = rrect_at(L.x, L.y, 20, 46, 108, 118, 14)
+    handle = union(seg(L, 44, 50, 46, 28, 5), seg(L, 46, 28, 82, 28, 5), seg(L, 82, 28, 84, 50, 5))
+    outline(L, union(bag, handle))
+    L.over(cov(handle), hexc('#C2501A'))
+    fill(L, bag, ORANGE)
+    coin = L.circle(64, 84, 20)
+    L.over(cov(coin + 3), INK)
+    fill(L, coin, GOLD)
+    L.over(cov(rrect_at(L.x, L.y, 60, 72, 68, 96, 2)), hexc('#D98A10'))
+    gloss(L, bag, 46, 60, 18, 9)
+    return L.image()
+
+
+def ticket():
+    """D-128 summon ticket: a golden ticket with notched ends, a perforation and a star."""
+    L = new()
+    body = rrect_at(L.x, L.y, 10, 32, 118, 96, 12)
+    notches = union(L.circle(10, 64, 12), L.circle(118, 64, 12))
+    d = inter(body, -notches)
+    outline(L, d)
+    fill(L, d, GOLD)
+    for k in range(6):
+        y = 40 + k * 10
+        L.over(cov(rrect_at(L.x, L.y, 84, y, 88, y + 5, 1)), (255, 255, 255, 140))
+    L.over(cov(L.polygon(star_pts(48, 64, 20, 9)) + 2), INK)
+    L.over(cov(L.polygon(star_pts(48, 64, 20, 9))), hexc('#FFFFFF'))
+    return L.image()
+
+
+def speed():
+    """D-129 speed booster: a fast-forward double chevron."""
+    L = new()
+    a = L.polygon([(14, 26), (66, 64), (14, 102)])
+    b = L.polygon([(60, 26), (112, 64), (60, 102)])
+    d = union(a, b)
+    outline(L, d)
+    fill(L, d, GREEN)
+    gloss(L, a, 30, 52, 12, 8)
+    gloss(L, b, 76, 52, 12, 8)
+    return L.image()
+
+
 def make():
     save(coin(), 'coin')
     save(gem(), 'gem')
@@ -687,6 +757,10 @@ def make():
     save(next_arrow(), 'next')
     save(hand(), 'hand')
     save(quest(), 'quest')
+    save(tower(), 'tower')
+    save(shop(), 'shop')
+    save(ticket(), 'ticket')
+    save(speed(), 'speed')
 
 
 if __name__ == '__main__':

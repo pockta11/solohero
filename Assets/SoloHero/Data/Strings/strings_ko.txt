@@ -20,6 +20,7 @@ hud.skill_auto	AUTO
 # Failure toasts (FailReason)
 toast.not_enough_gold	골드가 부족합니다
 toast.not_enough_gem	젬이 부족합니다
+toast.not_enough_ticket	소환권이 부족합니다
 toast.max_level	최대 레벨입니다
 toast.on_cooldown	아직 쓸 수 없습니다
 toast.locked	아직 잠겨 있습니다
@@ -290,7 +291,11 @@ gacha.skill_new	NEW!
 gacha.skill_up	Lv {0}
 gacha.skill_summary	새 스킬 {0} · 레벨업 {1} · 환급 {2}
 gacha.gold_pack	젬 {0} → 골드 {1}
+gacha.tickets	소환권 {0}회 (보유 {1})
 ad.free_summon	광고 보고 무료 {0}회 ({1}/{2})
+ad.speed_button	2배속 ({0})
+ad.speed_active	2배속 {0}:{1}
+ad.speed_started	30분 동안 전투가 2배 빨라져요!
 toast.gold_pack	골드 {0} 획득!
 
 # boss intro (E7-11, D-082 boss looks)
@@ -300,6 +305,12 @@ boss.name.2	해골 주술사
 boss.name.3	숲의 추적자
 boss.name.4	그림자 마도사
 boss.name.5	화염 마법사
+boss.name.6	사막 도적왕
+boss.name.7	용암 골렘
+boss.name.8	늪지 마녀
+boss.name.9	수정 골렘
+boss.name.10	마왕 기사
+boss.recommended	권장 전투력 {0}
 toast.no_talent_points	특성 포인트가 부족합니다
 toast.talent_reset	특성을 초기화했습니다
 talent.points	특성 포인트 {0}
@@ -470,6 +481,42 @@ skill.desc.ult_death_shot	먼 적 하나에게 공격력의 {0}% 일격
 # Pets (D-114, the D-102 companions)
 rail.pet	펫
 rail.achieve	업적
+rail.tower	탑
+rail.shop	상점
+tower.title	무한의 탑
+tower.floor	{0}층
+tower.recommended	권장 전투력 {0}
+tower.power	내 전투력 {0}
+tower.reward	보상: 젬 {0}
+tower.reward_gear	 · 장비 소환권 {0}장
+tower.reward_skill	 · 스킬 소환권 {0}장
+tower.reward_pet	 · 펫 소환권 {0}장
+tower.best	최고 {0}층까지 돌파
+tower.locked	{0} 보스를 쓰러뜨리면 열려요
+tower.enter	도전
+tower.busy	진행 중
+tower.cleared	{0}층 돌파! 젬 +{1}
+tower.result	무한의 탑 {0}개 층 돌파! 젬 +{1}
+tower.result_none	무한의 탑 도전 실패 - 더 강해져서 다시 도전해요
+tower.banner	무한의 탑 {0}층
+tower.earned	젬 +{0}
+tower.plate	탑 {0}층
+shop.title	상점
+shop.tickets	보유 소환권  ·  장비 {0}  ·  스킬 {1}  ·  펫 {2}
+shop.item.free_gear	매일 무료 선물
+shop.item.deal_gear	오늘의 특가 · 장비
+shop.item.deal_skill	오늘의 특가 · 스킬
+shop.item.deal_pet	오늘의 특가 · 펫
+shop.item.gold	골드 상자
+shop.amount_tickets	{0} ×{1}
+shop.amount_gold	골드 {0}
+shop.ticket_gear	장비 소환권
+shop.ticket_skill	스킬 소환권
+shop.ticket_pet	펫 소환권
+shop.sold_out	구매 완료
+shop.free	무료
+shop.price	{0} 젬
+shop.bought	{0} {1}장을 받았어요
 achieve.title	업적
 achieve.tier	{0} {1}단계
 achieve.progress	{0} / {1}
@@ -534,6 +581,8 @@ equip.gear	장비
 equip.accessory	장신구
 # D-111 combat power and guide quests
 cp.label	전투력
+cp.recommended	권장 {0}
+cp.up	전투력 상승!  {0} ▶ {1}
 guide.upgrade	능력치 강화 {0}회
 guide.stage	{0} 스테이지 클리어
 guide.level	레벨 {0} 달성

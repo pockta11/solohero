@@ -38,6 +38,7 @@ namespace SoloHero.Core.Economy
                 case AdSlot.GoldBooster: return _balance.AD_BOOSTER_DAILY;
                 case AdSlot.FreeGearSummon: return _balance.AD_FREE_GEAR_DAILY;
                 case AdSlot.FreePetSummon: return _balance.AD_FREE_PET_DAILY;
+                case AdSlot.BattleSpeed: return _balance.AD_SPEED_DAILY;
                 default: throw new ArgumentOutOfRangeException(nameof(slot));
             }
         }
@@ -53,6 +54,7 @@ namespace SoloHero.Core.Economy
         {
             if (Remaining(slot) <= 0) return Result.Fail(FailReason.DailyLimit);
             if (slot == AdSlot.GoldBooster && BoosterSecondsLeft > 0) return Result.Fail(FailReason.Busy);
+            if (slot == AdSlot.BattleSpeed && SpeedSecondsLeft > 0) return Result.Fail(FailReason.Busy);
             return Result.Success;
         }
 
@@ -75,6 +77,9 @@ namespace SoloHero.Core.Economy
                 case AdSlot.GoldBooster:
                     _data.goldBoosterEndUtc = _clock.UtcNowSeconds + (long)Math.Round(_balance.AD_BOOSTER_SECONDS);
                     break;
+                case AdSlot.BattleSpeed:
+                    _data.speedBoostEndUtc = _clock.UtcNowSeconds + (long)Math.Round(_balance.AD_SPEED_SECONDS);
+                    break;
             }
 
             SetUsed(slot, Used(slot) + 1);
@@ -91,6 +96,19 @@ namespace SoloHero.Core.Economy
             }
         }
 
+        /// <summary>D-129: real seconds left on the speed booster.</summary>
+        public long SpeedSecondsLeft
+        {
+            get
+            {
+                long left = _data.speedBoostEndUtc - _clock.UtcNowSeconds;
+                return left > 0 ? left : 0;
+            }
+        }
+
+        /// <summary>D-129: how many times faster the battle runs right now (1 without the booster).</summary>
+        public float BattleSpeedMultiplier => SpeedSecondsLeft > 0 ? Math.Max(1f, _balance.AD_SPEED_MULT) : 1f;
+
         /// <summary>Stage-clear gold multiplier right now (A-3 gold booster).</summary>
         public double StageGoldMultiplier => BoosterSecondsLeft > 0 ? _balance.AD_BOOSTER_GOLD_MULT : 1d;
 
@@ -104,6 +122,7 @@ namespace SoloHero.Core.Economy
             _data.adCountA3 = 0;
             _data.adCountA4 = 0;
             _data.adCountA5 = 0;
+            _data.adCountA6 = 0;
         }
 
         private int Used(AdSlot slot)
@@ -114,6 +133,7 @@ namespace SoloHero.Core.Economy
                 case AdSlot.Gem: return _data.adCountA2;
                 case AdSlot.FreeGearSummon: return _data.adCountA4;
                 case AdSlot.FreePetSummon: return _data.adCountA5;
+                case AdSlot.BattleSpeed: return _data.adCountA6;
                 default: return _data.adCountA3;
             }
         }
@@ -126,6 +146,7 @@ namespace SoloHero.Core.Economy
                 case AdSlot.Gem: _data.adCountA2 = value; break;
                 case AdSlot.FreeGearSummon: _data.adCountA4 = value; break;
                 case AdSlot.FreePetSummon: _data.adCountA5 = value; break;
+                case AdSlot.BattleSpeed: _data.adCountA6 = value; break;
                 default: _data.adCountA3 = value; break;
             }
         }

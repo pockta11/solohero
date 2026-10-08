@@ -32,6 +32,7 @@ namespace SoloHero.Game.UI.Panels
         private int _shownSeconds = -1;
         private double _shownEarned = -1d;
         private DungeonKind _shownKind = DungeonKind.None;
+        private int _shownFloor = -1;
 
         public bool IsOpen => _popup != null && _popup.activeSelf;
 
@@ -86,6 +87,15 @@ namespace SoloHero.Game.UI.Panels
         private void OnDungeonEnded(DungeonKind kind, double earned)
         {
             if (_toast == null) return;
+            if (kind == DungeonKind.Tower)
+            {
+                int cleared = _runner != null ? _runner.TowerCleared : 0;
+                _toast.Show(cleared > 0
+                    ? Strings.Format("tower.result", cleared, BigNumberFormat.Format(earned))
+                    : Strings.Get("tower.result_none"));
+                return;
+            }
+
             string key = kind == DungeonKind.Gold ? "dungeon.result_gold" : "dungeon.result_exp";
             _toast.Show(Strings.Format(key, BigNumberFormat.Format(earned)));
         }
@@ -107,12 +117,18 @@ namespace SoloHero.Game.UI.Panels
                 return;
             }
 
-            if (runner.Dungeon != _shownKind)
+            if (runner.Dungeon != _shownKind || (runner.InTower && runner.TowerFloor != _shownFloor))
             {
                 _shownKind = runner.Dungeon;
+                _shownFloor = runner.TowerFloor;
                 _shownSeconds = -1;
                 _shownEarned = -1d;
-                if (_bannerTitle != null) _bannerTitle.text = Strings.Get(_shownKind == DungeonKind.Gold ? "dungeon.gold" : "dungeon.exp");
+                if (_bannerTitle != null)
+                {
+                    _bannerTitle.text = runner.InTower
+                        ? Strings.Format("tower.banner", runner.TowerFloor)
+                        : Strings.Get(_shownKind == DungeonKind.Gold ? "dungeon.gold" : "dungeon.exp");
+                }
             }
 
             int seconds = Mathf.CeilToInt(runner.DungeonTimeRemaining);
@@ -125,7 +141,7 @@ namespace SoloHero.Game.UI.Panels
             if (runner.DungeonEarned != _shownEarned && _bannerEarned != null)
             {
                 _shownEarned = runner.DungeonEarned;
-                _bannerEarned.text = Strings.Format("dungeon.earned", BigNumberFormat.Format(_shownEarned));
+                _bannerEarned.text = Strings.Format(runner.InTower ? "tower.earned" : "dungeon.earned", BigNumberFormat.Format(_shownEarned));
             }
         }
 

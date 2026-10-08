@@ -91,6 +91,16 @@ namespace SoloHero.Core.Pets
             return Pull(data, count < 1 ? 1 : count);
         }
 
+        /// <summary>D-128: spends up to <paramref name="max"/> pet tickets on as many pulls (once the pet summon is open).</summary>
+        public PetSummonResult TryPullTickets(SaveDataV2 data, int max)
+        {
+            if (!IsUnlocked(data)) return PetSummonResult.Fail(FailReason.Locked);
+            int count = Math.Min(max, data.petTickets);
+            if (count < 1) return PetSummonResult.Fail(FailReason.NotEnoughTicket);
+            data.petTickets -= count;
+            return Pull(data, count);
+        }
+
         public PetSummonResult TryPullTenWithGem(SaveDataV2 data)
         {
             if (!IsUnlocked(data)) return PetSummonResult.Fail(FailReason.Locked);

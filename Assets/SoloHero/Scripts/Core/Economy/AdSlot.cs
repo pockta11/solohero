@@ -11,6 +11,9 @@ namespace SoloHero.Core.Economy
         FreeGearSummon = 3,
 
         /// <summary>D-120: a free pet ten-pull for an ad (after the pet summon opens).</summary>
-        FreePetSummon = 4
+        FreePetSummon = 4,
+
+        /// <summary>D-129: the battle runs faster for a while (AD_SPEED_MULT for AD_SPEED_SECONDS).</summary>
+        BattleSpeed = 5
     }
 }

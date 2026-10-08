@@ -27,5 +27,29 @@ namespace SoloHero.Core.Growth
                 + stats.Hp * HpWeight + stats.Def * DefWeight;
             return Math.Floor(power);
         }
+
+        /// <summary>The save's combat power right now (stats from the loadout, the equipped pet).</summary>
+        public static double OfSave(BalanceValues balance, SoloHero.Core.Save.SaveDataV2 save) =>
+            Of(balance, SoloHero.Core.Stage.CombatLoadout.ComputeStats(balance, save), SoloHero.Core.Pets.PetService.EquippedRate(balance, save));
+
+        /// <summary>
+        /// D-127 recommended combat power for stage <paramref name="g"/>: about what players have when they first clear
+        /// it (sim-calibrated), a boss a little more.
+        /// </summary>
+        public static double Recommended(BalanceValues balance, int g)
+        {
+            if (balance == null) throw new ArgumentNullException(nameof(balance));
+            return Recommended(balance, g, SoloHero.Core.Stage.StageIndex.IsBoss(g < 1 ? 1 : g, balance.STAGES_PER_CHAPTER));
+        }
+
+        /// <summary>As above for a fight that is (or is not) a boss whatever the stage number (D-130 tower floors).</summary>
+        public static double Recommended(BalanceValues balance, int g, bool boss)
+        {
+            if (balance == null) throw new ArgumentNullException(nameof(balance));
+            if (g < 1) g = 1;
+            double cp = balance.REC_CP_BASE * Math.Pow(balance.REC_CP_GROWTH, g - 1);
+            if (boss) cp *= balance.REC_CP_BOSS_MULT;
+            return Math.Floor(cp);
+        }
     }
 }

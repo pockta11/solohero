@@ -34,8 +34,11 @@ namespace SoloHero.Core.Balance
             new SimSession(22.0, 12.0)
         };
 
-        /// <summary>Watch every rewarded ad the day allows (offline x2, gem, gold booster).</summary>
+        /// <summary>Watch every rewarded ad the day allows (offline x2, gem, gold booster, D-129 speed).</summary>
         public bool UseAds;
+
+        /// <summary>D-130: climb the infinite tower once per session (from its first uncleared floor).</summary>
+        public bool UseTower = true;
 
         /// <summary>While farming after a fail, challenge again once power grew by this factor since the fail...</summary>
         public double ChallengePowerGain = 1.15d;

@@ -9,6 +9,9 @@ namespace SoloHero.Core.Stage
         Gold = 1,
 
         /// <summary>Each kill pays the enemy's EXP x DUNGEON_EXP_MULT.</summary>
-        Exp = 2
+        Exp = 2,
+
+        /// <summary>D-130: the infinite tower - one boss per floor, climbing while the hero wins.</summary>
+        Tower = 3
     }
 }

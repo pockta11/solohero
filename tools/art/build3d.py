@@ -18,7 +18,8 @@ from charkit import hexc
 from pixelize import ART, Entity
 
 ENTITIES = ["knight", "knight1", "knight2", "knight4", "jobmage", "jobpyro", "jobcryo", "jobarcher", "jobranger", "jobsniper", "petslime", "petwisp", "petowl", "petdragon", "petchick", "petbunny", "petfrog", "petbat", "petpiglet", "petfox", "petpenguin", "petcat", "petturtle", "petphoenix", "petgumiho", "petazure", "goblin", "goblinr", "skeleton", "skeletonv", "mushroom", "mushroomb", "flyeye", "flyeyer",
-            "ronin", "necro", "ranger", "shadowmage", "firemage", "golem"]
+            "ronin", "necro", "ranger", "shadowmage", "firemage", "golem",
+            "sandking", "lavagolem", "swampwitch", "crystalgolem", "demonknight", "goblins", "skeletonr", "mushroomg", "flyeyec"]
 
 
 def opt(name, default):

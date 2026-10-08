@@ -15,6 +15,9 @@ namespace SoloHero.Core.Common
         NoTalentPoints,
 
         /// <summary>D-104: the skill belongs to another job line (or the hero has no job yet).</summary>
-        JobLocked
+        JobLocked,
+
+        /// <summary>D-128: no summon tickets of that kind.</summary>
+        NotEnoughTicket
     }
 }

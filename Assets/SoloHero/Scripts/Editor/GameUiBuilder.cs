@@ -37,6 +37,8 @@ namespace SoloHero.Editor
         private const string DungeonName = "DungeonPopup";
         private const string PetName = "PetPopup";
         private const string AchievementName = "AchievementPopup";
+        private const string TowerName = "TowerPopup";
+        private const string ShopName = "ShopPopup";
         private const string JobName = "JobPopup";
         private const string SettingsWindowName = "SettingsWindow";
         private const string QuitPopupName = "QuitConfirm";
@@ -392,7 +394,7 @@ namespace SoloHero.Editor
             UnwrapSafeArea(hud.transform);
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
-            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, JobName, BossIntroName, FlashName })
+            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, ShopName, JobName, BossIntroName, FlashName })
             {
                 Transform stale = hud.transform.Find(name);
                 if (stale != null) Object.DestroyImmediate(stale.gameObject);
@@ -439,14 +441,16 @@ namespace SoloHero.Editor
             DungeonPresenter dungeon = BuildDungeon(hud.transform, session, toast);
             PetPresenter pet = BuildPet(hud.transform, session, toast, root.GetComponent<PanelHost>(), gacha.GetComponent<GachaPanelPresenter>());
             AchievementPresenter achievements = BuildAchievements(hud.transform, toast);
-            BuildRails(root, toast, settings, stageSelect, daily, dungeon, pet, achievements);
+            TowerPresenter tower = BuildTower(hud.transform, session, toast);
+            ShopPresenter shop = BuildShop(hud.transform, toast);
+            BuildRails(root, toast, settings, stageSelect, daily, dungeon, pet, achievements, tower, shop);
             // Built early (the character panel and the rails need them); lift them over the damage numbers like the
             // other popups. The quit confirm (BuildBackKey) stays the very last layer.
             jobPopup.transform.SetAsLastSibling();
             settings.transform.SetAsLastSibling();
             Transform creditsLayer = hud.transform.Find(SettingsPopupName);
             if (creditsLayer != null) creditsLayer.SetAsLastSibling();
-            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily, dungeon, pet, achievements, jobPopup);
+            BuildBackKey(hud.transform, reveal, settings, stageSelect, root.GetComponent<PanelHost>(), daily, dungeon, pet, achievements, tower, shop, jobPopup);
             BuildBossIntro(hud.transform, session);
             ScreenFlash flash = BuildFlash(hud.transform);
             WrapSafeArea(hud.transform);
@@ -1194,14 +1198,16 @@ namespace SoloHero.Editor
             UnityEventTools.AddPersistentListener(single.OnTap, presenter.PullSingle);
             UnityEventTools.AddPersistentListener(ten.OnTap, presenter.PullTen);
             UnityEventTools.AddPersistentListener(gem.OnTap, presenter.PullTenWithGem);
-            Button pack = MakeButton("GoldPack", panel, 0.5f, 0f, 1f, 0f, "", 26, out Text packLabel, Tone.Purple);
+            // D-128: tickets of the shown summon (the gold package moved to the shop).
+            Button pack = MakeButton("Tickets", panel, 0.5f, 0f, 1f, 0f, "", 26, out Text packLabel, Tone.Purple);
             var packRect = (RectTransform)pack.transform;
             packRect.pivot = new Vector2(0.5f, 0f);
             packRect.offsetMin = new Vector2(0f, 22f + 104f + 10f);
             packRect.offsetMax = new Vector2(-PanelPad, 22f + 104f + 10f + 66f);
-            IconButton(pack, packLabel, "gem", 40f);
+            IconButton(pack, packLabel, "ticket", 40f);
+            packLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
             TapGuardButton packGuard = pack.gameObject.AddComponent<TapGuardButton>();
-            UnityEventTools.AddPersistentListener(packGuard.OnTap, presenter.BuyGoldPack);
+            UnityEventTools.AddPersistentListener(packGuard.OnTap, presenter.UseTickets);
             // D-120: the free left half of that row holds the ad summon (gear and pet pages).
             Button adSummon = MakeButton("AdSummon", panel, 0f, 0f, 0.5f, 0f, "", 26, out Text adLabel, Tone.Green);
             var adRect = (RectTransform)adSummon.transform;
@@ -1224,8 +1230,8 @@ namespace SoloHero.Editor
             so.FindProperty("_singleButton").objectReferenceValue = single;
             so.FindProperty("_tenButton").objectReferenceValue = ten;
             so.FindProperty("_gemButton").objectReferenceValue = gem;
-            so.FindProperty("_goldPackButton").objectReferenceValue = packGuard;
-            so.FindProperty("_goldPackText").objectReferenceValue = packLabel;
+            so.FindProperty("_ticketButton").objectReferenceValue = packGuard;
+            so.FindProperty("_ticketLabel").objectReferenceValue = packLabel;
             so.FindProperty("_adButton").objectReferenceValue = adGuard;
             so.FindProperty("_adLabel").objectReferenceValue = adLabel;
             so.FindProperty("_session").objectReferenceValue = session;
@@ -1517,7 +1523,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void WrapSafeArea(Transform hud)
         {
-            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, JobName, BossIntroName, FlashName };
+            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, ShopName, JobName, BossIntroName, FlashName };
             RectTransform safe = Rect(SafeAreaName, hud, 0f, 0f, 1f, 1f);
             safe.gameObject.AddComponent<SafeAreaFitter>();
             var move = new System.Collections.Generic.List<Transform>();
@@ -1579,6 +1585,10 @@ namespace SoloHero.Editor
             so.FindProperty("_group").objectReferenceValue = group;
             so.FindProperty("_chapterText").objectReferenceValue = chapter;
             so.FindProperty("_nameText").objectReferenceValue = name;
+            Text rec = MakeText("Rec", strip, 0f, -0.42f, 1f, 0f, "", 36, TextAnchor.MiddleCenter);
+            UiSkin.ButtonText(rec, Tone.Red);
+            rec.color = new Color(1f, 0.92f, 0.86f, 1f);
+            so.FindProperty("_recText").objectReferenceValue = rec;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -1649,7 +1659,7 @@ namespace SoloHero.Editor
         }
 
         /// <summary>E7-14: back key router and the quit confirm popup (last sibling, above every other layer).</summary>
-        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels, DailyPresenter daily, DungeonPresenter dungeon, PetPresenter pet, AchievementPresenter achievements, JobPresenter job)
+        private static void BuildBackKey(Transform hud, GachaRevealView reveal, SettingsPresenter settings, StageSelectPresenter stageSelect, PanelHost panels, DailyPresenter daily, DungeonPresenter dungeon, PetPresenter pet, AchievementPresenter achievements, TowerPresenter tower, ShopPresenter shop, JobPresenter job)
         {
             RectTransform holder = Rect(QuitPopupName, hud, 0f, 0f, 1f, 1f);
             holder.SetAsLastSibling();
@@ -1680,6 +1690,8 @@ namespace SoloHero.Editor
             so.FindProperty("_dungeon").objectReferenceValue = dungeon;
             so.FindProperty("_pet").objectReferenceValue = pet;
             so.FindProperty("_achievements").objectReferenceValue = achievements;
+            so.FindProperty("_tower").objectReferenceValue = tower;
+            so.FindProperty("_shop").objectReferenceValue = shop;
             so.FindProperty("_job").objectReferenceValue = job;
             so.FindProperty("_panels").objectReferenceValue = panels;
             so.FindProperty("_quitConfirm").objectReferenceValue = popup.gameObject;
@@ -1700,29 +1712,40 @@ namespace SoloHero.Editor
         /// an ad badge and a caption chip), a folding menu on the right (navy tile; the column lists daily rewards,
         /// dungeons, pets, settings, stage and credits). Both sit under the top bar and above the battle lane.
         /// </summary>
-        private static void BuildRails(RectTransform root, ToastQueue toast, SettingsPresenter settings, StageSelectPresenter stageSelect, DailyPresenter daily, DungeonPresenter dungeon, PetPresenter pet, AchievementPresenter achievements)
+        private static void BuildRails(RectTransform root, ToastQueue toast, SettingsPresenter settings, StageSelectPresenter stageSelect, DailyPresenter daily, DungeonPresenter dungeon, PetPresenter pet, AchievementPresenter achievements, TowerPresenter tower, ShopPresenter shop)
         {
-            RectTransform left = Box("LeftRail", root, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(RailInset, -RailTop), new Vector2(RailItem + 40f, RailStep * 2f));
+            RectTransform left = Box("LeftRail", root, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(RailInset, -RailTop), new Vector2(RailItem + 40f, RailStep * 3f));
             TapGuardButton booster = RailButton(left, "Booster", 0, "coin", Tone.Gold, out Text boosterLabel);
             TapGuardButton gem = RailButton(left, "GemAd", 1, "gem", Tone.Purple, out Text gemLabel);
+            // D-129: the speed booster under the two others.
+            TapGuardButton speed = RailButton(left, "SpeedAd", 2, "speed", Tone.Green, out Text speedLabel);
             AdSlotsPresenter ads = left.gameObject.AddComponent<AdSlotsPresenter>();
             UnityEventTools.AddPersistentListener(booster.OnTap, ads.WatchBooster);
             UnityEventTools.AddPersistentListener(gem.OnTap, ads.WatchGem);
+            UnityEventTools.AddPersistentListener(speed.OnTap, ads.WatchSpeed);
             var so = new SerializedObject(ads);
             so.FindProperty("_gemButton").objectReferenceValue = gem;
             so.FindProperty("_gemLabel").objectReferenceValue = gemLabel;
             so.FindProperty("_boosterButton").objectReferenceValue = booster;
             so.FindProperty("_boosterLabel").objectReferenceValue = boosterLabel;
+            so.FindProperty("_speedButton").objectReferenceValue = speed;
+            so.FindProperty("_speedLabel").objectReferenceValue = speedLabel;
             so.FindProperty("_toast").objectReferenceValue = toast;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            string[] icons = { "gift", "gate", "paw", "crown", "cog", "flag", "scroll" };
-            string[] keys = { "rail.daily", "rail.dungeon", "rail.pet", "rail.achieve", "rail.settings", "rail.stage", "rail.credits" };
-            RectTransform right = Box("RightRail", root, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-RailInset, -RailTop), new Vector2(RailMenuButton + 40f, RailMenuButton + 24f + icons.Length * RailMenuStep));
+            // D-132: nine entries in two columns so the open menu stays above the panel on 16:9 screens.
+            string[] icons = { "gift", "shop", "gate", "tower", "paw", "crown", "flag", "cog", "scroll" };
+            string[] keys = { "rail.daily", "rail.shop", "rail.dungeon", "rail.tower", "rail.pet", "rail.achieve", "rail.stage", "rail.settings", "rail.credits" };
+            const int columns = 2;
+            int rows = (icons.Length + columns - 1) / columns;
+            float cell = RailItem + 20f;
+            float width = Mathf.Max(RailMenuButton + 40f, columns * cell + 8f * (columns - 1) + 28f);
+            RectTransform right = Box("RightRail", root, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-RailInset, -RailTop), new Vector2(width, RailMenuButton + 24f + rows * RailMenuStep));
             RailMenu menu = right.gameObject.AddComponent<RailMenu>();
-            Button toggle = MakeButton("Menu", right, 0.5f, 1f, 0.5f, 1f, "", 22, out Text unusedLabel, Tone.Gray);
+            Button toggle = MakeButton("Menu", right, 1f, 1f, 1f, 1f, "", 22, out Text unusedLabel, Tone.Gray);
             Object.DestroyImmediate(unusedLabel.gameObject);
-            Place((RectTransform)toggle.transform, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(RailMenuButton, RailMenuButton));
+            // Same spot as the one-column menu: centred (RailMenuButton + 40) / 2 in from the right edge.
+            Place((RectTransform)toggle.transform, new Vector2(1f, 1f), new Vector2(-20f, 0f), new Vector2(RailMenuButton, RailMenuButton));
             UiSkin.Sliced(toggle.GetComponent<Image>(), UiSkin.RailTile);
             toggle.transition = Selectable.Transition.None;
             FixedIcon(toggle.transform, "menu", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), 64f);
@@ -1734,12 +1757,15 @@ namespace SoloHero.Editor
             UiSkin.Sliced(column.gameObject.AddComponent<Image>(), UiSkin.RailTile);
             column.gameObject.AddComponent<CanvasGroup>();
             column.gameObject.AddComponent<PopupIntro>();
-            UnityAction[] actions = { daily.Open, dungeon.Open, pet.Open, achievements.Open, settings.Open, stageSelect.Open, settings.OpenCredits };
-            // D-118: achievements light their own item and a dot on the menu button at the daily dot's spot.
+            UnityAction[] actions = { daily.Open, shop.Open, dungeon.Open, tower.Open, pet.Open, achievements.Open, stageSelect.Open, settings.Open, settings.OpenCredits };
+            // D-118: achievements light their own item and a dot on the menu button at the daily dot's spot (D-128: so does the shop).
             var achieveBadges = new System.Collections.Generic.List<GameObject> { Badge(toggle.transform, new Vector2(1f, 1f), new Vector2(-8f, -8f)) };
+            var shopBadges = new System.Collections.Generic.List<GameObject> { Badge(toggle.transform, new Vector2(1f, 1f), new Vector2(-8f, -8f)) };
             for (int i = 0; i < icons.Length; i++)
             {
-                RectTransform item = Box("Item" + i, column, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -14f - i * RailMenuStep), new Vector2(RailItem + 20f, RailMenuStep - 6f));
+                int col = i % columns;
+                int row = i / columns;
+                RectTransform item = Box("Item" + i, column, new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(14f + cell / 2f + col * (cell + 8f), -14f - row * RailMenuStep), new Vector2(cell, RailMenuStep - 6f));
                 Button button = item.gameObject.AddComponent<Button>();
                 button.transition = Selectable.Transition.None;
                 Image hit = item.gameObject.AddComponent<Image>();
@@ -1753,8 +1779,13 @@ namespace SoloHero.Editor
                 UnityEventTools.AddPersistentListener(button.onClick, actions[i]);
                 UnityEventTools.AddPersistentListener(button.onClick, menu.Fold);
                 if (i == 0) badges.Add(Badge(item, new Vector2(0.5f, 1f), new Vector2(34f, -8f)));
-                if (i == 3) achieveBadges.Add(Badge(item, new Vector2(0.5f, 1f), new Vector2(34f, -8f)));
+                if (i == 1) shopBadges.Add(Badge(item, new Vector2(0.5f, 1f), new Vector2(34f, -8f)));
+                if (i == 5) achieveBadges.Add(Badge(item, new Vector2(0.5f, 1f), new Vector2(34f, -8f)));
             }
+
+            var shopSo = new SerializedObject(shop);
+            SetArray(shopSo, "_badges", shopBadges.ToArray());
+            shopSo.ApplyModifiedPropertiesWithoutUndo();
 
             var achieveSo = new SerializedObject(achievements);
             SetArray(achieveSo, "_badges", achieveBadges.ToArray());
@@ -2142,6 +2173,106 @@ namespace SoloHero.Editor
             return presenter;
         }
 
+        /// <summary>
+        /// D-130 infinite tower popup: the next floor big, its boss, recommended vs own combat power, the floor's reward,
+        /// the best floor (or how it opens) and the challenge button.
+        /// </summary>
+        private static TowerPresenter BuildTower(Transform hud, CombatSession session, ToastQueue toast)
+        {
+            RectTransform holder = Rect(TowerName, hud, 0f, 0f, 1f, 1f);
+            holder.SetAsLastSibling();
+            TowerPresenter presenter = holder.gameObject.AddComponent<TowerPresenter>();
+            RectTransform box = PopupWindow(holder, new Vector2(960f, 940f), "tower.title", presenter.Close, out RectTransform popup);
+
+            RectTransform card = TopBand("Card", box, 100f, 600f, 40f, 40f);
+            UiSkin.Sliced(card.gameObject.AddComponent<Image>(), UiSkin.Card);
+            card.GetComponent<Image>().raycastTarget = false;
+            RectTransform tile = Box("Tile", card, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(150f, 150f));
+            UiSkin.Sliced(Plain(tile, null), UiSkin.PlateSprite(Tone.Purple));
+            FixedIcon(tile, "tower", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), 110f);
+            Text floor = InkText(TopBand("Floor", card, 186f, 84f, 20f, 20f), 72, TextAnchor.MiddleCenter, UiPalette.InkTitle);
+            Text boss = InkText(TopBand("Boss", card, 272f, 50f, 20f, 20f), 36, TextAnchor.MiddleCenter, UiPalette.Ink);
+            Text rec = InkText(TopBand("Rec", card, 336f, 50f, 20f, 20f), 36, TextAnchor.MiddleCenter, UiPalette.InkGood);
+            Text power = InkText(TopBand("Power", card, 388f, 44f, 20f, 20f), 30, TextAnchor.MiddleCenter, UiPalette.InkMuted);
+            Text reward = InkText(TopBand("Reward", card, 448f, 64f, 20f, 20f), 32, TextAnchor.MiddleCenter, UiPalette.InkGold);
+            reward.horizontalOverflow = HorizontalWrapMode.Wrap;
+            Text best = InkText(TopBand("Best", card, 520f, 50f, 20f, 20f), 28, TextAnchor.MiddleCenter, UiPalette.InkMuted);
+            foreach (Text t in new[] { floor, boss, rec, power, best }) t.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+            Button enter = MakeButton("Enter", box, 0.5f, 0f, 0.5f, 0f, "", 44, out Text enterLabel, Tone.Green);
+            Place((RectTransform)enter.transform, new Vector2(0.5f, 0f), new Vector2(0f, 46f), new Vector2(460f, 120f));
+            TapGuardButton enterGuard = enter.gameObject.AddComponent<TapGuardButton>();
+            UnityEventTools.AddPersistentListener(enterGuard.OnTap, presenter.Enter);
+
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
+            so.FindProperty("_session").objectReferenceValue = session;
+            so.FindProperty("_toast").objectReferenceValue = toast;
+            so.FindProperty("_floorText").objectReferenceValue = floor;
+            so.FindProperty("_bossText").objectReferenceValue = boss;
+            so.FindProperty("_recText").objectReferenceValue = rec;
+            so.FindProperty("_powerText").objectReferenceValue = power;
+            so.FindProperty("_rewardText").objectReferenceValue = reward;
+            so.FindProperty("_bestText").objectReferenceValue = best;
+            so.FindProperty("_enterButton").objectReferenceValue = enterGuard;
+            so.FindProperty("_enterLabel").objectReferenceValue = enterLabel;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            popup.gameObject.SetActive(false);
+            return presenter;
+        }
+
+        /// <summary>
+        /// D-128 daily shop popup: the tickets owned on top, then one card per ShopItem (icon, name, what it gives, price
+        /// button).
+        /// </summary>
+        private static ShopPresenter BuildShop(Transform hud, ToastQueue toast)
+        {
+            RectTransform holder = Rect(ShopName, hud, 0f, 0f, 1f, 1f);
+            holder.SetAsLastSibling();
+            ShopPresenter presenter = holder.gameObject.AddComponent<ShopPresenter>();
+            const int count = 5;
+            const float rowStep = 150f;
+            RectTransform box = PopupWindow(holder, new Vector2(1000f, 200f + count * rowStep + 40f), "shop.title", presenter.Close, out RectTransform popup);
+
+            Text tickets = InkText(TopBand("Tickets", box, 96f, 56f, 40f, 40f), 30, TextAnchor.MiddleCenter, UiPalette.InkTitle);
+            tickets.horizontalOverflow = HorizontalWrapMode.Overflow;
+            string[] icons = { "gift", "ticket", "ticket", "ticket", "coin" };
+            Tone[] tones = { Tone.Green, Tone.Blue, Tone.Purple, Tone.Gold, Tone.Gold };
+            var names = new Text[count];
+            var amounts = new Text[count];
+            var buttons = new TapGuardButton[count];
+            var labels = new Text[count];
+            for (int i = 0; i < count; i++)
+            {
+                RectTransform row = TopBand("Row" + i, box, 164f + i * rowStep, rowStep - 12f, 34f, 34f);
+                UiSkin.Sliced(row.gameObject.AddComponent<Image>(), UiSkin.Card);
+                row.GetComponent<Image>().raycastTarget = false;
+                RectTransform tile = Box("Tile", row, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(16f, 0f), new Vector2(110f, 110f));
+                UiSkin.Sliced(Plain(tile, null), UiSkin.PlateSprite(tones[i]));
+                FixedIcon(tile, icons[i], new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), 80f);
+                names[i] = InkText(TopBand("Name", row, 14f, 52f, 146f, 260f), 32, TextAnchor.MiddleLeft, UiPalette.InkTitle);
+                names[i].horizontalOverflow = HorizontalWrapMode.Overflow;
+                amounts[i] = InkText(TopBand("Amount", row, 70f, 46f, 146f, 260f), 28, TextAnchor.MiddleLeft, UiPalette.Ink);
+                amounts[i].horizontalOverflow = HorizontalWrapMode.Overflow;
+                Button buy = MakeButton("Buy", row, 1f, 0.5f, 1f, 0.5f, "", 32, out labels[i], Tone.Green);
+                Place((RectTransform)buy.transform, new Vector2(1f, 0.5f), new Vector2(-16f, 0f), new Vector2(230f, 96f));
+                buttons[i] = buy.gameObject.AddComponent<TapGuardButton>();
+                UnityEventTools.AddIntPersistentListener(buttons[i].OnTap, presenter.Buy, i);
+            }
+
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
+            so.FindProperty("_toast").objectReferenceValue = toast;
+            so.FindProperty("_ticketsText").objectReferenceValue = tickets;
+            SetArray(so, "_names", names);
+            SetArray(so, "_amounts", amounts);
+            SetArray(so, "_buttons", buttons);
+            SetArray(so, "_buttonLabels", labels);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            popup.gameObject.SetActive(false);
+            return presenter;
+        }
+
         /// <summary>D-114: pet looks index-aligned with PetCatalog (ArtBuilder writes Data/Art/Pet_{Id}.asset).</summary>
         private static CharacterArt[] PetArts()
         {
@@ -2304,18 +2435,34 @@ namespace SoloHero.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>D-111 combat power pill left of the stage plate; a green "+N" floats up from it on every rise.</summary>
+        /// <summary>
+        /// D-111 / D-127 combat power pill left of the stage plate: label, the number, and the fight's recommended
+        /// combat power under it (green / red); a green "+N" floats up on every rise and a centre banner shows big jumps.
+        /// </summary>
         private static void BuildCombatPower(Transform hud)
         {
-            RectTransform pill = Box("CombatPower", hud, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-268f, -(TopBarHeight + 16f)), new Vector2(204f, 92f));
+            RectTransform pill = Box("CombatPower", hud, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-268f, -(TopBarHeight + 8f)), new Vector2(226f, 120f));
             UiSkin.Sliced(Plain(pill, null), UiSkin.Pill);
             pill.GetComponent<Image>().raycastTarget = false;
-            FixedIcon(pill, "atk", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), 46f);
-            Text label = AddText(Box("Label", pill, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(64f, -6f), new Vector2(134f, 32f)), 22, TextAnchor.MiddleLeft);
+            FixedIcon(pill, "atk", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(10f, 6f), 54f);
+            Text label = AddText(Box("Label", pill, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(68f, -6f), new Vector2(150f, 28f)), 22, TextAnchor.MiddleLeft);
             label.color = UiPalette.HudGold;
             Localize(label, "cp.label");
-            Text value = AddText(Box("Value", pill, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(64f, 8f), new Vector2(134f, 46f)), 34, TextAnchor.MiddleLeft);
+            Text value = AddText(Box("Value", pill, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(68f, -32f), new Vector2(150f, 48f)), 40, TextAnchor.MiddleLeft);
             value.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Text rec = AddText(Box("Rec", pill, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(14f, 6f), new Vector2(204f, 30f)), 22, TextAnchor.MiddleLeft);
+            rec.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+            RectTransform bannerRect = Box("CpBanner", hud, new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -(TopBarHeight + 380f)), new Vector2(700f, 116f));
+            UiSkin.Sliced(Plain(bannerRect, null), UiSkin.Pill);
+            bannerRect.GetComponent<Image>().raycastTarget = false;
+            FixedIcon(bannerRect, "atk", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(18f, 0f), 72f);
+            Text bannerText = AddText(Inset("Text", bannerRect, 100f, 6f, 24f, 6f), 44, TextAnchor.MiddleCenter);
+            bannerText.color = UiPalette.HudGold;
+            bannerText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            CanvasGroup bannerGroup = bannerRect.gameObject.AddComponent<CanvasGroup>();
+            bannerGroup.alpha = 0f;
+            bannerGroup.blocksRaycasts = false;
             RectTransform gainRect = Box("Gain", pill, new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(180f, 44f));
             Text gain = AddText(gainRect, 32, TextAnchor.MiddleLeft);
             gain.color = UiPalette.HudGood;
@@ -2329,6 +2476,10 @@ namespace SoloHero.Editor
             so.FindProperty("_value").objectReferenceValue = value;
             so.FindProperty("_gain").objectReferenceValue = gain;
             so.FindProperty("_gainGroup").objectReferenceValue = gainGroup;
+            so.FindProperty("_session").objectReferenceValue = Object.FindObjectOfType<CombatSession>();
+            so.FindProperty("_rec").objectReferenceValue = rec;
+            so.FindProperty("_banner").objectReferenceValue = bannerGroup;
+            so.FindProperty("_bannerText").objectReferenceValue = bannerText;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -2338,7 +2489,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void BuildGuideQuest(Transform hud)
         {
-            RectTransform bar = Box("GuideQuest", hud, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(RailInset, -(RailTop + 2f * RailStep + 8f)), new Vector2(476f, 100f));
+            RectTransform bar = Box("GuideQuest", hud, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(RailInset, -(RailTop + 3f * RailStep + 8f)), new Vector2(476f, 100f));
             Image background = Plain(bar, null);
             UiSkin.Sliced(background, UiSkin.Pill);
             background.raycastTarget = true;
@@ -2477,7 +2628,7 @@ namespace SoloHero.Editor
 
             Transform oldBar = hud.Find("TopBar");
             if (oldBar != null) Object.DestroyImmediate(oldBar.gameObject);
-            foreach (string stale in new[] { "StagePlate", "BossBar", "GemCount", "CombatPower", "GuideQuest" })
+            foreach (string stale in new[] { "StagePlate", "BossBar", "GemCount", "CombatPower", "CpBanner", "GuideQuest" })
             {
                 Transform t = hud.Find(stale);
                 if (t != null) Object.DestroyImmediate(t.gameObject);

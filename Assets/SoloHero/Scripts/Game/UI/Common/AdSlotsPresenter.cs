@@ -19,6 +19,10 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private Text _gemLabel;
         [SerializeField] private TapGuardButton _boosterButton;
         [SerializeField] private Text _boosterLabel;
+
+        [Tooltip("D-129: the speed booster (A-6).")]
+        [SerializeField] private TapGuardButton _speedButton;
+        [SerializeField] private Text _speedLabel;
         [SerializeField] private ToastQueue _toast;
 
         private AdSlotPolicy _policy;
@@ -44,6 +48,8 @@ namespace SoloHero.Game.UI.Common
         public void WatchGem() => Watch(AdSlot.Gem, "ad.gem_received");
 
         public void WatchBooster() => Watch(AdSlot.GoldBooster, "ad.booster_started");
+
+        public void WatchSpeed() => Watch(AdSlot.BattleSpeed, "ad.speed_started");
 
         private void Watch(AdSlot slot, string successKey)
         {
@@ -90,6 +96,17 @@ namespace SoloHero.Game.UI.Common
             }
 
             if (_boosterButton != null) _boosterButton.SetAvailable(!_busy && left == 0 && boosterLeft > 0);
+
+            long speedLeft = _policy.SpeedSecondsLeft;
+            int speedUses = _policy.Remaining(AdSlot.BattleSpeed);
+            if (_speedLabel != null)
+            {
+                _speedLabel.text = speedLeft > 0
+                    ? Strings.Format("ad.speed_active", speedLeft / 60, (speedLeft % 60).ToString("00"))
+                    : Strings.Format("ad.speed_button", speedUses);
+            }
+
+            if (_speedButton != null) _speedButton.SetAvailable(!_busy && speedLeft == 0 && speedUses > 0);
         }
     }
 }

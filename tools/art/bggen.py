@@ -48,6 +48,27 @@ THEMES = {
         sky=["#8a6ab8", "#c47eae", "#f0a0a0", "#ffd2a4"], cloud=["#ffe2c0", "#f6b8a8"], deco="sun",
         far=["#c88aa8", "#d8a0b4"], far_shape="hills", mid=["#a06a8a", "#b47e9a"],
         trees=["#6a3e5e", "#80506e", "#9a6a84"], trunk="#4a2a40", tree="round", near=["#5a3450", "#7a4a68", "#96607e"]),
+    # D-131 chapters 6-10.
+    "Ch6_Desert": dict(
+        sky=["#f2b05e", "#f7c878", "#fbdc9c", "#fff0cc"], cloud=["#fff6e0", "#ffe8c0"], deco="sun",
+        far=["#d9a066", "#e8b880"], far_shape="hills", mid=["#c88a4e", "#dca264"],
+        trees=["#3f7a3a", "#5a9a4a", "#86c06a"], trunk="#7a5236", tree="cactus", near=["#b97a42", "#d09456", "#e6b070"]),
+    "Ch7_Volcano": dict(
+        sky=["#2a1418", "#4a1e22", "#7a2e26", "#c2502e"], cloud=["#ffb060", "#ff6a2a"], deco="embers",
+        far=["#3a2228", "#ff6a2a"], far_shape="peaks", mid=["#2e1a20", "#c84a26"],
+        trees=["#2a1a1a", "#3a2424", "#5a3434"], trunk="#2a1a1a", tree="dead", near=["#2a1a1e", "#3e2428", "#ff7a3a"]),
+    "Ch8_Swamp": dict(
+        sky=["#4a5e4a", "#5e7458", "#788e6a", "#a2b48a"], cloud=["#c8d8b0", "#a8bc94"], deco="clouds",
+        far=["#4e6650", "#5e7860"], far_shape="hills", mid=["#3e5642", "#4e6a50"],
+        trees=["#2a3e2a", "#3a5236", "#56704a"], trunk="#3a2e22", tree="round", near=["#2e4230", "#3e563c", "#6a8a54"]),
+    "Ch9_Crystal": dict(
+        sky=["#140e30", "#221a4a", "#3a2a6a", "#5a3e8a"], cloud=["#e0c8ff", "#a88aff"], deco="night",
+        far=["#2e2456", "#3e3270"], far_shape="peaks_soft", mid=["#262050", "#342c66"],
+        trees=["#3a6ae0", "#6ab0ff", "#c8f0ff"], trunk="#2a2050", tree="crystal", near=["#221c44", "#30285a", "#8a70e0"]),
+    "Ch10_Castle": dict(
+        sky=["#1a0e16", "#2e1220", "#4e1a26", "#7a2a30"], cloud=["#ffb0a0", "#ff6a5a"], deco="night",
+        far=["#2a1a22", "#3a222c"], far_shape="peaks_soft", mid=["#22161e", "#32202a"],
+        trees=["#1a1018", "#2a1a24", "#4a2a36"], trunk="#1a1018", tree="spire", near=["#1e121a", "#2c1a24", "#5a2a36"]),
 }
 
 
@@ -131,6 +152,11 @@ def sky_layer(t, seed):
         blob(L, 230, 255, 14, [cloud[1], cloud[0], cloud[0]], light=False)
     if deco == "sun":
         blob(L, 200, 110, 26, [cloud[1], hexc("#fff0c8"), hexc("#fff0c8")], light=False)
+    if deco == "embers":
+        # D-131 volcano: drifting embers over a dim red sun.
+        blob(L, 210, 140, 22, [cloud[1], cloud[0], cloud[0]], light=False)
+        for _ in range(90):
+            L.set(rng.randrange(W), rng.randrange(HORIZON, H), cloud[0] if rng.random() < 0.5 else cloud[1])
     return L
 
 
@@ -172,6 +198,66 @@ def peaks(seed, amp):
 
 def tree(L, x, base, kind, colors, trunk, rng, scale=1.0):
     dark, mid, light = colors
+    if kind == "cactus":
+        # D-131 desert: a saguaro column with one or two arms.
+        h = int(rng.randrange(22, 34) * scale)
+        w = max(2, int(3 * scale))
+        for y in range(base, base + h):
+            for dx in range(-w, w + 1):
+                L.set(x + dx, y, light if dx < 0 else mid if dx == 0 else dark)
+        for side in (-1, 1):
+            if rng.random() < 0.8:
+                ay = base + int(h * rng.uniform(0.35, 0.6))
+                ah = int(h * 0.35)
+                ax = x + side * (w + 3)
+                for dx in range(w + 1, w + 4):
+                    for dy in range(-1, 2):
+                        L.set(x + side * dx, ay + dy, mid)
+                for y in range(ay, ay + ah):
+                    for dx in (-1, 0, 1):
+                        L.set(ax + dx, y, light if dx < 0 else mid)
+        return
+    if kind == "dead":
+        # D-131 volcano: a bare trunk with crooked branches.
+        h = int(rng.randrange(26, 40) * scale)
+        for y in range(base, base + h):
+            L.set(x, y, trunk)
+            L.set(x + 1, y, trunk)
+        for _ in range(3):
+            by = base + int(h * rng.uniform(0.45, 0.95))
+            side = rng.choice((-1, 1))
+            length = int(rng.randrange(6, 12) * scale)
+            for k in range(length):
+                L.set(x + side * k, by + k // 2, mid)
+                L.set(x + side * k, by + k // 2 + 1, dark)
+        return
+    if kind == "crystal":
+        # D-131 crystal cave: clusters of pointed crystal spires.
+        h = int(rng.randrange(18, 32) * scale)
+        for cx, hh in ((x, h), (x - 6, int(h * 0.6)), (x + 6, int(h * 0.7))):
+            w = max(2, hh // 5)
+            for i in range(hh):
+                y = base + i
+                half = int(round(w * (1 - (i - hh * 0.3) / (hh * 0.7)))) if i > hh * 0.3 else w
+                for dx in range(-half, half + 1):
+                    L.set(cx + dx, y, light if dx < 0 else mid if dx == 0 else dark)
+        return
+    if kind == "spire":
+        # D-131 castle: dark towers with pointed roofs and a lit window.
+        h = int(rng.randrange(30, 48) * scale)
+        w = max(3, int(5 * scale))
+        for y in range(base, base + h):
+            for dx in range(-w, w + 1):
+                L.set(x + dx, y, mid if dx < w // 2 else dark)
+        roof = int(w * 2.2)
+        for i in range(roof):
+            half = int(w * (1 - i / roof)) + 1
+            for dx in range(-half, half + 1):
+                L.set(x + dx, base + h + i, dark)
+        wy = base + int(h * 0.7)
+        L.set(x, wy, light)
+        L.set(x, wy + 1, light)
+        return
     if kind == "round":
         r = int(rng.randrange(9, 14) * scale)
         for y in range(base, base + r):

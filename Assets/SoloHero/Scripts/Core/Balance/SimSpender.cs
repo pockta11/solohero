@@ -95,6 +95,12 @@ namespace SoloHero.Core.Balance
 
         public int Promotions { get; private set; }
 
+        /// <summary>D-128: the daily shop (free bundle and deals); null skips it.</summary>
+        public ShopService Shop;
+
+        /// <summary>D-128: pulls paid with tickets (shop, tower).</summary>
+        public int TicketPulls { get; private set; }
+
         /// <summary>
         /// D-123: summon levels open the grades (level 1 gives Common only), so the one-step value of a pull cannot see
         /// why to keep pulling. The player model keeps at least this share of all spending on gear pulls (the GDD V-3b
@@ -109,6 +115,10 @@ namespace SoloHero.Core.Balance
         public bool Spend(int frontierG, int maxPurchases, double affordableShare = 1d)
         {
             bool bought = false;
+
+            // D-128: the free bundle and the day's deals come before gem pulls (they are cheaper), then every ticket.
+            BuyShop();
+            if (UseTickets()) bought = true;
 
             while (_save.gem >= _b.GACHA_COST_TEN_GEM)
             {
@@ -396,6 +406,56 @@ namespace SoloHero.Core.Balance
                 AdPulls += r.Items.Length;
                 for (int i = 0; i < r.Items.Length; i++) EarnedRefund += r.Items[i].RefundGold;
             }
+        }
+
+        private void BuyShop()
+        {
+            if (Shop == null) return;
+            Shop.TryBuy(ShopItem.FreeGear);
+            Shop.TryBuy(ShopItem.DealGear);
+            if (SoloHero.Core.Jobs.JobService.LineOf(_save) != SoloHero.Core.Jobs.JobLine.None) Shop.TryBuy(ShopItem.DealSkill);
+            if (PetSummonService.IsUnlocked(_b, _save)) Shop.TryBuy(ShopItem.DealPet);
+        }
+
+        /// <summary>D-128: tickets are pulls already paid for; the player spends them at once.</summary>
+        private bool UseTickets()
+        {
+            bool pulled = false;
+            for (int guard = 0; guard < 100 && _save.gearTickets > 0; guard++)
+            {
+                GachaBatchResult r = _gacha.TryPullTickets(_save, 10);
+                if (!r.Status.Ok) break;
+                TicketPulls += r.Items.Length;
+                Collect(r);
+                pulled = true;
+            }
+
+            if (SoloHero.Core.Jobs.JobService.LineOf(_save) != SoloHero.Core.Jobs.JobLine.None)
+            {
+                for (int guard = 0; guard < 100 && _save.skillTickets > 0; guard++)
+                {
+                    SkillSummonResult r = _summon.TryPullTickets(_save, 10);
+                    if (!r.Status.Ok) break;
+                    TicketPulls += r.Items.Length;
+                    for (int i = 0; i < r.Items.Length; i++) EarnedRefund += r.Items[i].RefundGold;
+                    _skills.AutoEquip();
+                    pulled = true;
+                }
+            }
+
+            if (PetSummonService.IsUnlocked(_b, _save))
+            {
+                for (int guard = 0; guard < 100 && _save.petTickets > 0; guard++)
+                {
+                    PetSummonResult r = _petSummon.TryPullTickets(_save, 10);
+                    if (!r.Status.Ok) break;
+                    TicketPulls += r.Items.Length;
+                    for (int i = 0; i < r.Items.Length; i++) EarnedRefund += r.Items[i].RefundGold;
+                    pulled = true;
+                }
+            }
+
+            return pulled;
         }
 
         /// <summary>D-123: gear pulls (ten when affordable) until they are GearPullShare of everything spent so far, then skill pulls to SkillPullShare.</summary>

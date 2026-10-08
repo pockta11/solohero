@@ -117,6 +117,21 @@ PAL = {
     "stone_dark": ["#3e3652", "#6a6284", "#9e96b4"],
     "moss": ["#2e6a3a", "#5aa84e", "#a6dc70"],
     "crystal": ["#2a5ac8", "#4ac0ff", "#dcf8ff"],
+    # D-131 chapter 6-10 bosses and recolours
+    "sand": ["#a8743a", "#e0b070", "#fff0c0"],
+    "basalt": ["#2e2430", "#54444e", "#86707a"],
+    "basalt_dark": ["#22181e", "#3e2e36", "#5e4a52"],
+    "lava": ["#c8301c", "#ff7a2a", "#ffd070"],
+    "ember": ["#d0401a", "#ff8a30", "#fff0a0"],
+    "swamp": ["#2a3e2a", "#46663e", "#76985a"],
+    "ice_stone": ["#3a4e7a", "#6a8ac0", "#b8d4f4"],
+    "ice_dark": ["#2a3a62", "#4a6094", "#7a94c8"],
+    "crystal_pink": ["#a02a90", "#e070ff", "#ffd8ff"],
+    "blade_blood": ["#8a1e2e", "#e04050", "#ffb0b8"],
+    "goblin_s": ["#8a8a2a", "#c0c050", "#eef09a"],
+    "bone_r": ["#b0705a", "#e8b098", "#fff0e8"],
+    "cap_g": ["#4a6a2a", "#7aa83a", "#c0e070"],
+    "wing_c": ["#2a4a7a", "#4a7ac0", "#8ab8f0"],
     # Flat face colours
     "eye": ["#2b1d3a"],
     "eye_low": ["#5a4a8a"],
@@ -128,6 +143,8 @@ PAL = {
     "flower_mid": ["#ffe066"],
     "iris_b": ["#3a6ae0"],
     "iris_r": ["#e03a3a"],
+    "iris_c": ["#2ab0e0"],
+    "glow_o": ["#ff8a30"],
     "glow_y": ["#ffe066"],
     "glow_v": ["#e070ff"],
     "glow_g": ["#6affa0"],
@@ -135,7 +152,9 @@ PAL = {
     "smear1": ["#d8ecff"],
     "smear2": ["#ffffff"],
 }
-THRESH = {"stone": ROCK_CEL, "stone_dark": ROCK_CEL, "moss": ROCK_CEL, "crystal": (0.12, 0.5)}
+THRESH = {"stone": ROCK_CEL, "stone_dark": ROCK_CEL, "moss": ROCK_CEL, "crystal": (0.12, 0.5),
+          "basalt": ROCK_CEL, "basalt_dark": ROCK_CEL, "lava": ROCK_CEL, "ember": (0.12, 0.5),
+          "ice_stone": ROCK_CEL, "ice_dark": ROCK_CEL, "crystal_pink": (0.12, 0.5)}
 NOLINES = ["smear0", "smear1", "smear2"]
 
 # ---------------------------------------------------------------- looks (R = head radius in art pixels)
@@ -168,6 +187,19 @@ LOOKS = {
     "shadowmage": dict(R=17.0, skin="shadow_face", head="wizard", hat="dark_purple", body="robe", cloth="dark_purple", legs="dark_purple", weapon="staff", orb="orb_purple", eyes="glow", glow="glow_y", boss=True),
     "firemage": dict(R=17.0, skin="skin", head="wizard", hat="red", body="robe", cloth="red", legs="red", weapon="staff", orb="orb_fire", eyes="cute", boss=True),
     "golem": dict(kind="golem", boss=True),
+    # D-131 chapter 6-10 bosses: existing parts in new materials.
+    "sandking": dict(R=17.0, skin="skin", head="hood", hood="sand", body="tunic", cloth="sand", legs="brown", weapon="katana", eyes="cute", brows=True, boss=True),
+    "lavagolem": dict(kind="golem", boss=True, mat_stone="basalt", mat_stone_dark="basalt_dark", mat_moss="lava", mat_crystal="ember", flowers=False),
+    "swampwitch": dict(R=17.0, skin="goblin", head="wizard", hat="swamp", body="robe", cloth="swamp", legs="swamp", weapon="staff", orb="orb_green", eyes="cute", boss=True),
+    "crystalgolem": dict(kind="golem", boss=True, mat_stone="ice_stone", mat_stone_dark="ice_dark", mat_moss="crystal", mat_crystal="crystal_pink", flowers=False),
+    "demonknight": dict(R=17.0, skin="shadow_face", head="helmet", helm="helm_dark", plume="plume_purple", body="tunic", cloth="tunic_crimson",
+                        legs="black", boots="boots", weapon="sword", blade="blade_blood", shield=True, shield_mat="black", cape=True,
+                        cape_mat="cape_purple", eyes="glow", glow="glow_v", boss=True),
+    # D-131 enemy recolours for the new chapters.
+    "goblins": dict(R=10.0, skin="goblin_s", head="goblin", body="tunic", cloth="sand", legs="leather", weapon="club", eyes="cute"),
+    "skeletonr": dict(R=10.0, skin="bone_r", head="skull", body="bones", cloth="bone_r", legs="bone_r", weapon="sword", eyes="socket", glow="glow_o"),
+    "mushroomg": dict(R=8.5, eye_el=-20.0, skin="stem", head="mushroom", cap="cap_g", body="tunic", cloth="stem", legs="stem", weapon="none", eyes="cute"),
+    "flyeyec": dict(R=9.0, kind="flyeye", iris="iris_c", wing="wing_c"),
 }
 for _name, _over in TIERS.items():
     LOOKS[_name] = dict(HERO, name=_name, **_over)
@@ -994,33 +1026,38 @@ G = 17.0
 
 
 def build_golem(look):
+    # D-131: a golem look may swap its materials (mat_stone, mat_stone_dark, mat_moss, mat_crystal).
+    def m(name):
+        return look.get("mat_" + name, name)
+
     rig = Rig()
     root = empty("root", rot=(0, 0, rad(-70.0)), scale=(G, G, G))
     rig.fall = empty("fall", root)
     rig.hip = empty("hips", rig.fall, (0, 0, 0.55))
-    rock("stone", rig.hip, (0, 0, 0.62), 0.85, (0.95, 0.85, 0.82))
+    rock(m("stone"), rig.hip, (0, 0, 0.62), 0.85, (0.95, 0.85, 0.82))
     for lp, sz, tl in [((-0.15, -0.72, 1.25), (0.62, 0.16), (35, -15, 0)),
                        ((-0.2, 0.72, 1.25), (0.72, 0.17), (-35, -15, 0)),
                        ((-0.45, 0.35, 1.45), (0.55, 0.13), (-20, -35, 0))]:
-        bipyramid("crystal", rig.hip, lp, sz[0], sz[1], tl)
+        bipyramid(m("crystal"), rig.hip, lp, sz[0], sz[1], tl)
     rig.legs, rig.arms = {}, {}
     for side, y in (("front", -0.42), ("back", 0.42)):
         pivot = empty("leg_" + side, rig.hip, (0, y, 0.0))
-        rock("stone_dark", pivot, (0.02, 0, -0.2), 0.33, (1.0, 1.0, 1.1), subdiv=1, jitter=0.05)
+        rock(m("stone_dark"), pivot, (0.02, 0, -0.2), 0.33, (1.0, 1.0, 1.1), subdiv=1, jitter=0.05)
         rig.legs[side] = pivot
     for side, y in (("front", -0.88), ("back", 0.88)):
         pivot = empty("arm_" + side, rig.hip, (0.08, y, 1.02))
-        rock("stone_dark", pivot, (0, 0, -0.22), 0.3, subdiv=1, jitter=0.05)
-        rock("stone", pivot, (0.1, 0, -0.8), 0.5, (1.0, 0.95, 0.92), subdiv=2, jitter=0.08)
+        rock(m("stone_dark"), pivot, (0, 0, -0.22), 0.3, subdiv=1, jitter=0.05)
+        rock(m("stone"), pivot, (0.1, 0, -0.8), 0.5, (1.0, 0.95, 0.92), subdiv=2, jitter=0.08)
         rig.arms[side] = pivot
     rig.neck = empty("neck", rig.hip, (0.05, 0, 1.3))
     hc, hr = (0.08, 0.0, 0.78), (1.0, 0.95, 0.88)
     head_id = new_id()
-    rock("stone", rig.neck, hc, 1.0, hr, subdiv=3, jitter=0.03, line_id=head_id)
+    rock(m("stone"), rig.neck, hc, 1.0, hr, subdiv=3, jitter=0.03, line_id=head_id)
     moss_id = new_id()
-    rock("moss", rig.neck, (hc[0] - 0.1, 0, hc[2] + 0.48), 0.96, (1.0, 1.0, 0.45), subdiv=3, jitter=0.04, line_id=moss_id)
-    ellip("flower", rig.neck, (hc[0] + 0.25, -0.35, hc[2] + 0.92), (0.16, 0.16, 0.09), line_id=moss_id)
-    ellip("flower_mid", rig.neck, (hc[0] + 0.27, -0.37, hc[2] + 0.99), (0.07, 0.07, 0.07), line_id=moss_id)
+    rock(m("moss"), rig.neck, (hc[0] - 0.1, 0, hc[2] + 0.48), 0.96, (1.0, 1.0, 0.45), subdiv=3, jitter=0.04, line_id=moss_id)
+    if look.get("flowers", True):
+        ellip("flower", rig.neck, (hc[0] + 0.25, -0.35, hc[2] + 0.92), (0.16, 0.16, 0.09), line_id=moss_id)
+        ellip("flower_mid", rig.neck, (hc[0] + 0.27, -0.37, hc[2] + 0.99), (0.07, 0.07, 0.07), line_id=moss_id)
     face = Face(rig.neck, hc, hr, head_id)
     rig.eyes = Eyes(face, "cute", 1.0, low="eye_low_c", az=23.0, el=-8.0, w=0.2, h=0.3)
     face.decal("blush", -40, -20, (0.04, 0.14, 0.08))

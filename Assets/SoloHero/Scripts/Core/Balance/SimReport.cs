@@ -30,6 +30,9 @@ namespace SoloHero.Core.Balance
         public double Gold;
         public double EarnedTotal;
         public double SpentTotal;
+
+        /// <summary>D-127: combat power at the first clear (calibrates the recommended combat power).</summary>
+        public double Cp;
     }
 
     /// <summary>Totals for one simulated day (24 h wall clock).</summary>
@@ -59,6 +62,10 @@ namespace SoloHero.Core.Balance
         public int NormalFails;
         public int BossAttempts;
         public int BossFails;
+
+        /// <summary>D-130: highest tower floor at the end of the day; D-128 pulls paid with tickets that day.</summary>
+        public int TowerFloor;
+        public int TicketPulls;
 
         /// <summary>D-124: boss fails where the hero fell (the rest ran out of time).</summary>
         public int BossDeaths;

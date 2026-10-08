@@ -84,7 +84,19 @@ namespace SoloHero.Core.Stage
         /// <summary>D-100: the dungeon run that is in progress (or showing its result), None otherwise.</summary>
         public DungeonKind Dungeon => _dungeon;
         public bool InDungeon => _dungeon != DungeonKind.None;
-        public float DungeonTimeRemaining => _dungeonTimer > 0f ? _dungeonTimer : 0f;
+        public float DungeonTimeRemaining => InTower ? Math.Max(0f, _bossTimer) : _dungeonTimer > 0f ? _dungeonTimer : 0f;
+
+        /// <summary>D-130: in the infinite tower (fighting or showing the result).</summary>
+        public bool InTower => _dungeon == DungeonKind.Tower;
+
+        /// <summary>D-130: the tower floor being fought.</summary>
+        public int TowerFloor { get; private set; }
+
+        /// <summary>D-130: floors cleared in this tower run.</summary>
+        public int TowerCleared { get; private set; }
+
+        /// <summary>D-130: raised on every floor cleared, with what it paid (already in the save).</summary>
+        public event Action<TowerReward> TowerFloorCleared;
 
         /// <summary>Gold or EXP earned in the current dungeon run (already added to the save, kill by kill).</summary>
         public double DungeonEarned { get; private set; }
@@ -123,6 +135,45 @@ namespace SoloHero.Core.Stage
             // No StageStarted: a dungeon run is not a stage attempt (telemetry counts those).
             SetState(StageState.Dungeon);
             return true;
+        }
+
+        /// <summary>
+        /// D-130: leaves the current stage for the infinite tower at <paramref name="floor"/>. Each floor is one boss of
+        /// stage TOWER_G_OFFSET + floor against the boss timer; a win pays the floor, heals and climbs on, a loss (time
+        /// or the hero falling) ends the run and the runner returns to the stage it left. Refused during a boss fight
+        /// or another run.
+        /// </summary>
+        public bool StartTower(int floor)
+        {
+            if (floor < 1 || InDungeon) return false;
+            if (State == StageState.BossIntro || State == StageState.BossTimer) return false;
+            _returnG = _isBoss ? StageIndex.PreviousNormalStage(_g) : _g;
+            _returnRetreat = _retreatMode || _isBoss;
+            _dungeon = DungeonKind.Tower;
+            _deathTimer = 0f;
+            _resultTimer = 0f;
+            DungeonEarned = 0d;
+            TowerCleared = 0;
+            _hero.Reset(_stats);
+            BeginFloor(floor);
+            // No StageStarted: a tower run is not a stage attempt (telemetry counts those).
+            SetState(StageState.Dungeon);
+            return true;
+        }
+
+        private void BeginFloor(int floor)
+        {
+            TowerFloor = floor;
+            _g = TowerService.StageOf(_balance, floor);
+            _isBoss = true;
+            _killTarget = 1;
+            _kills = 0;
+            _bossTimer = _balance.BOSS_TIME_LIMIT;
+            _introTimer = _balance.TOWER_FLOOR_INTRO;
+            _world.ClearAll();
+            _spawner.Reset(1, true);
+            _skills.ResetCooldowns();
+            _pet.Reset();
         }
 
         /// <summary>D-125: a run past this x restarts the next stage from 0 (keeps positions small over hours of farming).</summary>
@@ -258,7 +309,8 @@ namespace SoloHero.Core.Stage
                     TickFailed(dt);
                     break;
                 case StageState.Dungeon:
-                    TickDungeon(dt);
+                    if (InTower) TickTower(dt);
+                    else TickDungeon(dt);
                     break;
                 case StageState.DungeonResult:
                     _resultTimer += dt;
@@ -369,6 +421,50 @@ namespace SoloHero.Core.Stage
             if (_dungeonTimer > 0f && !down) return;
 
             _dungeonTimer = 0f;
+            _resultTimer = 0f;
+            _world.ClearAll();
+            SetState(StageState.DungeonResult);
+            _saveRequester?.RequestSave();
+            DungeonEnded?.Invoke(_dungeon, DungeonEarned);
+        }
+
+        /// <summary>D-130: one boss per floor; a win pays, heals and climbs, a loss ends the run.</summary>
+        private void TickTower(float dt)
+        {
+            if (_introTimer > 0f)
+            {
+                _introTimer -= dt;
+                if (_introTimer <= 0f) SpawnOne(isBoss: true);
+                return;
+            }
+
+            _world.TickEnemies(dt);
+            _skills.Tick(dt, _hero, _world, true);
+            _pet.Tick(dt, _hero, _world);
+            _hero.SetSkillBuffs(_skills.BuffAtk, _skills.BuffAtkSpd, _skills.BuffCrit, _skills.BuffGuard);
+            _hero.Tick(dt, _world);
+
+            int gained = _world.ResolveDeaths();
+            if (gained > 0)
+            {
+                _save.totalKills += gained;
+                _save.bossKills += gained;
+                TowerReward reward = TowerService.Grant(_balance, _save, TowerFloor);
+                DungeonEarned += reward.Gems;
+                TowerCleared++;
+                _saveRequester?.RequestSave();
+                TowerFloorCleared?.Invoke(reward);
+                _hero.Reset(_stats, true);
+                BeginFloor(TowerFloor + 1);
+                return;
+            }
+
+            _bossTimer -= dt;
+            bool down = _hero.Hp <= 0d || _hero.State == HeroState.Dead;
+            if (down && _hero.State != HeroState.Dead) _hero.Kill();
+            if (_bossTimer > 0f && !down) return;
+
+            _bossTimer = 0f;
             _resultTimer = 0f;
             _world.ClearAll();
             SetState(StageState.DungeonResult);

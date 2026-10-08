@@ -58,6 +58,15 @@ namespace SoloHero.Core.Gacha
             return GachaBatchResult.Ok(items);
         }
 
+        /// <summary>D-128: spends up to <paramref name="max"/> gear tickets on as many pulls.</summary>
+        public GachaBatchResult TryPullTickets(SaveDataV2 data, int max)
+        {
+            int count = System.Math.Min(max, data.gearTickets);
+            if (count < 1) return GachaBatchResult.Fail(FailReason.NotEnoughTicket);
+            data.gearTickets -= count;
+            return PullFree(data, count);
+        }
+
         public GachaBatchResult TryPullTenWithGem(SaveDataV2 data)
         {
             if (data.gem < _balance.GACHA_COST_TEN_GEM)

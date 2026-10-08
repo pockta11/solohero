@@ -4,7 +4,7 @@ Each tile repeats horizontally. Rows are spaced by perspective (a 1/z mapping), 
 viewer; speckles (grass blades, pebbles, flowers) shrink and thin out with distance; a soft dark lip and a row of
 tufts along the far edge blend the floor into the background. No anti-aliasing.
 
-Run: python tools/art/floorgen.py  ->  Assets/SoloHero/Art/Tiles/floor_{1..5}.png
+Run: python tools/art/floorgen.py  ->  Assets/SoloHero/Art/Tiles/floor_{1..10}.png
 """
 import os
 import random
@@ -29,6 +29,12 @@ THEMES = [
     ("forest", "#24402c", "#38603c", "#447046", "#5e8c52", ["#86b866", "#c8a050", "#ff9fb0", "#2a4428"], "#3a6a3e", "#16261a"),
     ("dusk", "#2a1a2e", "#46304e", "#523a5c", "#6e5078", ["#8a6a96", "#b08ac0", "#2e1e34", "#ffcf7a"], "#3a2a44", "#140c18"),
     ("sunset", "#5a3036", "#8a5048", "#9a5e50", "#b87a62", ["#d8a07a", "#ffd090", "#5a3036", "#f0b8a0"], "#6a4048", "#24121a"),
+    # D-131 chapters 6-10.
+    ("desert", "#7a5230", "#b98450", "#c8945a", "#e0b070", ["#f0d090", "#8a6038", "#d8a868", "#6a8a40"], "#9a7040", "#4a2e1a"),
+    ("volcano", "#1e1216", "#3a2226", "#46282c", "#5e3434", ["#ff7a3a", "#2a1a1e", "#ffb060", "#5e3434"], "#2e1a1e", "#100a0c"),
+    ("swamp", "#24301e", "#3a4a2e", "#465834", "#5e7044", ["#7a9a5a", "#4a5a3a", "#a8b870", "#2e3a24"], "#3a5030", "#141c10"),
+    ("crystal", "#1a1438", "#2e2656", "#382e66", "#4e4282", ["#8ad0ff", "#c890ff", "#ffffff", "#2a2050"], "#3a3070", "#0e0a20"),
+    ("castle", "#1a1014", "#2e1e24", "#38242c", "#4e3240", ["#6a4a58", "#2a1a20", "#a8706a", "#ff6a5a"], "#2e1e26", "#0c0608"),
 ]
 
 

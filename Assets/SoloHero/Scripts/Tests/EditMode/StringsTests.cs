@@ -82,7 +82,8 @@ namespace SoloHero.Tests.EditMode
         public void Table_HasEveryBossName()
         {
             Dictionary<string, string> table = Strings.ParseTsv(File.ReadAllText(TablePath));
-            for (int i = 1; i <= 5; i++) Assert.IsTrue(table.ContainsKey("boss.name." + i), "boss.name." + i);
+            // D-131: ten chapter looks (Game BossNames.Count).
+            for (int i = 1; i <= 10; i++) Assert.IsTrue(table.ContainsKey("boss.name." + i), "boss.name." + i);
         }
 
         [Test]

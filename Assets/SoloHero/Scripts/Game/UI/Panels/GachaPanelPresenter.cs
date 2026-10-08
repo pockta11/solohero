@@ -42,8 +42,9 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
         [SerializeField] private GachaRevealView _reveal;
-        [SerializeField] private TapGuardButton _goldPackButton;
-        [SerializeField] private Text _goldPackText;
+        [Tooltip("D-128: spend up to ten tickets of the shown summon.")]
+        [SerializeField] private TapGuardButton _ticketButton;
+        [SerializeField] private Text _ticketLabel;
         [Tooltip("D-120: watch an ad for a free ten-pull (gear and pet pages).")]
         [SerializeField] private TapGuardButton _adButton;
         [SerializeField] private Text _adLabel;
@@ -64,7 +65,6 @@ namespace SoloHero.Game.UI.Panels
         private GachaService _gacha;
         private SkillSummonService _skillSummon;
         private PetSummonService _petSummon;
-        private GemShop _shop;
         private AdSlotPolicy _adPolicy;
         private IAdGateway _ads;
         private bool _adBusy;
@@ -82,7 +82,6 @@ namespace SoloHero.Game.UI.Panels
             _gacha = PanelServices.TryGet<GachaService>();
             _skillSummon = PanelServices.TryGet<SkillSummonService>();
             _petSummon = PanelServices.TryGet<PetSummonService>();
-            _shop = PanelServices.TryGet<GemShop>();
             _adPolicy = PanelServices.TryGet<AdSlotPolicy>();
             _ads = PanelServices.TryGet<IAdGateway>();
             _balance = PanelServices.TryGet<BalanceValues>();
@@ -244,19 +243,15 @@ namespace SoloHero.Game.UI.Panels
             });
         }
 
-        /// <summary>E6-02: gems for an instant gold package worth 100 clears of the farming stage.</summary>
-        public void BuyGoldPack()
+        /// <summary>D-128: up to ten pulls of the shown summon, paid with its tickets.</summary>
+        public void UseTickets()
         {
-            if (_shop == null || _save == null) return;
-            double gold = _shop.GoldPackAmount(_save);
-            Result r = _shop.TryBuyGoldPack(_save);
-            if (_toast != null)
-            {
-                if (r.Ok) _toast.Show(Strings.Format("toast.gold_pack", BigNumberFormat.Format(gold)));
-                else _toast.ShowFailure(r.Reason);
-            }
-
-            Refresh();
+            if (_save == null) return;
+            int before = CurrentLevel;
+            if (_mode == ModePet) ApplyPet(_petSummon != null ? _petSummon.TryPullTickets(_save, 10) : default, "pet_ticket");
+            else if (_mode == ModeSkill) ApplySkill(_skillSummon != null ? _skillSummon.TryPullTickets(_save, 10) : default, "skill_ticket");
+            else Apply(_gacha != null ? _gacha.TryPullTickets(_save, 10) : default, "ticket");
+            AnnounceLevel(before);
         }
 
         private void Apply(GachaBatchResult result, string kind)
@@ -439,7 +434,7 @@ namespace SoloHero.Game.UI.Panels
                 int from = SummonLevel.PullsFor(_balance, kind, level);
                 int to = SummonLevel.PullsFor(_balance, kind, level + 1);
                 int pulls = SummonLevel.Pulls(_save, kind);
-                top = Strings.Format("gacha.level_progress", level, to - pulls);
+                top = Strings.Format("gacha.level_progress", level, BigNumberFormat.Format(to - pulls));
                 ratio = to > from ? Mathf.Clamp01((float)(pulls - from) / (to - from)) : 1f;
             }
 
@@ -451,9 +446,10 @@ namespace SoloHero.Game.UI.Panels
             if (_tenButton != null) _tenButton.SetAvailable(!locked && _save.gold >= TenCost);
             if (_gemButton != null) _gemButton.SetAvailable(!locked && _save.gem >= GemCost);
             _shownFarmingStage = _save.farmingStage;
-            if (_shop != null && _goldPackText != null)
-                _goldPackText.text = Strings.Format("gacha.gold_pack", _balance.GEM_GOLD_PACK_COST, BigNumberFormat.Format(_shop.GoldPackAmount(_save)));
-            if (_goldPackButton != null) _goldPackButton.SetAvailable(_save.gem >= _balance.GEM_GOLD_PACK_COST);
+            int tickets = ShopService.TicketsOf(_save, Kind);
+            if (_ticketLabel != null)
+                _ticketLabel.text = Strings.Format("gacha.tickets", System.Math.Min(10, tickets), BigNumberFormat.Format(tickets));
+            if (_ticketButton != null) _ticketButton.SetAvailable(!locked && tickets > 0);
             DrawAdButton(locked);
         }
 
@@ -484,8 +480,8 @@ namespace SoloHero.Game.UI.Panels
                 // D-121: when the next level opens a grade, the line says which.
                 int left = SummonLevel.PullsFor(_balance, kind, level + 1) - SummonLevel.Pulls(_save, kind);
                 _sb.Append(opening >= 0
-                    ? Strings.Format("gacha.level_open", level, left, PanelServices.GradeName(LadderGrade(mode, opening)))
-                    : Strings.Format("gacha.level", level, left));
+                    ? Strings.Format("gacha.level_open", level, BigNumberFormat.Format(left), PanelServices.GradeName(LadderGrade(mode, opening)))
+                    : Strings.Format("gacha.level", level, BigNumberFormat.Format(left)));
             }
 
             _sb.Append('\n');
@@ -528,9 +524,8 @@ namespace SoloHero.Game.UI.Panels
                 .Append("</color>");
         }
 
-        /// <summary>D-113: prices stay exact below 100K ("1,350", not "1.4K"); larger ones use the K/M notation.</summary>
-        private static string Price(double gold) =>
-            gold < 100000d ? gold.ToString("#,0", CultureInfo.InvariantCulture) : BigNumberFormat.Format(gold);
+        /// <summary>D-127: prices shorten like every other number (1.35K, 45K).</summary>
+        private static string Price(double gold) => BigNumberFormat.Format(gold);
 
         private static GearGrade BestGrade(GachaPullItem[] items)
         {

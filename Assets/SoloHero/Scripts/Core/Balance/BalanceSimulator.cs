@@ -5,6 +5,7 @@ using SoloHero.Core.Config;
 using SoloHero.Core.Economy;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
+using SoloHero.Core.Growth;
 using SoloHero.Core.Progression;
 using SoloHero.Core.Save;
 using SoloHero.Core.Skills;
@@ -91,6 +92,7 @@ namespace SoloHero.Core.Balance
                     Job1 = settings.Job1, Job2 = settings.Job2, DpsWeight = settings.DpsWeight
                 };
                 _ads = new AdSlotPolicy(balance, _save, _clock);
+                _spender.Shop = new ShopService(balance, _save, _clock);
                 _tutorial = new TutorialService(balance, gacha);
                 _guide = new GuideQuestService(balance, _save);
                 _achievements = new AchievementService(_save);
@@ -118,6 +120,7 @@ namespace SoloHero.Core.Balance
                     double refund0 = _spender.EarnedRefund;
                     int goldPulls0 = _spender.GoldPulls;
                     int gemPulls0 = _spender.GemPulls;
+                    int ticketPulls0 = _spender.TicketPulls;
 
                     for (int i = 0; i < _s.DailySessions.Length; i++)
                     {
@@ -135,6 +138,9 @@ namespace SoloHero.Core.Balance
                                 _ads.Complete(AdSlot.Gem, AdOutcome.Rewarded);
                             if (_ads.CanUse(AdSlot.GoldBooster).Ok)
                                 _ads.Complete(AdSlot.GoldBooster, AdOutcome.Rewarded);
+                            // D-129: the speed booster whenever one is left and none is running.
+                            if (_ads.CanUse(AdSlot.BattleSpeed).Ok)
+                                _ads.Complete(AdSlot.BattleSpeed, AdOutcome.Rewarded);
                             _spender.PullAdFree(_ads);
                         }
 
@@ -143,6 +149,8 @@ namespace SoloHero.Core.Balance
                         _runner.Resume(_save.farmingStage < 1 ? 1 : _save.farmingStage, _save.retreatMode);
                         _attemptStarted = true;
                         ProcessAttemptStart();
+                        // D-130: a tower climb from the first uncleared floor; the runner returns to the stage after it.
+                        if (_s.UseTower && TowerService.IsUnlocked(_b, _save)) _runner.StartTower(_save.towerFloor + 1);
 
                         _sessionStageGold = 0d;
                         int steps = (int)Math.Round(session.Minutes * 60d / _s.DeltaTime);
@@ -163,6 +171,8 @@ namespace SoloHero.Core.Balance
                     _day.GoldPulls = _spender.GoldPulls - goldPulls0;
                     _day.GemPulls = _spender.GemPulls - gemPulls0;
                     _day.HighestStage = _save.highestStage;
+                    _day.TowerFloor = _save.towerFloor;
+                    _day.TicketPulls = _spender.TicketPulls - ticketPulls0;
                     _day.HeroLevel = _save.heroLevel;
                     _day.GoldEnd = _save.gold;
                     _day.GemEnd = _save.gem;
@@ -188,7 +198,9 @@ namespace SoloHero.Core.Balance
                 double boost = _ads.StageGoldMultiplier;
                 _runner.ClearGoldMultiplier = boost;
                 double goldBefore = _save.gold;
-                _runner.Tick(dt);
+                // D-129: the speed booster runs the battle that many times faster in the same real time.
+                int reps = Math.Max(1, (int)Math.Round(_ads.BattleSpeedMultiplier));
+                for (int r = 0; r < reps; r++) _runner.Tick(dt);
                 _play += dt;
                 _day.PlaySeconds += dt;
 
@@ -447,7 +459,8 @@ namespace SoloHero.Core.Balance
                     Pulls = _save.totalPullCount,
                     Gold = _save.gold,
                     EarnedTotal = _earnedTotal + _spender.EarnedRefund,
-                    SpentTotal = _spender.SpentUpgrade + _spender.SpentGacha + _spender.SpentSkill + _spender.SpentPet
+                    SpentTotal = _spender.SpentUpgrade + _spender.SpentGacha + _spender.SpentSkill + _spender.SpentPet,
+                    Cp = CombatPower.Of(_b, CombatLoadout.ComputeStats(_b, _save), SoloHero.Core.Pets.PetService.EquippedRate(_b, _save))
                 };
             }
 

@@ -94,6 +94,10 @@ namespace SoloHero.Core.Save
         /// <summary>D-120: free gear and pet summons watched today.</summary>
         public int adCountA4;
         public int adCountA5;
+
+        /// <summary>D-129: speed boosters watched today and when the running one ends (UTC seconds).</summary>
+        public int adCountA6;
+        public long speedBoostEndUtc;
         public string adCountResetDate = "";
 
         public long goldBoosterEndUtc;
@@ -111,6 +115,16 @@ namespace SoloHero.Core.Save
         public string dungeonDate = "";
         public int dungeonGoldUsed;
         public int dungeonExpUsed;
+
+        /// <summary>D-128 summon tickets (one pull each) and today's shop purchases, index-aligned with ShopItem.</summary>
+        public int gearTickets;
+        public int skillTickets;
+        public int petTickets;
+        public string shopDate = "";
+        public List<bool> shopBought = new List<bool>();
+
+        /// <summary>D-130: the highest infinite-tower floor cleared.</summary>
+        public int towerFloor;
 
         public int tutorialStep;
 

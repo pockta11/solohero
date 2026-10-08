@@ -80,6 +80,16 @@ namespace SoloHero.Core.Skills
             return Pull(data, 10);
         }
 
+        /// <summary>D-128: spends up to <paramref name="max"/> skill tickets on as many pulls (after the first job).</summary>
+        public SkillSummonResult TryPullTickets(SaveDataV2 data, int max)
+        {
+            if (JobService.LineOf(data) == JobLine.None) return SkillSummonResult.Fail(FailReason.JobLocked);
+            int count = Math.Min(max, data.skillTickets);
+            if (count < 1) return SkillSummonResult.Fail(FailReason.NotEnoughTicket);
+            data.skillTickets -= count;
+            return Pull(data, count);
+        }
+
         public SkillSummonResult TryPullTenWithGem(SaveDataV2 data)
         {
             if (JobService.LineOf(data) == JobLine.None) return SkillSummonResult.Fail(FailReason.JobLocked);

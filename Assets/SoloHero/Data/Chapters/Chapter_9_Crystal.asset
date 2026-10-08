@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555bf3b3f397484f943cce376b6a3dcd, type: 3}
+  m_Name: Chapter_9_Crystal
+  m_EditorClassIdentifier: 
+  layers:
+  - {fileID: 21300000, guid: 439d6f406043e2440a720b620c66469c, type: 3}
+  - {fileID: 21300000, guid: 6bc15783904305e4c97b68dcfc673bbd, type: 3}
+  - {fileID: 21300000, guid: 7ea6452a5dc3c6747a9ceba8317ca733, type: 3}
+  - {fileID: 21300000, guid: 1d543e967775e134b961f1789dfc3609, type: 3}
+  - {fileID: 21300000, guid: c825310d6a074d14c911cc9a5a3b9f91, type: 3}
+  follow:
+  - 0.97
+  - 0.8025
+  - 0.635
+  - 0.46750003
+  - 0.3
+  floor: {fileID: 21300000, guid: da356a6eef82ab34dbe2b5c91e8f6414, type: 3}
+  pixelScale: 1
+  sky: {r: 0.078431375, g: 0.05490196, b: 0.1882353, a: 1}
+  enemies:
+  - {fileID: 11400000, guid: f2e64196f6c51bb468975e8f0779cd0b, type: 2}
+  - {fileID: 11400000, guid: d0e4a92503ab77d4280543b48a0272f3, type: 2}
+  - {fileID: 11400000, guid: f6cce1799c627b64f8abc99c748932c3, type: 2}
+  boss: {fileID: 11400000, guid: 856f6108ebc607549b8bff41cf04ffb6, type: 2}
+  bgm: {fileID: 8300000, guid: b2b22693745407f46a4949712edd866d, type: 3}
+  melee: {fileID: 11400000, guid: 6a865b91c9ebeb6478745771d1040db8, type: 2}
+  fast: {fileID: 11400000, guid: f2e64196f6c51bb468975e8f0779cd0b, type: 2}
+  tank: {fileID: 11400000, guid: f6cce1799c627b64f8abc99c748932c3, type: 2}
+  ranged: {fileID: 11400000, guid: d0e4a92503ab77d4280543b48a0272f3, type: 2}

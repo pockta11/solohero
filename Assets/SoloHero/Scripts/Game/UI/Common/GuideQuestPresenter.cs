@@ -154,11 +154,11 @@ namespace SoloHero.Game.UI.Common
         }
 
         private string TargetText(GuideQuestDef def) =>
-            def.Kind == GuideKind.ClearStage ? StageLabel(def.Target) : def.Target.ToString();
+            def.Kind == GuideKind.ClearStage ? StageLabel(def.Target) : BigNumberFormat.Format(def.Target);
 
         private string ProgressText(GuideQuestDef def, int progress)
         {
-            if (def.Kind != GuideKind.ClearStage) return (progress > def.Target ? def.Target : progress).ToString();
+            if (def.Kind != GuideKind.ClearStage) return BigNumberFormat.Format(progress > def.Target ? def.Target : progress);
             return StageLabel(progress > def.Target ? def.Target : progress);
         }
 
