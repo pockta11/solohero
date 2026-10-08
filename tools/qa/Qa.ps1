@@ -20,7 +20,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$adbExe = 'C:\Users\user\android-sdk-tools\platform-tools\adb.exe'
+$toolsRoot = if ($env:SOLOHERO_ANDROID_TOOLS) { $env:SOLOHERO_ANDROID_TOOLS } else { 'C:\Users\user\android-sdk-tools' }
+$adbExe = Join-Path $toolsRoot 'platform-tools\adb.exe'
 $pkg = 'com.SoloSoft.solohero'
 $activity = "$pkg/com.unity3d.player.UnityPlayerActivity"
 $prefs = "/data/data/$pkg/shared_prefs/$pkg.v2.playerprefs.xml"
@@ -136,7 +137,8 @@ switch ($Cmd) {
             Boot
             $before = Read-Save
             $gacha = ($i % 2 -eq 0)
-            if ($gacha) { Tap 540 1853; Start-Sleep 1.5; Tap 205 1710 } else { Tap 756 1853; Start-Sleep 1; Tap 108 1853; Start-Sleep 1.5; Tap 865 1345 }
+            # D-142: the HP lane's gold button is the left card of the first row (1080 x 1920).
+            if ($gacha) { Tap 540 1853; Start-Sleep 1.5; Tap 205 1710 } else { Tap 756 1853; Start-Sleep 1; Tap 108 1853; Start-Sleep 1.5; Tap 435 1493 }
             $delay = $delays[$i % $delays.Count]
             Start-Sleep -Milliseconds ([int]($delay * 1000))
             Stop-App
@@ -208,8 +210,8 @@ switch ($Cmd) {
             # The character panel opens on start; go through the skill tab so the next tap always opens it.
             Tap 756 1853; Start-Sleep 1
             Tap 108 1853; Start-Sleep 1
-            Tap 865 1345; Start-Sleep 0.5
-            Tap 865 1465; Start-Sleep 0.5
+            Tap 435 1493; Start-Sleep 0.5   # HP lane (D-142 lane cards)
+            Tap 955 1493; Start-Sleep 0.5   # ATK lane
             if (-not $pulled -and ((Get-Date) - $start).TotalSeconds -gt 90) {
                 Tap 540 1853; Start-Sleep 1
                 Tap 205 1710; Start-Sleep 3

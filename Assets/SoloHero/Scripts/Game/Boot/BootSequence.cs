@@ -32,11 +32,19 @@ namespace SoloHero.Game.Boot
         private SaveService _save;
         private SaveDataV2 _data;
         private BalanceValues _balanceValues;
+        private TrustedClock _clock;
         private bool _offlinePopupPending;
+
+        /// <summary>D-133: the player came back before the server's clock was known; paid when it is.</summary>
+        private bool _offlineDeferred;
+
+        /// <summary>Monotonic reading at the last return (start-up or back from the background).</summary>
+        private double _returnMonotonic;
 
         private async void Start()
         {
             Log.Sink = new UnityLogSink();
+            ExceptionReporter.Install();
             if (_strings != null) Strings.Load(Strings.ParseTsv(_strings.text));
             DontDestroyOnLoad(gameObject);
             try
@@ -52,8 +60,13 @@ namespace SoloHero.Game.Boot
         public async Task RunAsync()
         {
             BalanceValues balance = _balance != null ? _balance.ToValues() : new BalanceValues();
-            var clock = new SystemClock();
-            var auth = new AuthService();
+            // SDK callbacks (the server clock among them) are posted here; it must run while sign-in and loading await.
+            if (GetComponent<MainThreadDispatcher>() == null) gameObject.AddComponent<MainThreadDispatcher>();
+            // D-133: trusted time - the device clock at start-up, then the server's clock once Firebase connects.
+            _clock = new TrustedClock(new SystemClock(), MonotonicTime.Seconds);
+            _returnMonotonic = _clock.MonotonicSeconds;
+            var clock = _clock;
+            var auth = new AuthService(_clock);
             if (_loading != null) _loading.SetProgress(0.15f);
             BootReport report = await BootFlow.RunAsync(auth, CreateSave, balance, clock);
             if (_loading != null) _loading.SetProgress(0.5f);
@@ -61,6 +74,7 @@ namespace SoloHero.Game.Boot
             _save = report.Save;
             _data = report.Data;
             _offlinePopupPending = report.Offline.ShowPopup;
+            _offlineDeferred = report.OfflineDeferred;
 
             Services.Register(balance);
             Services.Register<IClock>(clock);
@@ -73,6 +87,9 @@ namespace SoloHero.Game.Boot
             RegisterAds(balance, clock, requester);
             RegisterSettingsAndAudio();
             Services.Register<IAnalytics>(new AnalyticsService(auth.FirebaseReady));
+            ExceptionReporter.Flush();
+            // D-134 account tools (settings > account): transfer codes and data deletion.
+            Services.Register(new AccountService(report.UserId, _save, _data, new NewtonsoftSaveSerializer(), clock));
             _balanceValues = balance;
             // D-119: the game is open, so pending reminders go away (and the channel exists for the next leave).
             SoloHero.Game.Infrastructure.LocalNotifications.Init(_data);
@@ -87,13 +104,61 @@ namespace SoloHero.Game.Boot
             }
 
             if (report.Offline.ShowPopup)
+                ShowOfflinePopup(report.Offline);
+
+            // D-133: no network at start-up - the offline gold waits for the server's clock (it may already be here).
+            if (_offlineDeferred)
             {
-                OfflineRewardPopup popup = FindObjectOfType<OfflineRewardPopup>();
-                if (popup != null)
-                    popup.Show(report.Offline.Gold, report.Offline.CountedSeconds, balance.OFFLINE_CAP);
+                if (_clock.IsTrusted) PayDeferredOffline();
+                else _clock.ServerTimeKnown += PayDeferredOffline;
             }
 
             EnterGame();
+        }
+
+        /// <summary>
+        /// D-133 / GDD offline rule 1: coming back from the background pays the time away too (before, only a cold
+        /// start did, and a process Android kept alive lost the hours). Untrusted time waits for the server's clock.
+        /// </summary>
+        private void ComeBack()
+        {
+            if (_data == null || _clock == null) return;
+            _returnMonotonic = _clock.MonotonicSeconds;
+            if (_offlinePopupPending || _offlineDeferred) return;
+            if (!_clock.IsTrusted)
+            {
+                _offlineDeferred = true;
+                _clock.ServerTimeKnown -= PayDeferredOffline;
+                _clock.ServerTimeKnown += PayDeferredOffline;
+                return;
+            }
+
+            PayOffline(_clock.UtcNowSeconds);
+        }
+
+        private void PayDeferredOffline()
+        {
+            _clock.ServerTimeKnown -= PayDeferredOffline;
+            if (!_offlineDeferred || _data == null) return;
+            _offlineDeferred = false;
+            // Measured to the moment the player came back, not to now: the time played since is not offline time.
+            PayOffline(_clock.UtcAt(_returnMonotonic));
+        }
+
+        private void PayOffline(long returnUtc)
+        {
+            OfflineReward offline = OfflineReturn.Apply(_balanceValues, _data, returnUtc, _clock.IsServerTime);
+            if (offline.GrantNow || offline.ResetQuitTime) _save?.RequestSave(_data);
+            if (!offline.ShowPopup) return;
+            _offlinePopupPending = true;
+            ShowOfflinePopup(offline);
+        }
+
+        private void ShowOfflinePopup(OfflineReward offline)
+        {
+            OfflineRewardPopup popup = FindObjectOfType<OfflineRewardPopup>();
+            if (popup != null)
+                popup.Show(offline.Gold, offline.CountedSeconds, _balanceValues != null ? _balanceValues.OFFLINE_CAP : 0);
         }
 
         private void RegisterAds(BalanceValues balance, IClock clock, ISaveRequester requester)
@@ -131,7 +196,12 @@ namespace SoloHero.Game.Boot
         private void RegisterGrowth(BalanceValues balance, ISaveRequester requester)
         {
             Services.Register(new UpgradeService(_data, balance, requester));
-            Services.Register(new SoloHero.Core.Jobs.JobService(_data, balance, requester));
+            Services.Register(new ApService(_data, balance, requester));
+            var jobs = new SoloHero.Core.Jobs.JobService(_data, balance, requester);
+            Services.Register(jobs);
+            // D-140: the strings name ATK, the AP main stat and the weapon after the hero's job line.
+            SoloHero.Core.Jobs.JobTerms.Apply(SoloHero.Core.Jobs.JobService.LineOf(_data));
+            jobs.Advanced += job => SoloHero.Core.Jobs.JobTerms.Apply(job.Line);
             // D-114: an older save gets the pets its cleared stages had unlocked (the D-102 companions).
             SoloHero.Core.Pets.PetService.EnsureOwned(_data);
             Services.Register(new SoloHero.Core.Pets.PetService(_data, balance, requester));
@@ -230,6 +300,7 @@ namespace SoloHero.Game.Boot
             else
             {
                 SoloHero.Game.Infrastructure.LocalNotifications.CancelAll();
+                ComeBack();
             }
         }
 
@@ -250,8 +321,9 @@ namespace SoloHero.Game.Boot
             if (_data == null || _save == null) return;
             try
             {
-                if (!_offlinePopupPending)
-                    _data.lastQuitTimeUtc = new SystemClock().UtcNowSeconds;
+                // D-133: an unclaimed popup or untrusted time keeps the old stamp (the next trusted return measures from it).
+                if (!_offlinePopupPending && _clock != null && _clock.IsTrusted)
+                    OfflineReturn.StampLeave(_data, _clock.UtcNowSeconds, _clock.IsServerTime);
                 Task flush = _save.FlushAsync(_data);
                 await Task.WhenAny(flush, Task.Delay(QuitSaveTimeoutMs));
             }

@@ -99,6 +99,9 @@ namespace SoloHero.Tests.EditMode
             var dungeons = new DungeonService(b, save, clock);
             StageRunner runner = Runner(b, save);
             runner.Resume(1, false);
+            // D-143: closed until the first boss falls.
+            Assert.AreEqual(FailReason.Locked, dungeons.TryEnter(DungeonKind.Gold, runner).Reason);
+            save.highestStage = b.DUNGEON_UNLOCK_STAGE;
 
             Assert.AreEqual(b.DUNGEON_DAILY_TICKETS, dungeons.Remaining(DungeonKind.Gold));
             Assert.IsTrue(dungeons.TryEnter(DungeonKind.Gold, runner).Ok);

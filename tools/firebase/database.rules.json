@@ -5,7 +5,30 @@
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null && auth.uid === $uid && !newData.exists()",
+        "v2": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.hasChildren(['dataVersion', 'saveRevision']) && newData.child('dataVersion').isNumber() && newData.child('saveRevision').isNumber()"
+        }
+      }
+    },
+    "transfers": {
+      "$code": {
+        ".read": "auth != null && data.exists() && data.child('createdAt').val() > now - 86400000",
+        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists()))",
+        ".validate": "$code.length === 12 && $code.matches(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]+$/) && newData.hasChildren(['uid', 'save', 'createdAt'])",
+        "uid": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "save": {
+          ".validate": "newData.isString() && newData.val().length < 200000"
+        },
+        "createdAt": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     }
   }

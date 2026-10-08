@@ -1,0 +1,123 @@
+name: Release AAB (Play upload)
+
+# Launch plan P0-1..P0-3: the only path to an AAB for Google Play. Manual dispatch with the version name; the version
+# code is 1000 + this workflow's run number (monotonic, above every CI build code). The build fails unless it is
+# signed with the upload key and carries the Firebase config (BuildAutomator SOLOHERO_RELEASE=1).
+#
+# Secrets (Settings > Secrets and variables > Actions), created once by the developer:
+#   UNITY_EMAIL, UNITY_PASSWORD           - same as the CI build
+#   GOOGLE_SERVICES_JSON_BASE64           - base64 of Assets/google-services.json
+#   UPLOAD_KEYSTORE_BASE64                - base64 of the upload keystore (tools/release/NewUploadKey.ps1)
+#   UPLOAD_KEYSTORE_PASS, UPLOAD_KEY_ALIAS, UPLOAD_KEY_PASS
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "versionName, e.g. 1.0.0"
+        required: true
+        default: "1.0.0"
+
+concurrency:
+  group: unity-android-build
+  cancel-in-progress: false
+
+env:
+  UNITY_IMAGE: unityci/editor:ubuntu-2022.3.62f3-android-3
+
+jobs:
+  release:
+    name: Signed release AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Check secrets
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+          UPLOAD_KEYSTORE_PASS: ${{ secrets.UPLOAD_KEYSTORE_PASS }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASS: ${{ secrets.UPLOAD_KEY_PASS }}
+          VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          missing=0
+          for name in GOOGLE_SERVICES_JSON_BASE64 UPLOAD_KEYSTORE_BASE64 UPLOAD_KEYSTORE_PASS UPLOAD_KEY_ALIAS UPLOAD_KEY_PASS; do
+            if [ -z "${!name}" ]; then echo "::error::secret $name is missing"; missing=1; fi
+          done
+          if ! echo "$VERSION_NAME" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then echo "::error::version_name must look like 1.0.0"; missing=1; fi
+          exit $missing
+
+      - name: Free disk space
+        run: |
+          df -h / | tail -1
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift
+          sudo docker image prune -af >/dev/null 2>&1 || true
+          sudo apt-get clean
+          df -h / | tail -1
+
+      - name: Cache Library
+        uses: actions/cache@v6
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-Android-
+
+      # The keystore and google-services.json are written inside the workspace (mounted into the container) and are
+      # git-ignored (*.keystore, Assets/google-services.json); the last step removes them.
+      - name: Write Firebase config and upload key
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 -d > Assets/google-services.json
+          mkdir -p .release
+          echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > .release/upload.keystore
+
+      - name: Build signed AAB
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          SOLOHERO_KEYSTORE_PASS: ${{ secrets.UPLOAD_KEYSTORE_PASS }}
+          SOLOHERO_KEYALIAS_NAME: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          SOLOHERO_KEYALIAS_PASS: ${{ secrets.UPLOAD_KEY_PASS }}
+        run: |
+          chmod +x .github/scripts/unity-build.sh
+          docker run --rm --init \
+            -v "$GITHUB_WORKSPACE:/project" -w /project \
+            -e UNITY_EMAIL -e UNITY_PASSWORD \
+            -e SOLOHERO_RELEASE=1 \
+            -e SOLOHERO_VERSION_NAME="${{ inputs.version_name }}" \
+            -e SOLOHERO_VERSION_CODE="$((1000 + ${{ github.run_number }}))" \
+            -e SOLOHERO_KEYSTORE_PATH=/project/.release/upload.keystore \
+            -e SOLOHERO_KEYSTORE_PASS -e SOLOHERO_KEYALIAS_NAME -e SOLOHERO_KEYALIAS_PASS \
+            "$UNITY_IMAGE" \
+            bash /project/.github/scripts/unity-build.sh
+
+      - name: Fix ownership
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" Library Builds 2>/dev/null || true
+
+      - name: Verify signature
+        run: |
+          jarsigner -verify -certs Builds/game.aab > .release/verify.txt 2>&1 || { cat .release/verify.txt; exit 1; }
+          if grep -q "Android Debug" .release/verify.txt; then echo "::error::AAB is debug-signed"; exit 1; fi
+          grep -m1 "jar verified" .release/verify.txt
+          mv Builds/game.aab "Builds/solohero-${{ inputs.version_name }}-$((1000 + ${{ github.run_number }})).aab"
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-release-aab
+          path: Builds/solohero-*.aab
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Remove secrets from the workspace
+        if: always()
+        run: rm -rf .release Assets/google-services.json

@@ -17,13 +17,17 @@ namespace SoloHero.Core.Stage
         public readonly int SkillTickets;
         public readonly int PetTickets;
 
-        public TowerReward(int floor, double gems, int gearTickets, int skillTickets, int petTickets)
+        /// <summary>D-143 breakthrough stones.</summary>
+        public readonly int Stones;
+
+        public TowerReward(int floor, double gems, int gearTickets, int skillTickets, int petTickets, int stones = 0)
         {
             Floor = floor;
             Gems = gems;
             GearTickets = gearTickets;
             SkillTickets = skillTickets;
             PetTickets = petTickets;
+            Stones = stones;
         }
     }
 
@@ -54,9 +58,12 @@ namespace SoloHero.Core.Stage
 
         public static int StageOf(BalanceValues balance, int floor) => balance.TOWER_G_OFFSET + Math.Max(1, floor);
 
-        /// <summary>The floor's boss is a boss fight at its stage: the recommended combat power of a boss there.</summary>
+        /// <summary>
+        /// The floor's boss is a boss fight at its stage with TOWER_BOSS_HP_MULT x the HP (D-144): the recommended combat
+        /// power of a boss there, times that (the HP wall is beaten with damage, and combat power is mostly damage).
+        /// </summary>
         public static double RecommendedCp(BalanceValues balance, int floor) =>
-            CombatPower.Recommended(balance, StageOf(balance, floor), true);
+            Math.Floor(CombatPower.Recommended(balance, StageOf(balance, floor), true) * Math.Max(1d, balance.TOWER_BOSS_HP_MULT));
 
         public static double Gems(BalanceValues balance, int floor) =>
             Math.Floor(balance.TOWER_GEM_BASE + balance.TOWER_GEM_PER_FLOOR * Math.Max(1, floor));
@@ -67,7 +74,8 @@ namespace SoloHero.Core.Stage
             bool tickets = balance.TOWER_TICKET_EVERY > 0 && floor % balance.TOWER_TICKET_EVERY == 0;
             bool rare = balance.TOWER_RARE_EVERY > 0 && floor % balance.TOWER_RARE_EVERY == 0;
             return new TowerReward(floor, Gems(balance, floor), tickets ? balance.TOWER_GEAR_TICKETS : 0,
-                rare ? balance.TOWER_SKILL_TICKETS : 0, rare ? balance.TOWER_PET_TICKETS : 0);
+                rare ? balance.TOWER_SKILL_TICKETS : 0, rare ? balance.TOWER_PET_TICKETS : 0,
+                balance.TOWER_STONES + (rare ? balance.TOWER_STONES_RARE : 0));
         }
 
         /// <summary>Records the cleared floor and pays it (gems and tickets). Called by the runner.</summary>
@@ -76,6 +84,7 @@ namespace SoloHero.Core.Stage
             TowerReward reward = Preview(balance, floor);
             if (floor > data.towerFloor) data.towerFloor = floor;
             data.gem += reward.Gems;
+            data.breakStones += reward.Stones;
             ShopService.AddTickets(data, SummonKind.Gear, reward.GearTickets);
             ShopService.AddTickets(data, SummonKind.Skill, reward.SkillTickets);
             ShopService.AddTickets(data, SummonKind.Pet, reward.PetTickets);

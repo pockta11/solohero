@@ -41,7 +41,7 @@ offline.time	{0}시간 {1}분 / 최대 {2}시간
 offline.title	오프라인 보상
 loading.status	모험을 준비하는 중...
 loading.tip.0	팁: 앱을 꺼 둔 시간만큼 골드가 쌓여요 (최대 6시간)
-loading.tip.1	팁: 소환은 100회째에 전설 등급이 확정돼요
+loading.tip.1	팁: 소환할수록 소환 레벨이 올라 더 높은 등급이 열려요
 loading.tip.2	팁: 강화 버튼을 꾹 누르면 연속으로 강화돼요
 loading.tip.3	팁: Lv 10에 전직하면 직업 전용 스킬을 쓸 수 있어요
 loading.tip.4	팁: 보스에게 지면 한 칸 아래에서 골드를 모아 다시 도전하세요
@@ -57,7 +57,7 @@ tutorial.skill_unlocked	스킬 슬롯 2 해금! Lv 10에 전직하면 직업 스
 
 # Stats and character panel
 stat.hp	체력
-stat.atk	공격력
+stat.atk	{atk}
 stat.def	방어력
 stat.atkspd	공격속도
 stat.crit	치명타
@@ -76,7 +76,7 @@ char.exp	EXP
 skill.slot_locked	Lv {0}
 skill.lv	Lv{0}
 skill.info	Lv {0}/{1} · 쿨타임 {2}초
-skill.owned_bonus	보유 효과  공격력 +{0}%
+skill.owned_bonus	보유 효과  {atk} +{0}%
 skill.collection	도감 {0}/{1}
 skill.not_owned	미보유
 skill.info_unowned	미보유 · 쿨타임 {0}초
@@ -87,23 +87,23 @@ skill.pick_slot	교체할 슬롯을 누르세요
 toast.slots_full	빈 슬롯이 없습니다. 교체할 슬롯을 고르세요
 toast.skill_equipped	{0} 장착!
 skill.name.power_strike	강타
-skill.desc.power_strike	앞의 적 하나에게 공격력의 {0}% 피해
+skill.desc.power_strike	앞의 적 하나에게 {atk}의 {0}% 피해
 skill.name.whirlwind	회전베기
-skill.desc.whirlwind	주변 적 모두에게 공격력의 {0}% 피해 {1}회
+skill.desc.whirlwind	주변 적 모두에게 {atk}의 {0}% 피해 {1}회
 skill.name.battle_cry	전투의 함성
-skill.desc.battle_cry	{6}초 동안 공격력 +{5}%, 체력 {7}% 회복
+skill.desc.battle_cry	{6}초 동안 {atk} +{5}%, 체력 {7}% 회복
 skill.name.quick_slash	연속 베기
-skill.desc.quick_slash	앞의 적에게 공격력의 {0}% 피해 {1}회
+skill.desc.quick_slash	앞의 적에게 {atk}의 {0}% 피해 {1}회
 skill.name.iron_skin	회피 기동
 skill.desc.iron_skin	{6}초 동안 받는 피해 -{5}%
 skill.name.first_aid	응급 처치
 skill.desc.first_aid	체력이 {10}% 이하일 때 체력 {7}% 회복
 skill.name.fireball	화염구
-skill.desc.fireball	먼 적에게 공격력의 {0}% 피해, {3}초 동안 초당 {2}% 화상
+skill.desc.fireball	먼 적에게 {atk}의 {0}% 피해, {3}초 동안 초당 {2}% 화상
 skill.name.frost_nova	서리 폭발
 skill.desc.frost_nova	주변 적 모두에게 {0}% 피해, {4}초 빙결
 skill.name.thunder	낙뢰
-skill.desc.thunder	먼 적 하나에게 벼락, 공격력의 {0}% 피해
+skill.desc.thunder	먼 적 하나에게 벼락, {atk}의 {0}% 피해
 skill.name.berserk	광폭화
 skill.desc.berserk	{6}초 동안 공격속도 +{5}%
 skill.name.poison_cloud	독침 화살
@@ -111,7 +111,7 @@ skill.desc.poison_cloud	넓은 범위에 독화살 {0}% 피해, {3}초 동안 �
 skill.name.eagle_eye	매의 눈
 skill.desc.eagle_eye	{6}초 동안 치명타 확률 +{5}%
 skill.name.meteor	메테오
-skill.desc.meteor	넓은 범위에 운석, 공격력의 {0}% 피해
+skill.desc.meteor	넓은 범위에 운석, {atk}의 {0}% 피해
 skill.name.chain_lightning	연쇄 번개
 skill.desc.chain_lightning	범위 안 모든 적에게 번개 {0}% 피해 {1}회
 skill.name.blade_storm	칼날 폭풍
@@ -121,25 +121,25 @@ skill.desc.holy_light	체력이 {10}% 이하일 때 체력 {7}% 회복, {9}초 �
 skill.name.glacier_spear	빙결 화살
 skill.desc.glacier_spear	먼 적 하나에게 {0}% 피해, {4}초 빙결
 skill.name.war_god	군신의 가호
-skill.desc.war_god	{6}초 동안 공격력 +{5}%, 보호막 {8}%
+skill.desc.war_god	{6}초 동안 {atk} +{5}%, 보호막 {8}%
 skill.name.dragon_breath	용의 숨결
 skill.desc.dragon_breath	넓은 범위에 화염 {0}% 피해 {1}회, {3}초 동안 초당 {2}% 화상
 skill.name.judgement	심판
-skill.desc.judgement	범위 안 모든 적에게 하늘의 빛, 공격력의 {0}% 피해
+skill.desc.judgement	범위 안 모든 적에게 하늘의 빛, {atk}의 {0}% 피해
 skill.name.time_stop	속박의 화살비
-skill.desc.time_stop	모든 적을 {4}초 묶고 {0}% 피해, {6}초 동안 공격력 +{5}%
+skill.desc.time_stop	모든 적을 {4}초 묶고 {0}% 피해, {6}초 동안 {atk} +{5}%
 skill.name.sword_rain	검의 비
 skill.desc.sword_rain	넓은 범위에 검을 쏟아 {0}% 피해 {1}회
 skill.name.phoenix	불사조
-skill.desc.phoenix	체력이 {10}% 이하일 때 체력 {7}% 회복, {6}초 동안 공격력 +{5}%
+skill.desc.phoenix	체력이 {10}% 이하일 때 체력 {7}% 회복, {6}초 동안 {atk} +{5}%
 skill.name.black_hole	블랙홀
 skill.desc.black_hole	적을 빨아들여 {0}% 피해 {1}회, {4}초 기절
 skill.name.shield_bash	방패 강타
-skill.desc.shield_bash	앞의 적 하나에게 공격력의 {0}% 피해, {4}초 기절
+skill.desc.shield_bash	앞의 적 하나에게 {atk}의 {0}% 피해, {4}초 기절
 skill.name.ground_slam	대지 강타
-skill.desc.ground_slam	주변 적 모두에게 공격력의 {0}% 피해
+skill.desc.ground_slam	주변 적 모두에게 {atk}의 {0}% 피해
 skill.name.cleave	휩쓸기
-skill.desc.cleave	앞의 적 모두에게 공격력의 {0}% 피해
+skill.desc.cleave	앞의 적 모두에게 {atk}의 {0}% 피해
 skill.name.earthquake	지진
 skill.desc.earthquake	넓은 범위에 {0}% 피해 {1}회, {4}초 기절
 skill.name.dragon_slash	용참
@@ -155,7 +155,7 @@ skill.desc.flame_pillar	주변 적에게 불기둥 {0}% 피해 {1}회, {3}초 �
 skill.name.arcane_storm	비전 폭풍
 skill.desc.arcane_storm	범위 안 모든 적에게 번개 {0}% 피해 {1}회
 skill.name.arrow_shot	강한 화살
-skill.desc.arrow_shot	먼 적 하나에게 공격력의 {0}% 피해
+skill.desc.arrow_shot	먼 적 하나에게 {atk}의 {0}% 피해
 skill.name.scatter_shot	산탄 화살
 skill.desc.scatter_shot	앞의 적 모두에게 {0}% 피해 {1}회
 skill.name.piercing_arrow	관통 화살
@@ -185,7 +185,7 @@ skill.desc.rapid_shot	먼 적에게 화살 {0}% 피해 {1}회
 skill.name.hunters_mark	사냥꾼의 표식
 skill.desc.hunters_mark	먼 적 하나에게 {0}% 피해, {13}초 동안 받는 피해 +{12}%
 skill.name.deadeye	데드아이
-skill.desc.deadeye	아주 먼 적 하나에게 공격력의 {0}% 일격
+skill.desc.deadeye	아주 먼 적 하나에게 {atk}의 {0}% 일격
 skill.name.phantom_volley	환영 일제사격
 skill.desc.phantom_volley	넓은 범위에 환영 화살 {0}% 피해 {1}회, {13}초 동안 받는 피해 +{12}%
 
@@ -197,7 +197,7 @@ grade.epic	영웅
 grade.legendary	전설
 grade.mythic	신화
 grade.ancient	고대
-slot.sword	검
+slot.sword	{weapon}
 slot.helm	투구
 slot.armor	갑옷
 slot.boots	신발
@@ -327,7 +327,7 @@ talent.current	현재 {0}
 talent.current_next	현재 {0}\n다음 {1}
 talent.none	없음
 talent.name.sharpness	예리함
-talent.desc.sharpness	공격력 +{0}%
+talent.desc.sharpness	{atk} +{0}%
 talent.name.precision	정밀
 talent.desc.precision	치명타 확률 +{0}%
 talent.name.ferocity	흉포
@@ -403,8 +403,8 @@ dungeon.close	닫기
 dungeon.time	{0}초
 dungeon.over	종료!
 dungeon.earned	+{0}
-dungeon.result_gold	골드 던전 완료: 골드 +{0}
-dungeon.result_exp	경험치 던전 완료: 경험치 +{0}
+dungeon.result_gold	골드 던전 완료: 골드 +{0} · 돌파석 +{1}
+dungeon.result_exp	경험치 던전 완료: 경험치 +{0} · 돌파석 +{1}
 
 # Jobs (D-104). job.current: {0} job, {1} level, {2} next tier. job.main_*: {0} targets, {1} ATK %, {2} hits
 job.title	전직
@@ -417,9 +417,9 @@ job.advanced	{0}(으)로 전직했습니다!
 job.button_lv	전직 Lv{0}
 job.button_ready	전직 가능!
 job.button_max	직업 정보
-job.main_info	대상 {0}명 · 공격력 {1}%
+job.main_info	대상 {0}명 · {atk} {1}%
 job.main_hits	대상 {0}명 · {1}% × {2}회
-job.stat.atk	공격력 +{0}%
+job.stat.atk	{atk} +{0}%
 job.stat.crit	치명타 확률 +{0}%
 job.stat.crit_damage	치명 피해 +{0}%
 job.stat.atkspd	공격속도 +{0}%
@@ -468,7 +468,7 @@ job.desc.sniper	한 적에게 강력한 한 발. 궁극기: 데스 샷
 skill.name.ult_guardian_cross	수호의 십자가
 skill.desc.ult_guardian_cross	주변 적 모두에게 {0}% 피해, {9}초 동안 보호막 {8}%
 skill.name.ult_blood_rage	피의 분노
-skill.desc.ult_blood_rage	주변 적에게 {0}% 피해, {6}초 동안 공격력 +{5}%, 체력 {7}% 회복
+skill.desc.ult_blood_rage	주변 적에게 {0}% 피해, {6}초 동안 {atk} +{5}%, 체력 {7}% 회복
 skill.name.ult_inferno	인페르노
 skill.desc.ult_inferno	넓은 범위에 화염 {0}% 피해 {1}회, {3}초 동안 초당 {2}% 화상
 skill.name.ult_blizzard	블리자드
@@ -476,7 +476,7 @@ skill.desc.ult_blizzard	넓은 범위에 눈보라 {0}% 피해 {1}회, {4}초 �
 skill.name.ult_arrow_rain	애로우 레인
 skill.desc.ult_arrow_rain	넓은 범위에 화살비 {0}% 피해 {1}회
 skill.name.ult_death_shot	데스 샷
-skill.desc.ult_death_shot	먼 적 하나에게 공격력의 {0}% 일격
+skill.desc.ult_death_shot	먼 적 하나에게 {atk}의 {0}% 일격
 
 # Pets (D-114, the D-102 companions)
 rail.pet	펫
@@ -496,7 +496,7 @@ tower.locked	{0} 보스를 쓰러뜨리면 열려요
 tower.enter	도전
 tower.busy	진행 중
 tower.cleared	{0}층 돌파! 젬 +{1}
-tower.result	무한의 탑 {0}개 층 돌파! 젬 +{1}
+tower.result	무한의 탑 {0}개 층 돌파! 젬 +{1} · 돌파석 +{2}
 tower.result_none	무한의 탑 도전 실패 - 더 강해져서 다시 도전해요
 tower.banner	무한의 탑 {0}층
 tower.earned	젬 +{0}
@@ -539,17 +539,17 @@ pet.title	펫
 pet.row	{0}  Lv {1}
 pet.cell	Lv {0}
 pet.tag	장착
-pet.attack	공격력 {0}% · {1}초마다
+pet.attack	{atk} {0}% · {1}초마다
 pet.effect_burn	화상
 pet.effect_poison	중독
 pet.effect_stun	기절
 pet.with_effect	{0} · {1}
-pet.owned_effect	보유 효과 공격력 +{0}%
+pet.owned_effect	보유 효과 {atk} +{0}%
 pet.unowned	펫 소환으로 얻을 수 있어요
 pet.equip	장착
 pet.equipped	장착 중
 pet.level_up	레벨업
-pet.summary	보유 효과 공격력 +{0}%   ·   보유 {1}/{2}
+pet.summary	보유 효과 {atk} +{0}%   ·   보유 {1}/{2}
 pet.summon	펫 소환
 pet.name.slime	슬라임
 pet.name.wisp	정령
@@ -570,13 +570,13 @@ pet.name.azure	청룡
 
 # Equipment effects (D-103)
 equip.owned_line	{0}  보유 {1}종
-equip.effect_atk	공격력 ×{0}
+equip.effect_atk	{atk} ×{0}
 equip.effect_def	방어력 ×{0}
 equip.effect_hp	체력 ×{0}
 equip.effect_boots	공속+{0}% 치명+{1}%
 equip.effect_ring	치명 피해 +{0}%
 equip.effect_earring	스킬 피해 +{0}%
-equip.owned_bonus	보유 효과  공격력 +{0}%
+equip.owned_bonus	보유 효과  {atk} +{0}%
 equip.gear	장비
 equip.accessory	장신구
 # D-111 combat power and guide quests
@@ -598,3 +598,73 @@ guide.claim	보상 받기!
 guide.claimed_gem	퀘스트 완료! 젬 +{0}
 guide.claimed_gold	퀘스트 완료! 골드 +{0}
 guide.keep_fighting	전투를 이어가면 달성돼요
+
+# D-134 account window (settings > 계정): account id, device transfer, privacy options (D-135), data deletion
+settings.account	계정
+account.title	계정
+account.id	계정 ID
+account.local_mode	오프라인 모드 (서버 계정 없음)
+account.copy	복사
+account.copied	복사했습니다
+account.transfer	기기 이전
+account.transfer_help	새 기기에서 이어 하려면 여기서 코드를 발급하고, 새 기기의 계정 화면에 입력하세요. 코드는 24시간 동안 쓸 수 있습니다.
+account.transfer_offline	서버에 연결되지 않아 기기 이전을 쓸 수 없습니다.
+account.no_code	발급된 코드 없음
+account.code_left	새 기기에서 이 코드를 입력하세요 · {0}시간 남음
+account.issue	코드 발급
+account.code_issued	코드를 발급하고 복사했습니다
+account.code_hint	이전 코드 입력
+account.redeem	가져오기
+account.own_code	이 기기에서 발급한 코드입니다
+account.import_title	진행 가져오기
+account.import_body	이 기기의 진행을 코드의 진행(최고 {0} · 레벨 {1})으로 바꿉니다.\n지금 이 기기의 진행은 사라집니다.
+account.privacy	개인정보 옵션 (광고 동의)
+account.delete	모든 데이터 삭제
+account.delete_title	데이터 삭제
+account.delete_body	서버와 이 기기에 저장된 진행과 계정을 모두 삭제하고 처음부터 시작합니다.\n되돌릴 수 없습니다.
+account.delete_body_local	이 기기에 저장된 진행을 모두 삭제하고 처음부터 시작합니다.\n되돌릴 수 없습니다.
+account.cancel	취소
+account.confirm	확인
+toast.network	서버에 연결할 수 없습니다. 네트워크를 확인해 주세요
+toast.code_invalid	코드는 12자리 영문·숫자입니다
+toast.code_not_found	코드를 찾을 수 없거나 기한이 지났습니다
+# D-140 job words: "{atk}", "{main}" and "{weapon}" in any value take the hero's line (term.NAME.mage / .archer, else term.NAME)
+term.atk	공격력
+term.atk.mage	주문력
+term.main	힘
+term.main.mage	지능
+term.main.archer	민첩
+term.weapon	검
+term.weapon.mage	지팡이
+term.weapon.archer	활
+# D-141 AP stat window (character panel, 스탯 page)
+char.tab_lanes	능력치
+char.tab_ap	스탯
+stat.main	{main}
+stat.vit	활력
+stat.crit_rate	치명타 확률
+char.ap_left	남은 AP {0}
+char.ap_auto	자동 분배
+char.ap_manual	직접 분배
+char.ap_main_effect	{atk} 기본값 +{0}%
+char.ap_vit_effect	체력 기본값 +{0}%
+char.ap_rule	레벨업마다 AP {0} · 자동 분배는 {main} 2 : 활력 1
+char.ap_reset	초기화
+char.ap_reset_cost	초기화 {0}
+char.ap_plus	+{0}
+toast.no_ap	남은 AP가 없습니다
+toast.ap_reset	AP를 초기화했습니다
+toast.ap_auto_on	자동 분배를 켰습니다 (남은 AP를 나눴어요)
+toast.ap_auto_off	직접 분배로 바꿨습니다. 레벨업 AP를 직접 나누세요
+# D-142 crit lanes and D-143 limit breaks (character panel, 능력치 page)
+char.lane_locked	Lv {0}에 열려요
+char.limit_value	한계 Lv {0} · 돌파 필요
+char.limit_button	돌파
+char.stones	{0}
+toast.limit_reached	한계 돌파가 필요합니다 (돌파석)
+toast.not_enough_stones	돌파석이 부족합니다 - 던전과 무한의 탑에서 얻어요
+toast.limit_broken	{0} 한계 돌파! 이제 Lv {1}까지
+dungeon.stones	입장마다 돌파석 {0}개
+dungeon.locked	{0} 보스를 쓰러뜨리면 열려요
+tower.reward_stones	 · 돌파석 {0}개
+loading.tip.6	팁: 능력치가 10레벨마다 멈추면 돌파석으로 한계 돌파하세요

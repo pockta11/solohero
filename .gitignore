@@ -55,3 +55,9 @@ Assets/Fonts.meta
 
 # Python bytecode from tools/art
 __pycache__/
+
+# Release workflow scratch (keystore, signature report)
+.release/
+
+# tools/firebase rules test dependencies
+node_modules/

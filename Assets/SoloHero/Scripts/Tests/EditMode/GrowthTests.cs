@@ -97,11 +97,14 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(101, data.upgradeHp);
         }
 
+        private static LaneLevels Lanes(int hp = 0, int atk = 0, int def = 0, int spd = 0) =>
+            new LaneLevels { Hp = hp, Atk = atk, Def = def, Spd = spd };
+
         [Test]
-        public void Compute_HeroLevelOne_HasZeroLevelBonus()
+        public void Compute_NoApNoLanes_IsTheBaseStats()
         {
             var balance = new BalanceValues();
-            HeroStats stats = StatAggregator.Compute(balance, 1, 0, 0, 0, 0);
+            HeroStats stats = StatAggregator.Compute(balance, default, Lanes());
 
             Assert.AreEqual(balance.HP_BASE, stats.Hp, 1e-9);
             Assert.AreEqual(balance.ATK_BASE, stats.Atk, 1e-9);
@@ -114,7 +117,7 @@ namespace SoloHero.Tests.EditMode
         public void Compute_UpgradeLevels_AppliesStatMult()
         {
             var balance = new BalanceValues();
-            HeroStats stats = StatAggregator.Compute(balance, 1, 2, 1, 3, 0);
+            HeroStats stats = StatAggregator.Compute(balance, default, Lanes(hp: 2, atk: 1, def: 3));
 
             Assert.AreEqual(balance.HP_BASE * Math.Pow(balance.UPG_STAT_MULT, 2), stats.Hp, 1e-9);
             Assert.AreEqual(balance.ATK_BASE * Math.Pow(balance.UPG_STAT_MULT, 1), stats.Atk, 1e-9);
@@ -122,13 +125,24 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void Compute_HeroLevelTwo_AddsLevelGain()
+        public void Compute_Ap_AddsMainToAtkAndVitalityToHp()
         {
             var balance = new BalanceValues();
-            HeroStats stats = StatAggregator.Compute(balance, 2, 0, 0, 0, 0);
+            HeroStats stats = StatAggregator.Compute(balance, new ApPoints(4, 2), Lanes());
 
-            Assert.AreEqual(balance.HP_BASE + balance.LEVEL_HP_GAIN, stats.Hp, 1e-9);
-            Assert.AreEqual(balance.ATK_BASE + balance.LEVEL_ATK_GAIN, stats.Atk, 1e-9);
+            Assert.AreEqual(balance.HP_BASE + 2 * balance.AP_VIT_HP, stats.Hp, 1e-9);
+            Assert.AreEqual(balance.ATK_BASE + 4 * balance.AP_MAIN_ATK, stats.Atk, 1e-9);
+        }
+
+        [Test]
+        public void Compute_AutoAp_GivesTheOldPerLevelGains()
+        {
+            // D-141: the auto split reproduces the flat +0.5 ATK / +5 HP a level of D-053.
+            var balance = new BalanceValues();
+            HeroStats stats = StatAggregator.Compute(balance, ApPoints.Auto(balance, 31), Lanes());
+
+            Assert.AreEqual(balance.HP_BASE + 5d * 30, stats.Hp, 1e-9);
+            Assert.AreEqual(balance.ATK_BASE + 0.5d * 30, stats.Atk, 1e-9);
         }
 
         [Test]
@@ -136,7 +150,7 @@ namespace SoloHero.Tests.EditMode
         {
             var balance = new BalanceValues();
             double expectedCap = balance.ATKSPD_BASE + balance.UPG_GAIN_SPD * balance.UPG_MAX_LEVEL_SPD;
-            HeroStats stats = StatAggregator.Compute(balance, 1, 0, 0, 0, balance.UPG_MAX_LEVEL_SPD);
+            HeroStats stats = StatAggregator.Compute(balance, default, Lanes(spd: balance.UPG_MAX_LEVEL_SPD));
 
             Assert.AreEqual(expectedCap, stats.AtkSpd, 1e-9);
             Assert.AreEqual(3.0d, stats.AtkSpd, 1e-9);
@@ -147,7 +161,7 @@ namespace SoloHero.Tests.EditMode
         {
             var balance = new BalanceValues();
             HeroStats stats = StatAggregator.Compute(
-                balance, 1, 0, 0, 0, 0,
+                balance, default, Lanes(),
                 swordMult: 2d,
                 buffs: new BuffSet(0.3d));
 
@@ -159,7 +173,7 @@ namespace SoloHero.Tests.EditMode
         {
             var balance = new BalanceValues();
             HeroStats stats = StatAggregator.Compute(
-                balance, 1, 0, 0, 0, 0,
+                balance, default, Lanes(),
                 bootsCritBonus: 10d);
 
             Assert.AreEqual(balance.CRIT_RATE_BASE + 10d, stats.CritRate, 1e-9);

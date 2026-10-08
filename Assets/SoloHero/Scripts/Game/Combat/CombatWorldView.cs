@@ -168,7 +168,7 @@ namespace SoloHero.Game.Combat
             for (int i = 0; i < world.SlotCount && i < _slots.Length; i++)
             {
                 if (!ReferenceEquals(world.GetSlot(i), target)) continue;
-                bool strong = kind == HitKind.Crit || kind == HitKind.Combo;
+                bool strong = kind == HitKind.Crit || kind == HitKind.Combo || kind == HitKind.SkillCrit;
                 float power = strong ? 1f : kind == HitKind.Skill ? 0.75f : 0.55f;
                 EnemySlotState slot = _slots[i];
                 if (power >= slot.SquashPower || slot.Squash <= 0f) slot.SquashPower = power;

@@ -40,6 +40,9 @@ namespace SoloHero.Core.Balance
         /// <summary>D-130: climb the infinite tower once per session (from its first uncleared floor).</summary>
         public bool UseTower = true;
 
+        /// <summary>D-143: run every daily dungeon entry left (gold and EXP) at the start of a session once they are open.</summary>
+        public bool UseDungeons = true;
+
         /// <summary>While farming after a fail, challenge again once power grew by this factor since the fail...</summary>
         public double ChallengePowerGain = 1.15d;
 

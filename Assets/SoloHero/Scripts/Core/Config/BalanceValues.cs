@@ -14,8 +14,16 @@ namespace SoloHero.Core.Config
         public double CRIT_RATE_BASE = 5;
         public double CRIT_MULT = 1.5;
         public double DEF_REF_MULT = 3;
-        public double LEVEL_HP_GAIN = 5;
-        public double LEVEL_ATK_GAIN = 0.5;
+        // D-141 level-up AP (MapleStory style, replaces the flat per-level gains): every level past 1 grants AP_PER_LEVEL
+        // points. A point in the main stat (STR / INT / DEX by job line) adds AP_MAIN_ATK to base ATK, one in vitality
+        // AP_VIT_HP to base HP. Auto mode splits them AP_AUTO_MAIN : AP_AUTO_VIT, which gives the old +0.5 ATK / +5 HP a
+        // level. A manual reset costs AP_RESET_GEM gems.
+        public int AP_PER_LEVEL = 3;
+        public double AP_MAIN_ATK = 0.25;
+        public double AP_VIT_HP = 5;
+        public int AP_AUTO_MAIN = 2;
+        public int AP_AUTO_VIT = 1;
+        public int AP_RESET_GEM = 50;
         public double EXP_REQ_BASE = 200;
         public double EXP_REQ_GROWTH = 1.18;
         public double UPG_COST_GROWTH = 1.12;
@@ -26,13 +34,28 @@ namespace SoloHero.Core.Config
         public double UPG_STAT_MULT = 1.16;
         public double UPG_GAIN_SPD = 0.02;
         public int UPG_MAX_LEVEL_SPD = 100;
+        // D-142 crit lanes, opened by hero level: crit rate +UPG_GAIN_CRIT points a level (capped), crit damage
+        // +UPG_GAIN_CRITDMG (a fraction added to CRIT_MULT) a level.
+        public double UPG_BASE_CRIT = 300;
+        public double UPG_BASE_CRITDMG = 300;
+        public double UPG_GAIN_CRIT = 2;
+        public int UPG_MAX_LEVEL_CRIT = 25;
+        public double UPG_GAIN_CRITDMG = 0.1;
+        public int UPG_UNLOCK_LV_CRIT = 15;
+        public int UPG_UNLOCK_LV_CRITDMG = 25;
+        // D-143 limit break: a lane stops every LIMIT_STEP levels until broken with LIMIT_STONE_BASE x k breakthrough
+        // stones (the k-th break). Stones come from the daily dungeons (DUNGEON_STONES a run) and the tower
+        // (TOWER_STONES a floor, TOWER_STONES_RARE more on every TOWER_RARE_EVERY floor).
+        public int LIMIT_STEP = 10;
+        public int LIMIT_STONE_BASE = 10;
         public double UPG_FARM_EXPONENT = 1.31;
         public double ENEMY_HP_BASE = 45;
-        // D-123 / D-124: 1.185 -> 1.165 (HP) and 1.175 (ATK); the summon ladder now paces gear, so enemies grow a
-        // little slower to keep day 7 in chapter 5.
-        public double ENEMY_HP_GROWTH = 1.165;
+        // D-123 / D-124: 1.185 -> 1.165 (HP) and 1.175 (ATK); the summon ladder now paces gear. D-145: 1.21 for both
+        // slows the stage curve (day 7 in chapter 4, day 14 in chapter 5-6) after the new growth axes (AP, crit lanes,
+        // limit breaks, daily dungeons in the sim). ATK 1.22 let a boss's 0.1x attack kill a fast (ad) hero.
+        public double ENEMY_HP_GROWTH = 1.21;
         public double ENEMY_ATK_BASE = 2.6;
-        public double ENEMY_ATK_GROWTH = 1.175;
+        public double ENEMY_ATK_GROWTH = 1.21;
         public double ENEMY_DEF = 0;
         public double ENEMY_EXP_BASE = 3.75;
         public double ENEMY_EXP_GROWTH = 1.10;
@@ -67,14 +90,16 @@ namespace SoloHero.Core.Config
         public double ENEMY_PROJECTILE_SPEED = 9;
         // D-124: a boss is a wall of HP against the 30 s clock, not a hard hitter (user: the boss should not kill the
         // hero in a few hits). HP 10 -> 26 (chapter 1: 6 -> 14), attack 2.5 -> 0.5 of a normal enemy's.
-        public double BOSS_HP_MULT = 26;
+        // D-139: still 9% of boss fails were the hero falling (up to half on some paths); attack 0.5 -> 0.1 makes every
+        // fail a time-out, HP 26 -> 27 keeps the day-7 curve.
+        public double BOSS_HP_MULT = 27;
 
         /// <summary>D-110: the chapter 1 boss (the first wall) is softer, so a new player clears it in a try or two.</summary>
         public double BOSS_HP_MULT_CH1 = 14;
 
         /// <summary>D-110: the boss walks in at this share of ENEMY_MOVE_SPEED.</summary>
         public double BOSS_SPEED_MULT = 0.8;
-        public double BOSS_ATK_MULT = 0.5;
+        public double BOSS_ATK_MULT = 0.1;
         public float BOSS_ATK_INTERVAL = 1.8f;
         public double BOSS_GOLD_MULT = 5.0;
         public double BOSS_EXP_MULT = 5.0;
@@ -85,7 +110,8 @@ namespace SoloHero.Core.Config
         public double STAGE_GOLD_GROWTH = 1.035;
         public int CHAPTER_CLEAR_GEM = 60;
         public int OFFLINE_CAP = 21600;
-        public double OFFLINE_DIVISOR = 2000;
+        // D-110: 2000; D-145: 1800, so offline gold stays 20 % or more of all gold now that the daily dungeons pay too.
+        public double OFFLINE_DIVISOR = 1800;
         public int OFFLINE_MIN_SECONDS = 60;
         public double OFFLINE_AD_MULT = 2.0;
         public double GACHA_COST_SINGLE = 150;
@@ -176,9 +202,10 @@ namespace SoloHero.Core.Config
         public float AD_SPEED_MULT = 2f;
 
         // D-127 recommended combat power (calibrated on the sim's first clears): REC_CP_BASE x REC_CP_GROWTH^(g - 1),
-        // bosses x REC_CP_BOSS_MULT. Shown next to the hero's combat power, green once met.
-        public double REC_CP_BASE = 150;
-        public double REC_CP_GROWTH = 1.15;
+        // bosses x REC_CP_BOSS_MULT. Shown next to the hero's combat power, green once met. D-145: refit (median first
+        // clear) after the faster enemy growth: 150 x 1.15 -> 185 x 1.172.
+        public double REC_CP_BASE = 185;
+        public double REC_CP_GROWTH = 1.172;
         public double REC_CP_BOSS_MULT = 1.1;
 
         // D-128 summon tickets and the daily shop: one ticket is one pull of its summon. Every day one free gear bundle
@@ -202,6 +229,11 @@ namespace SoloHero.Core.Config
         public int TOWER_SKILL_TICKETS = 2;
         public int TOWER_PET_TICKETS = 2;
         public float TOWER_FLOOR_INTRO = 0.8f;
+        // D-144: a tower floor's boss has TOWER_BOSS_HP_MULT x the HP of the chapter boss at its stage, so the tower is
+        // a harder ladder than the stages instead of the same wall again. D-143 stones per floor.
+        public double TOWER_BOSS_HP_MULT = 2;
+        public int TOWER_STONES = 1;
+        public int TOWER_STONES_RARE = 5;
         // Gear effects per grade, C U R E L M A (D-113 added U, M and A).
         public double SWORD_ATK_C = 1.10;
         public double SWORD_ATK_U = 1.18;
@@ -320,6 +352,10 @@ namespace SoloHero.Core.Config
         public int DUNGEON_DAILY_TICKETS = 2;
         public double DUNGEON_GOLD_PER_KILL = 0.5;
         public double DUNGEON_EXP_MULT = 6;
+        public int DUNGEON_STONES = 2;
+
+        /// <summary>D-143: the daily dungeons open with the first boss, like the tower and the pet summon.</summary>
+        public int DUNGEON_UNLOCK_STAGE = 10;
         public float DUNGEON_RESULT_TIME = 2.5f;
 
         /// <summary>D-104 job advancement (replaces the D-101 promotion): hero level for the first and second job,

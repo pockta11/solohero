@@ -12,7 +12,10 @@ namespace SoloHero.Core.Boot
         public readonly SaveService Save;
         public readonly OfflineReward Offline;
 
-        public BootReport(string userId, bool usedLocalMode, bool loadFailed, SaveDataV2 data, SaveService save, OfflineReward offline)
+        /// <summary>D-133: the offline reward waits for the server's clock (signed in, but not connected yet).</summary>
+        public readonly bool OfflineDeferred;
+
+        public BootReport(string userId, bool usedLocalMode, bool loadFailed, SaveDataV2 data, SaveService save, OfflineReward offline, bool offlineDeferred = false)
         {
             UserId = userId;
             UsedLocalMode = usedLocalMode;
@@ -20,6 +23,7 @@ namespace SoloHero.Core.Boot
             Data = data;
             Save = save;
             Offline = offline;
+            OfflineDeferred = offlineDeferred;
         }
     }
 }

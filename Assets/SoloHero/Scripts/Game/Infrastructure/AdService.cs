@@ -37,6 +37,12 @@ namespace SoloHero.Game.Infrastructure
                 return;
             }
 
+            // D-135: consent first (UMP); the SDK starts once ads may be requested.
+            AdConsent.Gather(StartSdk);
+        }
+
+        private void StartSdk()
+        {
             try
             {
                 MobileAds.Initialize(_ => MainThreadDispatcher.Post(() =>

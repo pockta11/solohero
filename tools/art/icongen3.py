@@ -723,6 +723,112 @@ def speed():
     return L.image()
 
 
+def stone():
+    """D-143 breakthrough stone: a faceted amber crystal with a rising arrow cut into it."""
+    L = new()
+    ramp = (hexc('#FFE2A8'), hexc('#FF9A3C'), hexc('#C24A1A'))
+    body = L.polygon([(64, 10), (100, 34), (100, 88), (64, 118), (28, 88), (28, 34)])
+    outline(L, body)
+    fill(L, body, ramp, hi=False)
+    L.over(cov(L.polygon([(64, 10), (100, 34), (64, 52), (28, 34)])), hexc('#FFE8B8'))
+    L.over(cov(L.polygon([(28, 34), (64, 52), (64, 118), (28, 88)])), hexc('#FFB45C', 200))
+    L.over(cov(L.polygon([(100, 34), (100, 88), (64, 118), (64, 52)])), hexc('#E06A26', 220))
+    arrow = union(L.polygon([(64, 40), (86, 66), (73, 66), (73, 92), (55, 92), (55, 66), (42, 66)]))
+    L.over(cov(arrow + 2.5), hexc('#7A2A0E', 200))
+    L.over(cov(arrow), vgrad(L, 40, 92, hexc('#FFFFFF'), hexc('#FFE6B0')))
+    L.over(cov(L.polygon(star_pts(94, 22, 11, 3, 4, 0))), WHITE)
+    return L.image()
+
+
+def str_stat():
+    """D-141 STR: a clenched red fist."""
+    L = new()
+    skin = (hexc('#FFB49C'), hexc('#F06A50'), hexc('#B0303A'))
+    fingers = union(*[rrect_at(L.x, L.y, x0, 30, x0 + 20, 70, 9) for x0 in (30, 50, 70, 90 - 0)])
+    fingers = inter(fingers, L.x - 108)
+    palm = rrect_at(L.x, L.y, 28, 52, 106, 104, 16)
+    thumb = seg(L, 30, 82, 66, 70, 11)
+    cuff = rrect_at(L.x, L.y, 40, 98, 96, 120, 7)
+    fist = union(fingers, palm, thumb)
+    d = union(fist, cuff)
+    outline(L, d)
+    fill(L, fist, skin)
+    for x0 in (50, 70, 90):
+        L.over(cov(seg(L, x0, 34, x0, 60, 1.4)), shade(skin[2], -0.1)[:3] + (200,))
+    L.over(cov(seg(L, 34, 80, 64, 70, 1.6)), shade(skin[2], -0.1)[:3] + (210,))
+    fill(L, cuff, GOLD, hi=False)
+    gloss(L, fingers, 52, 40, 14, 6, 150)
+    return L.image()
+
+
+def int_stat():
+    """D-141 INT: a glowing violet orb on a small golden stand."""
+    L = new()
+    orb = L.circle(64, 54, 36)
+    stand = union(L.polygon([(40, 96), (88, 96), (78, 82), (50, 82)]), rrect_at(L.x, L.y, 30, 94, 98, 112, 7))
+    d = union(orb, stand)
+    L.over(np.clip(1 - np.maximum(orb, 0) / 14.0, 0, 1) ** 2 * (orb > 0), (190, 130, 255, 130))
+    outline(L, d)
+    fill(L, stand, GOLD)
+    fill(L, orb, PURPLE, hi=False)
+    L.over(cov(L.circle(64, 54, 22)), (220, 190, 255, 120))
+    L.over(cov(L.polygon(star_pts(64, 54, 16, 5, 4, 0))), WHITE)
+    L.over(cov(L.circle(48, 36, 7)), (255, 255, 255, 220))
+    return L.image()
+
+
+def dex_stat():
+    """D-141 DEX: a swift green feather."""
+    L = new()
+    ramp = (hexc('#D6FFB8'), hexc('#5CCB5A'), hexc('#237A36'))
+    vane = union(L.ellipse(70, 54, 26, 44), L.circle(70, 26, 18))
+    x, y = rot(L, 64, 64, math.radians(-35))
+    vane = np.sqrt(((x - 70) / 26.0) ** 2 + ((y - 56) / 46.0) ** 2) * 26.0 - 26.0
+    quill = seg(L, 30, 112, 82, 28, 3.4)
+    d = union(vane, quill)
+    outline(L, d)
+    fill(L, vane, ramp)
+    for k in range(5):
+        t = 0.3 + k * 0.12
+        qx, qy = 30 + (82 - 30) * t, 112 + (28 - 112) * t
+        L.over(cov(seg(L, qx, qy, qx + 16, qy + 4, 1.3)), shade(ramp[2], -0.1)[:3] + (190,))
+        L.over(cov(seg(L, qx, qy, qx - 6, qy - 14, 1.3)), shade(ramp[2], -0.1)[:3] + (190,))
+    fill(L, quill, (hexc('#FFFFFF'), hexc('#EAF2E0'), hexc('#9AB090')), hi=False)
+    return L.image()
+
+
+def vit_stat():
+    """D-141 vitality: a green leaf heart with a white cross."""
+    L = new()
+    ramp = (hexc('#C8FFB0'), hexc('#4CC24A'), hexc('#1F6E30'))
+    d = union(L.circle(44, 50, 26), L.circle(84, 50, 26), L.polygon([(20, 58), (108, 58), (64, 110)]))
+    outline(L, d)
+    fill(L, d, ramp)
+    cross = union(rrect_at(L.x, L.y, 56, 40, 72, 86, 5), rrect_at(L.x, L.y, 41, 55, 87, 71, 5))
+    L.over(cov(cross + 2.5), shade(ramp[2], -0.2))
+    L.over(cov(cross), vgrad(L, 40, 86, hexc('#FFFFFF'), hexc('#E2F6DA')))
+    gloss(L, d, 42, 42, 12, 9, 150)
+    return L.image()
+
+
+def spell():
+    """D-140 spell power: a golden-tipped wand casting a star."""
+    L = new()
+    wand = seg(L, 26, 108, 80, 54, 6.5)
+    tip = seg(L, 70, 64, 82, 52, 7.5)
+    star_d = L.polygon(star_pts(92, 38, 30, 13)) - 2
+    d = union(wand, tip, star_d)
+    L.over(np.clip(1 - np.maximum(star_d, 0) / 16.0, 0, 1) ** 2 * (star_d > 0), (200, 150, 255, 140))
+    outline(L, d)
+    fill(L, wand, (hexc('#B488F0'), hexc('#6A3CB8'), hexc('#3A1E70')), hi=False)
+    fill(L, tip, GOLD, hi=False)
+    fill(L, star_d, GOLD)
+    L.over(cov(L.polygon(star_pts(92, 38, 14, 6))), (255, 252, 220, 220))
+    for (cx, cy, r) in ((40, 30, 9), (110, 92, 7)):
+        L.over(cov(L.polygon(star_pts(cx, cy, r, r * 0.28, 4, 0))), WHITE)
+    return L.image()
+
+
 def make():
     save(coin(), 'coin')
     save(gem(), 'gem')
@@ -761,6 +867,12 @@ def make():
     save(shop(), 'shop')
     save(ticket(), 'ticket')
     save(speed(), 'speed')
+    save(stone(), 'stone')
+    save(str_stat(), 'str')
+    save(int_stat(), 'int')
+    save(dex_stat(), 'dex')
+    save(vit_stat(), 'vit')
+    save(spell(), 'spell')
 
 
 if __name__ == '__main__':

@@ -11,6 +11,17 @@ namespace SoloHero.Game.Infrastructure
     {
         public const string LocalUserId = "local";
 
+        /// <summary>D-136: a first launch without a network plays in local mode instead of waiting on sign-in.</summary>
+        public const int SignInTimeoutMs = 10000;
+
+        private readonly TrustedClock _clock;
+
+        /// <param name="clock">D-133: synced to the server's clock as soon as Firebase is available.</param>
+        public AuthService(TrustedClock clock = null)
+        {
+            _clock = clock;
+        }
+
         /// <summary>True once Firebase dependencies resolved; analytics works even if sign-in later fails.</summary>
         public bool FirebaseReady { get; private set; }
 
@@ -26,6 +37,7 @@ namespace SoloHero.Game.Infrastructure
                 }
 
                 FirebaseReady = true;
+                ServerTimeSync.Start(_clock);
                 FirebaseAuth auth = FirebaseAuth.DefaultInstance;
                 if (auth.CurrentUser != null)
                 {
@@ -33,7 +45,16 @@ namespace SoloHero.Game.Infrastructure
                     return auth.CurrentUser.UserId;
                 }
 
-                AuthResult result = await auth.SignInAnonymouslyAsync();
+                Task<AuthResult> signIn = auth.SignInAnonymouslyAsync();
+                if (await Task.WhenAny(signIn, Task.Delay(SignInTimeoutMs)) != signIn)
+                {
+                    // The account still arrives later and the next start uses it; this session saves locally.
+                    _ = signIn.ContinueWith(t => t.Exception, TaskContinuationOptions.OnlyOnFaulted);
+                    Log.Warn(LogTag.Boot, "sign-in timed out, local mode");
+                    return LocalUserId;
+                }
+
+                AuthResult result = await signIn;
                 Log.Info(LogTag.Boot, "signed in " + result.User.UserId);
                 return result.User.UserId;
             }

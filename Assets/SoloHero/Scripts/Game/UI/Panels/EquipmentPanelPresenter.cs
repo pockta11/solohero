@@ -3,6 +3,7 @@ using SoloHero.Core.Common;
 using SoloHero.Core.Equipment;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Jobs;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
 using SoloHero.Game.Audio;
@@ -34,6 +35,10 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private GradeFrameSet _frames;
         [Tooltip("D-106: ATK, HP, DEF of the current loadout.")]
         [SerializeField] private Text[] _statTexts = new Text[3];
+        [Tooltip("D-140: the ATK chip icon, spell power for mages.")]
+        [SerializeField] private Image _atkStatIcon;
+        [SerializeField] private Sprite _atkSprite;
+        [SerializeField] private Sprite _spellSprite;
         [Tooltip("D-109: the owned bonus of the whole collection.")]
         [SerializeField] private Text _ownedBonusText;
         [SerializeField] private TapGuardButton _promoteButton;
@@ -46,6 +51,7 @@ namespace SoloHero.Game.UI.Panels
         private readonly string[] _shownIds = new string[GachaCatalog.SlotCount];
         private int _shownPulls = -1;
         private double _shownGold = -1d;
+        private string _shownJob;
 
         private void OnEnable()
         {
@@ -60,7 +66,9 @@ namespace SoloHero.Game.UI.Panels
         {
             if (_save == null) return;
             if (_save.gold != _shownGold) DrawPromote();
-            if (_save.ownedEquipment.Count == _shownOwnedCount && _save.totalPullCount == _shownPulls && !EquippedChanged()) return;
+            // D-140: the weapon icon follows the job line.
+            if (_save.ownedEquipment.Count == _shownOwnedCount && _save.totalPullCount == _shownPulls && _save.jobId == _shownJob
+                && !EquippedChanged()) return;
             Refresh();
         }
 
@@ -176,6 +184,11 @@ namespace SoloHero.Game.UI.Panels
             if (_save == null) return;
             _shownOwnedCount = _save.ownedEquipment.Count;
             _shownPulls = _save.totalPullCount;
+            _shownJob = _save.jobId;
+            JobLine line = JobService.LineOf(_save);
+            WeaponKind weapon = JobTerms.WeaponOf(line);
+            Sprite atkSprite = line == JobLine.Mage && _spellSprite != null ? _spellSprite : _atkSprite;
+            if (_atkStatIcon != null && atkSprite != null) _atkStatIcon.sprite = atkSprite;
             for (int s = 0; s < _shownIds.Length; s++) _shownIds[s] = Equipped((EquipmentSlot)s);
             EquipmentBonus bonus = _balance != null ? EquipmentBonus.Resolve(_balance, _save) : default;
 
@@ -202,7 +215,7 @@ namespace SoloHero.Game.UI.Panels
                 if (s < _slotIcons.Length && _slotIcons[s] != null && _icons != null)
                 {
                     // Empty slot: the common icon as a dim silhouette, so the slot still reads at a glance (E8-07).
-                    _slotIcons[s].sprite = _icons.Get(slot, grade < 0 ? GearGrade.Common : (GearGrade)grade);
+                    _slotIcons[s].sprite = _icons.Get(slot, grade < 0 ? GearGrade.Common : (GearGrade)grade, weapon);
                     _slotIcons[s].color = grade < 0 ? UiPalette.Silhouette : Color.white;
                 }
 

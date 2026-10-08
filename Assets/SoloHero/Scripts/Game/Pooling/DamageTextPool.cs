@@ -174,7 +174,7 @@ namespace SoloHero.Game.Pooling
             if (TryMerge(target, amount, kind)) return;
             if (_pool == null || _camera == null || !_pool.TryGet(out DamageText text)) return;
 
-            bool crit = kind == HitKind.Crit;
+            bool crit = kind == HitKind.Crit || kind == HitKind.SkillCrit;
             Vector3 screen = _camera.WorldToScreenPoint(new Vector3((float)target.X, EnemyHeadOffset + DepthLanes.For(target), 0f));
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_layer, screen, null, out Vector2 local);
             // Small sideways jitter keeps numbers from stacking on one spot; crits alternate their arc direction.
@@ -186,7 +186,8 @@ namespace SoloHero.Game.Pooling
             int size;
             switch (kind)
             {
-                case HitKind.Crit: color = _critColor; size = _critSize; break;
+                case HitKind.Crit:
+                case HitKind.SkillCrit: color = _critColor; size = _critSize; break;
                 case HitKind.Skill: color = _skillColor; size = _skillSize; break;
                 case HitKind.Dot: color = _dotColor; size = _dotSize; break;
                 case HitKind.Combo: color = _comboColor; size = _comboSize; break;

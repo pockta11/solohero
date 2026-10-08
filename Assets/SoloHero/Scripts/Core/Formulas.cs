@@ -85,6 +85,8 @@ namespace SoloHero.Core
                 case UpgradeLane.Atk: baseCost = c.UPG_BASE_ATK; break;
                 case UpgradeLane.Def: baseCost = c.UPG_BASE_DEF; break;
                 case UpgradeLane.Spd: baseCost = c.UPG_BASE_SPD; break;
+                case UpgradeLane.Crit: baseCost = c.UPG_BASE_CRIT; break;
+                case UpgradeLane.CritDmg: baseCost = c.UPG_BASE_CRITDMG; break;
                 default: throw new ArgumentOutOfRangeException(nameof(lane));
             }
 

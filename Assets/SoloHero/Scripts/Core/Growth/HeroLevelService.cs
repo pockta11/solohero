@@ -34,6 +34,8 @@ namespace SoloHero.Core.Growth
                 _data.heroExp -= ExpRequired(_balance, _data.heroLevel);
                 _data.heroLevel++;
                 gained++;
+                // D-141: auto mode spends the level's AP before anyone reads the new stats.
+                HeroAp.Settle(_balance, _data);
                 HeroLeveledUp?.Invoke(_data.heroLevel);
             }
 

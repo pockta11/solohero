@@ -69,3 +69,19 @@ MonoBehaviour:
   - {fileID: 21300000, guid: d41ba553c371fb640aaef21ab097e43a, type: 3}
   - {fileID: 21300000, guid: f6d3fb665dc61a74a96ec7d414e7bbc3, type: 3}
   - {fileID: 21300000, guid: e77b2453c1417c546941130670258e37, type: 3}
+  staffIcons:
+  - {fileID: 21300000, guid: dac955870cc467540a824dc5831d5a4b, type: 3}
+  - {fileID: 21300000, guid: 55f12fabd000bec48826fb50e8bc71e4, type: 3}
+  - {fileID: 21300000, guid: 6e4bb83360876724c8d1b67ac72ce5a0, type: 3}
+  - {fileID: 21300000, guid: 55d4567a9580440458361665e00701ff, type: 3}
+  - {fileID: 21300000, guid: e3e867e275ebc8941a3ee9b70c71a2b7, type: 3}
+  - {fileID: 21300000, guid: 660398d077d9e0f468b269db6555fc12, type: 3}
+  - {fileID: 21300000, guid: ed902b2c4dfc9ce4a8bc0d628855b7c9, type: 3}
+  bowIcons:
+  - {fileID: 21300000, guid: 00d95b6db5897ac43923140f578636c1, type: 3}
+  - {fileID: 21300000, guid: 0de5d91a74543d446866160082e8dc18, type: 3}
+  - {fileID: 21300000, guid: 17dec874009c8e14ab1bedb843a654b9, type: 3}
+  - {fileID: 21300000, guid: 88b76d4748cd6f9468602b4afc26fae9, type: 3}
+  - {fileID: 21300000, guid: d3601ff4bd072884abf680d1b75eba1b, type: 3}
+  - {fileID: 21300000, guid: e9dc843f9ba96294183dbf30af3c2df2, type: 3}
+  - {fileID: 21300000, guid: 044f2575bb85e874bbb61d6e5da481be, type: 3}

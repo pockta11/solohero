@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
@@ -87,23 +86,21 @@ namespace SoloHero.Core.Economy
             return Result.Success;
         }
 
-        public long BoosterSecondsLeft
-        {
-            get
-            {
-                long left = _data.goldBoosterEndUtc - _clock.UtcNowSeconds;
-                return left > 0 ? left : 0;
-            }
-        }
+        public long BoosterSecondsLeft => SecondsLeft(_data.goldBoosterEndUtc, _balance.AD_BOOSTER_SECONDS);
 
         /// <summary>D-129: real seconds left on the speed booster.</summary>
-        public long SpeedSecondsLeft
+        public long SpeedSecondsLeft => SecondsLeft(_data.speedBoostEndUtc, _balance.AD_SPEED_SECONDS);
+
+        /// <summary>
+        /// Seconds until <paramref name="endUtc"/>, never more than one booster's length (D-133: a device clock turned
+        /// back before the server's clock is known cannot stretch a running booster).
+        /// </summary>
+        private long SecondsLeft(long endUtc, double length)
         {
-            get
-            {
-                long left = _data.speedBoostEndUtc - _clock.UtcNowSeconds;
-                return left > 0 ? left : 0;
-            }
+            long left = endUtc - _clock.UtcNowSeconds;
+            if (left <= 0) return 0;
+            long max = (long)Math.Round(length);
+            return left > max ? max : left;
         }
 
         /// <summary>D-129: how many times faster the battle runs right now (1 without the booster).</summary>
@@ -114,8 +111,8 @@ namespace SoloHero.Core.Economy
 
         private void RollDay()
         {
-            string today = _clock.LocalNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            if (_data.adCountResetDate == today) return;
+            string today = DayKey.Today(_clock);
+            if (!DayKey.IsNewDay(_data.adCountResetDate, today)) return;
             _data.adCountResetDate = today;
             _data.adCountA1 = 0;
             _data.adCountA2 = 0;

@@ -70,6 +70,10 @@ namespace SoloHero.Core.Balance
             private readonly TutorialService _tutorial;
             private readonly GuideQuestService _guide;
             private readonly AchievementService _achievements;
+            private readonly DungeonService _dungeons;
+
+            /// <summary>D-143: runs left to start this session (daily dungeons, then the tower climb).</summary>
+            private readonly Queue<DungeonKind> _runs = new Queue<DungeonKind>();
 
             public SimRun(BalanceValues balance, SimSettings settings)
             {
@@ -96,6 +100,7 @@ namespace SoloHero.Core.Balance
                 _tutorial = new TutorialService(balance, gacha);
                 _guide = new GuideQuestService(balance, _save);
                 _achievements = new AchievementService(_save);
+                _dungeons = new DungeonService(balance, _save, _clock);
                 _spender.GradeObtained += OnGradeObtained;
 
                 _runner = new StageRunner(balance, combatRng, CombatLoadout.ComputeStats(balance, _save), _save);
@@ -149,8 +154,17 @@ namespace SoloHero.Core.Balance
                         _runner.Resume(_save.farmingStage < 1 ? 1 : _save.farmingStage, _save.retreatMode);
                         _attemptStarted = true;
                         ProcessAttemptStart();
-                        // D-130: a tower climb from the first uncleared floor; the runner returns to the stage after it.
-                        if (_s.UseTower && TowerService.IsUnlocked(_b, _save)) _runner.StartTower(_save.towerFloor + 1);
+                        // D-143: the day's dungeon entries in its first session; D-130: a tower climb from the first
+                        // uncleared floor every session. The runner returns to the stage after each run.
+                        _runs.Clear();
+                        if (_s.UseDungeons && _dungeons.Unlocked)
+                        {
+                            foreach (DungeonKind kind in new[] { DungeonKind.Gold, DungeonKind.Exp })
+                                for (int n = _dungeons.Remaining(kind); n > 0; n--) _runs.Enqueue(kind);
+                        }
+
+                        if (_s.UseTower && TowerService.IsUnlocked(_b, _save)) _runs.Enqueue(DungeonKind.Tower);
+                        StartNextRun();
 
                         _sessionStageGold = 0d;
                         int steps = (int)Math.Round(session.Minutes * 60d / _s.DeltaTime);
@@ -172,6 +186,8 @@ namespace SoloHero.Core.Balance
                     _day.GemPulls = _spender.GemPulls - gemPulls0;
                     _day.HighestStage = _save.highestStage;
                     _day.TowerFloor = _save.towerFloor;
+                    _day.Stones = _save.breakStones;
+                    _day.Breaks = _spender.Breaks;
                     _day.TicketPulls = _spender.TicketPulls - ticketPulls0;
                     _day.HeroLevel = _save.heroLevel;
                     _day.GoldEnd = _save.gold;
@@ -205,7 +221,12 @@ namespace SoloHero.Core.Balance
                 _day.PlaySeconds += dt;
 
                 double gained = _save.gold - goldBefore;
-                if (gained > 0d)
+                if (gained > 0d && _runner.InDungeon)
+                {
+                    _day.EarnedDungeon += gained;
+                    _earnedTotal += gained;
+                }
+                else if (gained > 0d)
                 {
                     double boosted = boost > 1d ? gained * (boost - 1d) / boost : 0d;
                     _day.EarnedStage += gained - boosted;
@@ -269,6 +290,22 @@ namespace SoloHero.Core.Balance
                 }
 
                 ProcessAttemptStart();
+                StartNextRun();
+            }
+
+            /// <summary>Starts the next queued dungeon or tower run once the runner is back on a stage.</summary>
+            private void StartNextRun()
+            {
+                while (_runs.Count > 0 && !_runner.InDungeon)
+                {
+                    DungeonKind kind = _runs.Peek();
+                    bool started = kind == DungeonKind.Tower
+                        ? _runner.StartTower(_save.towerFloor + 1)
+                        : _dungeons.TryEnter(kind, _runner).Ok;
+                    if (!started && (_runner.State == StageState.BossIntro || _runner.State == StageState.BossTimer)) return;
+                    _runs.Dequeue();
+                    if (started) return;
+                }
             }
 
             private void OnStateChanged(StageState state)
@@ -449,6 +486,8 @@ namespace SoloHero.Core.Balance
                     UpgradeAtk = _save.upgradeAtk,
                     UpgradeDef = _save.upgradeDef,
                     UpgradeSpd = _save.upgradeSpd,
+                    UpgradeCrit = _save.upgradeCrit,
+                    UpgradeCritDmg = _save.upgradeCritDmg,
                     SkillsOwned = _save.ownedSkills.Count,
                     SkillLevelSum = SkillLevelSum(),
                     SkillPulls = _save.skillPullCount,

@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
@@ -34,11 +33,11 @@ namespace SoloHero.Core.Daily
         /// <summary>Raised after progress moves or a reward is claimed.</summary>
         public event Action Changed;
 
-        private string Today => _clock.LocalNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        private string Today => DayKey.Today(_clock);
 
         // ------------------------------------------------------------------ attendance
 
-        public bool AttendanceAvailable => _data.attendanceDate != Today;
+        public bool AttendanceAvailable => DayKey.IsNewDay(_data.attendanceDate, Today);
 
         /// <summary>The cycle day (1..7) the next claim pays, or today's claimed day once claimed.</summary>
         public int AttendanceDay => AttendanceAvailable ? _data.attendanceCount % CycleDays + 1 : (_data.attendanceCount - 1) % CycleDays + 1;
@@ -158,7 +157,7 @@ namespace SoloHero.Core.Daily
             while (_data.missionProgress.Count < n) _data.missionProgress.Add(0);
             while (_data.missionClaimed.Count < n) _data.missionClaimed.Add(false);
             string today = Today;
-            if (_data.missionDate == today) return;
+            if (!DayKey.IsNewDay(_data.missionDate, today)) return;
             _data.missionDate = today;
             for (int i = 0; i < n; i++)
             {

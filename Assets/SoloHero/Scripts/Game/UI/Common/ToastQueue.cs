@@ -50,6 +50,12 @@ namespace SoloHero.Game.UI.Common
                 case FailReason.NoTalentPoints: return "toast.no_talent_points";
                 case FailReason.JobLocked: return "toast.job_locked";
                 case FailReason.NotEnoughTicket: return "toast.not_enough_ticket";
+                case FailReason.NetworkUnavailable: return "toast.network";
+                case FailReason.CodeInvalid: return "toast.code_invalid";
+                case FailReason.CodeNotFound: return "toast.code_not_found";
+                case FailReason.NoApPoints: return "toast.no_ap";
+                case FailReason.LimitReached: return "toast.limit_reached";
+                case FailReason.NotEnoughStones: return "toast.not_enough_stones";
                 default: return null;
             }
         }

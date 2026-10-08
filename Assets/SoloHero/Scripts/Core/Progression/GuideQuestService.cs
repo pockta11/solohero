@@ -63,7 +63,9 @@ namespace SoloHero.Core.Progression
         {
             switch (kind)
             {
-                case GuideKind.UpgradeTotal: return data.upgradeHp + data.upgradeAtk + data.upgradeDef + data.upgradeSpd;
+                // D-142: every gold lane counts, the crit lanes too.
+                case GuideKind.UpgradeTotal:
+                    return data.upgradeHp + data.upgradeAtk + data.upgradeDef + data.upgradeSpd + data.upgradeCrit + data.upgradeCritDmg;
                 case GuideKind.ClearStage: return data.highestStage;
                 case GuideKind.HeroLevel: return data.heroLevel;
                 case GuideKind.GearPulls: return data.totalPullCount;

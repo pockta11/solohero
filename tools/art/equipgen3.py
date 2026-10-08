@@ -1,7 +1,8 @@
 """Smooth equipment icons (D-108) -> Assets/SoloHero/Art/UI/Hd/Equipment/equip_{slot}_{grade}.png (128 x 128).
 
 Usage: python tools/art/equipgen3.py [OUT_DIR] [SLOT ...] [--preview PREVIEW.png]
-Eight slots (D-109: gloves, necklace, ring and earring after the gear) x seven grades (D-113). Each grade changes
+Eight slots (D-109: gloves, necklace, ring and earring after the gear) x seven grades (D-113), plus
+the staff and the bow that replace the sword picture for mages and archers (D-140). Each grade changes
 material and ornament, not just the hue: common = iron and leather, uncommon = the same shapes in green-trimmed steel,
 rare = polished steel with blue trim, epic = violet steel with gems, legendary = gold with wings, a ruby and a glint,
 mythic = the legendary shapes in crimson with gold gems, ancient = the legendary shapes in jade with golden wings.
@@ -20,7 +21,7 @@ from icongen3 import (BLUE, BROWN, GOLD, INK, OW, PURPLE, RED, SILVER, fill, glo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', '..', 'Assets', 'SoloHero', 'Art', 'UI', 'Hd', 'Equipment')
-SLOT_NAMES = ('sword', 'helm', 'armor', 'boots', 'gloves', 'necklace', 'ring', 'earring')
+SLOT_NAMES = ('sword', 'helm', 'armor', 'boots', 'gloves', 'necklace', 'ring', 'earring', 'staff', 'bow')
 args = [a for i, a in enumerate(sys.argv[1:], 1)
         if not a.startswith('--') and sys.argv[i - 1] != '--preview' and a not in SLOT_NAMES]
 if args:
@@ -454,9 +455,138 @@ def earring_icon(grade):
     return L.image()
 
 
-ORDER = ['sword', 'helm', 'armor', 'boots', 'gloves', 'necklace', 'ring', 'earring']
+# Staff and bow (D-140: the weapon slot of mages and archers) ---------------------------------------------------------
+def circ(x, y, cx, cy, r):
+    return np.sqrt((x - cx) ** 2 + (y - cy) ** 2) - r
+
+
+def seg_xy(x, y, ax, ay, bx, by, w):
+    """Capsule distance in an arbitrary (rotated) frame."""
+    px, py = x - ax, y - ay
+    ex, ey = bx - ax, by - ay
+    t = np.clip((px * ex + py * ey) / (ex * ex + ey * ey), 0, 1)
+    dx, dy = px - ex * t, py - ey * t
+    return np.sqrt(dx * dx + dy * dy) - w
+
+
+def rot_pt_frame(px, py, ang, cx=64, cy=64):
+    """A point of the frame rot(L, cx, cy, ang) draws in, back to image space."""
+    c, s_ = math.cos(ang), math.sin(ang)
+    dx, dy = px - cx, py - cy
+    return (cx + dx * c - dy * s_, cy + dx * s_ + dy * c)
+
+
+PINK_ORB = (hexc('#FFD0F8'), hexc('#F050C0'), hexc('#901870'))
+
+
+def staff_icon(grade):
+    L = new()
+    shaft_ramp = {'common': LEATHER, 'rare': (hexc('#C89870'), hexc('#7A4E2E'), hexc('#43281A')), 'epic': VIOLET,
+                  'legendary': GOLDEN}[grade]
+    holder_ramp = {'common': IRON, 'rare': STEEL, 'epic': GOLD, 'legendary': GOLDEN}[grade]
+    orb_ramp = {'common': (hexc('#E8F4FF'), hexc('#9CC8F0'), hexc('#4A78B0')), 'rare': BLUE, 'epic': PINK_ORB,
+                'legendary': RED}[grade]
+    ox, oy = 88, 38
+    orr = 17 if grade == 'legendary' else 15
+    shaft = seg(L, 22, 110, ox - 10, oy + 12, 5.5)
+    orb = L.circle(ox, oy, orr)
+    collar = seg(L, ox - 18, oy + 20, ox - 9, oy + 11, 7.5)
+    holder = collar if grade == 'common' else union(np.abs(L.circle(ox, oy, orr + 3)) - 3.2, collar)
+    every = union(shaft, orb, holder)
+    wings = None
+    if grade == 'legendary':
+        wings = wing_pair(L, ox, oy + 8, 34, up=True)
+        every = union(every, wings)
+    if grade in ('epic', 'legendary'):
+        reach = 16.0 if grade == 'legendary' else 12.0
+        aura = np.clip(1 - np.maximum(every, 0) / reach, 0, 1) ** 2 * (every > 0)
+        L.over(aura, AURA_L if grade == 'legendary' else (200, 140, 255, 120))
+    outline(L, every)
+    if wings is not None:
+        fill(L, wings, WING)
+    fill(L, shaft, shaft_ramp, hi=False)
+    for t in (0.16, 0.27):
+        gx, gy = 22 + (ox - 10 - 22) * t, 110 + (oy + 12 - 110) * t
+        L.over(cov(seg(L, gx - 5, gy - 5, gx + 5, gy + 5, 2.0) - 0.5), shade(shaft_ramp[2], -0.2)[:3] + (220,))
+    fill(L, holder, holder_ramp)
+    fill(L, orb, orb_ramp, hi=False)
+    L.over(cov(L.circle(ox - orr * 0.35, oy - orr * 0.35, orr * 0.3)), (255, 255, 255, 220))
+    if grade == 'rare':
+        gem(L, 34, 98, 5, BLUE)
+    if grade == 'epic':
+        sparkle(L, 110, 18, 8)
+    if grade == 'legendary':
+        sparkle(L, 112, 16, 11)
+        sparkle(L, 22, 44, 7)
+    return L.image()
+
+
+def bow_icon(grade):
+    L = new()
+    limb_ramp = {'common': LEATHER, 'rare': STEEL, 'epic': VIOLET, 'legendary': GOLDEN}[grade]
+    grip_ramp = {'common': PAD_LEATHER, 'rare': BLUE, 'epic': (hexc('#6A4AA0'), hexc('#3E2A70'), hexc('#24163E')),
+                 'legendary': RED}[grade]
+    tip_ramp = {'common': BRONZE, 'rare': GOLD, 'epic': GOLD, 'legendary': GOLDEN}[grade]
+    ang = math.radians(-40)
+    x, y = rot(L, 64, 64, ang)
+    cx, cy, R = 92, 64, 56
+    limb = np.maximum(np.abs(circ(x, y, cx, cy, R)) - 5.5, x - 66)
+    tip_y = math.sqrt(R * R - (cx - 66) ** 2)
+    tips = union(circ(x, y, 66, cy - tip_y, 6.5), circ(x, y, 66, cy + tip_y, 6.5))
+    grip = rrect_at(x, y, cx - R - 8, cy - 13, cx - R + 8, cy + 13, 5)
+    string = seg_xy(x, y, 66, cy - tip_y, 66, cy + tip_y, 1.6)
+    parts = [limb, tips, grip]
+    arrow = None
+    if grade != 'common':
+        shaft = seg_xy(x, y, 24, cy, 100, cy, 2.6)
+        head = np.maximum(np.maximum((y - cy) - (x - 12) * 0.62, -(y - cy) - (x - 12) * 0.62), x - 26)
+        fletch = union(seg_xy(x, y, 92, cy, 104, cy - 9, 2.4), seg_xy(x, y, 92, cy, 104, cy + 9, 2.4))
+        arrow = (shaft, head, fletch)
+        parts += [shaft, head, fletch]
+    wings = None
+    if grade == 'legendary':
+        halves = []
+        for sgn in (-1, 1):
+            outer = circ(x, y, 78, cy + sgn * (tip_y + 2), 15)
+            bite = circ(x, y, 92, cy + sgn * (tip_y - 6), 14)
+            halves.append(np.maximum(outer, -bite))
+        wings = union(*halves)
+        parts.append(wings)
+    every = union(*parts)
+    if grade in ('epic', 'legendary'):
+        reach = 16.0 if grade == 'legendary' else 12.0
+        aura = np.clip(1 - np.maximum(every, 0) / reach, 0, 1) ** 2 * (every > 0)
+        L.over(aura, AURA_L if grade == 'legendary' else (200, 140, 255, 120))
+    outline(L, every)
+    L.over(cov(string), (255, 250, 236, 235))
+    if wings is not None:
+        fill(L, wings, WING)
+    fill(L, limb, limb_ramp, hi=False)
+    L.over(cov(np.maximum(np.abs(circ(x, y, cx, cy, R + 2.2)) - 1.2, x - 64)), (255, 255, 255, 120))
+    fill(L, tips, tip_ramp)
+    fill(L, grip, grip_ramp, hi=False)
+    if arrow is not None:
+        shaft, head, fletch = arrow
+        fill(L, shaft, (hexc('#F4E2C4'), hexc('#C89A64'), hexc('#7A5432')), hi=False)
+        fill(L, head, GOLDEN if grade == 'legendary' else STEEL, hi=False)
+        fill(L, fletch, {'rare': BLUE, 'epic': PINK_ORB, 'legendary': RED}[grade], hi=False)
+    gx, gy = rot_pt_frame(cx - R, cy, ang)
+    if grade == 'rare':
+        gem(L, gx, gy, 5, BLUE)
+    if grade == 'epic':
+        gem(L, gx, gy, 6, PINK_ORB)
+        sparkle(L, 104, 22, 8)
+    if grade == 'legendary':
+        gem(L, gx, gy, 7, RED)
+        sparkle(L, 106, 20, 11)
+        sparkle(L, 22, 104, 7)
+    return L.image()
+
+
+ORDER = ['sword', 'helm', 'armor', 'boots', 'gloves', 'necklace', 'ring', 'earring', 'staff', 'bow']
 MAKERS = {'sword': sword_icon, 'helm': helm_icon, 'armor': armor_icon, 'boots': boots_icon,
-          'gloves': gloves_icon, 'necklace': necklace_icon, 'ring': ring_icon, 'earring': earring_icon}
+          'gloves': gloves_icon, 'necklace': necklace_icon, 'ring': ring_icon, 'earring': earring_icon,
+          'staff': staff_icon, 'bow': bow_icon}
 
 # D-113: the grades between and above the four drawn ones reuse a drawn shape in their own materials. The swap
 # rebinds this module's palette names while one icon is drawn: (shape grade, palette swaps, extra sparkles).

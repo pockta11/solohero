@@ -19,6 +19,10 @@ namespace SoloHero.Core.Balance
         public int UpgradeAtk;
         public int UpgradeDef;
         public int UpgradeSpd;
+
+        /// <summary>D-142 crit lanes.</summary>
+        public int UpgradeCrit;
+        public int UpgradeCritDmg;
         public int SkillsOwned;
         public int SkillLevelSum;
         public int SkillPulls;
@@ -49,6 +53,11 @@ namespace SoloHero.Core.Balance
 
         /// <summary>D-111 guide quest gold.</summary>
         public double EarnedQuest;
+
+        /// <summary>D-143: gold from the gold dungeon, breakthrough stones at the end of the day and breaks so far.</summary>
+        public double EarnedDungeon;
+        public int Stones;
+        public int Breaks;
         public double SpentUpgrade;
         public double SpentGacha;
         public double SpentSkill;
@@ -72,7 +81,7 @@ namespace SoloHero.Core.Balance
         public double GoldEnd;
         public double GemEnd;
 
-        public double Earned => EarnedStage + EarnedOffline + EarnedRefund + EarnedBooster + EarnedQuest;
+        public double Earned => EarnedStage + EarnedOffline + EarnedRefund + EarnedBooster + EarnedQuest + EarnedDungeon;
         public double Spent => SpentUpgrade + SpentGacha + SpentSkill + SpentPet;
     }
 

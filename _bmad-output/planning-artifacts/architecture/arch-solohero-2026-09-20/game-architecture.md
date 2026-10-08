@@ -1109,19 +1109,25 @@ public Result TryEquip(string equipmentId)
 public interface IClock  { long UtcNowSeconds { get; } DateTime LocalNow { get; } }   // LocalNow: ad daily reset at device-local midnight
 public interface IRandom { double NextDouble(); int Next(int maxExclusive); }
 
-public sealed class OfflineRewardService
+// D-133: the registered IClock is a TrustedClock - an anchor plus monotonic seconds. Boot anchors it to the device
+// clock, every Firebase connection re-anchors it to the server (.info/serverTimeOffset); the device clock is never
+// read in between, so moving it changes nothing. Android's monotonic source is SystemClock.elapsedRealtime (counts sleep).
+public sealed class TrustedClock : IClock
 {
-    public OfflineReward Calculate(PlayerState s, BalanceValues c)
-    {
-        long elapsed = _clock.UtcNowSeconds - s.LastQuitTimeUtc;
-        if (s.LastQuitTimeUtc == 0) return OfflineReward.None;                       // first run
-        if (elapsed < 0 || elapsed > c.OFFLINE_CAP * 2) { s.LastQuitTimeUtc = _clock.UtcNowSeconds; return OfflineReward.None; } // tamper
-        long capped = Math.Min(elapsed, c.OFFLINE_CAP);
-        double gold = Formulas.StageGold(c, s.FarmingStage) / c.OFFLINE_DIVISOR * capped;
-        return new OfflineReward(capped, gold, showPopup: capped >= c.OFFLINE_MIN_SECONDS);
-    }
+    public long UtcNowSeconds => _anchorUtc + (long)Math.Floor(_monotonic() - _anchorMonotonic);
+    public bool IsTrusted => IsServerTime || !ServerExpected;   // signed in without server time yet -> rewards wait
+    public void SyncServer(double offsetMs) { /* re-anchor: device now + offset */ }
 }
+
+// Offline gold on every return (cold start and back from the background), on trusted time only.
+OfflineReward offline = OfflineReturn.Apply(balance, data, nowUtc, serverTime: clock.IsServerTime);
+// elapsed < 0: server time -> 0 and reset the stamp; device clock (local mode) -> 0 and keep it (never moves back)
+// elapsed > OFFLINE_CAP: pays the cap (the old "> 2 x cap -> 0" tamper rule is gone, D-133)
+OfflineReturn.StampLeave(data, clock.UtcNowSeconds, clock.IsServerTime);   // on pause / quit
 ```
+
+Daily rollovers compare local days with `DayKey.IsNewDay(stored, today)` - only a later day resets, so a clock turned
+back cannot reopen a day already used (D-133).
 
 ### Gacha Pattern (장르 표준)
 
@@ -1291,9 +1297,10 @@ public PullResult Pull()
 |---|---|---|
 | ~~O1~~ | R9 가챠 방식 변경 GDD 역반영 — **완료.** 확률표 C 55 / R 33 / E 10 / L 2 %, `GACHA_PITY_RESET_ON_LEGENDARY = true` (decision-log D-049~D-051) | 2026-09-20 |
 | ~~O2~~ | E1-06 완료 기준 갱신 — **완료** (D-052) | 2026-09-20 |
-| O3 | CLAUDE.md 갱신 — Addressables/Input System/JSON 삭제, 구조·규약 반영, JDK 제약 조건부화 | Step 9 Next Steps |
+| ~~O3~~ | CLAUDE.md 갱신 — **완료** (매 결정 묶음마다 갱신, 최근 2026-10-08) | Step 9 Next Steps |
 | ~~O4~~ | JDK 11 → 17 전환 여부 — **결정 A: JDK 11 유지** (2026-09-21, 16 KB 로컬 검사 통과) | E1-09 |
-| O5 | Higgsfield 생성물 상업 사용권 확인 → Q-7 라이선스 관리표 | E8-01 |
+| ~~O5~~ | Higgsfield 생성물 상업 사용권 확인 — **해당 없음.** 배포물은 자체 생성 아트 + CC0 오디오 + OFL 글꼴뿐(`Art/ASSET_LICENSES.md`, D-138) | E8-01 |
+| O6 | 2026-10-08 추가 구조 (D-133~D-138): `TrustedClock`·`ServerTimeSync`·`MonotonicTime`(시간), `GameDatabase`(DB 접근 단일 진입점, 개발 빌드 QA 에뮬레이터), `AccountService`·`AppRestart`(계정 도구), `AdConsent`(UMP), `ExceptionReporter`(예외 → 분석). 규칙은 `project-context.md` | 반영 완료 |
 
 ### Validation Date
 

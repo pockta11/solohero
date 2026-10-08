@@ -3,14 +3,14 @@
 개발: SoloSoft
 
 ■ 그래픽
-- 캐릭터·적·보스·배경·이펙트·UI·아이콘: SoloSoft
-- 폭발 이펙트 일부: Kings and Pigs — Pixel Frog (CC0)
+- 캐릭터·적·보스·펫·배경·바닥·이펙트·UI·아이콘: SoloSoft (Blender와 자체 도구로 제작)
 
 ■ 사운드
 - 배경음·효과음: Juhani Junkala — Retro Game Music Pack, Chiptune Adventures, The Essential Retro Video Game Sound Effects Collection (CC0)
+- 스킬 효과음 5종: SoloSoft (합성)
 
 ■ 글꼴
-- Galmuri11 — Lee Minseo (quiple), SIL Open Font License 1.1 (아래 전문)
+- SoloHeroJua: Jua 글꼴에 Do Hyeon 글꼴의 기호(× → ▶)를 더한 글꼴, SIL Open Font License 1.1 (아래 전문)
 
 ■ 소프트웨어
 - Unity, Google Firebase, Google Mobile Ads SDK — 각 제공자의 라이선스를 따릅니다.
@@ -19,7 +19,10 @@ CC0 저작물은 표기 의무가 없지만 감사의 뜻으로 적습니다.
 
 ────────────────────────
 
-Copyright © 2019–2025 Lee Minseo (quiple@quiple.dev)
+SoloHeroJua
+Copyright 2015 The Jua Project Authors (https://github.com/google/fonts/tree/main/ofl/jua)
+Copyright 2018 The Do Hyeon Project Authors (https://github.com/google/fonts/tree/main/ofl/dohyeon)
+Merged and renamed by SoloSoft; no Reserved Font Name is used.
 
 This font software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

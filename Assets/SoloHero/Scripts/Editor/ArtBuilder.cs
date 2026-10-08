@@ -392,7 +392,10 @@ namespace SoloHero.Editor
             AssetDatabase.SaveAssets();
         }
 
-        /// <summary>E8-07: Art/Icons/Equipment/equip_{slot}_{grade}.png into the icon set (D-109: 8 slots; D-113: x 7 grades).</summary>
+        /// <summary>
+        /// E8-07: Art/Icons/Equipment/equip_{slot}_{grade}.png into the icon set (D-109: 8 slots; D-113: x 7 grades; D-140:
+        /// staff and bow weapons).
+        /// </summary>
         private static void BuildEquipmentIcons()
         {
             string path = DataArt + "/EquipmentIcons.asset";
@@ -417,6 +420,16 @@ namespace SoloHero.Editor
                     set.icons[s * grades.Length + g] = AssetDatabase.LoadAssetAtPath<Sprite>(file);
                     if (set.icons[s * grades.Length + g] == null) Debug.LogWarning("[Art] missing icon " + file);
                 }
+            }
+
+            // D-140: the mage and archer weapons (equip_staff_* / equip_bow_*, same generator).
+            set.staffIcons = new Sprite[grades.Length];
+            set.bowIcons = new Sprite[grades.Length];
+            for (int g = 0; g < grades.Length; g++)
+            {
+                set.staffIcons[g] = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/Hd/Equipment/equip_staff_" + grades[g] + ".png");
+                set.bowIcons[g] = AssetDatabase.LoadAssetAtPath<Sprite>(ArtRoot + "/UI/Hd/Equipment/equip_bow_" + grades[g] + ".png");
+                if (set.staffIcons[g] == null || set.bowIcons[g] == null) Debug.LogWarning("[Art] missing staff / bow icon " + grades[g]);
             }
 
             EditorUtility.SetDirty(set);

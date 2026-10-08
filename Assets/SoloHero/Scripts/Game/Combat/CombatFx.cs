@@ -55,6 +55,7 @@ namespace SoloHero.Game.Combat
         private static readonly Color KillShardA = new Color(1f, 0.62f, 0.2f, 1f);
         private static readonly Color KillShardB = new Color(1f, 0.95f, 0.55f, 1f);
         private float _lastComboFx = -1f;
+        private float _lastSkillCritFx = -1f;
 
         [SerializeField] private CombatSession _session;
         [SerializeField] private CombatWorldView _view;
@@ -181,6 +182,25 @@ namespace SoloHero.Game.Combat
                 HitStop.Trigger(CritStop);
                 // D-108: the spark sheet is 40 px now (was 16), so the scale drops to keep it a punchy accent.
                 if (!LowEffect) PlayVfx(_set != null ? _set.spark : null, (float)target.X, 0.9f, ComboTint, EffectY + DepthLanes.For(target));
+                return;
+            }
+
+            if (kind == HitKind.SkillCrit)
+            {
+                // D-142: a skill crit keeps the light skill effects in the crit colours, with one crit sound per moment
+                // (an area skill can crit a whole wave at once).
+                if (Time.time - _lastSkillCritFx >= ComboFxGap)
+                {
+                    _lastSkillCritFx = Time.time;
+                    Play(SfxId.Crit);
+                }
+
+                if (!LowEffect)
+                {
+                    PlayVfx(_set != null ? _set.spark : null, (float)target.X, 2.2f, CritTint, EffectY + DepthLanes.For(target));
+                    Shards(target, 3, CritShard, 3.6f);
+                }
+
                 return;
             }
 

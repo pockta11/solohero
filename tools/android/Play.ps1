@@ -16,7 +16,8 @@
   saved (an old build) and SwiftShader loses its textures on restore (rainbow stripes).
 #>
 $ErrorActionPreference = "Stop"
-$root = "C:\Users\user\android-sdk-tools"
+# The SDK root: $env:SOLOHERO_ANDROID_TOOLS on another PC, else the story 1-09 folder.
+$root = $(if ($env:SOLOHERO_ANDROID_TOOLS) { $env:SOLOHERO_ANDROID_TOOLS } else { "C:\Users\user\android-sdk-tools" })
 $adb = Join-Path $root "platform-tools\adb.exe"
 $emu = Join-Path $root "emulator\emulator.exe"
 $serial = "emulator-5554"

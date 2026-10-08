@@ -35,7 +35,8 @@ namespace SoloHero.Tests.EditMode
             double boss = CombatPower.Recommended(b, 20);
             double plain = CombatPower.Recommended(b, 20, false);
             Assert.AreEqual(b.REC_CP_BOSS_MULT, boss / plain, 0.01);
-            Assert.AreEqual(CombatPower.Recommended(b, TowerService.StageOf(b, 7), true), TowerService.RecommendedCp(b, 7));
+            // D-144: a floor's boss has TOWER_BOSS_HP_MULT x the HP, so it asks that much more power.
+            Assert.AreEqual(Math.Floor(CombatPower.Recommended(b, TowerService.StageOf(b, 7), true) * b.TOWER_BOSS_HP_MULT), TowerService.RecommendedCp(b, 7));
         }
 
         [Test]

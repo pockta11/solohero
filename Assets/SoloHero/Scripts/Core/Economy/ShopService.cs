@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Gacha;
@@ -126,8 +125,8 @@ namespace SoloHero.Core.Economy
 
         private void RollDay()
         {
-            string today = _clock.LocalNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            if (_data.shopDate == today) return;
+            string today = DayKey.Today(_clock);
+            if (!DayKey.IsNewDay(_data.shopDate, today)) return;
             _data.shopDate = today;
             _data.shopBought.Clear();
         }

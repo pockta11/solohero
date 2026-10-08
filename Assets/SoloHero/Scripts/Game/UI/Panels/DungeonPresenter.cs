@@ -1,4 +1,5 @@
 using SoloHero.Core.Common;
+using SoloHero.Core.Config;
 using SoloHero.Core.Stage;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
@@ -21,6 +22,8 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private ToastQueue _toast;
         [SerializeField] private Text[] _ticketTexts = new Text[2];
         [SerializeField] private Text[] _rewardTexts = new Text[2];
+        [Tooltip("D-143: breakthrough stones per run, or the unlock stage while closed.")]
+        [SerializeField] private Text[] _stoneTexts = new Text[2];
         [SerializeField] private Button[] _enterButtons = new Button[2];
         [SerializeField] private GameObject _banner;
         [SerializeField] private Text _bannerTitle;
@@ -90,14 +93,15 @@ namespace SoloHero.Game.UI.Panels
             if (kind == DungeonKind.Tower)
             {
                 int cleared = _runner != null ? _runner.TowerCleared : 0;
+                int stones = _runner != null ? _runner.DungeonStones : 0;
                 _toast.Show(cleared > 0
-                    ? Strings.Format("tower.result", cleared, BigNumberFormat.Format(earned))
+                    ? Strings.Format("tower.result", cleared, BigNumberFormat.Format(earned), stones)
                     : Strings.Get("tower.result_none"));
                 return;
             }
 
             string key = kind == DungeonKind.Gold ? "dungeon.result_gold" : "dungeon.result_exp";
-            _toast.Show(Strings.Format(key, BigNumberFormat.Format(earned)));
+            _toast.Show(Strings.Format(key, BigNumberFormat.Format(earned), _runner != null ? _runner.DungeonStones : 0));
         }
 
         private void Update()
@@ -149,6 +153,8 @@ namespace SoloHero.Game.UI.Panels
         {
             if (_dungeons == null) return;
             bool busy = _session != null && _session.Runner != null && _session.Runner.InDungeon;
+            bool open = _dungeons.Unlocked;
+            BalanceValues balance = PanelServices.TryGet<BalanceValues>();
             for (int i = 0; i < Kinds.Length; i++)
             {
                 int left = _dungeons.Remaining(Kinds[i]);
@@ -156,7 +162,15 @@ namespace SoloHero.Game.UI.Panels
                     _ticketTexts[i].text = Strings.Format("dungeon.tickets", left, _dungeons.DailyTickets);
                 if (i < _rewardTexts.Length && _rewardTexts[i] != null)
                     _rewardTexts[i].text = Strings.Format("dungeon.per_kill", BigNumberFormat.Format(_dungeons.RewardPerKill(Kinds[i])));
-                if (i < _enterButtons.Length && _enterButtons[i] != null) _enterButtons[i].interactable = left > 0 && !busy;
+                if (i < _stoneTexts.Length && _stoneTexts[i] != null && balance != null)
+                {
+                    // D-143: closed until the first boss falls.
+                    StageIndex.FromGlobal(balance.DUNGEON_UNLOCK_STAGE, balance.STAGES_PER_CHAPTER, out int c, out int s);
+                    _stoneTexts[i].text = open ? Strings.Format("dungeon.stones", balance.DUNGEON_STONES) : Strings.Format("dungeon.locked", c + "-" + s);
+                    _stoneTexts[i].color = open ? UiPalette.InkGood : UiPalette.InkBad;
+                }
+
+                if (i < _enterButtons.Length && _enterButtons[i] != null) _enterButtons[i].interactable = open && left > 0 && !busy;
             }
         }
     }

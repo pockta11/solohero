@@ -15,12 +15,12 @@ namespace SoloHero.Game.Infrastructure
 
         public static DatabaseReference V2Node(string userId)
         {
-            return FirebaseDatabase.DefaultInstance.RootReference.Child("users").Child(userId).Child("v2");
+            return GameDatabase.Instance.RootReference.Child("users").Child(userId).Child("v2");
         }
 
         public static DatabaseReference V1Node(string userId)
         {
-            return FirebaseDatabase.DefaultInstance.RootReference.Child("users").Child(userId);
+            return GameDatabase.Instance.RootReference.Child("users").Child(userId);
         }
 
         public async Task<string> LoadJsonAsync()

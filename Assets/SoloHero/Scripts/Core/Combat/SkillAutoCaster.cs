@@ -12,13 +12,14 @@ namespace SoloHero.Core.Combat
     /// SKILL_SEQUENCE_GAP between casts. A cast lands its first wave at once; later waves follow every
     /// WaveInterval. Buffs last per slot and are summed into the hero every tick. Allocation free while ticking.
     /// With <see cref="AutoEnabled"/> off (D-085 manual mode) only <see cref="TryCast"/> starts casts; cooldowns, buffs
-    /// and pending waves keep running.
+    /// and pending waves keep running. D-142: every skill hit rolls a crit like the main attack (DoT ticks do not).
     /// </summary>
     public sealed class SkillAutoCaster
     {
         private const int MaxPending = 8;
 
         private readonly BalanceValues _balance;
+        private readonly IRandom _random;
         private readonly SkillDef[] _defs;
         private readonly int[] _levels;
         private readonly float[] _cooldown;
@@ -36,9 +37,11 @@ namespace SoloHero.Core.Combat
         private int _damageCasts;
         private HeroBrain _castHero;
 
-        public SkillAutoCaster(BalanceValues balance)
+        /// <param name="random">Crit rolls of skill hits; null = skills never crit.</param>
+        public SkillAutoCaster(BalanceValues balance, IRandom random = null)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
+            _random = random;
             // D-104: one extra slot after the book slots holds the second job's ultimate.
             int slots = (balance.SKILL_SLOT_COUNT < 1 ? 1 : balance.SKILL_SLOT_COUNT) + 1;
             _defs = new SkillDef[slots];
@@ -318,8 +321,10 @@ namespace SoloHero.Core.Combat
             // The combo reads the state from earlier hits; this skill's own stun / DoT applies after it.
             double combo = DamageCalc.SkillCombo(_balance, target.IsStunned, target.HasDot);
             damage *= combo;
+            bool crit = _random != null && _castHero != null && DamageCalc.RollCrit(_castHero.Stats, _random, _castHero.CritBuffPoints);
+            if (crit) damage *= _balance.CRIT_MULT + _castHero.Stats.CritDamageBonus;
             target.TakeDamage(damage);
-            world.ReportHit(target, damage, combo > 1d ? HitKind.Combo : HitKind.Skill);
+            world.ReportHit(target, damage, combo > 1d ? HitKind.Combo : crit ? HitKind.SkillCrit : HitKind.Skill);
             if (dot > 0d) target.ApplyDot(dot, def.DotSeconds);
             if (def.StunSeconds > 0f) target.Stun(def.StunSeconds);
             // D-109: the mark lands after this hit, so it amplifies the next waves and every later hit.

@@ -27,12 +27,13 @@ namespace SoloHero.Core.Balance
     /// </summary>
     public static class BalanceChecks
     {
-        public const int Day1Min = 10;
-        public const int Day1Max = 19; // GDD "a day = half to one chapter": chapter 2 boss not yet beaten
-        public const int Day3Min = 20;
-        public const int Day3Max = 39; // GDD "a day = half to one chapter": day 1 + 10..20 stages, not into chapter 5
-        public const int Day7Min = 40;
-        public const int Day7Max = 49;
+        // D-145 slower curve: day 1 just past the first boss (2-1 .. 2-7), day 3 in chapter 3, day 7 in chapter 4.
+        public const int Day1Min = 11;
+        public const int Day1Max = 17;
+        public const int Day3Min = 21;
+        public const int Day3Max = 29;
+        public const int Day7Min = 31;
+        public const int Day7Max = 40;
         // D-110: enemies walk in, so the hero walks 10-30% of a stage instead of 30-45%; the same fight fits in
         // 12-25 s (was 20-30 s while the hero had to reach every enemy).
         public const double StageSecondsMin = 12d;
@@ -65,9 +66,9 @@ namespace SoloHero.Core.Balance
 
             var list = new List<SimCheck>();
             list.Add(FirstSession(r));
-            list.Add(DayCheckpoint(r, "V-1a", 1, Day1Min, Day1Max, "1-10 boss beaten, chapter 2 entered"));
-            list.Add(DayCheckpoint(r, "V-1b", 3, Day3Min, Day3Max, "chapter 3 entered"));
-            list.Add(DayCheckpoint(r, "V-1c", 7, Day7Min, Day7Max, "chapter 5 entered"));
+            list.Add(DayCheckpoint(r, "V-1a", 1, Day1Min, Day1Max, "1-10 boss beaten, early chapter 2"));
+            list.Add(DayCheckpoint(r, "V-1b", 3, Day3Min, Day3Max, "chapter 3"));
+            list.Add(DayCheckpoint(r, "V-1c", 7, Day7Min, Day7Max, "chapter 4"));
             list.Add(StageDuration(r));
             list.Add(GachaValueParity(r));
             list.Add(GachaShare(r));

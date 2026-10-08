@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
@@ -9,7 +8,8 @@ namespace SoloHero.Core.Stage
 {
     /// <summary>
     /// D-100 daily dungeon entries: DUNGEON_DAILY_TICKETS per dungeon per device-local day (like the ad counters).
-    /// An entry is spent only when the runner actually starts the run, and that spend is saved at once.
+    /// An entry is spent only when the runner actually starts the run, and that spend is saved at once. D-143: they
+    /// open once stage DUNGEON_UNLOCK_STAGE is cleared, and every finished run pays DUNGEON_STONES breakthrough stones.
     /// </summary>
     public sealed class DungeonService
     {
@@ -28,6 +28,11 @@ namespace SoloHero.Core.Stage
 
         public int DailyTickets => _balance.DUNGEON_DAILY_TICKETS;
 
+        public static bool IsUnlocked(BalanceValues balance, SaveDataV2 data) =>
+            balance != null && data != null && data.highestStage >= balance.DUNGEON_UNLOCK_STAGE;
+
+        public bool Unlocked => IsUnlocked(_balance, _data);
+
         public int Remaining(DungeonKind kind)
         {
             RollDay();
@@ -44,7 +49,7 @@ namespace SoloHero.Core.Stage
 
         public Result TryEnter(DungeonKind kind, StageRunner runner)
         {
-            if (kind == DungeonKind.None || runner == null) return Result.Fail(FailReason.Locked);
+            if (kind == DungeonKind.None || runner == null || !Unlocked) return Result.Fail(FailReason.Locked);
             if (Remaining(kind) <= 0) return Result.Fail(FailReason.DailyLimit);
             if (!runner.StartDungeon(kind)) return Result.Fail(FailReason.Busy);
             if (kind == DungeonKind.Gold) _data.dungeonGoldUsed++;
@@ -57,8 +62,8 @@ namespace SoloHero.Core.Stage
 
         private void RollDay()
         {
-            string today = _clock.LocalNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            if (_data.dungeonDate == today) return;
+            string today = DayKey.Today(_clock);
+            if (!DayKey.IsNewDay(_data.dungeonDate, today)) return;
             _data.dungeonDate = today;
             _data.dungeonGoldUsed = 0;
             _data.dungeonExpUsed = 0;

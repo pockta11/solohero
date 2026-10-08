@@ -52,3 +52,10 @@ Firebase Analytics로 GDD `Gameplay Metrics` 12개를 측정할 이벤트를 발
 - 새 저장은 `highestStage = 1`로 시작하므로 스테이지 1은 개척으로 보지 않는다. 첫 `stage_reach`는 2.
 - `attempt`는 세션 안 횟수다. 첫 도전 여부는 사용자별 이벤트 순서로 판정한다.
 - 개인정보처리방침과 Play 데이터 보안 양식에 Analytics 수집을 명시해야 한다 (E9-14).
+
+## 추가 이벤트 (2026-10-08)
+
+| 이벤트 | 파라미터 | 언제 | 용도 |
+|---|---|---|---|
+| `app_exception` | `kind`(Exception / Error / Assert), `message`(첫 줄 100자), `where`(첫 스택 프레임 100자) | C# 예외·`Log.Error`·Assert, 세션당 서로 다른 것 10개까지 (`ExceptionReporter`, D-135) | Play vitals에 잡히지 않는 C# 예외 집계. Firebase 콘솔에서 `message`·`where`를 맞춤 측정기준으로 등록해야 보고서에 보인다 |
+| `account_action` | `action`(issue / redeem / delete) | 설정 → 계정의 기기 이전 코드 발급·가져오기, 데이터 삭제 (D-134) | 계정 도구 사용량 |

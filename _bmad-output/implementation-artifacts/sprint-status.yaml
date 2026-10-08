@@ -47,7 +47,7 @@
 # - Story key = "{epic}-{story}-{slug}"; the original ID (E1-01 ...) and priority (M/S) are in the trailing comment
 
 generated: 2026-09-20
-last_updated: 2026-09-23
+last_updated: 2026-10-08  # D-133..D-138 known issues pass (see qa/release-gate.md)
 project: SoloHero
 project_key: NOKEY
 tracking_system: file-system
@@ -209,16 +209,16 @@ development_status:
   9-07-smoke-scenarios: review  # E9-07 [M] tools/qa/Qa.ps1 smoke 10/10
   9-08-force-kill-scenarios: review  # E9-08 [M] 20 kills 0.1-1.0 s after a purchase: 0 lost (after D-073)
   9-09-idle-30min: review  # E9-09 [M] 30 min alive, level 9 -> 23, PSS flat ~403 MB; FPS needs a device
-  9-10-idle-2h: in-progress  # E9-10 [M] 100 min no game crash, PSS +3.5%; emulator system_server died at 100 min - rerun on device
+  9-10-idle-2h: review  # E9-10 [M] 2026-10-08 rerun on solohero_fast (release-config QA build): 120 min, 0 crashes, PSS 318 -> 327 MB (+2.8%); device check still advised
   9-11-extra-scenarios: review  # E9-11 [M] v1 migration, ad failure, 16:9 / 20:9 layout PASS; boss/retreat in EditMode
   9-12-device-matrix: backlog  # E9-12 [M]
-  9-13-bug-severity-gate: review  # E9-13 [M] qa/release-gate.md; B-001 ad WebView crash on emulator pending device check
-  9-14-store-assets: review  # E9-14 [M] store/: icon 512, feature graphic, 4 draft shots, listing-ko, privacy-policy.html, data-safety; dev fills email/URL
+  9-13-bug-severity-gate: review  # E9-13 [M] qa/release-gate.md; B-003..B-009 found and fixed 2026-10-08, B-001 pending device check
+  9-14-store-assets: review  # E9-14 [M] 2026-10-08 redone for the current game: listing, 8 shots 1080x1920, feature graphic (tools/art/storegen.py), rating, data safety, privacy; dev fills email/URL
   9-15-rate-disclosure-policy: review  # E9-15 [M] no IAP -> legal disclosure not required; in-game + store text anyway (store/content-rating.md)
   9-16-ad-policy-check: review  # E9-16 [M] rewarded only, labelled, optional; 13+ target (store/content-rating.md)
   9-17-min-android-version: review  # E9-17 [S] minSdk 24 / target 36 (9-17-min-android-version.md)
-  9-18-release-aab: in-progress  # E9-18 [M] release AAB installs and runs on the emulator; dev device pending
-  9-19-memory-drawcall-measure: in-progress  # E9-19 [M] emulator PSS 405 MB (translation overhead), textures 36.8 MB; draw calls need a device
+  9-18-release-aab: in-progress  # E9-18 [M] Release workflow + SOLOHERO_RELEASE checks + NewUploadKey.ps1 ready; needs the dev's upload key and secrets
+  9-19-memory-drawcall-measure: review  # E9-19 [M] dev-build counters (PerfOverlay): battle 100-116 draw calls; x86_64 release-config PSS ~326 MB at start of 2 h idle; device FPS still pending
   9-20-first-session-5min: review  # E9-20 [M] scripted novice: stage 8, 3 upgrades, 1 pull at 5 min
   9-21-no-ad-completion: review  # E9-21 [M] sim no-ads: 5-10 boss beaten day 8-9 (229-255 play min)
   epic-9-retrospective: optional

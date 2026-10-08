@@ -344,10 +344,12 @@ namespace SoloHero.Game.UI.Panels
         private RevealCard[] Cards(GachaPullItem[] items)
         {
             var cards = new RevealCard[items.Length];
+            // D-140: a weapon shows as the hero's line draws it (sword, staff or bow).
+            SoloHero.Core.Jobs.WeaponKind weapon = SoloHero.Core.Jobs.JobTerms.WeaponOf(SoloHero.Core.Jobs.JobService.LineOf(_save));
             for (int i = 0; i < items.Length; i++)
             {
                 GachaPullItem item = items[i];
-                Sprite icon = _equipmentIcons != null ? _equipmentIcons.Get(item.Slot, item.Grade) : null;
+                Sprite icon = _equipmentIcons != null ? _equipmentIcons.Get(item.Slot, item.Grade, weapon) : null;
                 cards[i] = new RevealCard(item.Grade, PanelServices.SlotName(item.Slot), PanelServices.PullNote(item), icon);
             }
 

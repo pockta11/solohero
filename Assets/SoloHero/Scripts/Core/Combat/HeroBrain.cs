@@ -43,6 +43,9 @@ namespace SoloHero.Core.Combat
         public double Def => _stats.Def;
         public HeroStats Stats => _stats;
 
+        /// <summary>Crit points the skill buffs add right now (D-142: skill hits roll crits with them too).</summary>
+        public double CritBuffPoints => _critBuffPoints;
+
         /// <summary>Damage the active skill shield still absorbs before HP.</summary>
         public double Shield { get; private set; }
 

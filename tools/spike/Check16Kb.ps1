@@ -15,9 +15,9 @@
 #>
 param(
     [string] $Aab = "Builds/game.aab",
-    [string] $Bundletool = "C:\Users\user\android-sdk-tools\bundletool-all.jar",
+    [string] $Bundletool = (Join-Path $(if ($env:SOLOHERO_ANDROID_TOOLS) { $env:SOLOHERO_ANDROID_TOOLS } else { "C:\Users\user\android-sdk-tools" }) "bundletool-all.jar"),
     [string] $Ndk = "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\NDK",
-    [string] $BuildTools = "C:\Users\user\android-sdk-tools\build-tools\35.0.0",
+    [string] $BuildTools = (Join-Path $(if ($env:SOLOHERO_ANDROID_TOOLS) { $env:SOLOHERO_ANDROID_TOOLS } else { "C:\Users\user\android-sdk-tools" }) "build-tools\35.0.0"),
     [string] $Java = "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK\bin\java.exe",
     [string] $WorkDir = "Builds/spike16kb"
 )

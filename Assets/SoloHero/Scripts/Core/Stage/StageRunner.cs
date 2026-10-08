@@ -51,8 +51,8 @@ namespace SoloHero.Core.Stage
             _saveRequester = saveRequester;
             _world = new CombatWorld(_balance);
             _spawner = new SpawnScheduler(_balance);
-            _skills = new SkillAutoCaster(_balance);
-            _pet = new PetCaster(_balance);
+            _skills = new SkillAutoCaster(_balance, random);
+            _pet = new PetCaster(_balance, random);
             _hero = new HeroBrain(_balance, random, stats);
             _world.BindHero(_hero);
         }
@@ -101,6 +101,9 @@ namespace SoloHero.Core.Stage
         /// <summary>Gold or EXP earned in the current dungeon run (already added to the save, kill by kill).</summary>
         public double DungeonEarned { get; private set; }
 
+        /// <summary>D-143: breakthrough stones the current run paid (a dungeon at its end, the tower floor by floor).</summary>
+        public int DungeonStones { get; private set; }
+
         /// <summary>Raised once when a dungeon run ends (time up or hero down), with what it earned.</summary>
         public event Action<DungeonKind, double> DungeonEnded;
 
@@ -126,6 +129,7 @@ namespace SoloHero.Core.Stage
             _dungeonTimer = _balance.DUNGEON_TIME;
             _resultTimer = 0f;
             DungeonEarned = 0d;
+            DungeonStones = 0;
             _world.ClearAll();
             _spawner.Reset(int.MaxValue, false);
             _skills.ResetCooldowns();
@@ -153,6 +157,7 @@ namespace SoloHero.Core.Stage
             _deathTimer = 0f;
             _resultTimer = 0f;
             DungeonEarned = 0d;
+            DungeonStones = 0;
             TowerCleared = 0;
             _hero.Reset(_stats);
             BeginFloor(floor);
@@ -423,6 +428,9 @@ namespace SoloHero.Core.Stage
             _dungeonTimer = 0f;
             _resultTimer = 0f;
             _world.ClearAll();
+            // D-143: every finished run pays breakthrough stones, whatever it earned.
+            DungeonStones = _balance.DUNGEON_STONES;
+            _save.breakStones += DungeonStones;
             SetState(StageState.DungeonResult);
             _saveRequester?.RequestSave();
             DungeonEnded?.Invoke(_dungeon, DungeonEarned);
@@ -451,6 +459,7 @@ namespace SoloHero.Core.Stage
                 _save.bossKills += gained;
                 TowerReward reward = TowerService.Grant(_balance, _save, TowerFloor);
                 DungeonEarned += reward.Gems;
+                DungeonStones += reward.Stones;
                 TowerCleared++;
                 _saveRequester?.RequestSave();
                 TowerFloorCleared?.Invoke(reward);
@@ -539,6 +548,8 @@ namespace SoloHero.Core.Stage
             if (isBoss)
             {
                 hp *= Formulas.BossHpMult(_balance, _g);
+                // D-144: tower floors are a harder ladder than the chapter bosses.
+                if (InTower) hp *= _balance.TOWER_BOSS_HP_MULT;
                 atk *= _balance.BOSS_ATK_MULT;
                 interval = _balance.BOSS_ATK_INTERVAL;
                 speed = _balance.ENEMY_MOVE_SPEED * _balance.BOSS_SPEED_MULT;

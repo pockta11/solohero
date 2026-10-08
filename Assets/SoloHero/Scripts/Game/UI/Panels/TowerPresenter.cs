@@ -104,6 +104,7 @@ namespace SoloHero.Game.UI.Panels
             if (reward.GearTickets > 0) text += Strings.Format("tower.reward_gear", reward.GearTickets);
             if (reward.SkillTickets > 0) text += Strings.Format("tower.reward_skill", reward.SkillTickets);
             if (reward.PetTickets > 0) text += Strings.Format("tower.reward_pet", reward.PetTickets);
+            if (reward.Stones > 0) text += Strings.Format("tower.reward_stones", reward.Stones);
             return text;
         }
 

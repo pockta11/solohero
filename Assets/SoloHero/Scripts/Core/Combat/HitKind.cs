@@ -14,6 +14,9 @@ namespace SoloHero.Core.Combat
         Combo = 4,
 
         /// <summary>D-102 / D-114: the equipped pet's attack.</summary>
-        Pet = 5
+        Pet = 5,
+
+        /// <summary>D-142: a skill hit that rolled a crit: a crit number with the light skill effects.</summary>
+        SkillCrit = 6
     }
 }

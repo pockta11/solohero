@@ -1,4 +1,5 @@
 using SoloHero.Core.Config;
+using SoloHero.Core.Growth;
 using SoloHero.Core.Jobs;
 using SoloHero.Core.Save;
 using SoloHero.Core.Talents;
@@ -9,7 +10,8 @@ namespace SoloHero.Game.UI.Common
 {
     /// <summary>
     /// D-103 red dots on the bottom tabs for things waiting on the player: the character tab while a job advancement is
-    /// ready, the talent tab while talent points are unspent. Checked twice a second, not every frame.
+    /// ready, AP waits in manual mode (D-141) or a lane can be limit-broken (D-143); the talent tab while talent points
+    /// are unspent. Checked twice a second, not every frame.
     /// </summary>
     public sealed class TabBadges : MonoBehaviour
     {
@@ -36,8 +38,22 @@ namespace SoloHero.Game.UI.Common
             _timer -= Time.unscaledDeltaTime;
             if (_timer > 0f) return;
             _timer = CheckInterval;
-            Set(_heroBadge, _jobs != null && _jobs.CanAdvance);
+            Set(_heroBadge, (_jobs != null && _jobs.CanAdvance) || GrowthWaiting());
             Set(_talentBadge, _save != null && _balance != null && TalentService.Available(_balance, _save) > 0);
+        }
+
+        private bool GrowthWaiting()
+        {
+            if (_save == null || _balance == null) return false;
+            if (_save.apManual && HeroAp.Unspent(_balance, _save) > 0) return true;
+            for (int i = 0; i < UpgradeLanes.Count; i++)
+            {
+                var lane = (UpgradeLane)i;
+                if (LaneRules.State(_balance, _save, lane) == LaneState.NeedsBreak
+                    && _save.breakStones >= LaneRules.BreakCost(_balance, LaneRules.Breaks(_save, lane))) return true;
+            }
+
+            return false;
         }
 
         private static void Set(GameObject badge, bool show)

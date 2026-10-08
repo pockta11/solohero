@@ -131,6 +131,7 @@ namespace SoloHero.Core.Balance
 
             AllocateTalents();
             Advance();
+            BreakLimits();
             PromoteCheap();
             if (PullToShare()) bought = true;
 
@@ -176,11 +177,11 @@ namespace SoloHero.Core.Balance
                     }
                 }
 
-                for (int lane = 0; lane < 4; lane++)
+                for (int lane = 0; lane < UpgradeLanes.Count; lane++)
                 {
                     var l = (UpgradeLane)lane;
+                    if (_upgrades.State(l) != LaneState.Open) continue;
                     int level = _upgrades.GetLevel(l);
-                    if (l == UpgradeLane.Spd && level >= _b.UPG_MAX_LEVEL_SPD) continue;
                     double cost = Formulas.UpgradeCost(_b, l, level);
                     Snapshot next = now;
                     next.AddLane(l);
@@ -236,6 +237,7 @@ namespace SoloHero.Core.Balance
                         if (!_upgrades.TryUpgrade((UpgradeLane)bestIndex).Ok) return bought;
                         SpentUpgrade += bestCost;
                         Upgrades++;
+                        BreakLimits();
                         break;
                     case Kind.Skill:
                         if (!_skills.TryLevelUp(bestId).Ok) return bought;
@@ -304,14 +306,17 @@ namespace SoloHero.Core.Balance
         {
             EquipmentBonus eq = EquipmentBonus.FromGrades(_b, s.Grades, s.Levels, s.OwnedAtk);
             HeroStats st = StatAggregator.Compute(
-                _b, s.HeroLevel, s.UpgHp, s.UpgAtk, s.UpgDef, s.UpgSpd,
+                _b, s.Ap, s.Lanes,
                 eq.AtkMult, eq.HpMult, eq.HelmMult, eq.BootsSpeedBonus, eq.BootsCritBonus,
                 default, s.Skill.OwnedAtk + eq.OwnedAtk + s.PetOwned);
 
             double crit = Math.Min(1d, (st.CritRate + s.Skill.CritBuff) / 100d);
-            double critMult = _b.CRIT_MULT + eq.RingCritDamage;
-            double hitsPerSecond = st.AtkSpd * (1d + s.Skill.SpdBuff) * (1d + crit * (critMult - 1d));
-            double dps = st.Atk * (hitsPerSecond + s.Skill.HastedMult * (1d + eq.EarringSkillDamage) + s.PetRate)
+            // D-142: the crit damage lane comes through the stats (no talents here, so it is the lane alone), and
+            // skill hits crit like the main attack.
+            double critMult = _b.CRIT_MULT + eq.RingCritDamage + st.CritDamageBonus;
+            double critFactor = 1d + crit * (critMult - 1d);
+            double hitsPerSecond = st.AtkSpd * (1d + s.Skill.SpdBuff);
+            double dps = st.Atk * critFactor * (hitsPerSecond + s.Skill.HastedMult * (1d + eq.EarringSkillDamage) + s.PetRate)
                 * (1d + s.Skill.AtkBuff) * (1d + s.Skill.Mark);
             double defRef = _b.DEF_REF_MULT * enemyAtk;
             double guard = Math.Min(0.9d, s.Skill.Guard);
@@ -324,11 +329,11 @@ namespace SoloHero.Core.Balance
             Snapshot now = Snapshot.From(_b, _save);
             double baseScore = Score(now, enemyAtk);
             double bestLane = 0d;
-            for (int lane = 0; lane < 4; lane++)
+            for (int lane = 0; lane < UpgradeLanes.Count; lane++)
             {
                 var l = (UpgradeLane)lane;
+                if (_upgrades.State(l) != LaneState.Open) continue;
                 int level = _upgrades.GetLevel(l);
-                if (l == UpgradeLane.Spd && level >= _b.UPG_MAX_LEVEL_SPD) continue;
                 Snapshot next = now;
                 next.AddLane(l);
                 double ratio = (Score(next, enemyAtk) - baseScore) / Formulas.UpgradeCost(_b, l, level);
@@ -480,6 +485,19 @@ namespace SoloHero.Core.Balance
             }
 
             return pulled;
+        }
+
+        /// <summary>D-143 limit breaks done by the player model.</summary>
+        public int Breaks { get; private set; }
+
+        /// <summary>D-143: the player breaks every lane that waits at its limit as soon as the stones allow.</summary>
+        private void BreakLimits()
+        {
+            for (int lane = 0; lane < UpgradeLanes.Count; lane++)
+            {
+                var l = (UpgradeLane)lane;
+                while (_upgrades.State(l) == LaneState.NeedsBreak && _upgrades.TryBreak(l).Ok) Breaks++;
+            }
         }
 
         /// <summary>D-116: promotes max-level items, lowest grade first, while each costs at most PromoteShare of the gold.</summary>
@@ -678,11 +696,9 @@ namespace SoloHero.Core.Balance
         /// </summary>
         public struct Snapshot
         {
-            public int HeroLevel;
-            public int UpgHp;
-            public int UpgAtk;
-            public int UpgDef;
-            public int UpgSpd;
+            /// <summary>D-141 AP as allocated (auto mode: the level's auto split).</summary>
+            public ApPoints Ap;
+            public LaneLevels Lanes;
             public SkillPower Skill;
             public int[] Grades;
             public int[] Levels;
@@ -707,11 +723,8 @@ namespace SoloHero.Core.Balance
 
                 return new Snapshot
                 {
-                    HeroLevel = d.heroLevel,
-                    UpgHp = d.upgradeHp,
-                    UpgAtk = d.upgradeAtk,
-                    UpgDef = d.upgradeDef,
-                    UpgSpd = d.upgradeSpd,
+                    Ap = ApPoints.From(d),
+                    Lanes = LaneLevels.From(d),
                     Skill = SimSkillModel.Compute(b, d),
                     Grades = grades,
                     Levels = levels,
@@ -728,16 +741,7 @@ namespace SoloHero.Core.Balance
                 return PetRate(b, index, PetService.Level(d, index), PetService.Enhance(d, index));
             }
 
-            public void AddLane(UpgradeLane lane)
-            {
-                switch (lane)
-                {
-                    case UpgradeLane.Hp: UpgHp++; break;
-                    case UpgradeLane.Atk: UpgAtk++; break;
-                    case UpgradeLane.Def: UpgDef++; break;
-                    case UpgradeLane.Spd: UpgSpd++; break;
-                }
-            }
+            public void AddLane(UpgradeLane lane) => Lanes = Lanes.Plus(lane);
 
             public int Grade(int slot) => Grades[slot];
 

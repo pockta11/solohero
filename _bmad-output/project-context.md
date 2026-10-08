@@ -29,7 +29,7 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 | JSON | Newtonsoft `com.unity.nuget.newtonsoft-json` 3.2.1 | Save v2. `JsonUtility` only to read legacy v1 |
 | UI | uGUI + TextMeshPro 3.0.7 | UI Toolkit not used |
 | Backend | Firebase Auth (anonymous) / Realtime Database / Analytics via EDM4U | Save node `users/{uid}/v2` |
-| Ads | Google Mobile Ads Unity 11.5.0 (Android play-services-ads 25.4.0), rewarded only. App ID lives in `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset` (GMA 11+), not only in the manifest | Test IDs forced in development builds |
+| Ads | Google Mobile Ads Unity 11.5.0 (Android play-services-ads 25.4.0) + its UMP consent API, rewarded only. App ID lives only in `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset` (GMA 11 writes it into `GoogleMobileAdsPlugin.androidlib`; the main manifest has no copy since D-138). The SDK starts after UMP allows ads (`AdConsent`, D-135) | Test IDs forced in development builds |
 | Tests | Unity Test Framework 1.1.33, EditMode only | |
 | Build | Gradle (embedded AGP 7.4.2), custom templates in `Assets/Plugins/Android/`, `BuildAutomator.Build`. CI = GitHub Actions only (Jenkins dormant): plain `docker run unityci/editor` + `.github/scripts/unity-build.sh` (Licensing Client Personal activation, secrets `UNITY_EMAIL`/`UNITY_PASSWORD`; `.ulf`/`UNITY_LICENSE` no longer works). `Free disk space` step is required | **JDK 11 confirmed** (E1-09 result A, 2026-09-21): all 18 `.so` 16 KB-aligned with AGP 7.4.2. Re-run `tools/spike/Check16Kb.ps1` whenever a native SDK is added |
 | Removed (do not reintroduce) | Addressables, Input System package, `StreamingAssets/JSON`, project-owned `Resources/` (vendor-required exceptions stay: `Assets/Resources/DOTweenSettings.asset`, `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`, `Assets/TextMesh Pro/Resources/**` - TMP Essentials, tracked since E1-03), `SingletonMB`, `JsonDataManager`, Box-Muller `GachaSystem` — all removed in E1-03 | D1, D2, D9 |
@@ -38,6 +38,8 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 
 ### Engine-Specific Rules
 
+- **Time is the registered `IClock` (a `TrustedClock`, D-133): server-anchored plus a monotonic clock.** Never `new SystemClock()`, `DateTime.Now` or `DateTimeOffset.UtcNow` for game rules. Daily rollovers compare with `DayKey.IsNewDay(stored, today)` (later day only), never `!=`. Offline gold goes through `OfflineReturn.Apply` (return) and `OfflineReturn.StampLeave` (leave); untrusted time defers the reward.
+- **Realtime Database access goes through `GameDatabase.Instance`**, never `FirebaseDatabase.DefaultInstance` (development builds can point it at the Firebase emulator for QA).
 - **`SoloHero.Core` has `noEngineReferences: true`.** No `UnityEngine.*` there — not `Mathf`, `Debug`, `Time`, `Random`, `Vector2`, `Color`. Use `System.Math`, `Log`, `Tick(float dt)`, `IRandom`, `IClock`. It will not compile otherwise.
 - Four assemblies only: `SoloHero.Core` ← `SoloHero.Game` ← `SoloHero.Editor`; `SoloHero.Tests.EditMode` references **Core only**. Never add a reference from Core to Game.
 - C# 9 positional `record` types need `Core/Common/IsExternalInit.cs` polyfill — it exists; do not duplicate it, do not delete it.
@@ -76,11 +78,12 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 - Save-state field names come verbatim from the GDD table (`highestStage`, `farmingStage`, `retreatMode`, `pityCount`, `upgradeHp` …). Do not invent synonyms.
 - **All text inside code is English** — identifiers, comments, log messages, string keys. Korean appears only in the `Strings` table values. Non-ASCII in a `.cs` file is a review failure.
 - Player-facing text: `Strings.Get("toast.not_enough_gold")`. No literal Korean in `.cs` or prefabs.
+- Job words are terms, not literals (D-140): a value that names the hero's attack stat, AP main stat or weapon writes `{atk}`, `{main}` or `{weapon}`; `JobTerms.Apply` switches them per job line (spell power / INT / staff for mages). Never hard-code the attack word in a new string.
 
 ### Testing Rules
 
 - EditMode tests only, in `Assets/SoloHero/Scripts/Tests/EditMode/`, referencing `SoloHero.Core` only. If a test needs `UnityEngine`, the code under test is in the wrong assembly.
-- Required suites (GDD E9-06): `GachaTests` (table sums to 1.0, pity at 100 guarantees Legendary), `FormulasTests` (enemy scaling, stage gold, upgrade cost, ratio defense min 1), `UpgradeServiceTests` (cost, unbounded HP/ATK/DEF, SPD cap 100 → `MaxLevel`), `OfflineRewardTests` (600 s → exact gold, cap 21 600, negative and >2×cap → 0 and reset, <60 s no popup, first run none), `MigrationV1ToV2Tests` (refund math, slot renames, g preserved), `BigNumberFormatTests` (999 → "999", 12 400 → "12.4K", T → "aa").
+- Required suites (GDD E9-06): `GachaTests` (table sums to 1.0, pity guarantees Legendary), `FormulasTests` (enemy scaling, stage gold, upgrade cost, ratio defense min 1), `UpgradeServiceTests` (cost, unbounded HP/ATK/DEF, SPD cap 100 → `MaxLevel`), `OfflineRewardTests` (600 s → exact gold, cap 21 600, beyond 2×cap → cap, negative → 0 and reset on server time / kept on the device clock, <60 s no popup, first run none), `TrustedTimeTests` (clock moves ignored, day rollover only forward, deferred reward), `MigrationV1ToV2Tests` (refund math, slot renames, g preserved), `BigNumberFormatTests` (3 significant digits, trailing zeros trimmed, T → "aa").
 - Inject `IClock` and `IRandom` fakes; never rely on wall clock or unseeded randomness in tests.
 - Test names: `Method_Condition_Expected` (`TryUpgrade_SpdAtMax_ReturnsMaxLevel`).
 - `GachaVerifier` (editor menu) is the Monte Carlo check; it is not a substitute for `GachaTests`.
@@ -94,7 +97,9 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 - `Assets/google-services.json` is not committed. If missing, boot enters `local` mode (PlayerPrefs only) and the game must still run.
 - Input: legacy Input Manager only (`activeInputHandler: 0` since 1-09; the Input System package itself is removed in E1-03). UI via `StandaloneInputModule`; Android back = `Input.GetKeyDown(KeyCode.Escape)` handled solely by `BackKeyRouter` (popup → panel → quit confirm; D-108 pins the bottom panel open, so after the popups it goes to the quit confirm).
 - Debug tooling (`DebugPanel`, `PerfOverlay`, cheats) is wrapped in `#if DEVELOPMENT_BUILD || UNITY_EDITOR`. Release builds must not contain it — compile-time, not a runtime flag.
-- Save on `OnApplicationPause(true)` and `OnApplicationQuit` via `SaveService.FlushAsync()`; write `lastQuitTimeUtc` there and nowhere else.
+- Save on `OnApplicationPause(true)` and `OnApplicationQuit` via `SaveService.FlushAsync()`; `lastQuitTimeUtc` is stamped there (`OfflineReturn.StampLeave`), by the offline grant/claim, and nowhere else.
+- Boot never waits on the network: the remote load gives up after `SaveService.RemoteLoadTimeoutMs` (local backup), first-run sign-in after `AuthService.SignInTimeoutMs` (local mode), uploads during load are not awaited (D-136).
+- Account tools (D-134) call `SaveService.Suspend()` before deleting data or adopting a transferred save, write with `WriteThroughAsync`, and restart the app (`AppRestart.Now`); `Resume()` only when they give up.
 - Every save request bumps `SaveDataV2.saveRevision` and writes the local backup at once; only the upload is debounced. On load the copy with the higher revision wins and a newer local copy is uploaded (D-073). Never bypass `SaveService` to write either store.
 
 ### Critical Don't-Miss Rules
@@ -103,18 +108,19 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 - Expected failures (not enough gold, max level, on cooldown, locked, busy) return `Result.Fail(reason)` — never throw, never `Debug.LogError`. Exceptions are for programmer errors only.
 - External I/O failure is a fallback, not an error state: remote load fails → local backup; ad fails → normal claim stays enabled; auth fails → `local` mode. Nothing ever calls `Application.Quit` or blocks boot.
 - Gacha: **confirm result → save → then animate.** Skipping or quitting mid-animation must not lose or duplicate a pull. 10-pull deducts the full price up front; pity counts per pull.
-- Gacha is a **cumulative probability table + 100-pull pity**: Common 55 / Rare 33 / Epic 10 / Legendary 2 % (`GACHA_RATE`), pity resets on any Legendary (`GACHA_PITY_RESET_ON_LEGENDARY = true`, a data field on `GachaTable`, not a code constant). The Gaussian/μ-shift design in old code (`GachaSystem.cs`) is dead — do not port it.
+- Gacha is a **cumulative probability table + pity**. Gear and pets (D-113, D-114): seven grades `GEAR_RATE_*` 60 / 28 / 9 / 2.5 / 0.45 / 0.045 / 0.005 %, pity `GEAR_PITY` 200 to Legendary; skills: four grades `GACHA_RATE_*` with pity `GACHA_PITY` 100. Summon levels open grades and raise the upper rates (D-123): every draw goes through `AtLevel`, and pity only counts once Legendary is open (`PityOpen`). Pity resets on a Legendary or better. The Gaussian/μ-shift design in old code (`GachaSystem.cs`) is dead — do not port it.
 - Stat aggregation order (GDD): `(base + level gain) × 1.16^upgrade × equipmentMult × (1 + Σ buffs)`; attack speed additive with cap 3.0; crit additive. UI stat summary and combat call the same `StatAggregator.Compute`.
-- Defense is ratio-based with a self-scaling reference: `DEF_REF = 8 × enemyAtk`, `damage = max(1, enemyAtk × DEF_REF / (DEF_REF + def))`. Never subtractive.
+- Defense is ratio-based with a self-scaling reference: `DEF_REF = DEF_REF_MULT (3) × enemyAtk`, `damage = max(1, enemyAtk × DEF_REF / (DEF_REF + def))`. Never subtractive.
 - Hero move speed is a constant (2.0 u/s). Attack speed is the only speed stat. "SPD" in legacy v1 data meant move speed and is refunded, not migrated.
 - Stage index is one global `g = (chapter − 1) × 10 + stage`; `(chapter, stage)` is derived for display only. Chapters ≥ 6 reuse themes via `(chapter − 1) % 5`.
 - Simultaneous-death resolution inside `StageRunner.Tick`: enemy deaths → clear check → boss timer → hero death. Clear beats hero death; boss kill beats timer expiry.
-- Offline reward: `elapsed < 0` or `elapsed > 2 × 21 600` → reward 0 and reset `lastQuitTimeUtc` silently. `elapsed < 60` → grant without popup. Unclaimed popup survives restart without double counting (claim is what moves `lastQuitTimeUtc`).
+- Offline reward (D-133): paid on a cold start and on a return from the background, measured on trusted time; capped at 21 600 s (a longer absence pays the cap). Negative elapsed on server time → 0 and reset; on the device clock (local mode) → 0 and the quit stamp never moves back. Signed in but no server time yet → the reward waits for it. `elapsed < 60` → grant without popup. Unclaimed popup survives restart without double counting (claim is what moves `lastQuitTimeUtc`).
 - Ad daily counters reset at **device-local midnight** (`IClock.LocalNow`), not UTC.
 - Migration v1 → v2: upgrade levels are **refunded as gold** using the v1 linear cost formula, not copied (×1.16^level would explode). Slot ids `Weapon→Sword`, `Helmet→Helm`. v1 node `users/{uid}` is read-only; v2 lives at `users/{uid}/v2`.
 - No `Collider2D`/`Rigidbody2D`/`Physics2D` in gameplay even though the modules remain installed. Range checks are 1-D distance on X.
 - No `Resources.Load`, no Addressables, no `StreamingAssets` reads. Everything is a direct SO/prefab reference.
-- One panel open at a time via `PanelHost`; popups stack via `PopupHost`; toasts queue via `ToastQueue` (max 4 pending). Do not open UI by calling `SetActive` on panels directly.
+- One panel open at a time via `PanelHost`; popups stack via `PopupHost`; toasts queue via `ToastQueue` (max 4 pending) and draw on their own sorting canvas above every popup (D-137). Do not open UI by calling `SetActive` on panels directly.
+- C# exceptions and `Log.Error` reach analytics as `app_exception` through `ExceptionReporter` (D-135): keep `Log.Error` for real errors, expected failures stay `Result.Fail`.
 - Every spend button is a `TapGuardButton` — disabled on tap, re-enabled after the `Try*` call returns (or the ad callback fires).
 
 ---
@@ -135,4 +141,4 @@ Authoritative detail lives in `game-architecture.md` (decisions D1–D15, ADR-1�
 - Review quarterly for outdated rules
 - Remove rules that become obvious over time
 
-Last Updated: 2026-09-20
+Last Updated: 2026-10-08 (D-133..D-138: trusted time, account tools, offline boot, consent, toasts, release path)

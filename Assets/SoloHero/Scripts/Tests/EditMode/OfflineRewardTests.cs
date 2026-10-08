@@ -51,23 +51,36 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
-        public void Compute_BeyondTwiceCap_Resets()
+        public void Compute_BeyondTwiceCap_PaysCap()
         {
+            // D-133: the clock is trusted, so a day away pays the full cap instead of nothing.
             var balance = new BalanceValues();
             OfflineReward reward = OfflineReward.Compute(balance, 1, 100, 100 + balance.OFFLINE_CAP * 2L + 1);
 
-            Assert.AreEqual(0d, reward.Gold);
-            Assert.IsTrue(reward.ResetQuitTime);
-            Assert.IsFalse(reward.ShowPopup);
+            Assert.AreEqual(balance.STAGE_GOLD_BASE / balance.OFFLINE_DIVISOR * balance.OFFLINE_CAP, reward.Gold, 1e-9);
+            Assert.AreEqual((long)balance.OFFLINE_CAP, reward.CountedSeconds);
+            Assert.IsTrue(reward.ShowPopup);
+            Assert.IsFalse(reward.ResetQuitTime);
         }
 
         [Test]
-        public void Compute_NegativeElapsed_Resets()
+        public void Compute_NegativeElapsedOnServerTime_Resets()
         {
             OfflineReward reward = OfflineReward.Compute(new BalanceValues(), 1, 500, 400);
 
             Assert.IsTrue(reward.ResetQuitTime);
             Assert.AreEqual(0d, reward.Gold);
+            Assert.IsFalse(reward.ShowPopup);
+        }
+
+        [Test]
+        public void Compute_NegativeElapsedOnDeviceClock_KeepsQuitTime()
+        {
+            OfflineReward reward = OfflineReward.Compute(new BalanceValues(), 1, 500, 400, serverTime: false);
+
+            Assert.IsFalse(reward.ResetQuitTime);
+            Assert.AreEqual(0d, reward.Gold);
+            Assert.IsFalse(reward.GrantNow);
         }
 
         [Test]

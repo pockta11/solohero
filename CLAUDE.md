@@ -52,13 +52,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **2026-10-07 장비 7등급** (D-113): 장비만 일반·고급·희귀·영웅·전설·신화·고대 7단계(`GearGrade`; 스킬·동료·직업은 4단계 `Grade`, UI는 `ToGearGrade()`로 같은 색·테두리). 확률 60/28/9/2.5/0.45/0.045/0.005 %(`GEAR_RATE_*`, `GearTableValues`), 천장 200회 전설(`GEAR_PITY`), 뽑기 150골드/10연 1,350, 환영 선물 무료 10연. 장비 56종 아이콘(`equipgen3.py`의 `VARIANTS`: 기존 모양에 재질 교체)·테두리 7종(`uigen3.py` `hd9_slot{c,u,r,e,l,m,a}`). 시뮬 무광고 7일 5-3~6-6. 보스 실패 후 직전 일반 스테이지 반복은 D-077 그대로
 - **2026-10-07 펫** (D-114): 동료를 펫으로 이름을 바꾸고 16종으로(`Core/Pets` `PetCatalog`·`PetService`·`PetSummonService`, 전투 `PetCaster`, 뷰 `PetView`, 창 `PetPresenter`; 저장 키 `companionEquipped`·`companionLevels`는 유지, 새 키 `petOwned`·`petEnhance`·`petPityCount`). 소환 화면 세 번째 탭 "펫 소환"(300 / 10연 2,700 / 젬 200, 장비 7등급표·200회 천장, 1-10 처치 후 개방), 중복 강화·레벨업·보유 효과, 펫 창은 상세 + 4×4 도감. 신규 12종 그림은 `chibi3d.py` `build_pet`(`PET_BODY`·`PET_WINGS`·`HOPPERS`; 꼬리는 화면 왼쪽인 몸 −Y로 펼쳐야 보인다), `python tools/art/build3d.py pet...`. 시뮬 무광고 7일 5-6~6-8
 - **2026-10-07~08 성장 축·리텐션** (D-115~D-126): 소환 단계(장비·스킬·펫 각각, 누적 뽑기로 Lv 10까지, `Core/Gacha/SummonLevel`)가 **메이플 키우기식으로 등급을 연다**(D-123: 1단계 일반만, 단계마다 한 등급 — 장비·펫 고급 2·희귀 3·영웅 4·전설 5·신화 6·고대 7, 스킬 희귀 2·영웅 3·전설 4; 장비 단계 100회 단위로 누적 100/300/600/1,000…) 희귀 이상 확률도 올린다. 확률표는 `AtLevel`에서만 계산 — 새 뽑기 경로도 반드시 `AtLevel`을 거칠 것. 천장은 전설이 열린 단계부터만 센다(`PityOpen`). 시뮬 플레이어는 지출의 30 %를 장비·10 %를 스킬 소환에 쓴다(`GearPullShare`·`SkillPullShare`; 한 번의 가치로는 단계 투자를 못 본다). 환급은 소환 레벨 최대에서도 10연 단가의 ½ 미만으로(그 이상이면 뽑을수록 골드가 남는다). 장비 승급(+10 → 한 등급 위 +5, 영웅까지, 장비 창 `일괄 승급`, `Core/Equipment/EquipPromotion`), 업적 10계열(`Core/Progression/Achievement*`, 메뉴 "업적"), 로컬 알림(Unity Mobile Notifications 2.3.2, `Game/Infrastructure/LocalNotifications`, 설정 `알림`), 광고 무료 소환(장비 10회 ×2·펫 10회 ×1/일, `AdSlot.FreeGearSummon/FreePetSummon`). 골드만으로는 조금 더디게: `STAGE_GOLD_GROWTH` 1.035(D-122). 보스는 체력의 벽(D-124: 공격 ×0.5·체력 ×26, 1장 ×14, 실패 대부분 시간 초과 — 판정 V-8). 일반 스테이지는 이어 달린다(D-125: 클리어 대기 중 `HeroBrain.RunOn`, 다음 일반 스테이지는 `Reset(stats, keepPosition)`으로 x 유지; 보스·새 챕터·재시작은 0). 환생은 제외(D-126: 코드·예약 저장 필드 삭제, 후반은 소환 단계·승급·펫·업적). 시뮬 무광고 1일 2-7~2-9 · 3일 3-6~3-9 · 7일 4-10~5-6, 광고 7일 5-4~6-1, 14일 5-6~6-9
-- **2026-10-08 전투력·탑·상점·2배속·6~10장** (D-127~D-132): 권장 전투력(`CombatPower.Recommended` 150 × 1.15^(g−1), 보스 ×1.1; HUD 전투력 칸 아래 초록/빨강, 보스 배너·탑 창, 큰 상승은 중앙 배너)과 숫자 표기(유효숫자 3자리, 끝 0 제거, 버림: 1K·1.35K·12.3K — `BigNumberFormat` 하나로). 소환권(장비·스킬·펫, `TryPullTickets`)과 일일 상점(`ShopService`: 무료 장비 소환권·특가·골드 상자, 소환 화면 골드 패키지 자리는 소환권 버튼). 광고 2배속(A-6, 30분 × 하루 1, `Time.timeScale` — 실제 시간 타이머는 그대로). 무한의 탑(`TowerService`·`StageRunner.StartTower`, 던전 모드 재사용, N층 = 스테이지 4+N 보스, 젬 3+0.1N·소환권). 6~10장(사막·화산·늪·수정 동굴·마왕성: `bggen.py`·`floorgen.py`·`chibi3d.py` 보스 5·적 색 변형 4, 골렘 `mat_*` 재질 교체). 오른쪽 메뉴 2열 9칸. 시뮬 무광고 7일 5-2~5-9, 광고 6-6~7-8, 14일 6-8~8-4
+- **2026-10-08 전투력·탑·상점·2배속·6~10장** (D-127~D-132): 권장 전투력(`CombatPower.Recommended` 150 × 1.15^(g−1) → D-145 185 × 1.172^(g−1), 보스 ×1.1; HUD 전투력 칸 아래 초록/빨강, 보스 배너·탑 창, 큰 상승은 중앙 배너)과 숫자 표기(유효숫자 3자리, 끝 0 제거, 버림: 1K·1.35K·12.3K — `BigNumberFormat` 하나로). 소환권(장비·스킬·펫, `TryPullTickets`)과 일일 상점(`ShopService`: 무료 장비 소환권·특가·골드 상자, 소환 화면 골드 패키지 자리는 소환권 버튼). 광고 2배속(A-6, 30분 × 하루 1, `Time.timeScale` — 실제 시간 타이머는 그대로). 무한의 탑(`TowerService`·`StageRunner.StartTower`, 던전 모드 재사용, N층 = 스테이지 4+N 보스, 젬 3+0.1N·소환권). 6~10장(사막·화산·늪·수정 동굴·마왕성: `bggen.py`·`floorgen.py`·`chibi3d.py` 보스 5·적 색 변형 4, 골렘 `mat_*` 재질 교체). 오른쪽 메뉴 2열 9칸. 시뮬 무광고 7일 5-2~5-9, 광고 6-6~7-8, 14일 6-8~8-4
+- **2026-10-08 알려진 한계·오류 정리** (D-133~D-138): 신뢰 시각 `TrustedClock`(서버 시각 + 절전에도 흐르는 단조 시계, 기기 시계 조작 무효) — 오프라인 보상은 백그라운드 복귀에도 지급, 서버 시각을 모르면 연결될 때까지 보류, 하루 넘게 쉬어도 상한 지급, 하루 초기화는 늦은 날만(`DayKey`). 네트워크 없이 켜면 로딩에서 멈추던 치명 결함 수정(원격 6초·로그인 10초 제한). 설정 → 계정: 계정 ID, 기기 이전 코드(`transfers/{code}`, 24시간), 모든 데이터 삭제(`AccountService`, 끝나면 앱 재시작). UMP 동의 후 광고 시작(`AdConsent`), C# 예외 → `app_exception` 분석 이벤트. 토스트를 팝업 위로, 가이드 퀘스트 띠를 16:9에서 영웅을 가리지 않는 곳으로. RTDB 규칙 보강 + 에뮬레이터 검사(`tools/firebase`, `npm install && npm test`, Java 11+ 필요). 출시 경로: `Release AAB` 워크플로(서명·Firebase 설정 주입, versionCode 1000+실행 번호), `tools/release/NewUploadKey.ps1`. 스토어 소개문·스크린샷 8장(1080×1920)·대표 이미지(`tools/art/storegen.py`)·등급·데이터 보안·방침 갱신, 인게임 크레딧에 실제 글꼴(Jua OFL) 고지. DB 접근은 `GameDatabase.Instance`만(개발 빌드는 기기의 `files/db_emulator.txt`로 Firebase 에뮬레이터에 붙일 수 있음)
+- **2026-10-08 캐릭터 성장 축·성장 곡선 늦춤** (D-140~D-145): 공격 스탯은 안에서 하나, 표시는 계열별(전사 힘·공격력·검 / 마법사 지능·**주문력**·지팡이 / 궁수 민첩·공격력·활) — 문자열 값의 `{atk}`·`{main}`·`{weapon}`을 `Strings.UseTermSet`(`JobTerms.Apply`, 부팅·전직 때)이 바꾸고 `LocalizedText`는 `TermsChanged`로 다시 읽는다. 무기 칸 아이콘 지팡이·활 7종씩(`EquipmentIconSet.Get(slot, grade, WeaponKind)`). 레벨업 AP(`HeroAp`·`ApService`, 레벨당 3, 자동 2:1 = 이전 레벨 보너스, 직접 분배·젬 50 초기화, 저장 `apMain`·`apVit`·`apManual`). 능력치 6줄(`UpgradeLane.Crit`·`CritDmg`, Lv 15·25 개방)과 스킬·펫 타격의 치명타(`HitKind.SkillCrit`). 한계 돌파(`LaneRules`: 10레벨마다, k번째 돌파석 10k, 저장 `laneBreaks`·`breakStones`; 던전 한 판 2·탑 층 1·10층마다 +5; 던전은 1-10 이후). 탑 보스 체력 ×2(`TOWER_BOSS_HP_MULT`). 캐릭터 창은 `능력치 / 스탯` 두 페이지(2×3 줄 카드, 주황 `돌파` 버튼, 돌파석 수). 곡선: 적 성장 1.21(체력·공격), 오프라인 제수 1800, 권장 전투력 185 × 1.172 — 시뮬(일일 던전 포함) 무광고 1일 2-5~2-6 · 3일 3-2~3-6 · 7일 4-4~4-10 · 14일 5-5~6-6, 광고 7일 5-4~6-5
 - 빌드는 `libFirebaseCppApp` 포함을 자동 검사하고, EDM4U가 pom을 `srcaar`로 바꾸면 빌드 전에 되돌린다
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 
 ## Build Commands
 
 ### GitHub Actions (주 CI)
+**Play 업로드용 AAB는 `Release AAB (Play upload)` 워크플로(`.github/workflows/release.yml`, 수동 실행, versionName 입력)만 쓴다**: 시크릿 `GOOGLE_SERVICES_JSON_BASE64`·`UPLOAD_KEYSTORE_BASE64`·`UPLOAD_KEYSTORE_PASS`·`UPLOAD_KEY_ALIAS`·`UPLOAD_KEY_PASS`로 서명하고 `jarsigner`로 확인, versionCode = 1000 + 실행 번호, 산출물 `android-release-aab`(30일). 아래 빌드 워크플로는 확인용(디버그 서명, Firebase 설정 없음).
+
 Push to `main` 또는 수동. `unityci/editor:ubuntu-2022.3.62f3-android-3` 이미지를 직접 `docker run`하고 `.github/scripts/unity-build.sh`가 **Unity Licensing Client로 Personal 시트 활성화 → `BuildAutomator.Build` → 시트 반환**을 수행한다. Secrets: `UNITY_EMAIL` / `UNITY_PASSWORD`만 (Unity가 Personal `.ulf` 수동 활성화를 폐지해 `game-ci/unity-builder`·`UNITY_LICENSE`는 쓸 수 없다). Artifact `android-aab` (7일). 빌드 전 `Free disk space` 단계 필수. 계정 2FA는 꺼져 있어야 하고 비밀번호가 `-`로 시작하면 안 된다(옵션으로 파싱됨). 취소·타임아웃에도 시트를 반환하도록 `--init` + trap, 동시 실행은 `concurrency`로 직렬화, `**.md`·`_bmad-output/**`·`tools/**` 변경은 빌드를 트리거하지 않는다. ~22분/빌드.
 
 ### Jenkins (휴면)
@@ -105,13 +109,14 @@ Assets/SoloHero/            # 프로젝트 소유 전부. 벤더(Firebase·Googl
 E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트는 `Scripts/Legacy/`에 격리했다가 2026-09-28 전부 이식·삭제했다(장비 SO 16종도 코드 카탈로그 `GachaCatalog`로 대체되어 삭제). Addressables·Input System·collab-proxy 패키지, `StreamingAssets/JSON`, `AddressableAssetsData`는 제거됨. `Assets/Resources/DOTweenSettings.asset`은 벤더 필수 예외.
 
 ### 게임 규칙 요약 (GDD 상수표가 원본)
-- 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(26배 HP, 30초, D-124). 킬 목표 16 고정(8마리 무리 × 2, D-109). 적은 걸어와 앞 3마리가 동시에 공격(D-110). 적 HP 기준 45·ATK 기준 2.6, 성장 HP 1.165·ATK 1.175 (D-123), 보스 ATK ×0.5·HP ×26·1장 보스 HP ×14 (D-124), 골드 `50×1.035^(g−1)` (D-122), 보스 격파 골드·EXP ×5 (D-053·D-059). 일반 스테이지 사망 → 자동 한 칸 아래 파밍, `도전`으로 복귀 (D-058)
-- 강화: HP·ATK·DEF **승산 ×1.16/레벨·상한 없음**, 공격속도 가산 +0.02·최대 100. 비용 `baseCost × 1.12^level` (base 300/450/450/600)
+- 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(27배 HP, 30초, D-124·D-139). 킬 목표 16 고정(8마리 무리 × 2, D-109). 적은 걸어와 앞 3마리가 동시에 공격(D-110). 적 HP 기준 45·ATK 기준 2.6, 성장 HP·ATK 1.21 (D-123 → D-145), 보스 ATK ×0.1·HP ×27·1장 보스 HP ×14 (D-124 → D-139: 보스 실패는 시간 초과로만), 골드 `50×1.035^(g−1)` (D-122), 보스 격파 골드·EXP ×5 (D-053·D-059). 일반 스테이지 사망 → 자동 한 칸 아래 파밍, `도전`으로 복귀 (D-058)
+- 강화 6줄 (D-142): HP·ATK·DEF **승산 ×1.16/레벨·상한 없음**, 공격속도 가산 +0.02·최대 100, 치명타 확률 +2%p·최대 25(Lv 15), 치명 피해 +10%p(Lv 25). 비용 `baseCost × 1.12^level` (base 300/450/450/600/300/300). **10레벨마다 한계 돌파**, k번째 돌파석 10k (D-143)
+- 레벨업 AP (D-141): 레벨당 3, 주 스탯 1 = 기본 ATK +0.25, 활력 1 = 기본 HP +5, 자동 2:1(= 레벨당 ATK +0.5·HP +5). 치명타는 주공격·스킬·펫 모두(도트 제외, D-142)
 - 방어: `DEF_REF = 3 × 적ATK`, `피격 = max(1, 적ATK × DEF_REF / (DEF_REF + DEF))`
 - 가챠 (D-113): 150골드 / 10연 1,350 / 젬 200. 장비 확률 **일반 60 / 고급 28 / 희귀 9 / 영웅 2.5 / 전설 0.45 / 신화 0.045 / 고대 0.005 %**, 200회 천장(전설), 전설 이상 획득 시 pity 리셋. 중복 = 장비 강화 +1(최대 10, ×1.10/레벨), 최대 레벨만 환급 20~15,000 (D-062, D-115). **소환 단계**(장비 단계 100·펫 50·스킬 20, Lv 10): 1단계 일반만, 단계마다 한 등급 개방(고급 2·희귀 3·영웅 4·전설 5·신화 6·고대 7, 스킬 희귀 2·영웅 3·전설 4), 희귀 이상 ×(1 + 0.12×(L−1)), 천장은 전설 개방 후부터 (D-115, D-123). 승급 +10 → 윗등급 +5, `500 × 3^등급`, 영웅까지 (D-116). 광고 무료 소환 장비 10회 ×2·펫 10회 ×1/일 (D-120). 장비 **8슬롯 × 7등급 = 56종**(검·투구·갑옷·신발 + 장신구 장갑·목걸이·반지·귀걸이), 보유 효과 ATK +0.5/0.75/1/2/4/8/15 %×강화 (D-109)
 - 스킬 (D-078~D-080, D-107, D-109): **시작 3종 + 계열당 16종(등급별 4) = 51종 도감** + 스킬 소환(4등급 표 C 55 / R 33 / E 10 / L 2 %·100회 천장, 카운터 별도, 5,000 / 10연 45,000 / 젬 200) + **6슬롯**(해금 Lv 1/5/12/20/30/45) 슬롯 순 자동 발동. 중복 = 레벨 +1(최대 10, ×1.9), 골드 레벨업 병행, 보유 효과 ATK +0.25/0.5/1/2 %×레벨 배율. 스킬 수치 원본은 `Core/Skills/SkillCatalog`. 화상/중독·기절(보스 ½)·버프 5종(가속 포함)·보호막·표식(받는 피해 +%)
 - 펫 (D-114): 16종(일반 3·고급 3·희귀 3·영웅 3·전설 2·신화 1·고대 1), 펫 소환 300 / 10연 2,700 / 젬 200(장비 확률표·천장 공유, 카운터 별도, 1-10 처치 후). 장착 1마리가 공격(영웅 공격력 × 배율 × 1.1^레벨 × 1.1^강화), 보유 효과 ATK +2/3/5/8/15/30/60 % × 강화 × 레벨
-- 오프라인: `파밍스테이지_골드 / 2000` 초당 (D-055, D-110), 상한 21,600초, 60초 미만 팝업 없음, 음수·상한 2배 초과 → 0. 광고 2배
+- 오프라인: `파밍스테이지_골드 / 1800` 초당 (D-055, D-110, D-145), 상한 21,600초, 60초 미만 팝업 없음, 음수·상한 2배 초과 → 0. 광고 2배
 - 이동 속도 상수 2.0 u/s — 스탯 아님. SP 없음(쿨다운만). 콤보 없음
 - 평타 없음 (D-093): 기본 스킬 "섬광 베기"가 공격속도 간격으로 앞의 가까운 적 3명(2.4u)에게 ATK 300%. 몹 HP 기준 45 (D-094 → D-110)
 
@@ -124,20 +129,22 @@ E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트는 `Scripts/Legacy
 | JDK | **JDK 11 확정** (Unity 번들 OpenJDK 11.0.14.1). E1-09 스파이크 결과 A — 2022.3.62f3 + AGP 7.4.2로 16 KB 정렬 통과, JDK 17 불필요 |
 | `Assets/google-services.json` | 커밋 금지. 없으면 부트가 `local` 모드로 진입해야 함 |
 | DOTween | Utility Panel > Setup + **Create ASMDEF** |
+| Android SDK 위치 | 도구 스크립트(`Emu.ps1`·`Play.ps1`·`Qa.ps1`·`Check16Kb.ps1`)는 `SOLOHERO_ANDROID_TOOLS` 환경변수, 없으면 `C:\Users\user\android-sdk-tools` |
 | Android 에뮬레이터 (실기기 없음) | `pwsh tools/android/Emu.ps1 start` → AVD `solohero_fast` (Android 15 · Google APIs · 4 KB · 1080×2400 · host GPU RTX 4060 · 60 fps, 바탕화면 바로가기도 이것). 16 KB 확인은 `-Avd solohero16k35` (SwiftShader 전용, host GPU면 게임 화면이 검다). `install` / `run` / `shot`. SDK 루트 `C:\Users\user\android-sdk-tools` (bundletool·build-tools 35 포함) |
 | MCP (선택) | `CoplayDev/unity-mcp`(에디터 조작), Context7(2022.3 API 문서), Higgsfield(배경·아이콘 생성) — 설치는 아키텍처 Development Environment 절 |
 
 ## Android Build Configuration
 
-`Assets/Plugins/Android/`: `mainTemplate.gradle` / `settingsTemplate.gradle` / `gradleTemplate.properties`(EDM4U가 갱신), `AndroidManifest.xml`, `FirebaseApp.androidlib`, `GoogleMobileAdsPlugin.androidlib`. **AdMob App ID(`ca-app-pub-1435934257467286~9895276357`)는 GMA 11부터 `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset`이 원본**이며 빌드 시 매니페스트에 주입된다 (`AndroidManifest.xml`의 동일 항목은 레거시).
+`Assets/Plugins/Android/`: `mainTemplate.gradle` / `settingsTemplate.gradle` / `gradleTemplate.properties`(EDM4U가 갱신), `AndroidManifest.xml`, `FirebaseApp.androidlib`, `GoogleMobileAdsPlugin.androidlib`. **AdMob App ID(`ca-app-pub-1435934257467286~9895276357`)는 `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset` 한 곳**이며 빌드 시 `GoogleMobileAdsPlugin.androidlib` 매니페스트에 주입된다(메인 매니페스트의 중복은 2026-10-08 삭제).
 Gradle Java 호환성 11. 16 KB 페이지 정렬: `pwsh tools/spike/Check16Kb.ps1`로 로컬 검증 (2026-09-21 통과). 새 네이티브 SDK를 추가하면 다시 돌린다.
 
 ## Next Steps
 
-1. **실기기 확인** — 광고 켠 릴리스 빌드 30분 무크래시(release-gate B-001), 기기 매트릭스(E9-12), FPS·드로우콜(E9-19)
-2. **콘솔 작업(개발자)** — RTDB 보안 규칙 적용(`tools/firebase/database.rules.json`), AdMob 계정 승인·스토어 연결·app-ads.txt, 개인정보처리방침 공개 URL
-3. **Play Console** — 비공개 테스트(개인 계정이면 12명 × 14일) → 프로덕션
-4. 출시 후 분석 이벤트로 V-7(재도전 간격)·보스 첫 도전 실패율 판정
+1. **실기기 확인** — 광고 켠 릴리스 빌드 30분 무크래시(release-gate B-001), 기기 매트릭스(E9-12), 실기기 FPS (드로우콜·2시간 방치·16 KB는 에뮬레이터로 확인 완료)
+2. **콘솔 작업(개발자)** — RTDB 보안 규칙 적용(`tools/firebase/database.rules.json`, 이전 코드 경로 포함 — 적용 전에는 기기 이전이 실패한다), AdMob 계정 승인·스토어 연결·app-ads.txt·GDPR 메시지 게시, 개인정보처리방침 이름·이메일·시행일 입력과 공개 URL, Firebase Analytics 맞춤 측정기준(`app_exception`의 `message`·`where`)
+3. **출시 빌드** — `pwsh tools/release/NewUploadKey.ps1`로 업로드 키(오프라인 백업 2곳) → GitHub 시크릿 5개 → `Release AAB` 워크플로
+4. **Play Console** — 비공개 테스트(개인 계정이면 12명 × 14일) → 프로덕션
+5. 출시 후 분석 이벤트로 V-7(재도전 간격)·보스 첫 도전 실패율 판정, 필요하면 Crashlytics·Play Games 로그인·인앱 리뷰
 
 ## Development Milestones
 

@@ -17,6 +17,9 @@ namespace SoloHero.Core.Analytics
         public const string GoldSession = "gold_session";
         public const string GachaPull = "gacha_pull";
         public const string Upgrade = "upgrade";
+
+        /// <summary>D-143: a lane's limit break (lane, breaks after it).</summary>
+        public const string LimitBreak = "limit_break";
         public const string SkillLevel = "skill_level";
         public const string SkillSummon = "skill_summon";
 
@@ -25,6 +28,15 @@ namespace SoloHero.Core.Analytics
         public const string AdReward = "ad_reward";
         public const string AdFail = "ad_fail";
         public const string OfflineClaim = "offline_claim";
+
+        /// <summary>
+        /// P1-2: a C# exception or Log.Error in the player (they do not crash the app, so Play's vitals never see them).
+        /// Params: kind (Exception / Error / Assert), message (first line, 100 chars), where (first stack frame).
+        /// </summary>
+        public const string AppException = "app_exception";
+
+        /// <summary>D-133: account tools in the settings (transfer code issued / redeemed, data deleted).</summary>
+        public const string Account = "account_action";
 
         public const string UserHighestChapter = "highest_chapter";
 
@@ -46,5 +58,8 @@ namespace SoloHero.Core.Analytics
         public const string PSkill = "skill";
         public const string PGold = "gold";
         public const string PDoubled = "doubled";
+        public const string PMessage = "message";
+        public const string PWhere = "where";
+        public const string PAction = "action";
     }
 }

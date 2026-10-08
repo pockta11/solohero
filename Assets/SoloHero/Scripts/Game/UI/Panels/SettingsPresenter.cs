@@ -7,8 +7,9 @@ namespace SoloHero.Game.UI.Panels
 {
     /// <summary>
     /// Settings window (E7-09; D-089 moved it from the 5th bottom tab to the right menu rail): BGM / SFX mute,
-    /// low-effect mode and 30 fps mode as on/off rows, plus credits with the font's SIL OFL text. Changes apply at
-    /// once through <see cref="SettingsService"/> and are saved with the next pause / quit save.
+    /// low-effect mode and 30 fps mode as on/off rows, plus credits with the font's SIL OFL text and (D-134) the
+    /// account window. Changes apply at once through <see cref="SettingsService"/> and are saved with the next pause /
+    /// quit save.
     /// </summary>
     public sealed class SettingsPresenter : MonoBehaviour
     {
@@ -23,10 +24,11 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private TextAsset _credits;
         [SerializeField] private Sprite _onSprite;
         [SerializeField] private Sprite _offSprite;
+        [SerializeField] private AccountPresenter _account;
 
         private SettingsService _settings;
 
-        public bool IsOpen => (_creditsPopup != null && _creditsPopup.activeSelf) || (_window != null && _window.activeSelf);
+        public bool IsOpen => (_account != null && _account.IsOpen) || (_creditsPopup != null && _creditsPopup.activeSelf) || (_window != null && _window.activeSelf);
 
         private void OnEnable()
         {
@@ -61,9 +63,21 @@ namespace SoloHero.Game.UI.Panels
             if (_creditsPopup != null) _creditsPopup.SetActive(false);
         }
 
-        /// <summary>Back key: the credits overlay first, then the window.</summary>
+        /// <summary>D-134: account id, device transfer, privacy options and data deletion.</summary>
+        public void OpenAccount()
+        {
+            if (_account != null) _account.Open();
+        }
+
+        /// <summary>Back key: the account window, then the credits overlay, then the window.</summary>
         public void Close()
         {
+            if (_account != null && _account.IsOpen)
+            {
+                _account.Close();
+                return;
+            }
+
             if (_creditsPopup != null && _creditsPopup.activeSelf)
             {
                 CloseCredits();

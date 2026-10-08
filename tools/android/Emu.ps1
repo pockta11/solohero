@@ -3,7 +3,7 @@
   Android emulator helper for SoloHero (16 KB page-size Pixel, Android 15 / API 35, SwiftShader).
 
 .DESCRIPTION
-  Uses the user-local SDK root created in story 1-09 (C:\Users\user\android-sdk-tools).
+  Uses the user-local SDK root created in story 1-09: $env:SOLOHERO_ANDROID_TOOLS, else C:\Users\user\android-sdk-tools.
   Two AVDs:
     solohero_fast  (default) Android 15 Google APIs x86_64, 4 KB pages, 1080x2400, host GPU - 60 fps, adb root.
     solohero16k35  16 KB pages for page-size checks. The API 36.1 16 KB image crash-loops surfaceflinger on
@@ -22,7 +22,7 @@ param(
     [string] $Avd = "solohero_fast",
     [string] $Package = "com.SoloSoft.solohero",
     [string] $Aab = "Builds/game.aab",
-    [string] $Root = "C:\Users\user\android-sdk-tools",
+    [string] $Root = $(if ($env:SOLOHERO_ANDROID_TOOLS) { $env:SOLOHERO_ANDROID_TOOLS } else { "C:\Users\user\android-sdk-tools" }),
     [string] $Java = "C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK\bin\java.exe"
 )
 $ErrorActionPreference = "Stop"

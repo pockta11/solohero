@@ -1,4 +1,5 @@
 using System;
+using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Pets;
 
@@ -7,18 +8,21 @@ namespace SoloHero.Core.Combat
     /// <summary>
     /// D-102 / D-114: the equipped pet attacks the nearest enemy in its range every Interval seconds for hero ATK x
     /// AttackMult x its level and enhance scale, with the D-098 combo bonus, and applies its burn / stun. Ticks with
-    /// the stage.
+    /// the stage. D-142: its hits roll the hero's crit like every other hero damage (the number keeps the pet style).
     /// </summary>
     public sealed class PetCaster
     {
         private readonly BalanceValues _balance;
+        private readonly IRandom _random;
         private PetDef _def;
         private double _scale = 1d;
         private float _timer;
 
-        public PetCaster(BalanceValues balance)
+        /// <param name="random">Crit rolls; null = the pet never crits.</param>
+        public PetCaster(BalanceValues balance, IRandom random = null)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
+            _random = random;
         }
 
         public PetDef Def => _def;
@@ -51,6 +55,8 @@ namespace SoloHero.Core.Combat
             _timer = _def.Interval;
             double damage = DamageCalc.SkillHit(hero.Stats, _def.AttackMult * _scale)
                 * DamageCalc.SkillCombo(_balance, target.IsStunned, target.HasDot) * target.DamageTakenMult;
+            if (_random != null && DamageCalc.RollCrit(hero.Stats, _random, hero.CritBuffPoints))
+                damage *= _balance.CRIT_MULT + hero.Stats.CritDamageBonus;
             target.TakeDamage(damage);
             world.ReportHit(target, damage, HitKind.Pet);
             if (_def.DotPercent > 0d) target.ApplyDot(DamageCalc.SkillDot(hero.Stats, _def.DotPercent, _scale), _def.DotSeconds);

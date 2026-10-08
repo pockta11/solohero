@@ -51,6 +51,25 @@ namespace SoloHero.Core.Save
         public int upgradeDef;
         public int upgradeSpd;
 
+        /// <summary>D-142 crit rate and crit damage lanes (open with hero levels).</summary>
+        public int upgradeCrit;
+        public int upgradeCritDmg;
+
+        /// <summary>
+        /// D-143 limit breaks per lane, index-aligned with UpgradeLane (LaneRules.EnsureBreaks fills a save from before
+        /// them as broken up to its levels), and the breakthrough stones held.
+        /// </summary>
+        public List<int> laneBreaks = new List<int>();
+        public int breakStones;
+
+        /// <summary>
+        /// D-141 AP put into the main stat and vitality. apManual false = auto: new points are split at once
+        /// (HeroAp.Settle), which also hands an older save the points of every past level.
+        /// </summary>
+        public int apMain;
+        public int apVit;
+        public bool apManual;
+
         public string equippedSword = "";
         public string equippedHelm = "";
         public string equippedArmor = "";

@@ -28,14 +28,25 @@ namespace SoloHero.Core.Stage
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             if (save == null) throw new ArgumentNullException(nameof(save));
 
+            LaneLevels lanes = LaneLevels.From(save);
+            if (raised >= 0) lanes = lanes.Plus(raised);
+            return Compute(balance, save, ApPoints.From(save), lanes);
+        }
+
+        /// <summary>D-141 stat window preview: the stats with <paramref name="ap"/> instead of the saved AP.</summary>
+        public static HeroStats ComputeStatsWithAp(BalanceValues balance, SaveDataV2 save, ApPoints ap) =>
+            Compute(balance, save, ap, LaneLevels.From(save));
+
+        private static HeroStats Compute(BalanceValues balance, SaveDataV2 save, ApPoints ap, LaneLevels lanes)
+        {
+            if (balance == null) throw new ArgumentNullException(nameof(balance));
+            if (save == null) throw new ArgumentNullException(nameof(save));
+
             EquipmentBonus bonus = EquipmentBonus.Resolve(balance, save);
             return StatAggregator.Compute(
                 balance,
-                save.heroLevel,
-                save.upgradeHp + (raised == UpgradeLane.Hp ? 1 : 0),
-                save.upgradeAtk + (raised == UpgradeLane.Atk ? 1 : 0),
-                save.upgradeDef + (raised == UpgradeLane.Def ? 1 : 0),
-                save.upgradeSpd + (raised == UpgradeLane.Spd ? 1 : 0),
+                ap,
+                lanes,
                 bonus.AtkMult,
                 bonus.HpMult,
                 bonus.HelmMult,
