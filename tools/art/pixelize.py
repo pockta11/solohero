@@ -24,6 +24,7 @@ from PIL import Image, ImageOps
 sys.path.insert(0, os.path.dirname(__file__))
 from charkit import clean_orphans, hexc, sheet
 from hero import EYE, OUT
+from punch import color_map
 
 ART = os.path.join(os.path.dirname(__file__), "..", "..", "Assets", "SoloHero", "Art")
 LINE_EPS = 0.3  # art pixels of depth before a neighbour counts as in front
@@ -48,6 +49,8 @@ class Entity:
         self.line_of = {mat: hexc(hexes[0]) for mat, hexes in m["palette"].items()}
         self.ramped = {mat for mat, hexes in m["palette"].items() if len(hexes) > 1}
         self.nolines = set(m["nolines"])
+        # D-150: renders are matched against the palette as rendered, then shown in punch.py's crisper ramps.
+        self.punched = color_map(m["palette"]) if os.environ.get("SOLOHERO_PUNCH", "1") != "0" else {}
 
     def pixelize(self, stem):
         W, H, S = self.W, self.H, self.S
@@ -112,7 +115,9 @@ class Entity:
         for y in range(H):
             for x in range(W):
                 if out[y][x] is not None:
-                    px[x, y] = out[y][x]
+                    c = out[y][x]
+                    p = self.punched.get(tuple(c[:3]))
+                    px[x, y] = (p[0], p[1], p[2], c[3]) if p is not None else c
         return clean_orphans(img)
 
     def stamp(self, img, stamps):

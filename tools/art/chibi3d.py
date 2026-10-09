@@ -4,7 +4,7 @@ Same looks as tools/art/hero.py + cast.py, built in 3D instead of painted: a big
 ears or skull), a small body, two-segment arms and legs, weapons, and face features (eyes, blush, mouth) placed on the
 face surface. One Blender unit is one art pixel. The body is turned 30 degrees toward the camera and the head another
 45 so the face reads in 3/4 view while swings stay sideways. Every material is unlit emission: the surface normal is
-dotted with charkit's key light (top-left, toward the viewer) and quantised into the part's 3-tone ramp. Each frame
+dotted with the key light (top-left, toward the viewer; D-150 more to the side) and quantised into the part's 3-tone ramp. Each frame
 is rendered at 4x twice: colour, and data (R = object index, G + B/255 = camera depth) for pixelize.py's lines.
 
 Run: blender -b --factory-startup -P tools/art/chibi3d.py -- OUT_DIR ENTITY
@@ -24,12 +24,27 @@ from mathutils import Euler, Vector
 ARGS = sys.argv[sys.argv.index("--") + 1:]
 OUT_ROOT, ENTITY = ARGS[0], ARGS[1]
 SCALE = 4
-LIGHT = (-0.55, 0.62, 0.56)  # charkit.LIGHT in camera space (x right, y up, z toward the viewer)
+# D-150: the key light swings further to the side (was charkit.LIGHT (-0.55, 0.62, 0.56)) and the shadow band starts
+# higher, so every form shows a clear lit and shadow side; faces keep a low threshold and stay mostly lit, rocks a
+# lower one so golems do not sink into shadow. Camera space: x right, y up, z toward the viewer.
+LIGHT = (-0.7, 0.55, 0.45)
 BODY_YAW, HEAD_YAW = -30.0, -45.0
 CAM_DIST = 300.0
 DEPTH_NEAR, DEPTH_FAR = CAM_DIST - 100.0, CAM_DIST + 100.0
-CEL = (0.34, 0.9)  # hero.CEL
-ROCK_CEL = (0.2, 0.62)
+CEL = (0.45, 0.88)
+ROCK_CEL = (0.1, 0.55)
+
+
+def _env_floats(name, default):
+    """Lighting experiments: SOLOHERO_LIGHT="x,y,z", SOLOHERO_CEL / SOLOHERO_ROCK_CEL / SOLOHERO_SKIN_CEL="a,b"."""
+    value = os.environ.get(name)
+    return tuple(float(v) for v in value.split(",")) if value else default
+
+
+LIGHT = _env_floats("SOLOHERO_LIGHT", LIGHT)
+CEL = _env_floats("SOLOHERO_CEL", CEL)
+ROCK_CEL = _env_floats("SOLOHERO_ROCK_CEL", ROCK_CEL)
+SKIN_CEL = _env_floats("SOLOHERO_SKIN_CEL", (0.28, 0.9))
 
 # ---------------------------------------------------------------- palette (sRGB hex, darkest first)
 
@@ -152,7 +167,7 @@ PAL = {
     "smear1": ["#d8ecff"],
     "smear2": ["#ffffff"],
 }
-THRESH = {"stone": ROCK_CEL, "stone_dark": ROCK_CEL, "moss": ROCK_CEL, "crystal": (0.12, 0.5),
+THRESH = {"skin": SKIN_CEL, "stone": ROCK_CEL, "stone_dark": ROCK_CEL, "moss": ROCK_CEL, "crystal": (0.12, 0.5),
           "basalt": ROCK_CEL, "basalt_dark": ROCK_CEL, "lava": ROCK_CEL, "ember": (0.12, 0.5),
           "ice_stone": ROCK_CEL, "ice_dark": ROCK_CEL, "crystal_pink": (0.12, 0.5)}
 NOLINES = ["smear0", "smear1", "smear2"]

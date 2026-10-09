@@ -166,6 +166,8 @@ namespace SoloHero.Editor
             AppIconSetup.Apply();
             ApplyFont(GameScene);
             ApplyFont(BootScene);
+            // D-149: the UI sprites and the effect sheets draw from atlases so the HUD and skill bursts batch.
+            SpriteAtlases.Build();
             Debug.Log("[Art] art built and wired");
         }
 
