@@ -1,0 +1,11 @@
+        // Experiment only: piecewise enemy growth after SEG_START (env), SEG_GROWTH per stage beyond it.
+        static readonly int SegStart = int.TryParse(Environment.GetEnvironmentVariable("SEG_START"), out var v) ? v : 100000;
+        static readonly double SegGrowth = double.TryParse(Environment.GetEnvironmentVariable("SEG_GROWTH"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w) ? w : 1.21;
+        static double Grow(double baseGrowth, int g) =>
+            g <= SegStart ? Math.Pow(baseGrowth, g - 1) : Math.Pow(baseGrowth, SegStart - 1) * Math.Pow(SegGrowth, g - SegStart);
+
+        public static double EnemyHp(BalanceValues c, int g) =>
+            c.ENEMY_HP_BASE * Grow(c.ENEMY_HP_GROWTH, g);
+
+        public static double EnemyAtk(BalanceValues c, int g) =>
+            c.ENEMY_ATK_BASE * Grow(c.ENEMY_ATK_GROWTH, g);

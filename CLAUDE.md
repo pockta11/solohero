@@ -28,6 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Decision log | 같은 폴더 `decision-log.md` | D-001~D-132 |
 | **Architecture** | `_bmad-output/planning-artifacts/architecture/arch-solohero-2026-09-20/game-architecture.md` | 결정 D1~D15, ADR 1~7, 구조, 패턴(코드 예시), 검증 |
 | **Project context** | `_bmad-output/project-context.md` | **코드를 만지기 전에 읽는 규칙 62개.** 아키텍처와 충돌 시 아키텍처가 우선 |
+| 출시 후 1년 계획 (제안) | `_bmad-output/planning-artifacts/roadmap/content-roadmap-2026-10-14.md` | 365일 시뮬 측정(현재 예상 플레이·축 소진), 후반 곡선 처방, 콘텐츠 로드맵 L-01~L-24. 채택하면 D 번호로 옮긴다 |
 
 코드 작업은 `project-context.md` → 해당 절의 `game-architecture.md` 순으로 읽고 시작한다.
 
