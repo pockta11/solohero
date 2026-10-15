@@ -21,6 +21,8 @@ namespace SoloHero.Core.Analytics
         /// <summary>D-143: a lane's limit break (lane, breaks after it).</summary>
         public const string LimitBreak = "limit_break";
         public const string SkillLevel = "skill_level";
+        /// <summary>D-174: a skill awakening star (skill, level = the new stars).</summary>
+        public const string SkillAwaken = "skill_awaken";
         public const string SkillSummon = "skill_summon";
 
         /// <summary>D-114 pet summon; same params as gacha_pull.</summary>
@@ -66,6 +68,8 @@ namespace SoloHero.Core.Analytics
         public const string PCount = "count";
         public const string PBestGrade = "best_grade";
         public const string PPity = "pity";
+        /// <summary>D-173: the pickup banner running at a pet or skill summon, or "none".</summary>
+        public const string PPickup = "pickup";
         public const string PLane = "lane";
         public const string PSlot = "slot";
         public const string PSkill = "skill";

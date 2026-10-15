@@ -1,4 +1,5 @@
-"""Synthesized SFX, 44.1 kHz mono 16-bit: skill fire, thunder, ice, heal, magic (D-078); reward collect and fanfare (D-171).
+"""Synthesized SFX, 44.1 kHz mono 16-bit: skill fire, thunder, ice, heal, magic (D-078); reward collect and fanfare (D-171);
+raid warn and slam (D-175).
 
     python tools/art/sfxgen.py Assets/SoloHero/Audio/Sfx                   -> every sound
     python tools/art/sfxgen.py Assets/SoloHero/Audio/Sfx collect fanfare   -> only these (the others keep their bytes)
@@ -135,9 +136,32 @@ def fanfare():
     return buf + shimmer
 
 
+def warn():
+    """D-175 raid warning: two quick falling alarm tones over a low swell."""
+    buf = np.zeros(len(t(0.7)))
+    for k in range(2):
+        tt = t(0.22)
+        f = 880 - 260 * tt / 0.22
+        x = np.sign(np.sin(2 * np.pi * np.cumsum(f) / SR)) * 0.5 + np.sin(2 * np.pi * np.cumsum(f) / SR)
+        place(buf, lowpass(x, 0.25) * env(len(tt), 0.005, 0.12), k * 0.24)
+    n = len(buf)
+    swell = np.sin(2 * np.pi * 110 * t(0.7)) * np.linspace(0.2, 1, n) * env(n, 0.3, 0.3)
+    return buf + swell * 0.5
+
+
+def slam():
+    """D-175 raid slam / charge impact: a deep thump with a gravel burst."""
+    n = len(t(0.8))
+    tt = t(0.8)
+    thump = np.sin(2 * np.pi * (55 + 90 * np.exp(-tt * 18)) * tt) * env(n, 0.002, 0.22)
+    gravel = lowpass(rng.standard_normal(n), 0.15) * env(n, 0.0, 0.12)
+    return thump * 1.4 + gravel * 0.9
+
+
 SOUNDS = {
     'skill_fire': (fire, 0.8), 'skill_thunder': (thunder, 0.9), 'skill_ice': (ice, 0.7), 'skill_heal': (heal, 0.7),
     'skill_magic': (magic, 0.7), 'collect': (collect, 0.6), 'fanfare': (fanfare, 0.75),
+    'warn': (warn, 0.7), 'slam': (slam, 0.9),
 }
 
 os.makedirs(OUT, exist_ok=True)

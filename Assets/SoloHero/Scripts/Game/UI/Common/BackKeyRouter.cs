@@ -19,6 +19,7 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private PetPresenter _pet;
         [SerializeField] private AchievementPresenter _achievements;
         [SerializeField] private TowerPresenter _tower;
+        [SerializeField] private RaidPresenter _raid;
         [SerializeField] private ShopPresenter _shop;
         [SerializeField] private JobPresenter _job;
 
@@ -115,6 +116,12 @@ namespace SoloHero.Game.UI.Common
             if (_tower != null && _tower.IsOpen)
             {
                 _tower.Close();
+                return;
+            }
+
+            if (_raid != null && _raid.IsOpen)
+            {
+                _raid.Close();
                 return;
             }
 

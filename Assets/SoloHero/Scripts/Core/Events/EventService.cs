@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Daily;
+using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 
@@ -14,7 +15,7 @@ namespace SoloHero.Core.Events
     /// event id; when another event runs the progress starts over and unspent tokens of the old one are gone. Times come
     /// from the trusted clock, so moving the device clock does not open or stretch an event.
     /// </summary>
-    public sealed class EventService
+    public sealed class EventService : IPickupSource
     {
         private static readonly ScheduleEntry[] None = new ScheduleEntry[0];
 
@@ -55,6 +56,19 @@ namespace SoloHero.Core.Events
                 ScheduleEntry active = Active;
                 return active == null ? 0L : Math.Max(0L, active.EndUtc - _clock.UtcNowSeconds);
             }
+        }
+
+        /// <summary>D-173: the pickup banner of a summon running now (beside any event), or null.</summary>
+        public PickupBanner ActivePickup(SummonKind kind)
+        {
+            ScheduleEntry entry = EventSchedule.PickupAt(_schedule, _clock.UtcNowSeconds, kind);
+            return entry != null ? PickupCatalog.Find(entry.Template) : null;
+        }
+
+        public long PickupSecondsLeft(SummonKind kind)
+        {
+            ScheduleEntry entry = EventSchedule.PickupAt(_schedule, _clock.UtcNowSeconds, kind);
+            return entry == null ? 0L : Math.Max(0L, entry.EndUtc - _clock.UtcNowSeconds);
         }
 
         /// <summary>True the first time it is asked during an event (for the event_join analytics event).</summary>

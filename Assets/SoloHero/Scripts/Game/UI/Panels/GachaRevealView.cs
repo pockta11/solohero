@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using SoloHero.Core.Common;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Settings;
 using SoloHero.Game.Audio;
 using SoloHero.Game.UI.Common;
+using SoloHero.Game.View;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,6 +19,8 @@ namespace SoloHero.Game.UI.Panels
     /// Equipment and skill summons (D-078) both hand in ready-made <see cref="RevealCard"/>s. D-113: a Legendary or
     /// better result tints the summon circle in its grade colour before the cards turn (the genre's tell), and a
     /// Mythic or Ancient card bursts twice and shakes harder.
+    /// D-172: more results than cards (a x100 pull, a big ticket spend) skip the cards: small tiles pop into a grid, best
+    /// grade first, in about a second, under a line of grade counts.
     /// </summary>
     public sealed class GachaRevealView : MonoBehaviour
     {
@@ -28,6 +32,8 @@ namespace SoloHero.Game.UI.Panels
         private const float ShakePixels = 18f;
         private const float ShakeSeconds = 0.35f;
         private const float TopShakeScale = 1.6f;
+        private const float TilePop = 0.16f;
+        private const float TileInterval = 0.011f;
 
         [SerializeField] private GameObject _root;
         [SerializeField] private RectTransform _circle;
@@ -38,6 +44,11 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private GameObject _skipButton;
         [SerializeField] private GameObject _closeHint;
 
+        [Header("D-172 bulk grid")]
+        [SerializeField] private GachaTile[] _tiles = new GachaTile[0];
+        [SerializeField] private GradeFrameSet _frames;
+        [SerializeField] private Text _summary;
+
         private readonly List<Coroutine> _flips = new List<Coroutine>();
         private RevealCard[] _items;
         private Coroutine _running;
@@ -47,6 +58,8 @@ namespace SoloHero.Game.UI.Panels
         private AudioService _audio;
         private SettingsService _settings;
         private Color _circleBase = Color.white;
+        private int[] _order = new int[0];
+        private readonly System.Text.StringBuilder _sb = new System.Text.StringBuilder();
 
         public bool IsShowing => _root != null && _root.activeSelf;
 
@@ -92,6 +105,13 @@ namespace SoloHero.Game.UI.Panels
 
         private IEnumerator Run()
         {
+            if (_items.Length > _cards.Length && _tiles.Length > 0)
+            {
+                yield return RunGrid();
+                yield break;
+            }
+
+            HideGrid();
             bool ten = _items.Length > 1;
             Layout(_items.Length);
             if (_skipButton != null) _skipButton.SetActive(ten);
@@ -154,6 +174,146 @@ namespace SoloHero.Game.UI.Panels
             _done = true;
             _flips.Clear();
             _running = null;
+        }
+
+        /// <summary>D-172: the bulk reveal - circle, then the tiles pop in best grade first, then the best one celebrates.</summary>
+        private IEnumerator RunGrid()
+        {
+            for (int i = 0; i < _cards.Length; i++) _cards[i].Hide();
+            if (_skipButton != null) _skipButton.SetActive(true);
+            if (_closeHint != null) _closeHint.SetActive(false);
+            int count = Mathf.Min(_items.Length, _tiles.Length);
+            SortByGrade(count);
+            for (int i = 0; i < _tiles.Length; i++) _tiles[i].Hide();
+            if (_summary != null)
+            {
+                _summary.text = Summary();
+                _summary.gameObject.SetActive(true);
+            }
+
+            GearGrade top = _items[_order[0]].Grade;
+            if (_circleImage != null)
+            {
+                Color tint = top >= GearGrade.Legendary ? PanelServices.GradeColor(top) : _circleBase;
+                tint.a = _circleImage.color.a;
+                _circleImage.color = tint;
+            }
+
+            if (_circle != null) _circle.gameObject.SetActive(true);
+            for (float t = 0f; t < SummonTen && !_skip; t += Time.unscaledDeltaTime)
+            {
+                float k = t / SummonTen;
+                SetCircle(Mathf.SmoothStep(0.2f, 1.25f, k), k * 360f, Mathf.Sin(k * Mathf.PI));
+                yield return null;
+            }
+
+            if (_circle != null) _circle.gameObject.SetActive(false);
+            for (int i = 0; i < count; i++)
+            {
+                RevealCard item = _items[_order[i]];
+                Sprite frame = _frames != null ? _frames.Get(item.Grade) : null;
+                _tiles[i].Show(frame, item.Icon, item.IconScale, item.IsNew);
+            }
+
+            // One loop scales every tile: tile i starts TileInterval x i after the first, overshoots a little, then rests.
+            float total = (count - 1) * TileInterval + TilePop;
+            int sounded = -1;
+            for (float t = 0f; t < total && !_skip; t += Time.unscaledDeltaTime)
+            {
+                for (int i = 0; i < count; i++) _tiles[i].Rect.localScale = Vector3.one * Pop((t - i * TileInterval) / TilePop);
+                int row = Mathf.Min(count - 1, (int)(t / TileInterval)) / 10;
+                if (row > sounded)
+                {
+                    sounded = row;
+                    Sound(SfxId.CardFlip);
+                }
+
+                yield return null;
+            }
+
+            for (int i = 0; i < count; i++) _tiles[i].Rect.localScale = Vector3.one;
+            if (IsHigh(top)) CelebrateTile(0, top);
+            if (_skipButton != null) _skipButton.SetActive(false);
+            if (_closeHint != null) _closeHint.SetActive(true);
+            _done = true;
+            _running = null;
+        }
+
+        /// <summary>0 before the start, a 1.15 overshoot at 70 %, 1 at the end.</summary>
+        private static float Pop(float k)
+        {
+            if (k <= 0f) return 0f;
+            if (k >= 1f) return 1f;
+            return k < 0.7f ? Mathf.Lerp(0f, 1.15f, k / 0.7f) : Mathf.Lerp(1.15f, 1f, (k - 0.7f) / 0.3f);
+        }
+
+        private void CelebrateTile(int index, GearGrade grade)
+        {
+            if (_celebrated) return;
+            _celebrated = true;
+            bool top = grade >= GearGrade.Mythic;
+            Sound(grade >= GearGrade.Legendary ? SfxId.GradeLegendary : SfxId.GradeEpic);
+            UiPunch punch = _tiles[index].GetComponent<UiPunch>();
+            if (punch != null) punch.Play(top ? 2.6f : 2f);
+            if (_settings != null && _settings.LowEffect) return;
+            if (_burst != null)
+            {
+                Vector2 local = (Vector2)_burst.transform.InverseTransformPoint(_tiles[index].Rect.position);
+                _burst.Play(local, PanelServices.GradeColor(grade));
+                if (top) StartCoroutine(SecondBurst(local, PanelServices.GradeColor(grade)));
+            }
+
+            StartCoroutine(Shake(top ? TopShakeScale : 1f));
+        }
+
+        /// <summary>Stable sort of the shown results, highest grade first (insertion sort; a hundred at most).</summary>
+        private void SortByGrade(int count)
+        {
+            if (_order.Length < count) _order = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                int j = i - 1;
+                while (j >= 0 && _items[_order[j]].Grade < _items[i].Grade)
+                {
+                    _order[j + 1] = _order[j];
+                    j--;
+                }
+
+                _order[j + 1] = i;
+            }
+        }
+
+        /// <summary>The pull count, grade counts in grade colours (best first), then how many were new.</summary>
+        private string Summary()
+        {
+            _sb.Clear();
+            var counts = new int[GearGrades.Count];
+            int fresh = 0;
+            for (int i = 0; i < _items.Length; i++)
+            {
+                counts[(int)_items[i].Grade]++;
+                if (_items[i].IsNew) fresh++;
+            }
+
+            _sb.Append(Strings.Format("gacha.bulk_title", _items.Length)).Append('\n');
+            bool first = true;
+            for (int g = counts.Length - 1; g >= 0; g--)
+            {
+                if (counts[g] == 0) continue;
+                if (!first) _sb.Append("  ");
+                first = false;
+                _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(PanelServices.GradeColor((GearGrade)g))).Append('>')
+                    .Append(PanelServices.GradeName((GearGrade)g)).Append(' ').Append(counts[g]).Append("</color>");
+            }
+
+            if (fresh > 0) _sb.Append("  <color=#FFE066>").Append(Strings.Format("gacha.bulk_new", fresh)).Append("</color>");
+            return _sb.ToString();
+        }
+
+        private void HideGrid()
+        {
+            for (int i = 0; i < _tiles.Length; i++) _tiles[i].Hide();
+            if (_summary != null) _summary.gameObject.SetActive(false);
         }
 
         private IEnumerator Flip(GachaCard card, RevealCard item, float seconds)

@@ -21,6 +21,9 @@ namespace SoloHero.Core.Economy
         public int Stones { get; init; }
         public int Tokens { get; init; }
 
+        /// <summary>D-174: skill awakening stones.</summary>
+        public int AwakenStones { get; init; }
+
         public double GoldFor(BalanceValues b, SaveDataV2 data)
         {
             if (b == null || data == null || GoldStages <= 0d) return 0d;
@@ -38,6 +41,7 @@ namespace SoloHero.Core.Economy
             ShopService.AddTickets(data, SummonKind.Pet, PetTickets);
             data.breakStones += Stones;
             data.eventTokens += Tokens;
+            data.awakenStones += AwakenStones;
         }
     }
 }

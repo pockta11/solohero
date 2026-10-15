@@ -124,7 +124,23 @@ namespace SoloHero.Core
             return baseCost * Math.Pow(c.SKILL_UPG_COST_GROWTH, (level < 1 ? 1 : level) - 1);
         }
 
-        /// <summary>Owned effect of one skill (genre "collection bonus"): ATK +grade% x level scale, as a fraction.</summary>
+        /// <summary>D-174: what <paramref name="stars"/> awakening stars multiply a skill's values by.</summary>
+        public static double SkillAwakenScale(BalanceValues c, int stars) =>
+            1d + c.AWAKEN_SKILL_GAIN / 100d * (stars < 0 ? 0 : stars);
+
+        /// <summary>D-174: awakening stones for the star after <paramref name="stars"/> of a skill of <paramref name="grade"/>.</summary>
+        public static int SkillAwakenCost(BalanceValues c, Grade grade, int stars) =>
+            (int)Math.Round(c.AWAKEN_COST_BASE * ((stars < 0 ? 0 : stars) + 1) * Math.Pow(c.AWAKEN_GRADE_MULT, (int)grade));
+
+        /// <summary>
+        /// Owned effect of one skill (genre "collection bonus"): ATK +grade% x level scale, as a fraction; D-174: each
+        /// awakening star adds AWAKEN_OWNED_GAIN % of it.
+        /// </summary>
+        public static double SkillOwnedAtk(BalanceValues c, Grade grade, int level, int stars)
+        {
+            return SkillOwnedAtk(c, grade, level) * (1d + c.AWAKEN_OWNED_GAIN / 100d * (stars < 0 ? 0 : stars));
+        }
+
         public static double SkillOwnedAtk(BalanceValues c, Grade grade, int level)
         {
             double percent;

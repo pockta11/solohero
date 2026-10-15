@@ -15,6 +15,12 @@ namespace SoloHero.Core.Stage
         Tower = 3,
 
         /// <summary>D-165: the score dungeon - damage to a training boss in a set time, paid by tier.</summary>
-        Score = 4
+        Score = 4,
+
+        /// <summary>D-174: the material dungeon - waves like gold and EXP, every few kills pay an awakening stone.</summary>
+        Material = 5,
+
+        /// <summary>D-175: the weekly raid - one boss with patterns that fights back, paid in medals by damage.</summary>
+        Raid = 6
     }
 }

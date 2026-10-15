@@ -18,8 +18,8 @@ using UnityEngine.UI;
 namespace SoloHero.Game.UI.Panels
 {
     /// <summary>
-    /// Summon panel (E7-07, D-078, D-114): equipment / skill / pet tabs on top (genre summon screen), then single / 10 /
-    /// gem 10 pulls, the pity gauge of the shown tab, rate disclosure and the last result. The pet page opens after
+    /// Summon panel (E7-07, D-078, D-114): equipment / skill / pet tabs on top (genre summon screen), then 10 / 100
+    /// (D-172) / gem 10 pulls, the pity gauge of the shown tab, rate disclosure and the last result. The pet page opens after
     /// the first boss. Order is confirm -> save -> show:
     /// the service settles gold and items, then the save is requested, then the card reveal (E5-11) plays.
     /// </summary>
@@ -33,10 +33,11 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Image _pityFill;
         [SerializeField] private Text _rateText;
         [SerializeField] private Text _resultText;
-        [SerializeField] private Text _singleCostText;
+        [Tooltip("D-172: the x100 pull (was the single pull).")]
+        [SerializeField] private Text _bulkCostText;
         [SerializeField] private Text _tenCostText;
         [SerializeField] private Text _gemCostText;
-        [SerializeField] private TapGuardButton _singleButton;
+        [SerializeField] private TapGuardButton _bulkButton;
         [SerializeField] private TapGuardButton _tenButton;
         [SerializeField] private TapGuardButton _gemButton;
         [SerializeField] private CombatSession _session;
@@ -56,6 +57,11 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Sprite _tabActive;
         [SerializeField] private EquipmentIconSet _equipmentIcons;
         [SerializeField] private SkillIconSet _skillIcons;
+
+        [Header("D-173 pickup banner")]
+        [SerializeField] private GameObject _pickupRoot;
+        [SerializeField] private Image _pickupIcon;
+        [SerializeField] private Text _pickupText;
 
         [Tooltip("D-114 pet looks, index-aligned with PetCatalog (the card shows the first idle frame).")]
         [SerializeField] private CharacterArt[] _petArts = new CharacterArt[0];
@@ -77,6 +83,8 @@ namespace SoloHero.Game.UI.Panels
         private double _shownGem = -1d;
         private int _mode = ModeGear;
         private int _shownHighest = -1;
+        private SoloHero.Core.Events.EventService _events;
+        private float _pickupClock;
 
         private void OnEnable()
         {
@@ -88,6 +96,7 @@ namespace SoloHero.Game.UI.Panels
             _balance = PanelServices.TryGet<BalanceValues>();
             _save = PanelServices.TryGet<SaveDataV2>();
             _requester = PanelServices.TryGet<ISaveRequester>();
+            _events = PanelServices.TryGet<SoloHero.Core.Events.EventService>();
             _shownGold = -1d;
             DrawStatic();
             Refresh();
@@ -96,6 +105,16 @@ namespace SoloHero.Game.UI.Panels
         private void LateUpdate()
         {
             if (_save == null) return;
+            // D-173: the pickup's time left (and its start or end) ticks once a second.
+            _pickupClock -= Time.unscaledDeltaTime;
+            if (_pickupClock <= 0f)
+            {
+                _pickupClock = 1f;
+                bool was = _pickupRoot != null && _pickupRoot.activeSelf;
+                DrawPickup();
+                if (_pickupRoot != null && was != _pickupRoot.activeSelf) DrawStatic();
+            }
+
             if (_save.gold == _shownGold && _save.gem == _shownGem && _save.farmingStage == _shownFarmingStage
                 && _save.highestStage == _shownHighest) return;
             Refresh();
@@ -113,6 +132,7 @@ namespace SoloHero.Game.UI.Panels
             if (_mode != mode && _resultText != null) _resultText.text = "";
             _mode = mode;
             DrawStatic();
+            DrawPickup();
             Refresh();
         }
 
@@ -184,10 +204,11 @@ namespace SoloHero.Game.UI.Panels
         /// <summary>D-159: the ticket reward line of each page's summon.</summary>
         private static readonly string[] TicketRewardKeys = { "reward.gear", "reward.skill", "reward.pet" };
 
-        public void PullSingle()
+        /// <summary>D-172: SUMMON_BULK_PULLS pulls (ten ten-pulls) in one tap.</summary>
+        public void PullBulk()
         {
             int before = CurrentLevel;
-            PullSingleNow();
+            PullBulkNow();
             AnnounceLevel(before);
         }
 
@@ -205,11 +226,14 @@ namespace SoloHero.Game.UI.Panels
             AnnounceLevel(before);
         }
 
-        private void PullSingleNow()
+        private int BulkTens => _balance != null ? System.Math.Max(1, _balance.SUMMON_BULK_PULLS / 10) : 10;
+
+        private void PullBulkNow()
         {
-            if (_mode == ModePet) ApplyPet(_petSummon != null && _save != null ? _petSummon.TryPull(_save) : default, "pet_gold_single");
-            else if (_mode == ModeSkill) ApplySkill(_skillSummon != null && _save != null ? _skillSummon.TryPull(_save) : default, "skill_gold_single");
-            else Apply(_gacha != null && _save != null ? _gacha.TryPull(_save) : default, "gold_single");
+            int tens = BulkTens;
+            if (_mode == ModePet) ApplyPet(_petSummon != null && _save != null ? _petSummon.TryPullTens(_save, tens) : default, "pet_gold_bulk");
+            else if (_mode == ModeSkill) ApplySkill(_skillSummon != null && _save != null ? _skillSummon.TryPullTens(_save, tens) : default, "skill_gold_bulk");
+            else Apply(_gacha != null && _save != null ? _gacha.TryPullTens(_save, tens) : default, "gold_bulk");
         }
 
         private void PullTenNow()
@@ -261,14 +285,15 @@ namespace SoloHero.Game.UI.Panels
             });
         }
 
-        /// <summary>D-128: up to ten pulls of the shown summon, paid with its tickets.</summary>
+        /// <summary>D-128: pulls of the shown summon paid with its tickets; D-172: up to SUMMON_TICKET_MAX a tap.</summary>
         public void UseTickets()
         {
-            if (_save == null) return;
+            if (_save == null || _balance == null) return;
             int before = CurrentLevel;
-            if (_mode == ModePet) ApplyPet(_petSummon != null ? _petSummon.TryPullTickets(_save, 10) : default, "pet_ticket");
-            else if (_mode == ModeSkill) ApplySkill(_skillSummon != null ? _skillSummon.TryPullTickets(_save, 10) : default, "skill_ticket");
-            else Apply(_gacha != null ? _gacha.TryPullTickets(_save, 10) : default, "ticket");
+            int max = TicketBatch;
+            if (_mode == ModePet) ApplyPet(_petSummon != null ? _petSummon.TryPullTickets(_save, max) : default, "pet_ticket");
+            else if (_mode == ModeSkill) ApplySkill(_skillSummon != null ? _skillSummon.TryPullTickets(_save, max) : default, "skill_ticket");
+            else Apply(_gacha != null ? _gacha.TryPullTickets(_save, max) : default, "ticket");
             AnnounceLevel(before);
         }
 
@@ -343,7 +368,7 @@ namespace SoloHero.Game.UI.Panels
                 CharacterArt art = index >= 0 && index < _petArts.Length ? _petArts[index] : null;
                 Sprite icon = art != null && art.idle.Length > 0 ? art.idle[0] : null;
                 PetDef def = PetCatalog.Find(item.Id);
-                cards[i] = new RevealCard(item.Grade, def != null ? Strings.Get(def.NameKey) : item.Id, PetNote(item), icon, PetIconScale);
+                cards[i] = new RevealCard(item.Grade, def != null ? Strings.Get(def.NameKey) : item.Id, PetNote(item), icon, PetIconScale, item.WasNew);
             }
 
             return cards;
@@ -368,7 +393,7 @@ namespace SoloHero.Game.UI.Panels
             {
                 GachaPullItem item = items[i];
                 Sprite icon = _equipmentIcons != null ? _equipmentIcons.Get(item.Slot, item.Grade, weapon) : null;
-                cards[i] = new RevealCard(item.Grade, PanelServices.SlotName(item.Slot), PanelServices.PullNote(item), icon);
+                cards[i] = new RevealCard(item.Grade, PanelServices.SlotName(item.Slot), PanelServices.PullNote(item), icon, 1f, !item.WasDuplicate);
             }
 
             return cards;
@@ -382,7 +407,7 @@ namespace SoloHero.Game.UI.Panels
                 SkillPullItem item = items[i];
                 SkillDef def = SkillCatalog.Find(item.Id);
                 Sprite icon = _skillIcons != null ? _skillIcons.Get(item.Id) : null;
-                cards[i] = new RevealCard(item.Grade.ToGearGrade(), def != null ? Strings.Get(def.NameKey) : item.Id, SkillNote(item), icon);
+                cards[i] = new RevealCard(item.Grade.ToGearGrade(), def != null ? Strings.Get(def.NameKey) : item.Id, SkillNote(item), icon, 1f, item.WasNew);
             }
 
             return cards;
@@ -395,8 +420,9 @@ namespace SoloHero.Game.UI.Panels
             return Strings.Format("gacha.skill_up", item.Level);
         }
 
-        private double SingleCost => _mode == ModePet ? _balance.PET_SUMMON_COST_SINGLE
-            : _mode == ModeSkill ? _balance.SKILL_SUMMON_COST_SINGLE : _balance.GACHA_COST_SINGLE;
+        private int TicketBatch => System.Math.Max(1, _balance.SUMMON_TICKET_MAX);
+
+        private double BulkCost => TenCost * BulkTens;
 
         private double TenCost => _mode == ModePet ? _balance.PET_SUMMON_COST_TEN
             : _mode == ModeSkill ? _balance.SKILL_SUMMON_COST_TEN : _balance.GACHA_COST_TEN;
@@ -408,7 +434,7 @@ namespace SoloHero.Game.UI.Panels
         {
             if (_balance == null) return;
             if (_rateText != null) _rateText.text = RatesText(_mode);
-            if (_singleCostText != null) _singleCostText.text = Strings.Format("gacha.cost_single", Price(SingleCost));
+            if (_bulkCostText != null) _bulkCostText.text = Strings.Format("gacha.cost_bulk", BulkTens * 10, Price(BulkCost));
             if (_tenCostText != null) _tenCostText.text = Strings.Format("gacha.cost_ten", Price(TenCost));
             if (_gemCostText != null) _gemCostText.text = Strings.Format("gacha.cost_gem", GemCost);
             for (int i = 0; i < _tabImages.Length; i++)
@@ -462,13 +488,13 @@ namespace SoloHero.Game.UI.Panels
             // Width by anchor: a Filled image without a sprite ignores fillAmount.
             if (_pityFill != null) _pityFill.rectTransform.anchorMax = new Vector2(ratio, 1f);
 
-            if (_singleButton != null) _singleButton.SetAvailable(!locked && _save.gold >= SingleCost);
+            if (_bulkButton != null) _bulkButton.SetAvailable(!locked && _save.gold >= BulkCost);
             if (_tenButton != null) _tenButton.SetAvailable(!locked && _save.gold >= TenCost);
             if (_gemButton != null) _gemButton.SetAvailable(!locked && _save.gem >= GemCost);
             _shownFarmingStage = _save.farmingStage;
             int tickets = ShopService.TicketsOf(_save, Kind);
             if (_ticketLabel != null)
-                _ticketLabel.text = Strings.Format("gacha.tickets", System.Math.Min(10, tickets), BigNumberFormat.Format(tickets));
+                _ticketLabel.text = Strings.Format("gacha.tickets", System.Math.Max(1, System.Math.Min(TicketBatch, tickets)), BigNumberFormat.Format(tickets));
             if (_ticketButton != null) _ticketButton.SetAvailable(!locked && tickets > 0);
             DrawAdButton(locked);
         }
@@ -516,6 +542,8 @@ namespace SoloHero.Game.UI.Panels
                 _sb.Append('\n').Append(pityOpen
                     ? Strings.Format("gacha.rates_pity_skill", table.PityCeiling)
                     : Strings.Format("gacha.rates_pity_locked", SkillTable.OpenLevel(Grade.Legendary), table.PityCeiling));
+                if (TryPickup(mode, out string skillName, out GearGrade skillGrade, out int skillPool, out _))
+                    AppendPickupRate(skillName, skillGrade, rates[SkillIndex(skillGrade)], open[SkillIndex(skillGrade)] > level, skillPool);
             }
             else
             {
@@ -524,9 +552,131 @@ namespace SoloHero.Game.UI.Panels
                 _sb.Append('\n').Append(pityOpen
                     ? Strings.Format(mode == ModePet ? "gacha.rates_pity_pet" : "gacha.rates_pity_gear", table.PityCeiling)
                     : Strings.Format("gacha.rates_pity_locked", GearTable.OpenLevel(GearTableValues.PityGrade), table.PityCeiling));
+                if (TryPickup(mode, out string petName, out GearGrade petGrade, out int petPool, out _))
+                    AppendPickupRate(petName, petGrade, table.Rates[(int)petGrade], open[(int)petGrade] > level, petPool);
             }
 
             return _sb.ToString();
+        }
+
+        /// <summary>
+        /// D-173: the running pickup of the page (pets, skills): the boosted item's name and grade, the size of its grade's
+        /// pool and the seconds left. A skill banner counts only when its target of the hero's line is in the pool.
+        /// </summary>
+        private bool TryPickup(int mode, out string name, out GearGrade grade, out int poolSize, out long secondsLeft)
+        {
+            name = "";
+            grade = GearGrade.Common;
+            poolSize = 0;
+            secondsLeft = 0L;
+            if (_save == null) return false;
+            if (mode == ModePet)
+            {
+                PickupBanner banner = _petSummon?.Pickup;
+                PetDef pet = banner != null && banner.Targets.Length > 0 ? PetCatalog.Find(banner.Targets[0]) : null;
+                if (pet == null) return false;
+                name = Strings.Get(pet.NameKey);
+                grade = pet.Grade;
+                poolSize = PetCatalog.OfGrade(pet.Grade).Length;
+                secondsLeft = _events != null ? _events.PickupSecondsLeft(SummonKind.Pet) : 0L;
+                return true;
+            }
+
+            if (mode == ModeSkill)
+            {
+                SkillDef def = PickupSkill();
+                if (def == null) return false;
+                name = Strings.Get(def.NameKey);
+                grade = def.Grade.ToGearGrade();
+                poolSize = SkillCatalog.OfLine(SoloHero.Core.Jobs.JobService.LineOf(_save), def.Grade, SoloHero.Core.Jobs.JobService.TierOf(_save)).Length;
+                secondsLeft = _events != null ? _events.PickupSecondsLeft(SummonKind.Skill) : 0L;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>D-173: the skill banner's target in the hero's pool, or null.</summary>
+        private SkillDef PickupSkill()
+        {
+            PickupBanner banner = _skillSummon?.Pickup;
+            if (banner == null || _save == null) return null;
+            SoloHero.Core.Jobs.JobLine line = SoloHero.Core.Jobs.JobService.LineOf(_save);
+            if (line == SoloHero.Core.Jobs.JobLine.None) return null;
+            int tier = SoloHero.Core.Jobs.JobService.TierOf(_save);
+            for (int i = 0; i < banner.Targets.Length; i++)
+            {
+                SkillDef def = SkillCatalog.Find(banner.Targets[i]);
+                if (def == null || def.Line != line) continue;
+                SkillDef[] pool = SkillCatalog.OfLine(line, def.Grade, tier);
+                if (System.Array.IndexOf(pool, def) >= 0) return def;
+            }
+
+            return null;
+        }
+
+        /// <summary>D-173 disclosure: the boosted item's rate and each other item of its grade (or when the grade opens).</summary>
+        private void AppendPickupRate(string name, GearGrade grade, double gradeRate, bool locked, int poolSize)
+        {
+            _sb.Append('\n').Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(UiPalette.GradeInk(grade))).Append('>');
+            if (locked)
+            {
+                _sb.Append(Strings.Format("pickup.rates_locked", name, PanelServices.GradeName(grade)));
+            }
+            else
+            {
+                double share = _balance.PICKUP_SHARE;
+                _sb.Append(Strings.Format("pickup.rates", name,
+                    Pct(Pickup.TargetRate(gradeRate, share)), PanelServices.GradeName(grade), Pct(Pickup.OtherRate(gradeRate, share, poolSize))));
+            }
+
+            _sb.Append("</color>");
+        }
+
+        /// <summary>The four-grade index (skill table) of a gear-ladder grade a skill maps to.</summary>
+        private static int SkillIndex(GearGrade grade) =>
+            grade >= GearGrade.Legendary ? (int)Grade.Legendary : grade >= GearGrade.Epic ? (int)Grade.Epic : grade >= GearGrade.Rare ? (int)Grade.Rare : (int)Grade.Common;
+
+        private static string Pct(double percent) => System.Math.Round(percent, 4).ToString("0.####", CultureInfo.InvariantCulture);
+
+        /// <summary>D-173: the pickup band over the summon circle - the boosted item, its share and the time left.</summary>
+        private void DrawPickup()
+        {
+            if (_pickupRoot == null) return;
+            bool show = TryPickup(_mode, out string name, out GearGrade grade, out _, out long left);
+            if (_pickupRoot.activeSelf != show) _pickupRoot.SetActive(show);
+            if (!show) return;
+            if (_pickupText != null)
+                _pickupText.text = Strings.Format("pickup.banner", name) + "\n"
+                    + Strings.Format("pickup.banner_sub", PanelServices.GradeName(grade), _balance.PICKUP_SHARE, TimeLeft(left));
+            if (_pickupIcon != null)
+            {
+                Sprite icon = PickupIcon();
+                _pickupIcon.sprite = icon;
+                _pickupIcon.enabled = icon != null;
+            }
+        }
+
+        private Sprite PickupIcon()
+        {
+            if (_mode == ModePet)
+            {
+                PickupBanner banner = _petSummon?.Pickup;
+                int index = banner != null && banner.Targets.Length > 0 ? PetCatalog.IndexOf(banner.Targets[0]) : -1;
+                CharacterArt art = index >= 0 && index < _petArts.Length ? _petArts[index] : null;
+                return art != null && art.idle.Length > 0 ? art.idle[0] : null;
+            }
+
+            SkillDef def = PickupSkill();
+            return def != null && _skillIcons != null ? _skillIcons.Get(def.Id) : null;
+        }
+
+        private static string TimeLeft(long seconds)
+        {
+            long days = seconds / 86400;
+            long hours = seconds % 86400 / 3600;
+            long minutes = seconds % 3600 / 60;
+            return days > 0 ? Strings.Format("event.time_days", days, hours) : Strings.Format("event.time_hours", hours, minutes);
         }
 
         /// <summary>One disclosed grade: its rate in its colour, or (D-121) the summon level that opens it, dimmed.</summary>
@@ -562,13 +712,16 @@ namespace SoloHero.Game.UI.Panels
         }
 
         /// <summary>best_grade is the gear ladder index (0 Common .. 6 Ancient) for gear and the skill grade for skills.</summary>
-        private static void LogPull(string eventName, long best, int count, string kind, int pity)
+        private void LogPull(string eventName, long best, int count, string kind, int pity)
         {
+            // D-173: the pickup banner of the page when it ran ("none" otherwise).
+            PickupBanner banner = _mode == ModePet ? _petSummon?.Pickup : _mode == ModeSkill ? _skillSummon?.Pickup : null;
             GameAnalytics.Log(eventName,
                 AnalyticsParam.Of(AnalyticsEvents.PKind, kind),
                 AnalyticsParam.Of(AnalyticsEvents.PCount, count),
                 AnalyticsParam.Of(AnalyticsEvents.PBestGrade, best),
-                AnalyticsParam.Of(AnalyticsEvents.PPity, pity));
+                AnalyticsParam.Of(AnalyticsEvents.PPity, pity),
+                AnalyticsParam.Of(AnalyticsEvents.PPickup, banner != null ? banner.Id : "none"));
         }
 
         /// <summary>

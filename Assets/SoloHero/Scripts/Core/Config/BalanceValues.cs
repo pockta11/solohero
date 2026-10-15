@@ -149,6 +149,13 @@ namespace SoloHero.Core.Config
         public double GACHA_COST_SINGLE = 150;
         public double GACHA_COST_TEN = 1350;
         public int GACHA_COST_TEN_GEM = 200;
+        // D-172: the bulk pull (genre x100 button) costs the ten-pull price per ten (no extra discount), and one tap of the
+        // ticket button spends up to SUMMON_TICKET_MAX tickets.
+        public int SUMMON_BULK_PULLS = 100;
+        public int SUMMON_TICKET_MAX = 100;
+        // D-173 (L-19): a pickup banner's target takes PICKUP_SHARE % of its grade's draws (grade rates unchanged); 70, not
+        // 50: the Legendary pets are a pair, where half would be no pickup at all.
+        public double PICKUP_SHARE = 70;
         public int GEM_GOLD_PACK_COST = 50;
         public double GEM_GOLD_PACK_STAGES = 100;
         public double GACHA_RATE_C = 55;
@@ -443,6 +450,50 @@ namespace SoloHero.Core.Config
         public int SCORE_TIER_MAX = 20;
         public int SCORE_STONES_BASE = 4;
         public int SCORE_STONES_PER_TIER = 3;
+        // D-174 (L-13) material dungeon: DUNGEON_TIME seconds of waves at the farming stage; every MATERIAL_KILLS_PER_STONE
+        // kills pay one awakening stone at once. MATERIAL_DAILY_TICKETS entries a day, open once stage MATERIAL_UNLOCK_STAGE
+        // is cleared; sweeps pay the best run's kills.
+        public int MATERIAL_DAILY_TICKETS = 2;
+        public int MATERIAL_KILLS_PER_STONE = 2;
+        public int MATERIAL_UNLOCK_STAGE = 30;
+        // D-174 (L-09) skill awakening: a max-level skill climbs to AWAKEN_MAX_STARS stars. Star s+1 costs
+        // AWAKEN_COST_BASE x (s+1) x AWAKEN_GRADE_MULT^grade awakening stones; each star adds AWAKEN_SKILL_GAIN % to the
+        // skill's values (on top of its level scale) and AWAKEN_OWNED_GAIN % to its owned effect (10, not 20: the 365-day sim
+        // put day 30 / 90 on the top of their bands at 20).
+        public int AWAKEN_MAX_STARS = 5;
+        public double AWAKEN_COST_BASE = 10;
+        public double AWAKEN_GRADE_MULT = 2;
+        public double AWAKEN_SKILL_GAIN = 20;
+        public double AWAKEN_OWNED_GAIN = 10;
+        // D-175 (L-14) weekly raid: RAID_WEEKLY_TICKETS entries a week (Monday 0:00 local), open once stage RAID_UNLOCK_STAGE
+        // is cleared. Level L (1..RAID_LEVELS; the next opens when L is beaten) fights the chapter boss of stage
+        // RAID_BASE_STAGE + RAID_LEVEL_STEP x (L-1) with RAID_HP_MULT x its boss HP and RAID_ATK_MULT x that stage's enemy
+        // attack, for RAID_TIME seconds; the hero falling ends the run. Every RAID_PATTERN_INTERVAL seconds the boss warns for
+        // RAID_TELEGRAPH seconds, then slams (RAID_SLAM_MULT x its hit within RAID_SLAM_RANGE), charges (RAID_CHARGE_MULT x its
+        // hit) or calls RAID_SUMMON_COUNT minions. Medals: RAID_MEDALS_PER_LEVEL x L x the share of its HP dealt, plus
+        // RAID_CLEAR_MEDALS x L on a kill; a level's first kill pays RAID_FIRST_GEM x L gems.
+        public int RAID_WEEKLY_TICKETS = 3;
+        public int RAID_UNLOCK_STAGE = 40;
+        public int RAID_LEVELS = 10;
+        public int RAID_BASE_STAGE = 40;
+        public int RAID_LEVEL_STEP = 20;
+        public double RAID_HP_MULT = 3;
+        public double RAID_ATK_MULT = 1.5;
+        public float RAID_TIME = 60f;
+        public float RAID_PATTERN_INTERVAL = 7f;
+        public float RAID_TELEGRAPH = 1.4f;
+        public double RAID_SLAM_MULT = 4;
+        public double RAID_SLAM_RANGE = 3;
+        public double RAID_CHARGE_MULT = 2.5;
+        public int RAID_SUMMON_COUNT = 3;
+        // D-175: a raid minion has RAID_MINION_HP_MULT x a normal enemy's HP of the stage, so the summon pulls the hero's attacks
+        // off the boss for a while instead of dying in the same swing.
+        public double RAID_MINION_HP_MULT = 20;
+        public int RAID_MEDALS_PER_LEVEL = 6;
+        public int RAID_CLEAR_MEDALS = 6;
+        public int RAID_FIRST_GEM = 100;
+        // D-175: the raid window's recommended power is the level's stage boss's x RAID_REC_MULT (3x HP, but twice the time).
+        public double RAID_REC_MULT = 1.5;
         public float DUNGEON_RESULT_TIME = 2.5f;
 
         /// <summary>D-104 job advancement (replaces the D-101 promotion): hero level for the first and second job,

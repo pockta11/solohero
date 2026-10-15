@@ -35,6 +35,15 @@ namespace SoloHero.Core.Stage
 
         public bool Unlocked => IsUnlocked(_balance, _data);
 
+        /// <summary>D-174: whether this dungeon is open (the material dungeon opens later than the others).</summary>
+        public bool IsOpen(DungeonKind kind) => IsOpen(_balance, _data, kind);
+
+        public static bool IsOpen(BalanceValues balance, SaveDataV2 data, DungeonKind kind) =>
+            IsUnlocked(balance, data) && (kind != DungeonKind.Material || data.highestStage >= balance.MATERIAL_UNLOCK_STAGE);
+
+        /// <summary>D-174: the stage that opens a dungeon.</summary>
+        public int UnlockStage(DungeonKind kind) => kind == DungeonKind.Material ? _balance.MATERIAL_UNLOCK_STAGE : _balance.DUNGEON_UNLOCK_STAGE;
+
         public int Remaining(DungeonKind kind)
         {
             RollDay();
@@ -43,7 +52,12 @@ namespace SoloHero.Core.Stage
         }
 
         /// <summary>D-165: entries a day for each dungeon (the score dungeon has its own count).</summary>
-        public int DailyTicketsOf(DungeonKind kind) => kind == DungeonKind.Score ? _balance.SCORE_DAILY_TICKETS : _balance.DUNGEON_DAILY_TICKETS;
+        public int DailyTicketsOf(DungeonKind kind) =>
+            kind == DungeonKind.Score ? _balance.SCORE_DAILY_TICKETS : kind == DungeonKind.Material ? _balance.MATERIAL_DAILY_TICKETS : _balance.DUNGEON_DAILY_TICKETS;
+
+        /// <summary>D-174: awakening stones a material run of <paramref name="kills"/> kills pays.</summary>
+        public static int MaterialStones(BalanceValues balance, int kills) =>
+            balance.MATERIAL_KILLS_PER_STONE <= 0 || kills <= 0 ? 0 : kills / balance.MATERIAL_KILLS_PER_STONE;
 
         /// <summary>D-165: the tier of a score run that dealt <paramref name="ratio"/> chapter-boss HP of damage.</summary>
         public static int ScoreTier(BalanceValues balance, double ratio)
@@ -78,6 +92,7 @@ namespace SoloHero.Core.Stage
                 case DungeonKind.Gold: return data.dungeonGoldBest;
                 case DungeonKind.Exp: return data.dungeonExpBest;
                 case DungeonKind.Score: return data.dungeonScoreBest;
+                case DungeonKind.Material: return data.dungeonMaterialBest;
                 default: return 0;
             }
         }
@@ -92,6 +107,7 @@ namespace SoloHero.Core.Stage
             if (kind == DungeonKind.Gold && result > data.dungeonGoldBest) data.dungeonGoldBest = result;
             else if (kind == DungeonKind.Exp && result > data.dungeonExpBest) data.dungeonExpBest = result;
             else if (kind == DungeonKind.Score && result > data.dungeonScoreBest) data.dungeonScoreBest = result;
+            else if (kind == DungeonKind.Material && result > data.dungeonMaterialBest) data.dungeonMaterialBest = result;
         }
 
         /// <summary>
@@ -99,11 +115,13 @@ namespace SoloHero.Core.Stage
         /// best tier's stones (paid as stones, not here).
         /// </summary>
         public double SweepReward(DungeonKind kind) =>
-            kind == DungeonKind.Score ? ScoreStones(_balance, Best(kind)) : Best(kind) * RewardPerKill(kind);
+            kind == DungeonKind.Score ? ScoreStones(_balance, Best(kind))
+            : kind == DungeonKind.Material ? MaterialStones(_balance, Best(kind))
+            : Best(kind) * RewardPerKill(kind);
 
         public bool CanSweep(DungeonKind kind) =>
-            (kind == DungeonKind.Gold || kind == DungeonKind.Exp || kind == DungeonKind.Score) && Unlocked && Best(kind) > 0
-            && Remaining(kind) > 0;
+            (kind == DungeonKind.Gold || kind == DungeonKind.Exp || kind == DungeonKind.Score || kind == DungeonKind.Material)
+            && IsOpen(kind) && Best(kind) > 0 && Remaining(kind) > 0;
 
         /// <summary>
         /// D-161: spends an entry and pays the record at once (gold, or EXP through the hero level), plus the stones.
@@ -112,10 +130,21 @@ namespace SoloHero.Core.Stage
         public Result TrySweep(DungeonKind kind, out double earned)
         {
             earned = 0d;
-            if (kind != DungeonKind.Gold && kind != DungeonKind.Exp && kind != DungeonKind.Score) return Result.Fail(FailReason.Locked);
-            if (!Unlocked || Best(kind) <= 0) return Result.Fail(FailReason.Locked);
+            if (kind != DungeonKind.Gold && kind != DungeonKind.Exp && kind != DungeonKind.Score && kind != DungeonKind.Material)
+                return Result.Fail(FailReason.Locked);
+            if (!IsOpen(kind) || Best(kind) <= 0) return Result.Fail(FailReason.Locked);
             if (Remaining(kind) <= 0) return Result.Fail(FailReason.DailyLimit);
             earned = SweepReward(kind);
+            if (kind == DungeonKind.Material)
+            {
+                // D-174: the record's awakening stones plus the run's breakthrough stones.
+                _data.awakenStones += (int)earned;
+                _data.breakStones += _balance.DUNGEON_STONES;
+                _data.dungeonMaterialUsed++;
+                _save?.RequestSave();
+                return Result.Success;
+            }
+
             if (kind == DungeonKind.Score)
             {
                 // D-165: the best tier's stones instead of the flat dungeon stones.
@@ -143,19 +172,21 @@ namespace SoloHero.Core.Stage
 
         public Result TryEnter(DungeonKind kind, StageRunner runner)
         {
-            if (kind == DungeonKind.None || runner == null || !Unlocked) return Result.Fail(FailReason.Locked);
+            if (kind == DungeonKind.None || runner == null || !IsOpen(kind)) return Result.Fail(FailReason.Locked);
             if (Remaining(kind) <= 0) return Result.Fail(FailReason.DailyLimit);
             if (kind == DungeonKind.Tower) return Result.Fail(FailReason.Locked);
             if (!runner.StartDungeon(kind)) return Result.Fail(FailReason.Busy);
             if (kind == DungeonKind.Gold) _data.dungeonGoldUsed++;
             else if (kind == DungeonKind.Score) _data.dungeonScoreUsed++;
+            else if (kind == DungeonKind.Material) _data.dungeonMaterialUsed++;
             else _data.dungeonExpUsed++;
             _save?.RequestSave();
             return Result.Success;
         }
 
         private int Used(DungeonKind kind) =>
-            kind == DungeonKind.Gold ? _data.dungeonGoldUsed : kind == DungeonKind.Score ? _data.dungeonScoreUsed : _data.dungeonExpUsed;
+            kind == DungeonKind.Gold ? _data.dungeonGoldUsed : kind == DungeonKind.Score ? _data.dungeonScoreUsed
+            : kind == DungeonKind.Material ? _data.dungeonMaterialUsed : _data.dungeonExpUsed;
 
         private void RollDay()
         {
@@ -165,6 +196,7 @@ namespace SoloHero.Core.Stage
             _data.dungeonGoldUsed = 0;
             _data.dungeonExpUsed = 0;
             _data.dungeonScoreUsed = 0;
+            _data.dungeonMaterialUsed = 0;
         }
     }
 }

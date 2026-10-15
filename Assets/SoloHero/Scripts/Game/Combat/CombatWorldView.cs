@@ -97,6 +97,10 @@ namespace SoloHero.Game.Combat
         private int _lastKills;
         private float _cameraY = float.NaN;
         private float _heroLunge;
+        private float _bossLunge;
+        private static readonly Color RaidWarnTint = new Color(1f, 0.35f, 0.32f, 1f);
+        private const float RaidBossScale = 1.15f;
+        private const float BossLungeReturnRate = 5f;
         private float _heroStretch;
         private SoloHero.Core.Save.SaveDataV2 _save;
         private CharacterArt _heroShown;
@@ -115,6 +119,20 @@ namespace SoloHero.Game.Combat
 
         /// <summary>D-171: a point over the hero's head in world space (reward icons and LEVEL UP start there).</summary>
         public Vector3 HeroHead => _heroRenderer != null ? _heroRenderer.bounds.center + new Vector3(0f, _heroRenderer.bounds.extents.y * 0.8f, 0f) : Vector3.zero;
+
+        /// <summary>D-175: the boss lunges <paramref name="units"/> toward the hero and eases back (a raid charge; view only).</summary>
+        public void LungeBoss(float units) => _bossLunge = Mathf.Max(_bossLunge, units);
+
+        /// <summary>D-175: the raid boss's position on screen (feet), or the battle centre when none is up.</summary>
+        public Vector3 BossFeet
+        {
+            get
+            {
+                for (int i = 0; i < _slots.Length; i++)
+                    if (_slots[i].Active && _slots[i].Boss) return new Vector3(_slots[i].X, _slots[i].Y, 0f);
+                return Vector3.zero;
+            }
+        }
 
         public void FlashHero(Color color, float seconds)
         {
@@ -462,6 +480,12 @@ namespace SoloHero.Game.Combat
 
                 slot.Push -= slot.Push * Mathf.Min(1f, KnockReturnRate * dt);
                 slot.X = (float)enemy.X + (enemy.IsBoss ? BossDrawOffset : 0f) + slot.Push;
+                if (enemy.IsBoss && _bossLunge > 0.001f)
+                {
+                    // D-175: a raid charge throws the boss at the hero, then it walks back.
+                    slot.X -= _bossLunge;
+                    _bossLunge -= _bossLunge * Mathf.Min(1f, BossLungeReturnRate * dt);
+                }
                 slot.Y = DepthLanes.For(enemy);
                 renderer.enabled = true;
                 renderer.transform.position = new Vector3(slot.X, slot.Y, 0f);
@@ -469,7 +493,8 @@ namespace SoloHero.Game.Combat
 
                 if (art != null && book != null)
                 {
-                    float baseScale = art.pixelScale * DepthLanes.Scale(slot.Y) * RoleScale(enemy);
+                    float baseScale = art.pixelScale * DepthLanes.Scale(slot.Y) * RoleScale(enemy)
+                        * (enemy.IsBoss && _hooked != null && _hooked.InRaid ? RaidBossScale : 1f);
                     float squash = slot.Squash > 0f ? slot.Squash / SquashSeconds : 0f;
                     // Ease out: the squash snaps in on the hit and springs back.
                     squash *= squash * slot.SquashPower;
@@ -504,8 +529,18 @@ namespace SoloHero.Game.Combat
             }
 
             slot.Flash -= Time.deltaTime;
-            renderer.color = StatusTint(enemy) * TierLook.EnemyTint(_tier);
+            renderer.color = StatusTint(enemy) * TierLook.EnemyTint(_tier) * RaidWarning(enemy);
             _enemyFlashFx[index]?.Set(slot.Flash / HitFlashSeconds);
+        }
+
+        /// <summary>D-175: a raid boss pulses red faster and faster while it warns of a move.</summary>
+        private Color RaidWarning(EnemyBrain enemy)
+        {
+            if (enemy == null || !enemy.IsBoss || _hooked == null || !_hooked.InRaid || _hooked.Raid.Warning == RaidPattern.None)
+                return Color.white;
+            float k = _hooked.Raid.WarningProgress;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * (10f + 20f * k));
+            return Color.Lerp(Color.white, RaidWarnTint, 0.35f + 0.65f * pulse);
         }
 
         /// <summary>Kill fling: back and up in an arc over the first part of the death clip, then rest on the ground.</summary>

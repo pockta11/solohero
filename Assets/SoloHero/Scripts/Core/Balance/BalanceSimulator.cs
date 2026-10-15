@@ -72,6 +72,7 @@ namespace SoloHero.Core.Balance
             private readonly GuideQuestService _guide;
             private readonly AchievementService _achievements;
             private readonly DungeonService _dungeons;
+            private readonly RaidService _raid;
 
             /// <summary>D-143: runs left to start this session (daily dungeons, then the tower climb).</summary>
             private readonly Queue<DungeonKind> _runs = new Queue<DungeonKind>();
@@ -102,6 +103,7 @@ namespace SoloHero.Core.Balance
                 _guide = new GuideQuestService(balance, _save);
                 _achievements = new AchievementService(_save);
                 _dungeons = new DungeonService(balance, _save, _clock);
+                _raid = new RaidService(balance, _save, _clock);
                 _spender.GradeObtained += OnGradeObtained;
 
                 _runner = new StageRunner(balance, combatRng, CombatLoadout.ComputeStats(balance, _save), _save);
@@ -160,11 +162,15 @@ namespace SoloHero.Core.Balance
                         _runs.Clear();
                         if (_s.UseDungeons && _dungeons.Unlocked)
                         {
-                            foreach (DungeonKind kind in new[] { DungeonKind.Gold, DungeonKind.Exp, DungeonKind.Score })
-                                for (int n = _dungeons.Remaining(kind); n > 0; n--) _runs.Enqueue(kind);
+                            foreach (DungeonKind kind in new[] { DungeonKind.Gold, DungeonKind.Exp, DungeonKind.Score, DungeonKind.Material })
+                                if (_dungeons.IsOpen(kind))
+                                    for (int n = _dungeons.Remaining(kind); n > 0; n--) _runs.Enqueue(kind);
                         }
 
                         if (_s.UseTower && TowerService.IsUnlocked(_b, _save)) _runs.Enqueue(DungeonKind.Tower);
+                        // D-175: the week's raid entries go in the first session that has them.
+                        if (_s.UseDungeons && _raid.Unlocked)
+                            for (int n = _raid.Remaining; n > 0; n--) _runs.Enqueue(DungeonKind.Raid);
                         StartNextRun();
 
                         _sessionStageGold = 0d;
@@ -188,6 +194,9 @@ namespace SoloHero.Core.Balance
                     _day.HighestStage = _save.highestStage;
                     _day.TowerFloor = _save.towerFloor;
                     _day.Stones = _save.breakStones;
+                    _day.AwakenStars = _spender.AwakenStars;
+                    _day.AwakenStones = _save.awakenStones;
+                    _day.RaidCleared = _save.raidCleared;
                     _day.Breaks = _spender.Breaks;
                     _day.TicketPulls = _spender.TicketPulls - ticketPulls0;
                     _day.HeroLevel = _save.heroLevel;
@@ -295,14 +304,53 @@ namespace SoloHero.Core.Balance
                 StartNextRun();
             }
 
+            /// <summary>
+            /// D-175 player model: fight the highest open raid level when it is new or the hero has reached its
+            /// recommended power; otherwise sweep the best beaten level if that pays more than the level's best share
+            /// (a sweep starts no run).
+            /// </summary>
+            private bool EnterRaid()
+            {
+                int top = _raid.MaxLevel;
+                int cleared = _raid.Cleared;
+                bool ready = CombatPower.OfSave(_b, _save) >= RaidService.RecommendedCp(_b, top);
+                if (cleared >= 1 && top > cleared && !ready)
+                {
+                    int tryPays = RaidService.MedalsFor(_b, top, _raid.BestPermille(top), false);
+                    int sweepPays = RaidService.MedalsFor(_b, cleared, 1000, true);
+                    if (_raid.BestPermille(top) > 0 && tryPays < sweepPays)
+                    {
+                        _raid.TrySweep(cleared, out _);
+                        BuyRaidShop();
+                        return false;
+                    }
+                }
+
+                if (cleared >= top)
+                {
+                    _raid.TrySweep(cleared, out _);
+                    BuyRaidShop();
+                    return false;
+                }
+
+                return _raid.TryEnter(top, _runner).Ok;
+            }
+
+            /// <summary>D-175: everything affordable in the raid shop, in list order.</summary>
+            private void BuyRaidShop()
+            {
+                for (int i = 0; i < RaidService.Shop.Length; i++)
+                    while (_raid.CanBuy(i) && _raid.TryBuy(i).Ok) { }
+            }
+
             /// <summary>Starts the next queued dungeon or tower run once the runner is back on a stage.</summary>
             private void StartNextRun()
             {
                 while (_runs.Count > 0 && !_runner.InDungeon)
                 {
                     DungeonKind kind = _runs.Peek();
-                    bool started = kind == DungeonKind.Tower
-                        ? _runner.StartTower(_save.towerFloor + 1)
+                    bool started = kind == DungeonKind.Tower ? _runner.StartTower(_save.towerFloor + 1)
+                        : kind == DungeonKind.Raid ? EnterRaid()
                         : _dungeons.TryEnter(kind, _runner).Ok;
                     if (!started && (_runner.State == StageState.BossIntro || _runner.State == StageState.BossTimer)) return;
                     _runs.Dequeue();
@@ -413,6 +461,7 @@ namespace SoloHero.Core.Balance
             {
                 // D-118: the player claims finished achievements before spending; the gems feed gem pulls.
                 _achievements.ClaimAll();
+                BuyRaidShop();
                 if (_spender.Spend(_save.highestStage + 1, _s.MaxPurchasesPerDecision, _s.SpendAffordableShare))
                     CombatLoadout.Apply(_runner, _b, _save);
             }

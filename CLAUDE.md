@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|---|
 | **GDD** | `_bmad-output/planning-artifacts/gdds/gdd-solohero-2026-09-20/gdd.md` | 설계 단일 출처. `Number Balancing` 상수표가 모든 수치의 원본 |
 | Epics | 같은 폴더 `epics.md` | 10 에픽 / 144 스토리 (E10 = 출시 후 1년 로드맵) |
-| Decision log | 같은 폴더 `decision-log.md` | D-001~D-171 |
+| Decision log | 같은 폴더 `decision-log.md` | D-001~D-175 |
 | **Architecture** | `_bmad-output/planning-artifacts/architecture/arch-solohero-2026-09-20/game-architecture.md` | 결정 D1~D15, ADR 1~7, 구조, 패턴(코드 예시), 검증 |
 | **Project context** | `_bmad-output/project-context.md` | **코드를 만지기 전에 읽는 규칙 62개.** 아키텍처와 충돌 시 아키텍처가 우선 |
 | 출시 후 1년 계획 | `_bmad-output/planning-artifacts/roadmap/content-roadmap-2026-10-14.md` | 365일 시뮬 측정, 후반 곡선, 콘텐츠 로드맵 L-01~L-24. 맨 위 진행 기록에 채택된 항목(D 번호). P0(L-01·02·03·04·08·11·16) 완료 = D-151~D-156 |
@@ -63,6 +63,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **2026-10-15 잉크 셀 그림체** (D-168): 도트 → 매끈한 잉크 셀. 캐릭터 55종은 `python tools/art/build3d.py`(Blender ×6 → `hdize.py`, 3텍셀/칸, 클립마다 발 기준으로 잘라 4096 넘으면 줄바꿈 `_{n}r{rows}`; `--pixel`은 옛 경로, 전체 1.5~2시간), 머리 0.75배·다리 1.3배. 영웅·직업 `skill` 클립(스킬 시전마다 `CombatWorldView.PlayHeroSkill`). 이펙트는 `vfxhd.py`(도트 시트 → 매끈 ×2, 광채 1배), 맵은 `mapgen_hd.py`(bggen·floorgen 테마 그대로 ×3). 임포터 `SpriteImportPreset`이 폴더별 PPU·바이리니어·Android ASTC 6×6. UI 속 캐릭터 크기는 `UiFlipbook.Fit`. 전직 단계마다 갑옷·머리 장식이 늘어난다(D-169, `chibi3d.build_gear`, 초보자는 맨머리·목검, 영웅 몸 1.25배)
 - **2026-10-15 출시 준비 정리** (D-170): 스토어 스크린샷 8장·대표 이미지·소개문을 잉크 셀 빌드로 갱신(촬영은 1080×1920 `wm size` + 저장 시드, 비개발 x86_64 빌드 — 개발 빌드는 FPS가 찍힌다). 분석 `stage_stall`·`axis_cap`·`tier_enter`(로드맵 §6, `GameplayTelemetry` + 신뢰 시계). 던전·탑 `나가기`(`StageRunner.LeaveRun`). 펫 칸·카드 크기, 전투력 띠 가림 수정. 패스 기준일 2026-10-12. P1 화면 에뮬레이터 QA 완료
 - **2026-10-15 보상 연출** (D-171): `Game/UI/Common/RewardFx`(아이콘이 받은 자리에서 자기 칸으로 날아가고 칸이 튐, "+N", 입자; `RewardSnapshot` 전후 차이로 판단, `_rewardFx` 필드가 있는 씬 컴포넌트는 UI 빌더가 자동 연결)와 `ClaimGate`(가이드 퀘스트 0.6초, 그 밖 받기 0.35초). 큰 순간은 `RewardFx.Celebrate`(리본+번쩍임+`SfxId.Fanfare`) — 장 첫 클리어·단계 개방·전직·컬렉션 세트·탑 50층, `CombatFx`가 저장 변화를 보고 재생. 효과음 추가는 `sfxgen.py` + `SfxId` + `ArtBuilder.BuildAudioBatch`(아트 재임포트 없이 사운드 뱅크만)
+- **2026-10-15 100회 소환·픽업·재료 던전·주간 레이드** (D-172~D-175, 로드맵 출시 후 항목을 앞당김): 소환 아래 줄 10회 / 100회 / 젬 10회(`TryPullTens`), 소환권 한 번에 100장, 10개 넘는 결과는 10×10 칸 격자(`GachaTile`). 픽업 소환(`PickupCatalog`, 등급 안 70%, 일정은 `config/events`에 `template: pickup_pet_{id}`·`pickup_skill_{k}` — 이벤트와 동시에, 확률 공시에 픽업 줄). 재료 던전(`DungeonKind.Material`, 2마리마다 각성석) + 스킬 각성(최대 레벨 스킬 ★1~5, 저장 `awakenStones`·`ownedSkillStars`, 스킬 창 레벨업 버튼이 각성으로 바뀜). 주간 레이드(`RaidService`·`RaidPatterns`·`StageRunner.StartRaid`, `RaidPresenter` — 메뉴의 크레딧 자리, 주 3회·10단계·60초·패턴 3종·메달 상점, 저장 `raid*`). 365일 시뮬(라이트 무광고 6경로 × 2시드, Mono 드라이버): 각성·레이드 없음 1개월 8-6 · 3개월 14-8 · 6개월 20-2 · 1년 24-9 → 둘 다 넣고 8-8 · 14-9 · 20-9 · 25-9(무광고 목표 띠 30일 7~8장·90일 12~15·180일 16~20·1년 23~29 안), 각성 별 중앙 1년 109개, 레이드 처치 단계 중앙 30일 1 · 90일 5 · 180일 8 · 1년 10.
 - 빌드는 `libFirebaseCppApp` 포함을 자동 검사하고, EDM4U가 pom을 `srcaar`로 바꾸면 빌드 전에 되돌린다
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 

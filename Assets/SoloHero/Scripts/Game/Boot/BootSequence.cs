@@ -172,10 +172,9 @@ namespace SoloHero.Game.Boot
             Services.Register(new GemShop(balance, requester));
             var daily = new SoloHero.Core.Daily.DailyService(balance, _data, clock, requester);
             Services.Register(daily);
-            // D-156: events count the same actions as the daily missions.
-            var events = new SoloHero.Core.Events.EventService(balance, _data, clock, requester);
+            // D-156: events count the same actions as the daily missions (D-173: made in RegisterGrowth for the pickups).
+            var events = Services.Get<SoloHero.Core.Events.EventService>();
             daily.Recorded += events.Record;
-            Services.Register(events);
             // D-163: the season pass earns XP from claimed missions and kills.
             var pass = new SoloHero.Core.Pass.PassService(balance, _data, clock, requester);
             daily.Recorded += pass.Record;
@@ -185,6 +184,8 @@ namespace SoloHero.Game.Boot
             // D-128 daily shop, D-130 infinite tower.
             Services.Register(new ShopService(balance, _data, clock, requester));
             Services.Register(new SoloHero.Core.Stage.TowerService(balance, _data, requester));
+            // D-175: the weekly raid (entries and shop on the trusted clock's local week).
+            Services.Register(new SoloHero.Core.Stage.RaidService(balance, _data, clock, requester));
         }
 
         private void RegisterSettingsAndAudio()
@@ -229,8 +230,11 @@ namespace SoloHero.Game.Boot
                 Services.Get<IRandom>(),
                 GachaCatalog.Standard(balance));
             Services.Register(gacha);
-            Services.Register(new SkillSummonService(balance, GachaTableValues.FromBalance(balance), Services.Get<IRandom>()));
-            Services.Register(new SoloHero.Core.Pets.PetSummonService(balance, GearTableValues.FromBalance(balance), Services.Get<IRandom>()));
+            // D-173: the event schedule also opens pickup banners for the pet and skill summons.
+            var pickup = new SoloHero.Core.Events.EventService(balance, _data, Services.Get<IClock>(), requester);
+            Services.Register(pickup);
+            Services.Register(new SkillSummonService(balance, GachaTableValues.FromBalance(balance), Services.Get<IRandom>(), pickup));
+            Services.Register(new SoloHero.Core.Pets.PetSummonService(balance, GearTableValues.FromBalance(balance), Services.Get<IRandom>(), pickup));
             Services.Register(new TutorialService(balance, gacha, requester));
             Services.Register(new SoloHero.Core.Progression.GuideQuestService(balance, _data, requester));
             Services.Register(new SoloHero.Core.Progression.AchievementService(_data, requester));

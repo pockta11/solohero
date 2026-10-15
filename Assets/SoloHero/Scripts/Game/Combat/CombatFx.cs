@@ -140,6 +140,8 @@ namespace SoloHero.Game.Combat
             runner.Hero.AttackRequested += OnBasicSwing;
             runner.StateChanged += OnStateChanged;
             runner.StageCleared += OnStageCleared;
+            runner.RaidWarned += OnRaidWarned;
+            runner.RaidStruck += OnRaidStruck;
             _shownLevel = _save != null ? _save.heroLevel : -1;
         }
 
@@ -150,6 +152,8 @@ namespace SoloHero.Game.Combat
             _hooked.Hero.AttackRequested -= OnBasicSwing;
             _hooked.StateChanged -= OnStateChanged;
             _hooked.StageCleared -= OnStageCleared;
+            _hooked.RaidWarned -= OnRaidWarned;
+            _hooked.RaidStruck -= OnRaidStruck;
             _hooked = null;
         }
 
@@ -386,6 +390,72 @@ namespace SoloHero.Game.Combat
             if (_rewardFx != null) _rewardFx.Celebrate(text, color, seconds);
             else if (_cutIn != null) _cutIn.PlayText(text, color, true, seconds);
         }
+
+        private static readonly Color RaidWarnColor = new Color(1f, 0.36f, 0.3f, 1f);
+        private static readonly Color RaidSummonColor = new Color(0.72f, 0.42f, 1f, 1f);
+
+        /// <summary>
+        /// D-175: a raid move's warning - the alarm, its name over the boss, and for the slam a red circle as wide as its
+        /// reach (step back out of it, ranged heroes already stand clear); the summon draws a violet circle.
+        /// </summary>
+        private void OnRaidWarned(RaidPattern move)
+        {
+            Play(SfxId.Warn);
+            Vector3 feet = _view != null ? _view.BossFeet : Vector3.zero;
+            _rewardFx?.Label(Strings.Get(RaidWarnKey(move)), RewardFx.ScreenOf(feet + new Vector3(0f, 2.6f, 0f)), RaidWarnColor);
+            if (LowEffect || _set == null) return;
+            if (move == RaidPattern.Slam)
+            {
+                VfxClip circle = _set.Find("circle4");
+                Color red = RaidWarnColor;
+                red.a = 0.85f;
+                if (circle != null) _vfx?.Play(circle.frames, circle.fps * 0.6f, new Vector3(feet.x, 0f, 0f), RaidCircleScale(), red, 3, false);
+            }
+            else if (move == RaidPattern.Summon)
+            {
+                VfxClip circle = _set.Find("circle3");
+                if (circle != null) _vfx?.Play(circle.frames, circle.fps * 0.6f, new Vector3(feet.x, 0f, 0f), 1.3f, RaidSummonColor, 3, false);
+            }
+        }
+
+        /// <summary>D-175: a landed move - the slam's shock ring, the charge's lunge, the summon's flash, and a shake.</summary>
+        private void OnRaidStruck(RaidPattern move, double damage)
+        {
+            Vector3 feet = _view != null ? _view.BossFeet : Vector3.zero;
+            switch (move)
+            {
+                case RaidPattern.Slam:
+                    Play(SfxId.Slam);
+                    if (!LowEffect && _set != null)
+                    {
+                        VfxClip shock = _set.Find("shock");
+                        if (shock != null) _vfx?.Play(shock.frames, shock.fps, new Vector3(feet.x, 0.3f, 0f), RaidCircleScale(), RaidWarnColor, 4, false);
+                    }
+
+                    Shake(BossShake * 1.2f, 0.35f);
+                    break;
+                case RaidPattern.Charge:
+                    Play(SfxId.Slam);
+                    _view?.LungeBoss(1.6f);
+                    Shake(BossShake, 0.3f);
+                    break;
+                case RaidPattern.Summon:
+                    Play(SfxId.SkillMagic);
+                    if (!LowEffect && _set != null)
+                    {
+                        VfxClip flash = _set.Find("flash");
+                        if (flash != null) _vfx?.Play(flash.frames, flash.fps, new Vector3(feet.x, EffectY, 0f), 1.6f, RaidSummonColor, VfxPool.SortingOrder, true);
+                    }
+
+                    break;
+            }
+        }
+
+        /// <summary>The magic circle art is about 2.4 units wide at scale 1; the slam reaches RAID_SLAM_RANGE either side.</summary>
+        private float RaidCircleScale() => (float)(_balance.RAID_SLAM_RANGE * 2d / 2.4d);
+
+        private static string RaidWarnKey(RaidPattern move) =>
+            move == RaidPattern.Slam ? "raid.warn_slam" : move == RaidPattern.Charge ? "raid.warn_charge" : "raid.warn_summon";
 
         private Vector2 HeroScreen() => _view != null ? RewardFx.ScreenOf(_view.HeroHead) : RewardFx.BattleCenter;
 

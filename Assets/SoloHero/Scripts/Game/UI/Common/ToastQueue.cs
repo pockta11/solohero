@@ -58,6 +58,9 @@ namespace SoloHero.Game.UI.Common
                 case FailReason.NotEnoughStones: return "toast.not_enough_stones";
                 case FailReason.NotEnoughTokens: return "toast.not_enough_tokens";
                 case FailReason.EventEnded: return "toast.event_ended";
+                case FailReason.NotEnoughAwakenStones: return "toast.not_enough_awaken";
+                case FailReason.NeedMaxLevel: return "toast.need_max_level";
+                case FailReason.NotEnoughMedals: return "toast.not_enough_medals";
                 default: return null;
             }
         }

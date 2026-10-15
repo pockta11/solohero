@@ -215,7 +215,7 @@ namespace SoloHero.Game.UI.Panels
             if (_lastAds >= 0 && ads > _lastAds) _daily.Record(MissionKind.WatchAd, ads - _lastAds);
             _lastAds = ads;
             // D-155: dungeon entries used today (a new day resets them, so only rises count).
-            int dungeons = _save.dungeonGoldUsed + _save.dungeonExpUsed + _save.dungeonScoreUsed;
+            int dungeons = _save.dungeonGoldUsed + _save.dungeonExpUsed + _save.dungeonScoreUsed + _save.dungeonMaterialUsed;
             if (_lastDungeons >= 0 && dungeons > _lastDungeons) _daily.Record(MissionKind.Dungeon, dungeons - _lastDungeons);
             _lastDungeons = dungeons;
         }

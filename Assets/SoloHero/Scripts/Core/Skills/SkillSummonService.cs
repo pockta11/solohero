@@ -56,13 +56,18 @@ namespace SoloHero.Core.Skills
         private readonly BalanceValues _balance;
         private readonly GachaTableValues _table;
         private readonly IRandom _rng;
+        private readonly IPickupSource _pickup;
 
-        public SkillSummonService(BalanceValues balance, GachaTableValues table, IRandom rng)
+        public SkillSummonService(BalanceValues balance, GachaTableValues table, IRandom rng, IPickupSource pickup = null)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
             _table = table ?? throw new ArgumentNullException(nameof(table));
             _rng = rng ?? throw new ArgumentNullException(nameof(rng));
+            _pickup = pickup;
         }
+
+        /// <summary>D-173: the skill pickup running now, or null.</summary>
+        public PickupBanner Pickup => _pickup?.ActivePickup(SummonKind.Skill);
 
         public SkillSummonResult TryPull(SaveDataV2 data)
         {
@@ -72,12 +77,17 @@ namespace SoloHero.Core.Skills
             return Pull(data, 1);
         }
 
-        public SkillSummonResult TryPullTen(SaveDataV2 data)
+        public SkillSummonResult TryPullTen(SaveDataV2 data) => TryPullTens(data, 1);
+
+        /// <summary>D-172: <paramref name="tens"/> ten-pulls in one go at the ten-pull price each; all or nothing.</summary>
+        public SkillSummonResult TryPullTens(SaveDataV2 data, int tens)
         {
+            if (tens < 1) tens = 1;
             if (JobService.LineOf(data) == JobLine.None) return SkillSummonResult.Fail(FailReason.JobLocked);
-            if (data.gold < _balance.SKILL_SUMMON_COST_TEN) return SkillSummonResult.Fail(FailReason.NotEnoughGold);
-            data.gold -= _balance.SKILL_SUMMON_COST_TEN;
-            return Pull(data, 10);
+            double cost = _balance.SKILL_SUMMON_COST_TEN * tens;
+            if (data.gold < cost) return SkillSummonResult.Fail(FailReason.NotEnoughGold);
+            data.gold -= cost;
+            return Pull(data, 10 * tens);
         }
 
         /// <summary>D-128: spends up to <paramref name="max"/> skill tickets on as many pulls (after the first job).</summary>
@@ -132,9 +142,12 @@ namespace SoloHero.Core.Skills
 
             // D-157: third-job skills join the pool with the third job.
             SkillDef[] pool = SkillCatalog.OfLine(JobService.LineOf(data), grade, JobService.TierOf(data));
-            SkillDef def = pool[_rng.Next(pool.Length)];
+            // D-173: a pickup takes PICKUP_SHARE % of its grade (the target of the hero's line, when it is in the pool).
+            SkillDef def = pool[Gacha.Pickup.PickIndex(pool, SkillId, Pickup, _balance.PICKUP_SHARE, _rng)];
             return Acquire(data, def);
         }
+
+        private static readonly Func<SkillDef, string> SkillId = d => d.Id;
 
         private SkillPullItem Acquire(SaveDataV2 data, SkillDef def)
         {

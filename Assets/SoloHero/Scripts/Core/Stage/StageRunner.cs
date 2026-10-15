@@ -89,6 +89,28 @@ namespace SoloHero.Core.Stage
         /// <summary>D-130: in the infinite tower (fighting or showing the result).</summary>
         public bool InTower => _dungeon == DungeonKind.Tower;
 
+        /// <summary>D-175: a weekly raid run is on.</summary>
+        public bool InRaid => _dungeon == DungeonKind.Raid;
+
+        /// <summary>D-175: the raid level of the run on.</summary>
+        public int RaidLevel { get; private set; }
+
+        /// <summary>D-175: damage dealt to the raid boss so far, and its full HP (0 before it appears).</summary>
+        public double RaidDamage { get; private set; }
+        public double RaidBossHp { get; private set; }
+
+        /// <summary>D-175: what the last raid run paid.</summary>
+        public RaidResult LastRaid { get; private set; }
+
+        /// <summary>D-175: the boss's pattern clock (the view draws its warning).</summary>
+        public RaidPatterns Raid { get; } = new RaidPatterns();
+
+        /// <summary>D-175: a raid move's warning started.</summary>
+        public event Action<RaidPattern> RaidWarned;
+
+        /// <summary>D-175: a raid move landed, with the damage it did to the hero (0 for a miss or a summon).</summary>
+        public event Action<RaidPattern, double> RaidStruck;
+
         /// <summary>D-130: the tower floor being fought.</summary>
         public int TowerFloor { get; private set; }
 
@@ -190,6 +212,43 @@ namespace SoloHero.Core.Stage
         }
 
         /// <summary>
+        /// D-175 (L-14): leaves the current stage for weekly raid level <paramref name="level"/>: its boss alone, after the
+        /// boss intro, for RAID_TIME seconds; the boss fights back with patterns, the hero falling ends the run. Every
+        /// skill starts ready (a boss fight). Refused during a boss fight or another run.
+        /// </summary>
+        public bool StartRaid(int level)
+        {
+            if (level < 1 || InDungeon) return false;
+            if (State == StageState.BossIntro || State == StageState.BossTimer) return false;
+            _returnG = _isBoss ? StageIndex.PreviousNormalStage(_g) : _g;
+            _returnRetreat = _retreatMode || _isBoss;
+            _g = RaidService.StageOf(_balance, level);
+            _isBoss = true;
+            _killTarget = 1;
+            _kills = 0;
+            _cleared = false;
+            _deathTimer = 0f;
+            _dungeonTimer = _balance.RAID_TIME;
+            _introTimer = _balance.BOSS_INTRO_TIME;
+            _resultTimer = 0f;
+            DungeonEarned = 0d;
+            DungeonStones = 0;
+            RaidLevel = level;
+            RaidDamage = 0d;
+            RaidBossHp = 0d;
+            _raidBoss = null;
+            Raid.Reset(_balance);
+            _world.ClearAll();
+            _spawner.Reset(1, true);
+            _skills.ResetCooldowns();
+            _pet.Reset();
+            _hero.Reset(_stats);
+            _dungeon = DungeonKind.Raid;
+            SetState(StageState.Dungeon);
+            return true;
+        }
+
+        /// <summary>
         /// D-170: the HUD's leave button ends a dungeon or tower run now, as if its time ran out. What the run paid so
         /// far is kept (the tower pays floor by floor; a gold / EXP run pays kill by kill plus its stones; the score
         /// dungeon scores the damage dealt so far), and the runner returns to the stage it left after the result.
@@ -199,6 +258,7 @@ namespace SoloHero.Core.Stage
             if (!InDungeon || State != StageState.Dungeon) return false;
             if (InTower) FinishTower();
             else if (_dungeon == DungeonKind.Score) FinishScore();
+            else if (InRaid) FinishRaid(false);
             else FinishDungeon();
             return true;
         }
@@ -357,6 +417,7 @@ namespace SoloHero.Core.Stage
                 case StageState.Dungeon:
                     if (InTower) TickTower(dt);
                     else if (_dungeon == DungeonKind.Score) TickScore(dt);
+                    else if (InRaid) TickRaid(dt);
                     else TickDungeon(dt);
                     break;
                 case StageState.DungeonResult:
@@ -454,6 +515,15 @@ namespace SoloHero.Core.Stage
                     _save.gold += gold;
                     DungeonEarned += gold;
                 }
+                else if (_dungeon == DungeonKind.Material)
+                {
+                    // D-174: every MATERIAL_KILLS_PER_STONE kills pay an awakening stone at once.
+                    if (_balance.MATERIAL_KILLS_PER_STONE > 0 && _kills % _balance.MATERIAL_KILLS_PER_STONE == 0)
+                    {
+                        _save.awakenStones++;
+                        DungeonEarned += 1d;
+                    }
+                }
                 else
                 {
                     double exp = Formulas.DungeonExpPerKill(_balance, _g);
@@ -523,6 +593,97 @@ namespace SoloHero.Core.Stage
             DungeonStones = DungeonService.ScoreStones(_balance, ScoreTier);
             _save.breakStones += DungeonStones;
             DungeonService.RecordRun(_save, DungeonKind.Score, ScoreTier);
+            SetState(StageState.DungeonResult);
+            _saveRequester?.RequestSave();
+            DungeonEnded?.Invoke(_dungeon, DungeonEarned);
+        }
+
+        private EnemyBrain _raidBoss;
+
+        /// <summary>D-175: the raid boss fights, warns and strikes; a kill, the timer or the hero falling ends the run.</summary>
+        private void TickRaid(float dt)
+        {
+            if (_introTimer > 0f)
+            {
+                _introTimer -= dt;
+                if (_introTimer <= 0f) SpawnOne(isBoss: true);
+                return;
+            }
+
+            _world.TickEnemies(dt);
+            _skills.Tick(dt, _hero, _world, true);
+            _pet.Tick(dt, _hero, _world);
+            _hero.SetSkillBuffs(_skills.BuffAtk, _skills.BuffAtkSpd, _skills.BuffCrit, _skills.BuffGuard);
+            _hero.Tick(dt, _world);
+
+            EnemyBrain boss = _raidBoss != null && _raidBoss.IsAlive ? _raidBoss : null;
+            RaidPattern landed = Raid.Tick(dt, boss != null && !boss.IsStunned && _hero.State != HeroState.Dead, out RaidPattern warned);
+            if (warned != RaidPattern.None) RaidWarned?.Invoke(warned);
+            if (landed != RaidPattern.None && boss != null) Strike(landed, boss);
+
+            if (boss != null) RaidDamage = Math.Max(0d, boss.MaxHp - boss.Hp);
+            int gained = _world.ResolveDeaths();
+            bool killed = _raidBoss != null && !_raidBoss.IsAlive && RaidBossHp > 0d;
+            if (gained > 0) _save.totalKills += gained;
+            if (killed)
+            {
+                RaidDamage = RaidBossHp;
+                _save.bossKills++;
+                FinishRaid(true);
+                return;
+            }
+
+            _dungeonTimer -= dt;
+            bool down = _hero.Hp <= 0d || _hero.State == HeroState.Dead;
+            if (down && _hero.State != HeroState.Dead) _hero.Kill();
+            if (_dungeonTimer > 0f && !down) return;
+            FinishRaid(false);
+        }
+
+        /// <summary>D-175: what a landed move does (X-axis rules: the slam reaches RAID_SLAM_RANGE from the boss).</summary>
+        private void Strike(RaidPattern move, EnemyBrain boss)
+        {
+            double damage = 0d;
+            switch (move)
+            {
+                case RaidPattern.Slam:
+                    if (Math.Abs(_hero.X - boss.X) <= _balance.RAID_SLAM_RANGE)
+                        damage = DamageCalc.EnemyHit(_balance, boss.Atk * _balance.RAID_SLAM_MULT, _hero.Def);
+                    break;
+                case RaidPattern.Charge:
+                    damage = DamageCalc.EnemyHit(_balance, boss.Atk * _balance.RAID_CHARGE_MULT, _hero.Def);
+                    break;
+                case RaidPattern.Summon:
+                    for (int i = 0; i < _balance.RAID_SUMMON_COUNT; i++) SpawnRaidMinion(boss, i);
+                    break;
+            }
+
+            if (damage > 0d) _hero.ApplyDamage(damage);
+            RaidStruck?.Invoke(move, damage);
+        }
+
+        /// <summary>D-175: a minion of the raid's stage next to the boss (RAID_MINION_HP_MULT x the HP; it walks to the hero).</summary>
+        private void SpawnRaidMinion(EnemyBrain boss, int index)
+        {
+            if (!_world.TryActivateSlot(out EnemyBrain brain)) return;
+            double hp = Formulas.EnemyHp(_balance, _g) * _balance.RAID_MINION_HP_MULT;
+            double atk = Formulas.EnemyAtk(_balance, _g);
+            double speed = _balance.ENEMY_MOVE_SPEED;
+            brain.Reset(_balance, hp, atk, _balance.ENEMY_ATK_INTERVAL, boss.X - 0.4d + index * _balance.SPAWN_WAVE_SPACING, false,
+                index + 1, EnemyRole.Melee, speed);
+        }
+
+        private void FinishRaid(bool killed)
+        {
+            _dungeonTimer = 0f;
+            _introTimer = 0f;
+            _resultTimer = 0f;
+            if (!killed && _raidBoss != null && _raidBoss.IsAlive) RaidDamage = Math.Max(0d, _raidBoss.MaxHp - _raidBoss.Hp);
+            _world.ClearAll();
+            _raidBoss = null;
+            double share = RaidBossHp > 0d ? RaidDamage / RaidBossHp : 0d;
+            LastRaid = RaidService.Settle(_balance, _save, RaidLevel, share, killed);
+            DungeonEarned = LastRaid.Medals;
             SetState(StageState.DungeonResult);
             _saveRequester?.RequestSave();
             DungeonEnded?.Invoke(_dungeon, DungeonEarned);
@@ -667,6 +828,13 @@ namespace SoloHero.Core.Stage
                     hp *= _balance.SCORE_HP_MULT;
                     atk = 0d;
                 }
+                else if (_dungeon == DungeonKind.Raid)
+                {
+                    // D-175: the raid boss is tougher and hits like its stage's enemies (a boss of the chapters barely does).
+                    hp *= _balance.RAID_HP_MULT;
+                    atk = Formulas.EnemyAtk(_balance, _g) * _balance.RAID_ATK_MULT;
+                    RaidBossHp = hp;
+                }
                 interval = _balance.BOSS_ATK_INTERVAL;
                 speed = _balance.ENEMY_MOVE_SPEED * _balance.BOSS_SPEED_MULT;
             }
@@ -680,6 +848,7 @@ namespace SoloHero.Core.Stage
             // D-081: a wave comes in a line, front enemy first.
             double x = _world.SpawnXAheadOfHero() + (isBoss ? 0 : _spawner.WaveSlot) * _balance.SPAWN_WAVE_SPACING;
             brain.Reset(_balance, hp, atk, interval, x, isBoss, isBoss ? 0 : _spawner.Spawned - 1, role, speed);
+            if (isBoss && _dungeon == DungeonKind.Raid) _raidBoss = brain;
             return true;
         }
 

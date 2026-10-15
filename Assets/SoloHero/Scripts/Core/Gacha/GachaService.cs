@@ -36,14 +36,22 @@ namespace SoloHero.Core.Gacha
             return GachaBatchResult.Ok(items);
         }
 
-        public GachaBatchResult TryPullTen(SaveDataV2 data)
+        public GachaBatchResult TryPullTen(SaveDataV2 data) => TryPullTens(data, 1);
+
+        /// <summary>
+        /// D-172: <paramref name="tens"/> ten-pulls in one go (the x100 button is ten of them) at the ten-pull price each;
+        /// all or nothing.
+        /// </summary>
+        public GachaBatchResult TryPullTens(SaveDataV2 data, int tens)
         {
-            if (data.gold < _balance.GACHA_COST_TEN)
+            if (tens < 1) tens = 1;
+            double cost = _balance.GACHA_COST_TEN * tens;
+            if (data.gold < cost)
                 return GachaBatchResult.Fail(FailReason.NotEnoughGold);
 
-            data.gold -= _balance.GACHA_COST_TEN;
-            var items = new GachaPullItem[10];
-            for (int i = 0; i < 10; i++)
+            data.gold -= cost;
+            var items = new GachaPullItem[10 * tens];
+            for (int i = 0; i < items.Length; i++)
                 items[i] = ExecuteOnePull(data);
             return GachaBatchResult.Ok(items);
         }

@@ -55,13 +55,18 @@ namespace SoloHero.Core.Pets
         private readonly BalanceValues _balance;
         private readonly GearTableValues _table;
         private readonly IRandom _rng;
+        private readonly IPickupSource _pickup;
 
-        public PetSummonService(BalanceValues balance, GearTableValues table, IRandom rng)
+        public PetSummonService(BalanceValues balance, GearTableValues table, IRandom rng, IPickupSource pickup = null)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
             _table = table ?? throw new ArgumentNullException(nameof(table));
             _rng = rng ?? throw new ArgumentNullException(nameof(rng));
+            _pickup = pickup;
         }
+
+        /// <summary>D-173: the pet pickup running now, or null.</summary>
+        public PickupBanner Pickup => _pickup?.ActivePickup(SummonKind.Pet);
 
         public bool IsUnlocked(SaveDataV2 data) => IsUnlocked(_balance, data);
 
@@ -76,12 +81,17 @@ namespace SoloHero.Core.Pets
             return Pull(data, 1);
         }
 
-        public PetSummonResult TryPullTen(SaveDataV2 data)
+        public PetSummonResult TryPullTen(SaveDataV2 data) => TryPullTens(data, 1);
+
+        /// <summary>D-172: <paramref name="tens"/> ten-pulls in one go at the ten-pull price each; all or nothing.</summary>
+        public PetSummonResult TryPullTens(SaveDataV2 data, int tens)
         {
+            if (tens < 1) tens = 1;
             if (!IsUnlocked(data)) return PetSummonResult.Fail(FailReason.Locked);
-            if (data.gold < _balance.PET_SUMMON_COST_TEN) return PetSummonResult.Fail(FailReason.NotEnoughGold);
-            data.gold -= _balance.PET_SUMMON_COST_TEN;
-            return Pull(data, 10);
+            double cost = _balance.PET_SUMMON_COST_TEN * tens;
+            if (data.gold < cost) return PetSummonResult.Fail(FailReason.NotEnoughGold);
+            data.gold -= cost;
+            return Pull(data, 10 * tens);
         }
 
         /// <summary>D-120: free pulls (an ad summon); same rates, pity and counters as paid ones.</summary>
@@ -142,8 +152,11 @@ namespace SoloHero.Core.Pets
             }
 
             PetDef[] pool = PetCatalog.OfGrade(grade);
-            return Acquire(data, pool[_rng.Next(pool.Length)]);
+            // D-173: a pickup takes PICKUP_SHARE % of its grade.
+            return Acquire(data, pool[Gacha.Pickup.PickIndex(pool, PetId, Pickup, _balance.PICKUP_SHARE, _rng)]);
         }
+
+        private static readonly Func<PetDef, string> PetId = d => d.Id;
 
         private PetPullItem Acquire(SaveDataV2 data, PetDef def)
         {

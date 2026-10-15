@@ -42,6 +42,15 @@ namespace SoloHero.Core.Common
         NotEnoughTokens,
 
         /// <summary>D-156: no event is running (it ended while the popup was open).</summary>
-        EventEnded
+        EventEnded,
+
+        /// <summary>D-174: not enough awakening stones for the next star.</summary>
+        NotEnoughAwakenStones,
+
+        /// <summary>D-174: the skill is not at its max level yet (awakening starts there).</summary>
+        NeedMaxLevel,
+
+        /// <summary>D-175: not enough raid medals.</summary>
+        NotEnoughMedals
     }
 }

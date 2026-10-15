@@ -35,5 +35,11 @@ namespace SoloHero.Game.Audio
 
         /// <summary>D-171: job advance, chapter clear, set complete.</summary>
         Fanfare = 24,
+
+        /// <summary>D-175: a raid boss warns of its next move.</summary>
+        Warn = 25,
+
+        /// <summary>D-175: a raid boss's slam or charge lands.</summary>
+        Slam = 26,
     }
 }

@@ -829,6 +829,66 @@ def spell():
     return L.image()
 
 
+def awaken():
+    """D-174 awakening stone: a violet crystal shard with a five-point star cut into it and a cyan glint."""
+    L = new()
+    ramp = (hexc('#F0D8FF'), hexc('#A35CF0'), hexc('#4A1C9C'))
+    body = L.polygon([(64, 6), (98, 40), (88, 100), (64, 122), (40, 100), (30, 40)])
+    outline(L, body)
+    fill(L, body, ramp, hi=False)
+    L.over(cov(L.polygon([(64, 6), (98, 40), (64, 52), (30, 40)])), hexc('#E8C8FF'))
+    L.over(cov(L.polygon([(30, 40), (64, 52), (64, 122), (40, 100)])), hexc('#B47CF4', 210))
+    L.over(cov(L.polygon([(98, 40), (88, 100), (64, 122), (64, 52)])), hexc('#6A2CC0', 220))
+    star = L.polygon(star_pts(64, 76, 24, 10))
+    L.over(cov(star + 3), hexc('#2A0E5C', 210))
+    L.over(cov(star), vgrad(L, 52, 100, hexc('#FFFFFF'), hexc('#FFE070')))
+    L.over(cov(L.polygon(star_pts(92, 20, 12, 3, 4, 0))), hexc('#B8FFFF'))
+    return L.image()
+
+
+def raid():
+    """D-175 weekly raid: a horned demon head with glowing eyes over crossed swords."""
+    L = new()
+    blade1 = seg(L, 18, 112, 110, 20, 6)
+    blade2 = seg(L, 110, 112, 18, 20, 6)
+    head = L.ellipse(64, 70, 34, 32)
+    horn_l = L.polygon([(36, 52), (14, 14), (50, 40)])
+    horn_r = L.polygon([(92, 52), (114, 14), (78, 40)])
+    d = union(head, horn_l, horn_r)
+    outline(L, union(d, blade1, blade2))
+    L.over(cov(union(blade1, blade2)), hexc('#C9D2E6'))
+    fill(L, union(horn_l, horn_r), (hexc('#FFF4D8'), hexc('#E0C89A'), hexc('#9C7A48')))
+    fill(L, head, RED)
+    for cx in (50, 78):
+        eye = L.polygon([(cx - 11, 62), (cx + 11, 62), (cx, 74)] if cx < 64 else [(cx - 11, 62), (cx + 11, 62), (cx, 74)])
+        L.over(cov(eye + 2), INK)
+        L.over(cov(eye), hexc('#FFE860'))
+    mouth = rrect_at(L.x, L.y, 48, 84, 80, 92, 3)
+    L.over(cov(mouth), INK)
+    for x0 in (54, 64, 74):
+        L.over(cov(L.polygon([(x0 - 4, 84), (x0 + 4, 84), (x0, 90)])), WHITE)
+    gloss(L, head, 50, 50, 14, 7, 120)
+    return L.image()
+
+
+def medal():
+    """D-175 raid medal (the raid shop's currency): a red ribbon under a gold medal with a skull emboss."""
+    L = new()
+    ribbon = union(L.polygon([(34, 4), (58, 4), (70, 50), (46, 50)]), L.polygon([(94, 4), (70, 4), (58, 50), (82, 50)]))
+    coin = L.circle(64, 80, 40)
+    outline(L, union(ribbon, coin))
+    fill(L, ribbon, RED, hi=False)
+    fill(L, coin, GOLD)
+    L.over(cov(L.circle(64, 80, 30) + 2.5), hexc('#B06A08', 200))
+    L.over(cov(L.circle(64, 80, 30)), vgrad(L, 50, 110, hexc('#FFE27A'), hexc('#F0A820')))
+    skull = union(L.circle(64, 76, 14), rrect_at(L.x, L.y, 56, 82, 72, 96, 3))
+    L.over(cov(skull), hexc('#8A4A06', 230))
+    for cx in (58, 70):
+        L.over(cov(L.circle(cx, 77, 4)), hexc('#FFE27A'))
+    gloss(L, coin, 48, 60, 14, 8, 140)
+    return L.image()
+
+
 def make():
     save(coin(), 'coin')
     save(gem(), 'gem')
@@ -873,6 +933,9 @@ def make():
     save(dex_stat(), 'dex')
     save(vit_stat(), 'vit')
     save(spell(), 'spell')
+    save(awaken(), 'awaken')
+    save(raid(), 'raid')
+    save(medal(), 'medal')
 
 
 if __name__ == '__main__':

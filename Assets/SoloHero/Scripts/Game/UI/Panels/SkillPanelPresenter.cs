@@ -65,6 +65,10 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text _ownedCount;
         [SerializeField] private TapGuardButton _levelButton;
         [SerializeField] private Text _levelCost;
+        [Tooltip("D-174: the level button's icon - gold below max level, an awakening stone at max.")]
+        [SerializeField] private Image _levelIcon;
+        [SerializeField] private Sprite _goldIcon;
+        [SerializeField] private Sprite _awakenIcon;
         [SerializeField] private TapGuardButton _equipButton;
         [SerializeField] private Text _equipLabel;
         [SerializeField] private UiPunch _detailPunch;
@@ -84,6 +88,7 @@ namespace SoloHero.Game.UI.Panels
         private double _shownGold = -1d;
         private int _shownHeroLevel = -1;
         private int _shownPulls = -1;
+        private int _shownAwaken = -1;
         private readonly object[] _descArgs = new object[14];
 
         private void OnEnable()
@@ -107,7 +112,8 @@ namespace SoloHero.Game.UI.Panels
         {
             if (_save == null) return;
             if (_picking) PulseSlots();
-            if (_save.gold == _shownGold && _save.heroLevel == _shownHeroLevel && _save.skillPullCount == _shownPulls) return;
+            if (_save.gold == _shownGold && _save.heroLevel == _shownHeroLevel && _save.skillPullCount == _shownPulls
+                && _save.awakenStones == _shownAwaken) return;
             Refresh();
         }
 
@@ -142,6 +148,13 @@ namespace SoloHero.Game.UI.Panels
         public void LevelUp()
         {
             if (_skills == null) return;
+            // D-174: a max-level skill's button awakens it instead.
+            if (_skills.Level(_selected) >= _balance.SKILL_MAX_LEVEL)
+            {
+                Awaken();
+                return;
+            }
+
             Result r = _skills.TryLevelUp(_selected);
             if (!r.Ok)
             {
@@ -156,6 +169,27 @@ namespace SoloHero.Game.UI.Panels
             if (_detailPunch != null) _detailPunch.Play(0.4f);
             Play(SfxId.Upgrade);
             _rewardFx?.Sparkle(new Color(0.75f, 0.6f, 1f, 1f));
+            Refresh();
+        }
+
+        /// <summary>D-174: one awakening star for stones (genre "awakening"): a bigger sparkle and the epic chime.</summary>
+        private void Awaken()
+        {
+            Result r = _skills.TryAwaken(_selected);
+            if (!r.Ok)
+            {
+                Fail(r.Reason);
+                return;
+            }
+
+            if (_session != null) _session.RefreshLoadout();
+            int stars = _skills.Stars(_selected);
+            GameAnalytics.Log(AnalyticsEvents.SkillAwaken,
+                AnalyticsParam.Of(AnalyticsEvents.PSkill, _selected),
+                AnalyticsParam.Of(AnalyticsEvents.PLevel, stars));
+            if (_detailPunch != null) _detailPunch.Play(0.7f);
+            Play(SfxId.GradeEpic);
+            _rewardFx?.Sparkle(new Color(0.82f, 0.6f, 1f, 1f), Strings.Format("fx.awaken", stars));
             Refresh();
         }
 
@@ -220,6 +254,7 @@ namespace SoloHero.Game.UI.Panels
             _shownGold = _save.gold;
             _shownHeroLevel = _save.heroLevel;
             _shownPulls = _save.skillPullCount;
+            _shownAwaken = _save.awakenStones;
             DrawSlots();
             DrawGrid();
             DrawDetail();
@@ -286,7 +321,11 @@ namespace SoloHero.Game.UI.Panels
                 Set(_cellBadges, i, has);
                 Set(_cellLocks, i, !has);
                 if (has && i < _cellLevels.Length && _cellLevels[i] != null)
-                    _cellLevels[i].text = Strings.Format("skill.lv", level);
+                {
+                    // D-174: an awakened skill shows its stars instead of its (max) level.
+                    int stars = SkillBook.GetStars(_save, def.Id);
+                    _cellLevels[i].text = stars > 0 ? Strings.Format("skill.stars", stars) : Strings.Format("skill.lv", level);
+                }
 
                 int slot = has ? SkillBook.SlotOf(_save, def.Id) : -1;
                 bool equipped = slot >= 0 && SkillService.IsSlotUnlocked(_balance, slot, _save.heroLevel);
@@ -342,6 +381,9 @@ namespace SoloHero.Game.UI.Panels
                 _detailInfo.text = owned
                     ? Strings.Format("skill.info", level, _balance.SKILL_MAX_LEVEL, Num(def.Cooldown))
                     : Strings.Format("skill.info_unowned", Num(def.Cooldown));
+                // D-174: stars and the stones held once the skill can awaken.
+                if (owned && level >= _balance.SKILL_MAX_LEVEL)
+                    _detailInfo.text += "  " + Strings.Format("skill.awaken_info", SkillBook.GetStars(_save, def.Id), _balance.AWAKEN_MAX_STARS, _save.awakenStones);
                 if (def.Line != JobLine.None)
                 {
                     string line = Strings.Format("skill.line_only", Strings.Get(LineKeys[(int)def.Line]));
@@ -349,12 +391,27 @@ namespace SoloHero.Game.UI.Panels
                 }
             }
 
-            if (_detailDesc != null) _detailDesc.text = Strings.Format(def.DescKey, DescArgs(def, shownLevel));
+            int starsNow = owned ? SkillBook.GetStars(_save, def.Id) : 0;
+            if (_detailDesc != null) _detailDesc.text = Strings.Format(def.DescKey, DescArgs(def, shownLevel, starsNow));
 
             bool max = level >= _balance.SKILL_MAX_LEVEL;
             double cost = SkillService.UpgradeCost(_balance, def, shownLevel);
-            if (_levelCost != null) _levelCost.text = !owned ? Strings.Get("skill.not_owned") : max ? Strings.Get("char.max") : BigNumberFormat.Format(cost);
-            if (_levelButton != null) _levelButton.SetAvailable(owned && !max && _save.gold >= cost);
+            if (owned && max)
+            {
+                // D-174: the button turns into awakening (stones; done at AWAKEN_MAX_STARS).
+                int awaken = _skills != null ? _skills.AwakenCost(def.Id) : 0;
+                bool done = awaken <= 0;
+                if (_levelCost != null)
+                    _levelCost.text = done ? Strings.Get("skill.awaken_done") : Strings.Format("skill.awaken_cost", starsNow + 1, awaken);
+                if (_levelIcon != null && _awakenIcon != null) _levelIcon.sprite = _awakenIcon;
+                if (_levelButton != null) _levelButton.SetAvailable(!done && _save.awakenStones >= awaken);
+            }
+            else
+            {
+                if (_levelCost != null) _levelCost.text = !owned ? Strings.Get("skill.not_owned") : BigNumberFormat.Format(cost);
+                if (_levelIcon != null && _goldIcon != null) _levelIcon.sprite = _goldIcon;
+                if (_levelButton != null) _levelButton.SetAvailable(owned && !max && _save.gold >= cost);
+            }
 
             int slot = SkillBook.SlotOf(_save, def.Id);
             bool equipped = slot >= 0 && SkillService.IsSlotUnlocked(_balance, slot, _save.heroLevel);
@@ -382,9 +439,9 @@ namespace SoloHero.Game.UI.Panels
         }
 
         /// <summary>Description arguments at <paramref name="level"/>; see the arg list in strings_ko.txt.</summary>
-        private object[] DescArgs(SkillDef def, int level)
+        private object[] DescArgs(SkillDef def, int level, int stars = 0)
         {
-            double scale = Formulas.SkillLevelScale(_balance, level);
+            double scale = Formulas.SkillLevelScale(_balance, level) * Formulas.SkillAwakenScale(_balance, stars);
             _descArgs[0] = Num(def.DamageMult * 100d * scale);
             _descArgs[1] = def.Waves;
             _descArgs[2] = Num(def.DotPercent * scale);

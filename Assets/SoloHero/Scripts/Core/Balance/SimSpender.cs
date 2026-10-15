@@ -133,6 +133,7 @@ namespace SoloHero.Core.Balance
             Advance();
             BreakLimits();
             EnhanceWithStones();
+            Awaken();
             PromoteCheap();
             if (PullToShare()) bought = true;
 
@@ -553,6 +554,36 @@ namespace SoloHero.Core.Balance
                 if (_save.breakStones - StoneEnhance.Cost(_b, EquipmentLevels.Get(_save, best)) < reserve) return;
                 if (!StoneEnhance.TryEnhance(_b, _save, best).Ok) return;
                 StoneLevels++;
+            }
+        }
+
+        /// <summary>D-174 stars bought by the player model.</summary>
+        public int AwakenStars { get; private set; }
+
+        /// <summary>
+        /// D-174: awakening stones go to the cheapest next star, equipped skills first (genre: the loadout before the
+        /// collection).
+        /// </summary>
+        private void Awaken()
+        {
+            for (int guard = 0; guard < 100; guard++)
+            {
+                string best = null;
+                int bestCost = int.MaxValue;
+                for (int i = 0; i < _save.ownedSkills.Count; i++)
+                {
+                    string id = _save.ownedSkills[i];
+                    if (SkillBook.GetLevel(_save, id) < _b.SKILL_MAX_LEVEL) continue;
+                    int cost = _skills.AwakenCost(id);
+                    if (cost <= 0) continue;
+                    if (SkillBook.SlotOf(_save, id) < 0) cost *= 3;
+                    if (cost >= bestCost) continue;
+                    bestCost = cost;
+                    best = id;
+                }
+
+                if (best == null || !_skills.TryAwaken(best).Ok) return;
+                AwakenStars++;
             }
         }
 

@@ -67,13 +67,44 @@ namespace SoloHero.Core.Skills
             {
                 SkillDef def = SkillCatalog.Find(save.ownedSkills[i]);
                 if (def == null) continue;
-                sum += Formulas.SkillOwnedAtk(balance, def.Grade, SkillBook.GetLevel(save, def.Id));
+                sum += Formulas.SkillOwnedAtk(balance, def.Grade, SkillBook.GetLevel(save, def.Id), SkillBook.GetStars(save, def.Id));
             }
 
             return sum;
         }
 
         public int Level(string id) => SkillBook.GetLevel(_data, id);
+
+        /// <summary>D-174: awakening stars of an owned skill.</summary>
+        public int Stars(string id) => SkillBook.GetStars(_data, id);
+
+        /// <summary>D-174: a skill was awakened (id, new stars).</summary>
+        public event Action<string, int> SkillAwakened;
+
+        /// <summary>D-174: stones for the next star of <paramref name="id"/> (0 when it cannot rise).</summary>
+        public int AwakenCost(string id)
+        {
+            SkillDef def = SkillCatalog.Find(id);
+            int stars = SkillBook.GetStars(_data, id);
+            return def == null || stars >= _balance.AWAKEN_MAX_STARS ? 0 : Formulas.SkillAwakenCost(_balance, def.Grade, stars);
+        }
+
+        /// <summary>D-174: a max-level skill climbs a star for awakening stones (genre "awakening").</summary>
+        public Result TryAwaken(string id)
+        {
+            SkillDef def = SkillCatalog.Find(id);
+            if (def == null || !SkillBook.IsOwned(_data, id)) return Result.Fail(FailReason.Locked);
+            if (SkillBook.GetLevel(_data, id) < _balance.SKILL_MAX_LEVEL) return Result.Fail(FailReason.NeedMaxLevel);
+            int stars = SkillBook.GetStars(_data, id);
+            if (stars >= _balance.AWAKEN_MAX_STARS) return Result.Fail(FailReason.MaxLevel);
+            int cost = Formulas.SkillAwakenCost(_balance, def.Grade, stars);
+            if (_data.awakenStones < cost) return Result.Fail(FailReason.NotEnoughAwakenStones);
+            _data.awakenStones -= cost;
+            SkillBook.SetStars(_data, id, stars + 1);
+            SkillAwakened?.Invoke(id, stars + 1);
+            _save?.RequestSave();
+            return Result.Success;
+        }
 
         public Result TryLevelUp(string id)
         {

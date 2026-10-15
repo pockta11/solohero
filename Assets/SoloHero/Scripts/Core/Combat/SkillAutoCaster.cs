@@ -22,6 +22,7 @@ namespace SoloHero.Core.Combat
         private readonly IRandom _random;
         private readonly SkillDef[] _defs;
         private readonly int[] _levels;
+        private readonly double[] _awaken;
         private readonly float[] _cooldown;
         private readonly float[] _buffRemaining;
 
@@ -46,9 +47,11 @@ namespace SoloHero.Core.Combat
             int slots = (balance.SKILL_SLOT_COUNT < 1 ? 1 : balance.SKILL_SLOT_COUNT) + 1;
             _defs = new SkillDef[slots];
             _levels = new int[slots];
+            _awaken = new double[slots];
             _cooldown = new float[slots];
             _buffRemaining = new float[slots];
             for (int i = 0; i < slots; i++) _levels[i] = 1;
+            for (int i = 0; i < slots; i++) _awaken[i] = 1d;
         }
 
         public int SlotCount => _defs.Length;
@@ -83,7 +86,7 @@ namespace SoloHero.Core.Combat
         public double AtkBuffSum => BuffAtk;
 
         /// <summary>Puts a skill (or null for an empty / locked slot) into a slot and resets that slot's timers.</summary>
-        public void SetSlot(int slot, SkillDef def, int level)
+        public void SetSlot(int slot, SkillDef def, int level, int stars = 0)
         {
             if (slot < 0 || slot >= _defs.Length) return;
             if (level < 1) level = 1;
@@ -96,6 +99,8 @@ namespace SoloHero.Core.Combat
 
             _defs[slot] = def;
             _levels[slot] = level;
+            // D-174: awakening stars scale the skill's values on top of its level.
+            _awaken[slot] = Formulas.SkillAwakenScale(_balance, stars);
         }
 
         public SkillDef DefAt(int slot) => slot >= 0 && slot < _defs.Length ? _defs[slot] : null;
@@ -239,7 +244,7 @@ namespace SoloHero.Core.Combat
 
         private void Apply(int slot, SkillDef def, HeroBrain hero, ICombatWorld world)
         {
-            double scale = Formulas.SkillLevelScale(_balance, _levels[slot]);
+            double scale = Formulas.SkillLevelScale(_balance, _levels[slot]) * _awaken[slot];
 
             double heal = 1d + _talents.HealPct;
             if (def.HealPercent > 0d) hero.Heal(hero.MaxHp * def.HealPercent / 100d * scale * heal);
@@ -367,7 +372,7 @@ namespace SoloHero.Core.Combat
             {
                 SkillDef def = _defs[i];
                 if (def == null || def.Buff != stat || _buffRemaining[i] <= 0f) continue;
-                sum += def.BuffAmount * Formulas.SkillLevelScale(_balance, _levels[i]);
+                sum += def.BuffAmount * Formulas.SkillLevelScale(_balance, _levels[i]) * _awaken[i];
             }
 
             return sum;

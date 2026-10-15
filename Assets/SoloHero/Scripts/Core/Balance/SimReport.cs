@@ -43,6 +43,13 @@ namespace SoloHero.Core.Balance
     public sealed class SimDayRow
     {
         public int Day;
+
+        /// <summary>D-174: awakening stars bought so far and stones held at the end of the day.</summary>
+        public int AwakenStars;
+        public int AwakenStones;
+
+        /// <summary>D-175: the highest raid level beaten.</summary>
+        public int RaidCleared;
         public int HighestStage;
         public int HeroLevel;
         public double PlaySeconds;

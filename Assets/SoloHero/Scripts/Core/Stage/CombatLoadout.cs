@@ -89,7 +89,7 @@ namespace SoloHero.Core.Stage
                     : null;
                 // D-104: a skill of another line (an old save, or a job change) stays equipped but does not cast.
                 if (!JobService.CanUse(save, def)) def = null;
-                runner.Skills.SetSlot(slot, def, def != null ? SkillBook.GetLevel(save, def.Id) : 1);
+                runner.Skills.SetSlot(slot, def, def != null ? SkillBook.GetLevel(save, def.Id) : 1, def != null ? SkillBook.GetStars(save, def.Id) : 0);
             }
 
             JobDef job = JobCatalog.Find(save.jobId);

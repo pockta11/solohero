@@ -162,6 +162,29 @@ namespace SoloHero.Core.Save
         public int dungeonScoreUsed;
         public int dungeonScoreBest;
 
+        /// <summary>D-174 material dungeon: entries used today (reset with dungeonDate) and the most kills of one run.</summary>
+        public int dungeonMaterialUsed;
+        public int dungeonMaterialBest;
+
+        /// <summary>
+        /// D-174 skill awakening: the awakening stones held and each owned skill's stars, index-aligned with ownedSkills
+        /// (SkillBook.Align pads an older save with zeros).
+        /// </summary>
+        public int awakenStones;
+        public List<int> ownedSkillStars = new List<int>();
+
+        /// <summary>
+        /// D-175 weekly raid: the week these entries and shop counts belong to (its Monday), entries used, the highest
+        /// level beaten, medals held, the best share of each level's HP dealt (permille, by level - 1) and shop purchases
+        /// this week (index-aligned with RaidService.Shop).
+        /// </summary>
+        public string raidWeek = "";
+        public int raidUsed;
+        public int raidCleared;
+        public int raidMedals;
+        public List<int> raidBest = new List<int>();
+        public List<int> raidShopBought = new List<int>();
+
         /// <summary>
         /// D-163 free season pass: the season these fields belong to, its XP, the levels claimed, and kills not yet
         /// worth a whole XP.

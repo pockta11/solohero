@@ -267,6 +267,7 @@ gacha.pet_locked	{0} 보스를 처치하면 펫 소환이 열려요
 gacha.pet_new_equipped	NEW! 장착
 gacha.pet_summary	새 펫 {0} · 강화 {1} · 환급 {2}
 gacha.cost_single	1회  {0}
+gacha.cost_bulk	{0}회  {1}
 gacha.cost_ten	10회  {0}
 gacha.cost_gem	10회  {0} 젬
 gacha.enhanced	중복 -> +{0} 강화
@@ -296,6 +297,8 @@ settings.credits	크레딧
 # gacha reveal (E5-11)
 gacha.skip	전체 건너뛰기
 gacha.tap_close	탭하여 닫기
+gacha.bulk_title	{0}회 소환 결과
+gacha.bulk_new	NEW {0}
 
 # level up (E8-11)
 toast.chapter_clear	{0} 클리어! 젬 +{1}
@@ -325,6 +328,10 @@ stage.close	닫기
 gacha.mode_gear	장비 소환
 gacha.mode_skill	스킬 소환
 gacha.mode_pet	펫 소환
+pickup.banner	픽업 소환! {0}
+pickup.banner_sub	{0} 등급 중 {1}% · {2}
+pickup.rates	픽업 {0} {1}% · 그 밖의 {2} 각 {3}%
+pickup.rates_locked	픽업 {0}: {1} 등급이 열리면 그 등급의 절반
 gacha.skill_new	NEW!
 gacha.skill_up	Lv {0}
 gacha.skill_summary	새 스킬 {0} · 레벨업 {1} · 환급 {2}
@@ -887,6 +894,54 @@ char.stones	{0}
 toast.limit_reached	한계 돌파가 필요합니다 (돌파석)
 toast.not_enough_stones	돌파석이 부족합니다 - 던전과 무한의 탑에서 얻어요
 toast.not_enough_tokens	이벤트 코인이 부족합니다
+toast.not_enough_medals	레이드 메달이 부족합니다
+rail.raid	레이드
+raid.title	주간 레이드
+raid.tab_raid	레이드
+raid.tab_shop	메달 상점
+raid.level	레이드 Lv {0} / {1}
+raid.boss	{0} · {1}
+raid.reward_first	처치 시 메달 {0} · 첫 처치 젬 {1}
+raid.reward	처치 시 메달 {0} (처치 완료 - 소탕 가능)
+raid.best	최고 피해 {0}%
+raid.best_killed	처치 완료!
+raid.locked	{0} 보스를 처치하면 레이드가 열려요
+raid.patterns	패턴: 내려찍기(가까우면 큰 피해) · 돌진 · 부하 소환
+raid.entries	이번 주 입장 {0}/{1} · 초기화까지 {2}일 {3}시간
+raid.medals	메달 {0}
+raid.enter	도전
+raid.banner	레이드 Lv {0}
+raid.damage	보스 체력 {0}% 깎음
+raid.warn_slam	내려찍기!
+raid.warn_charge	돌진!
+raid.warn_summon	부하 소환!
+raid.medals_gain	메달 +{0}
+raid.swept	레이드 Lv {0} 소탕! 메달 +{1}
+raid.result	레이드 Lv {0} 종료 - 피해 {1}%, 메달 +{2}
+raid.result_kill	레이드 Lv {0} 처치! 메달 +{1}
+raid.result_first	레이드 Lv {0} 첫 처치! 메달 +{1}, 젬 +{2}
+raid.cleared_ribbon	레이드 Lv {0} 격파!
+raid.shop_limit	이번 주 {0}/{1}
+raid.shop.awaken10	각성석 10개
+raid.shop.stone50	돌파석 50개
+raid.shop.gear10	장비 소환권 10장
+raid.shop.skill5	스킬 소환권 5장
+raid.shop.pet5	펫 소환권 5장
+raid.shop.gem300	젬 300개
+toast.not_enough_awaken	각성석이 부족합니다 - 재료 던전에서 얻어요
+toast.need_max_level	최대 레벨(Lv 10)에서 각성할 수 있어요
+fx.awaken	각성 ★{0}!
+skill.stars	★{0}
+skill.awaken_info	★{0}/{1} · 각성석 {2}
+skill.awaken_cost	각성 ★{0}  {1}
+skill.awaken_done	각성 완료
+dungeon.material	재료 던전
+dungeon.material_desc	30초 동안 몰려오는 적을 처치해 스킬 각성석을 모아요
+dungeon.material_first	{0}마리마다 각성석 +1\n<size=26>한 번 입장하면 소탕이 열려요</size>
+dungeon.material_sweep	{0}마리마다 각성석 +1\n<size=26>소탕 +{1} (최고 {2}마리)</size>
+dungeon.material_earned	각성석 +{0}
+dungeon.result_material	재료 던전 종료! 각성석 +{0}, 돌파석 +{1}
+dungeon.swept_material	소탕 완료! 각성석 +{0}, 돌파석 +{1}
 toast.event_ended	이벤트가 끝났습니다
 toast.limit_broken	{0} 한계 돌파! 이제 Lv {1}까지
 dungeon.stones	입장마다 돌파석 {0}개

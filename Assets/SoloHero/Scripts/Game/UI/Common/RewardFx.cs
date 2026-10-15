@@ -14,6 +14,9 @@ namespace SoloHero.Game.UI.Common
         Gem = 1,
         Ticket = 2,
         Stone = 3,
+
+        /// <summary>D-174: skill awakening stones (to the skill tab).</summary>
+        Awaken = 4,
     }
 
     /// <summary>Gold, gems, tickets and stones at one moment; the difference to a later save is what a claim paid.</summary>
@@ -23,9 +26,11 @@ namespace SoloHero.Game.UI.Common
         public readonly double Gem;
         public readonly int Tickets;
         public readonly int Stones;
+        public readonly int Awaken;
 
         public RewardSnapshot(SaveDataV2 save)
         {
+            Awaken = save != null ? save.awakenStones : 0;
             Gold = save != null ? save.gold : 0d;
             Gem = save != null ? save.gem : 0d;
             Tickets = save != null ? save.gearTickets + save.skillTickets + save.petTickets : 0;
@@ -42,7 +47,7 @@ namespace SoloHero.Game.UI.Common
     /// </summary>
     public sealed class RewardFx : MonoBehaviour
     {
-        private const int KindCount = 4;
+        private const int KindCount = 5;
         private const float SpreadSeconds = 0.22f;
         private const float FlySeconds = 0.5f;
         private const float Stagger = 0.035f;
@@ -53,7 +58,7 @@ namespace SoloHero.Game.UI.Common
 
         [SerializeField] private Image[] _icons = new Image[0];
         [SerializeField] private Text[] _labels = new Text[0];
-        [Tooltip("Indexed by RewardKind: gold, gem, ticket, stone.")]
+        [Tooltip("Indexed by RewardKind: gold, gem, ticket, stone, awakening stone.")]
         [SerializeField] private Sprite[] _sprites = new Sprite[KindCount];
         [SerializeField] private RectTransform[] _targets = new RectTransform[KindCount];
         [SerializeField] private UiPunch[] _punches = new UiPunch[KindCount];
@@ -120,7 +125,8 @@ namespace SoloHero.Game.UI.Common
             if (now.Gold > before.Gold) Play(RewardKind.Gold, now.Gold - before.Gold, screen, row++);
             if (now.Gem > before.Gem) Play(RewardKind.Gem, now.Gem - before.Gem, screen, row++);
             if (now.Tickets > before.Tickets) Play(RewardKind.Ticket, now.Tickets - before.Tickets, screen, row++);
-            if (now.Stones > before.Stones) Play(RewardKind.Stone, now.Stones - before.Stones, screen, row);
+            if (now.Stones > before.Stones) Play(RewardKind.Stone, now.Stones - before.Stones, screen, row++);
+            if (now.Awaken > before.Awaken) Play(RewardKind.Awaken, now.Awaken - before.Awaken, screen, row);
         }
 
         /// <summary>

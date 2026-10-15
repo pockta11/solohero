@@ -42,6 +42,28 @@ namespace SoloHero.Core.Skills
             Align(save);
             save.ownedSkills.Add(id);
             save.ownedSkillLevels.Add(level < 1 ? 1 : level);
+            save.ownedSkillStars.Add(0);
+        }
+
+        /// <summary>D-174: awakening stars of an owned skill (0 when none or not owned).</summary>
+        public static int GetStars(SaveDataV2 save, string id)
+        {
+            if (save == null) throw new ArgumentNullException(nameof(save));
+            if (string.IsNullOrEmpty(id)) return 0;
+            int index = save.ownedSkills.IndexOf(id);
+            if (index < 0) return 0;
+            Align(save);
+            int stars = save.ownedSkillStars[index];
+            return stars < 0 ? 0 : stars;
+        }
+
+        public static void SetStars(SaveDataV2 save, string id, int stars)
+        {
+            if (save == null) throw new ArgumentNullException(nameof(save));
+            int index = save.ownedSkills.IndexOf(id);
+            if (index < 0) return;
+            Align(save);
+            save.ownedSkillStars[index] = stars < 0 ? 0 : stars;
         }
 
         public static string EquippedAt(SaveDataV2 save, int slot)
@@ -74,6 +96,11 @@ namespace SoloHero.Core.Skills
             while (save.ownedSkillLevels.Count < save.ownedSkills.Count) save.ownedSkillLevels.Add(1);
             if (save.ownedSkillLevels.Count > save.ownedSkills.Count)
                 save.ownedSkillLevels.RemoveRange(save.ownedSkills.Count, save.ownedSkillLevels.Count - save.ownedSkills.Count);
+            // D-174: stars, zero for every skill of an older save.
+            if (save.ownedSkillStars == null) save.ownedSkillStars = new List<int>();
+            while (save.ownedSkillStars.Count < save.ownedSkills.Count) save.ownedSkillStars.Add(0);
+            if (save.ownedSkillStars.Count > save.ownedSkills.Count)
+                save.ownedSkillStars.RemoveRange(save.ownedSkills.Count, save.ownedSkillStars.Count - save.ownedSkills.Count);
         }
 
         /// <summary>

@@ -33,5 +33,25 @@ namespace SoloHero.Core.Events
 
             return best;
         }
+
+        /// <summary>
+        /// D-173: the pickup banner of <paramref name="kind"/> running at <paramref name="utc"/> (latest start wins). Pickups
+        /// run beside the event: their templates are banner ids, which <see cref="ActiveAt"/> skips as unknown.
+        /// </summary>
+        public static ScheduleEntry PickupAt(IReadOnlyList<ScheduleEntry> entries, long utc, SoloHero.Core.Gacha.SummonKind kind)
+        {
+            if (entries == null) return null;
+            ScheduleEntry best = null;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                ScheduleEntry e = entries[i];
+                if (e == null || string.IsNullOrEmpty(e.Id) || !e.RunsAt(utc)) continue;
+                SoloHero.Core.Gacha.PickupBanner banner = PickupCatalog.Find(e.Template);
+                if (banner == null || banner.Kind != kind) continue;
+                if (best == null || e.StartUtc > best.StartUtc) best = e;
+            }
+
+            return best;
+        }
     }
 }
