@@ -1,6 +1,8 @@
 using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Economy;
+using SoloHero.Core.Save;
+using SoloHero.Game.Audio;
 using SoloHero.Game.UI.Panels;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,6 +26,7 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private TapGuardButton _speedButton;
         [SerializeField] private Text _speedLabel;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
 
         private AdSlotPolicy _policy;
         private IAdGateway _ads;
@@ -62,12 +65,21 @@ namespace SoloHero.Game.UI.Common
             }
 
             _busy = true;
+            SaveDataV2 save = PanelServices.TryGet<SaveDataV2>();
+            var before = new RewardSnapshot(save);
             _ads.Show(outcome =>
             {
                 _busy = false;
                 Result r = _policy.Complete(slot, outcome);
                 GameAnalytics.Log(r.Ok ? AnalyticsEvents.AdReward : AnalyticsEvents.AdFail,
                     AnalyticsParam.Of(AnalyticsEvents.PSlot, slot.ToString()));
+                if (r.Ok)
+                {
+                    // D-171: what the ad paid flies from its rail button; a timed boost sparkles instead.
+                    PanelServices.TryGet<AudioService>()?.Play(SfxId.GradeEpic);
+                    _rewardFx?.PlayGain(before, save);
+                    if (slot == AdSlot.GoldBooster || slot == AdSlot.BattleSpeed) _rewardFx?.Sparkle(new Color(1f, 0.85f, 0.4f, 1f));
+                }
                 if (_toast != null)
                 {
                     if (r.Ok) _toast.Show(Strings.Get(successKey));

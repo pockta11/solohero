@@ -1,0 +1,23 @@
+===== p1_h16 12 runs
+light_berserker_s1     d7 4-7 L37 t30 | d30 9-1 L68 t76 | d60 13-7 L97 t114 | d90 14-4 L104 t122 | d120 15-8 L112 t134 | d180 18-9 L128 t167 | d240 21-9 L148 t197 | d365 23-9 L165 t219 | stall 59 | new30 min(d90+) 0 | new30@365 0
+light_berserker_s2     d7 4-8 L37 t29 | d30 8-7 L65 t74 | d60 13-9 L96 t112 | d90 14-3 L105 t121 | d120 15-8 L111 t132 | d180 18-9 L128 t165 | d240 21-9 L146 t192 | d365 23-9 L164 t215 | stall 48 | new30 min(d90+) 0 | new30@365 0
+light_cryo_s1          d7 4-9 L38 t29 | d30 9-9 L71 t78 | d60 12-9 L96 t109 | d90 13-9 L104 t119 | d120 14-9 L111 t129 | d180 17-9 L124 t155 | d240 20-9 L143 t189 | d365 23-9 L163 t213 | stall 70 | new30 min(d90+) 0 | new30@365 1
+light_cryo_s2          d7 4-9 L37 t28 | d30 9-9 L71 t77 | d60 12-9 L93 t105 | d90 13-9 L103 t119 | d120 14-9 L110 t128 | d180 17-9 L124 t156 | d240 20-9 L142 t187 | d365 23-9 L162 t213 | stall 53 | new30 min(d90+) 0 | new30@365 1
+light_knight_s1        d7 4-7 L36 t28 | d30 8-7 L63 t70 | d60 13-6 L94 t110 | d90 13-7 L101 t113 | d120 14-9 L109 t129 | d180 17-6 L121 t153 | d240 20-9 L140 t188 | d365 23-9 L161 t212 | stall 66 | new30 min(d90+) 0 | new30@365 1
+light_knight_s2        d7 4-6 L36 t26 | d30 7-8 L61 t64 | d60 12-9 L90 t107 | d90 13-9 L101 t118 | d120 14-9 L108 t125 | d180 16-9 L120 t149 | d240 20-9 L138 t181 | d365 22-9 L159 t210 | stall 56 | new30 min(d90+) 0 | new30@365 0
+light_pyro_s1          d7 4-8 L38 t29 | d30 9-5 L70 t78 | d60 12-9 L96 t107 | d90 14-1 L103 t121 | d120 15-8 L112 t134 | d180 18-7 L127 t163 | d240 21-9 L146 t193 | d365 23-9 L164 t214 | stall 71 | new30 min(d90+) 0 | new30@365 1
+light_pyro_s2          d7 4-8 L37 t28 | d30 9-4 L69 t76 | d60 12-8 L93 t107 | d90 13-9 L103 t118 | d120 14-9 L109 t130 | d180 17-9 L124 t155 | d240 20-9 L142 t187 | d365 23-9 L162 t212 | stall 52 | new30 min(d90+) 0 | new30@365 2
+light_ranger_s1        d7 4-7 L38 t30 | d30 8-5 L66 t73 | d60 12-4 L90 t103 | d90 13-4 L99 t111 | d120 14-8 L107 t128 | d180 16-10 L120 t151 | d240 20-9 L139 t186 | d365 22-9 L157 t207 | stall 62 | new30 min(d90+) 0 | new30@365 0
+light_ranger_s2        d7 4-9 L38 t29 | d30 8-4 L65 t71 | d60 12-6 L89 t104 | d90 14-3 L101 t121 | d120 14-9 L108 t129 | d180 17-9 L122 t152 | d240 19-9 L136 t180 | d365 22-9 L155 t206 | stall 72 | new30 min(d90+) 0 | new30@365 1
+light_sniper_s1        d7 4-7 L37 t32 | d30 8-4 L63 t73 | d60 12-1 L85 t104 | d90 13-1 L97 t111 | d120 14-7 L105 t127 | d180 16-6 L116 t145 | d240 19-9 L134 t180 | d365 22-9 L156 t208 | stall 51 | new30 min(d90+) 0 | new30@365 0
+light_sniper_s2        d7 4-8 L38 t34 | d30 7-6 L61 t68 | d60 12-2 L86 t104 | d90 13-8 L98 t119 | d120 14-9 L107 t129 | d180 16-9 L118 t148 | d240 19-9 L132 t174 | d365 22-9 L152 t205 | stall 50 | new30 min(d90+) 0 | new30@365 1
+-- median over runs
+d7   4-6 ~ 4-9 (median g38 = 4-8)  lv 36-38  tower 26-34  gap(g-t) med 9
+d30  7-6 ~ 9-9 (median g77 = 8-7)  lv 61-71  tower 64-78  gap(g-t) med 4
+d60  12-1 ~ 13-9 (median g119 = 12-9)  lv 85-97  tower 103-114  gap(g-t) med 12
+d90  13-1 ~ 14-4 (median g129 = 13-9)  lv 97-105  tower 111-122  gap(g-t) med 11
+d120 14-7 ~ 15-8 (median g139 = 14-9)  lv 105-112  tower 125-134  gap(g-t) med 10
+d180 16-6 ~ 18-9 (median g169 = 17-9)  lv 116-128  tower 145-167  gap(g-t) med 13
+d240 19-9 ~ 21-9 (median g199 = 20-9)  lv 132-148  tower 174-197  gap(g-t) med 12
+d365 22-9 ~ 23-9 (median g229 = 23-9)  lv 152-165  tower 205-219  gap(g-t) med 14
+longest stall: median 57.5 max 72 | new30 min from d90: median 0.0 min 0

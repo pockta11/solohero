@@ -34,7 +34,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 0
+    filterMode: 1
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -48,7 +48,7 @@ TextureImporter:
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 32
+  spritePixelsToUnits: 64
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
@@ -115,8 +115,8 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 52
-        height: 72
+        width: 104
+        height: 144
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -134,10 +134,10 @@ TextureImporter:
       name: vfxaura_play_8_1
       rect:
         serializedVersion: 2
-        x: 52
+        x: 104
         y: 0
-        width: 52
-        height: 72
+        width: 104
+        height: 144
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -155,10 +155,10 @@ TextureImporter:
       name: vfxaura_play_8_2
       rect:
         serializedVersion: 2
-        x: 104
+        x: 208
         y: 0
-        width: 52
-        height: 72
+        width: 104
+        height: 144
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -176,10 +176,10 @@ TextureImporter:
       name: vfxaura_play_8_3
       rect:
         serializedVersion: 2
-        x: 156
+        x: 312
         y: 0
-        width: 52
-        height: 72
+        width: 104
+        height: 144
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -197,10 +197,10 @@ TextureImporter:
       name: vfxaura_play_8_4
       rect:
         serializedVersion: 2
-        x: 208
+        x: 416
         y: 0
-        width: 52
-        height: 72
+        width: 104
+        height: 144
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -218,10 +218,10 @@ TextureImporter:
       name: vfxaura_play_8_5
       rect:
         serializedVersion: 2
-        x: 260
+        x: 520
         y: 0
-        width: 52
-        height: 72
+        width: 104
+        height: 144
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -239,10 +239,10 @@ TextureImporter:
       name: vfxaura_play_8_6
       rect:
         serializedVersion: 2
-        x: 312
+        x: 624
         y: 0
-        width: 52
-        height: 72
+        width: 104
+        height: 144
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -260,10 +260,10 @@ TextureImporter:
       name: vfxaura_play_8_7
       rect:
         serializedVersion: 2
-        x: 364
+        x: 728
         y: 0
-        width: 52
-        height: 72
+        width: 104
+        height: 144
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}

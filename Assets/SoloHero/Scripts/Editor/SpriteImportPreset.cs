@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
@@ -8,7 +9,7 @@ namespace SoloHero.Editor
 {
     /// <summary>
     /// E8-16: every texture under Assets/SoloHero/Art gets pixel-art settings (PPU 32, Point, no compression,
-    /// no mipmaps). Sheets named "{entity}_{clip}_{frames}.png" are sliced into equal frames with the entity's
+    /// no mipmaps), except the D-168 ink-cel character sheets (PPU 96, bilinear, ASTC) and the smooth UI skin. Sheets named "{entity}_{clip}_{frames}.png" are sliced into equal frames with the entity's
     /// foot pivot (VFX sheets pivot at their centre); backgrounds and tiles become single repeatable sprites pivoted
     /// at the bottom centre, and UI sprites single sprites pivoted at the centre.
     /// Do not hand-edit importer settings under Art/ - change this file and reimport.
@@ -18,7 +19,26 @@ namespace SoloHero.Editor
         private const string ArtRoot = "Assets/SoloHero/Art/";
         private const int Ppu = 32;
 
-        private static readonly Regex SheetName = new Regex(@"^([a-z0-9]+)_([a-z0-9]+)_(\d+)$");
+        /// <summary>{entity}_{clip}_{frames}, or {entity}_{clip}_{frames}r{rows} for a sheet wrapped into rows
+        /// (frames left to right, top to bottom).</summary>
+        private static readonly Regex SheetName = new Regex(@"^([a-z0-9]+)_([a-z0-9]+)_(\d+)(?:r(\d+))?$");
+
+        /// <summary>
+        /// D-168 ink-cel characters (tools/art/hdize.py): 3 texels per art pixel, filtered and compressed. PPU 96 keeps
+        /// the world size of the old 32 PPU pixel sheets.
+        /// </summary>
+        private const int CharacterPpu = 96;
+
+        private static readonly string[] CharacterFolders = { "Hero/", "Enemies/", "Bosses/", "Pets/" };
+
+        /// <summary>
+        /// D-168 smooth VFX (tools/art/vfxhd.py): clips hold 2 texels per art pixel; the soft glow sheets stay at
+        /// 1 texel per art pixel (bilinear keeps a halo smooth). Both keep their world size.
+        /// </summary>
+        private const int VfxPpu = 64;
+
+        /// <summary>D-168 smooth maps (tools/art/mapgen_hd.py): background layers and floors at 3 texels per art pixel.</summary>
+        private const int MapPpu = 96;
 
         /// <summary>
         /// UI 9-slice sprites: ui9_{name}_{border px}.png, and the D-108 smooth skin hd9_{name}_{border px}.png or
@@ -58,6 +78,20 @@ namespace SoloHero.Editor
 
             string name = Path.GetFileNameWithoutExtension(path);
             Match sheet = SheetName.Match(name);
+            if (sheet.Success && CharacterFolders.Any(f => path.StartsWith(ArtRoot + f)))
+            {
+                // The settings copy was read with Point above and is written back last, so set both.
+                importer.spritePixelsPerUnit = CharacterPpu;
+                settings.spritePixelsPerUnit = CharacterPpu;
+                importer.filterMode = FilterMode.Bilinear;
+                settings.filterMode = FilterMode.Bilinear;
+                importer.textureCompression = TextureImporterCompression.Compressed;
+                importer.maxTextureSize = 4096;
+                importer.SetPlatformTextureSettings(new TextureImporterPlatformSettings
+                {
+                    name = "Android", overridden = true, maxTextureSize = 4096, format = TextureImporterFormat.ASTC_6x6
+                });
+            }
             bool repeating = path.Contains("/Backgrounds/") || path.Contains("/Tiles/");
             bool ui = path.Contains("/UI/");
             if (repeating || ui || !sheet.Success)
@@ -87,9 +121,38 @@ namespace SoloHero.Editor
                     settings.spriteBorder = new Vector4(side, cap, side, cap);
                 }
 
+                if (path.StartsWith(ArtRoot + "Particles/"))
+                {
+                    importer.filterMode = FilterMode.Bilinear;
+                    settings.filterMode = FilterMode.Bilinear;
+                }
+
+                bool map = path.StartsWith(ArtRoot + "Backgrounds/") || (path.StartsWith(ArtRoot + "Tiles/") && name.StartsWith("floor_"));
+                if (map)
+                {
+                    importer.spritePixelsPerUnit = MapPpu;
+                    settings.spritePixelsPerUnit = MapPpu;
+                    importer.filterMode = FilterMode.Bilinear;
+                    settings.filterMode = FilterMode.Bilinear;
+                    importer.textureCompression = TextureImporterCompression.Compressed;
+                    importer.SetPlatformTextureSettings(new TextureImporterPlatformSettings
+                    {
+                        name = "Android", overridden = true, maxTextureSize = 2048, format = TextureImporterFormat.ASTC_6x6
+                    });
+                }
+
                 importer.wrapMode = repeating ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
                 importer.SetTextureSettings(settings);
                 return;
+            }
+
+            if (path.StartsWith(ArtRoot + "Vfx/"))
+            {
+                int ppu = sheet.Groups[1].Value.EndsWith("glow") ? Ppu : VfxPpu;
+                importer.spritePixelsPerUnit = ppu;
+                settings.spritePixelsPerUnit = ppu;
+                importer.filterMode = FilterMode.Bilinear;
+                settings.filterMode = FilterMode.Bilinear;
             }
 
             importer.wrapMode = TextureWrapMode.Clamp;
@@ -97,8 +160,11 @@ namespace SoloHero.Editor
             importer.spriteImportMode = SpriteImportMode.Multiple;
 
             int frames = int.Parse(sheet.Groups[3].Value);
-            importer.GetSourceTextureWidthAndHeight(out int width, out int height);
-            int frameWidth = frames > 0 ? width / frames : width;
+            int rows = sheet.Groups[4].Success ? int.Parse(sheet.Groups[4].Value) : 1;
+            int cols = (frames + rows - 1) / rows;
+            importer.GetSourceTextureWidthAndHeight(out int width, out int sheetHeight);
+            int frameWidth = cols > 0 ? width / cols : width;
+            int height = sheetHeight / rows;
             bool vfx = path.Contains("/Vfx/");
             Vector2 pivotPx = vfx ? new Vector2(frameWidth / 2f, height / 2f)
                 : FootPivotPx.TryGetValue(sheet.Groups[1].Value, out Vector2 p) ? p : new Vector2(frameWidth / 2f, 0f);
@@ -110,7 +176,7 @@ namespace SoloHero.Editor
                 metas[i] = new SpriteMetaData
                 {
                     name = name + "_" + i,
-                    rect = new Rect(i * frameWidth, 0, frameWidth, height),
+                    rect = new Rect(i % cols * frameWidth, (rows - 1 - i / cols) * height, frameWidth, height),
                     alignment = (int)SpriteAlignment.Custom,
                     pivot = pivot
                 };

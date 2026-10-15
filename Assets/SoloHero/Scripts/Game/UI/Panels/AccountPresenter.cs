@@ -216,12 +216,11 @@ namespace SoloHero.Game.UI.Panels
             }
         }
 
-        /// <summary>"3-7" style chapter-stage label for the global stage index.</summary>
+        /// <summary>"3-7" style chapter-stage label for the global stage index ("Hard 3-7" past the normal tier, D-153).</summary>
         private static string StageLabel(int globalStage)
         {
             BalanceValues balance = PanelServices.TryGet<BalanceValues>() ?? new BalanceValues();
-            StageIndex.FromGlobal(globalStage < 1 ? 1 : globalStage, balance.STAGES_PER_CHAPTER, out int chapter, out int stage);
-            return chapter + "-" + stage;
+            return DifficultyTier.StageLabel(balance, globalStage < 1 ? 1 : globalStage);
         }
     }
 }

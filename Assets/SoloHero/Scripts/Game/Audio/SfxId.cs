@@ -29,5 +29,11 @@ namespace SoloHero.Game.Audio
         SkillIce = 20,
         SkillHeal = 21,
         SkillMagic = 22,
+
+        /// <summary>D-171: reward icons landing in a counter.</summary>
+        Collect = 23,
+
+        /// <summary>D-171: job advance, chapter clear, set complete.</summary>
+        Fanfare = 24,
     }
 }

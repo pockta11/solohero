@@ -1,0 +1,28 @@
+===== C:/Users/user/AppData/Local/Temp/claude/D--git-solohero/7f2942db-2bc0-4a7e-a0ec-2c533c3fb2c1/scratchpad/lt/a110 12 runs
+ads_berserker_s1       d7 5-2 L42 t39 | d30 9-8 L72 t86 | d60 15-6 L104 t142 | d90 18-7 L121 t172 | d120 21-2 L135 t208 | d180 24-10 L161 t249 | d240 26-7 L173 t265 | d365 29-1 L190 t288 | stall 14 | new30 min(d90+) 2 | new30@365 3
+ads_berserker_s2       d7 5-3 L43 t39 | d30 9-7 L73 t92 | d60 14-5 L98 t129 | d90 18-4 L116 t164 | d120 20-3 L130 t191 | d180 24-6 L158 t242 | d240 26-5 L172 t265 | d365 31-5 L195 t303 | stall 14 | new30 min(d90+) 5 | new30@365 12
+ads_cryo_s1            d7 5-3 L43 t36 | d30 13-9 L93 t109 | d60 21-1 L133 t192 | d90 22-9 L150 t205 | d120 23-8 L157 t211 | d180 26-8 L173 t248 | d240 28-9 L188 t266 | d365 32-9 L210 t302 | stall 40 | new30 min(d90+) 0 | new30@365 7
+ads_cryo_s2            d7 5-5 L43 t39 | d30 12-9 L88 t100 | d60 19-3 L124 t171 | d90 22-9 L148 t203 | d120 22-9 L155 t207 | d180 26-9 L172 t248 | d240 29-3 L188 t278 | d365 33-1 L213 t316 | stall 47 | new30 min(d90+) 0 | new30@365 2
+ads_knight_s1          d7 5-1 L42 t37 | d30 9-10 L72 t90 | d60 15-2 L102 t137 | d90 17-7 L117 t167 | d120 20-6 L132 t203 | d180 24-10 L160 t246 | d240 26-8 L174 t265 | d365 29-3 L190 t289 | stall 20 | new30 min(d90+) 1 | new30@365 1
+ads_knight_s2          d7 5-1 L41 t35 | d30 9-7 L72 t88 | d60 14-3 L95 t124 | d90 17-5 L114 t160 | d120 19-3 L126 t186 | d180 23-10 L152 t237 | d240 26-5 L170 t266 | d365 29-7 L191 t301 | stall 22 | new30 min(d90+) 2 | new30@365 2
+ads_pyro_s1            d7 5-3 L44 t39 | d30 12-9 L90 t106 | d60 18-5 L122 t173 | d90 21-6 L141 t203 | d120 22-9 L150 t208 | d180 26-1 L167 t246 | d240 28-9 L183 t263 | d365 31-10 L205 t299 | stall 32 | new30 min(d90+) 0 | new30@365 10
+ads_pyro_s2            d7 5-4 L44 t40 | d30 11-9 L85 t99 | d60 17-2 L111 t151 | d90 21-3 L136 t203 | d120 25-6 L162 t241 | d180 26-9 L177 t246 | d240 28-8 L186 t274 | d365 32-5 L206 t313 | stall 63 | new30 min(d90+) 0 | new30@365 8
+ads_ranger_s1          d7 5-6 L45 t42 | d30 9-2 L71 t85 | d60 13-8 L93 t120 | d90 16-8 L112 t159 | d120 19-8 L128 t197 | d180 24-10 L159 t248 | d240 28-2 L178 t271 | d365 30-6 L195 t294 | stall 20 | new30 min(d90+) 1 | new30@365 3
+ads_ranger_s2          d7 5-6 L45 t43 | d30 9-5 L71 t85 | d60 13-9 L94 t118 | d90 16-10 L113 t159 | d120 19-3 L127 t192 | d180 25-10 L160 t247 | d240 27-10 L177 t270 | d365 31-1 L197 t309 | stall 14 | new30 min(d90+) 2 | new30@365 5
+ads_sniper_s1          d7 5-3 L43 t42 | d30 7-8 L66 t80 | d60 10-5 L81 t105 | d90 12-8 L91 t129 | d120 16-6 L108 t155 | d180 20-4 L128 t192 | d240 24-8 L152 t236 | d365 27-6 L176 t270 | stall 15 | new30 min(d90+) 4 | new30@365 4
+ads_sniper_s2          d7 5-4 L43 t42 | d30 8-1 L67 t77 | d60 12-2 L84 t116 | d90 14-10 L98 t131 | d120 16-10 L109 t154 | d180 20-4 L128 t194 | d240 23-1 L149 t234 | d365 26-10 L171 t281 | stall 20 | new30 min(d90+) 2 | new30@365 8
+-- median over runs
+d7   5-1 ~ 5-6 (median g43 = 5-3)  lv 41-45  tower 35-43  gap(g-t) med 4
+d30  7-8 ~ 13-9 (median g88 = 9-8)  lv 66-93  tower 77-109  gap(g-t) med 0
+d60  10-5 ~ 21-1 (median g138 = 14-8)  lv 81-133  tower 105-192  gap(g-t) med 7
+d90  12-8 ~ 22-9 (median g170 = 17-10)  lv 91-150  tower 129-205  gap(g-t) med 4
+d120 16-6 ~ 25-6 (median g194 = 20-4)  lv 108-162  tower 154-241  gap(g-t) med 2
+d180 20-4 ~ 26-9 (median g240 = 24-10)  lv 128-177  tower 192-249  gap(g-t) med 1
+d240 23-1 ~ 29-3 (median g264 = 27-4)  lv 149-188  tower 234-278  gap(g-t) med 0
+d365 26-10 ~ 33-1 (median g298 = 30-8)  lv 171-213  tower 270-316  gap(g-t) med -1
+longest stall: median 20.0 max 63 | new30 min from d90: median 1.5 min 0
+== C:/Users/user/AppData/Local/Temp/claude/D--git-solohero/7f2942db-2bc0-4a7e-a0ec-2c533c3fb2c1/scratchpad/lt/a110 (12 runs)
+  d1-30 longest stall median 1.0 max 3 | normal fail 20.3% | boss fails 279 deaths 73%
+  d31-90 longest stall median 3.5 max 9 | normal fail 31.6% | boss fails 208 deaths 100%
+  d91-180 longest stall median 7.5 max 40 | normal fail 35.4% | boss fails 337 deaths 100%
+  d181-365 longest stall median 20.0 max 40 | normal fail 36.5% | boss fails 630 deaths 100%

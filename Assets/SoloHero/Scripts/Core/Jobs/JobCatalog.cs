@@ -54,7 +54,7 @@ namespace SoloHero.Core.Jobs
         public string Id { get; init; } = "";
         public JobLine Line { get; init; }
 
-        /// <summary>0 beginner, 1 first job, 2 second job.</summary>
+        /// <summary>0 beginner, 1 first job, 2 second job, 3 third job (D-157).</summary>
         public int Tier { get; init; }
 
         /// <summary>The job this one advances from ("" for the first jobs, which come from the beginner).</summary>
@@ -63,10 +63,10 @@ namespace SoloHero.Core.Jobs
         /// <summary>Null for the beginner, who keeps the BASIC_SKILL_* flash slash.</summary>
         public MainAttack Main { get; init; }
 
-        /// <summary>Passive stats of this job alone; a second job also keeps its first job's mastery.</summary>
+        /// <summary>Passive stats of this job alone; a job also keeps the mastery of every job it advanced from.</summary>
         public Mastery[] Mastery { get; init; } = new Mastery[0];
 
-        /// <summary>Second jobs: the job-only skill in the ultimate slot.</summary>
+        /// <summary>Second and third jobs: the job-only skill in the ultimate slot (a third job's replaces its parent's).</summary>
         public SkillDef Ultimate { get; init; }
 
         /// <summary>Hero sheet entity under Art/Hero for this job's look.</summary>
@@ -79,11 +79,16 @@ namespace SoloHero.Core.Jobs
 
     /// <summary>
     /// D-104 jobs, MapleStory-style: the beginner, three first jobs at JOB_LV_1 and two second jobs for each at
-    /// JOB_LV_2. Content table like SkillCatalog; ids are saved (SaveDataV2.jobId), so never rename one.
+    /// JOB_LV_2. D-157 (L-05): one third job for each second job at JOB_LV_3, a straight succession with a stronger
+    /// main attack and ultimate and one more mastery. Content table like SkillCatalog; ids are saved
+    /// (SaveDataV2.jobId), so never rename one. New jobs go at the end (the job looks are index-aligned).
     /// </summary>
     public static class JobCatalog
     {
         public const string Beginner = "beginner";
+
+        /// <summary>The last job tier (D-157: third jobs).</summary>
+        public const int MaxTier = 3;
 
         public static readonly JobDef[] All =
         {
@@ -180,6 +185,83 @@ namespace SoloHero.Core.Jobs
                 {
                     Id = "ult_death_shot", Grade = Grade.Legendary, Line = JobLine.Archer, Kind = SkillKind.Strike,
                     Cooldown = 22f, Range = 8.0, DamageMult = 45.0, Vfx = "spear", VfxScale = 1.6f, Sound = "thunder",
+                },
+            },
+
+            // D-157 (L-05) third jobs, one per second job: the main attack and the ultimate replace the parent's, the
+            // mastery stacks on the first and second job's.
+            new JobDef
+            {
+                Id = "paladin", Line = JobLine.Warrior, Tier = 3, Parent = "knight", Look = "knight5",
+                Main = new MainAttack { Targets = 6, Mult = 3.2, Range = 2.8, Tint = 0xFFF0A0, VfxScale = 1.65f },
+                Mastery = new[] { new Mastery(TalentStat.HpPct, 0.15), new Mastery(TalentStat.DamageTakenPct, 0.05) },
+                Ultimate = new SkillDef
+                {
+                    Id = "ult_sanctuary", Grade = Grade.Legendary, Line = JobLine.Warrior, Kind = SkillKind.Area,
+                    Cooldown = 25f, Range = 3.5, DamageMult = 13.0, ShieldPercent = 40, ShieldSeconds = 8f, HealPercent = 10,
+                    Vfx = "holy", VfxAt = SkillVfxAt.EachTarget, VfxScale = 1.2f, Sound = "thunder",
+                },
+            },
+            new JobDef
+            {
+                Id = "warlord", Line = JobLine.Warrior, Tier = 3, Parent = "berserker", Look = "knight6",
+                Main = new MainAttack { Targets = 5, Mult = 3.9, Range = 2.6, Tint = 0xFF4040, VfxScale = 1.65f },
+                Mastery = new[] { new Mastery(TalentStat.AtkPct, 0.08), new Mastery(TalentStat.CritDamage, 0.2) },
+                Ultimate = new SkillDef
+                {
+                    Id = "ult_warlord_wrath", Grade = Grade.Legendary, Line = JobLine.Warrior, Kind = SkillKind.Area,
+                    Cooldown = 28f, Range = 3.2, DamageMult = 10.0, Buff = SkillBuff.Atk, BuffAmount = 80,
+                    BuffSeconds = 10f, HealPercent = 20, Vfx = "aura", VfxAt = SkillVfxAt.Hero, VfxScale = 1.8f,
+                    Tint = 0xFF2030, Sound = "cry",
+                },
+            },
+            new JobDef
+            {
+                Id = "archpyro", Line = JobLine.Mage, Tier = 3, Parent = "pyro", Look = "jobarchpyro",
+                Main = new MainAttack { Targets = 4, Mult = 2.9, Range = 4.8, DotPercent = 40, DotSeconds = 2f, Vfx = "fire", VfxScale = 1.05f },
+                Mastery = new[] { new Mastery(TalentStat.AtkPct, 0.06), new Mastery(TalentStat.DotPct, 0.25) },
+                Ultimate = new SkillDef
+                {
+                    Id = "ult_meteor_storm", Grade = Grade.Legendary, Line = JobLine.Mage, Kind = SkillKind.Area,
+                    Cooldown = 24f, Range = 5.5, DamageMult = 4.2, Waves = 5, WaveInterval = 0.2f, DotPercent = 150,
+                    DotSeconds = 4f, Vfx = "meteor", VfxAt = SkillVfxAt.Front, VfxScale = 1.6f, Sound = "fire",
+                },
+            },
+            new JobDef
+            {
+                Id = "archcryo", Line = JobLine.Mage, Tier = 3, Parent = "cryo", Look = "jobarchcryo",
+                Main = new MainAttack { Targets = 5, Mult = 2.3, Range = 4.8, StunSeconds = 0.3f, Vfx = "ice", VfxScale = 1.05f },
+                Mastery = new[] { new Mastery(TalentStat.SkillDamagePct, 0.08), new Mastery(TalentStat.CooldownPct, 0.04) },
+                Ultimate = new SkillDef
+                {
+                    Id = "ult_frozen_thunder", Grade = Grade.Legendary, Line = JobLine.Mage, Kind = SkillKind.Area,
+                    Cooldown = 26f, Range = 6.5, DamageMult = 3.6, Waves = 6, WaveInterval = 0.2f, StunSeconds = 2f,
+                    Vfx = "bolt", VfxAt = SkillVfxAt.EachTarget, VfxScale = 1.3f, Tint = 0xA0E8FF, Sound = "thunder",
+                },
+            },
+            new JobDef
+            {
+                Id = "bowmaster", Line = JobLine.Archer, Tier = 3, Parent = "ranger", Look = "jobbowmaster",
+                Main = new MainAttack { Targets = 4, Hits = 2, Mult = 1.65, Range = 5.2, Vfx = "spear", Tint = 0xFFE890, VfxScale = 1f },
+                Mastery = new[] { new Mastery(TalentStat.AtkSpdPct, 0.08), new Mastery(TalentStat.AtkPct, 0.05) },
+                Ultimate = new SkillDef
+                {
+                    Id = "ult_arrow_storm", Grade = Grade.Legendary, Line = JobLine.Archer, Kind = SkillKind.Area,
+                    Cooldown = 22f, Range = 6.5, DamageMult = 1.9, Waves = 12, WaveInterval = 0.1f, MarkPercent = 15,
+                    MarkSeconds = 5f, Vfx = "swords", VfxAt = SkillVfxAt.Front, VfxScale = 1.5f, Tint = 0xFFE890,
+                    Sound = "whoosh",
+                },
+            },
+            new JobDef
+            {
+                Id = "marksman", Line = JobLine.Archer, Tier = 3, Parent = "sniper", Look = "jobmarksman",
+                Main = new MainAttack { Targets = 1, Mult = 7.5, Range = 6.5, Vfx = "spear", Tint = 0xFFD0A0, VfxScale = 1.45f },
+                Mastery = new[] { new Mastery(TalentStat.CritDamage, 0.35), new Mastery(TalentStat.BossDamagePct, 0.1) },
+                Ultimate = new SkillDef
+                {
+                    Id = "ult_true_shot", Grade = Grade.Legendary, Line = JobLine.Archer, Kind = SkillKind.Strike,
+                    Cooldown = 22f, Range = 9.0, DamageMult = 62.0, MarkPercent = 25, MarkSeconds = 6f, Vfx = "spear",
+                    VfxScale = 1.9f, Tint = 0xFFC060, Sound = "thunder",
                 },
             },
         };

@@ -1,0 +1,28 @@
+===== C:/Users/user/AppData/Local/Temp/claude/D--git-solohero/7f2942db-2bc0-4a7e-a0ec-2c533c3fb2c1/scratchpad/lt/r110 12 runs
+light_berserker_s1     d7 4-5 L37 t29 | d30 7-4 L62 t65 | d60 11-9 L84 t97 | d90 13-8 L97 t120 | d120 15-2 L105 t130 | d180 18-6 L120 t165 | d240 21-6 L137 t197 | d365 26-7 L172 t247 | stall 14 | new30 min(d90+) 4 | new30@365 5
+light_berserker_s2     d7 4-4 L37 t29 | d30 7-4 L61 t64 | d60 11-1 L80 t100 | d90 13-5 L95 t117 | d120 15-1 L103 t129 | d180 17-3 L116 t152 | d240 20-5 L132 t188 | d365 25-6 L166 t245 | stall 17 | new30 min(d90+) 4 | new30@365 6
+light_cryo_s1          d7 4-8 L38 t28 | d30 8-3 L65 t66 | d60 13-9 L99 t119 | d90 18-7 L123 t164 | d120 23-3 L148 t211 | d180 27-9 L181 t257 | d240 29-9 L195 t274 | d365 31-9 L210 t294 | stall 57 | new30 min(d90+) 0 | new30@365 1
+light_cryo_s2          d7 4-6 L38 t27 | d30 8-7 L66 t67 | d60 13-7 L95 t111 | d90 18-5 L121 t161 | d120 22-7 L144 t204 | d180 27-9 L181 t257 | d240 29-9 L195 t276 | d365 31-9 L211 t296 | stall 48 | new30 min(d90+) 0 | new30@365 0
+light_knight_s1        d7 4-3 L36 t27 | d30 7-3 L61 t64 | d60 11-7 L82 t99 | d90 13-9 L97 t118 | d120 14-7 L104 t131 | d180 17-10 L119 t161 | d240 21-3 L136 t195 | d365 26-9 L170 t246 | stall 13 | new30 min(d90+) 5 | new30@365 8
+light_knight_s2        d7 4-4 L36 t28 | d30 7-1 L60 t63 | d60 11-2 L81 t101 | d90 13-2 L92 t115 | d120 15-1 L102 t130 | d180 17-2 L116 t152 | d240 19-10 L131 t187 | d365 24-7 L163 t242 | stall 13 | new30 min(d90+) 2 | new30@365 6
+light_pyro_s1          d7 4-6 L38 t29 | d30 8-3 L65 t65 | d60 12-9 L95 t107 | d90 16-8 L111 t146 | d120 19-10 L130 t179 | d180 26-4 L167 t239 | d240 28-9 L184 t260 | d365 30-9 L200 t282 | stall 49 | new30 min(d90+) 0 | new30@365 8
+light_pyro_s2          d7 4-6 L38 t30 | d30 8-2 L65 t66 | d60 12-9 L92 t108 | d90 16-8 L112 t147 | d120 20-1 L130 t180 | d180 26-5 L168 t241 | d240 28-7 L184 t262 | d365 30-9 L201 t284 | stall 26 | new30 min(d90+) 1 | new30@365 1
+light_ranger_s1        d7 4-7 L38 t29 | d30 7-7 L64 t64 | d60 10-3 L79 t93 | d90 11-9 L88 t100 | d120 13-9 L96 t118 | d180 16-6 L112 t149 | d240 21-1 L134 t193 | d365 27-9 L176 t254 | stall 10 | new30 min(d90+) 8 | new30@365 10
+light_ranger_s2        d7 4-8 L39 t31 | d30 7-6 L64 t65 | d60 10-3 L79 t98 | d90 13-5 L93 t116 | d120 15-10 L106 t139 | d180 19-4 L126 t183 | d240 23-5 L150 t225 | d365 27-7 L177 t259 | stall 11 | new30 min(d90+) 4 | new30@365 6
+light_sniper_s1        d7 4-5 L37 t32 | d30 7-4 L62 t64 | d60 8-7 L72 t88 | d90 9-10 L80 t95 | d120 10-6 L86 t101 | d180 14-8 L97 t121 | d240 15-5 L105 t133 | d365 18-10 L123 t169 | stall 43 | new30 min(d90+) 0 | new30@365 3
+light_sniper_s2        d7 4-6 L38 t33 | d30 7-1 L61 t64 | d60 8-5 L72 t85 | d90 11-1 L81 t101 | d120 12-1 L88 t109 | d180 14-7 L101 t131 | d240 16-4 L110 t141 | d365 20-4 L129 t184 | stall 28 | new30 min(d90+) 1 | new30@365 8
+-- median over runs
+d7   4-3 ~ 4-8 (median g36 = 4-6)  lv 36-39  tower 27-33  gap(g-t) med 6
+d30  7-1 ~ 8-7 (median g65 = 7-5)  lv 60-66  tower 63-67  gap(g-t) med 0
+d60  8-5 ~ 13-9 (median g104 = 11-4)  lv 72-99  tower 85-119  gap(g-t) med 4
+d90  9-10 ~ 18-7 (median g126 = 13-6)  lv 80-123  tower 95-164  gap(g-t) med 9
+d120 10-6 ~ 23-3 (median g142 = 15-2)  lv 86-148  tower 101-211  gap(g-t) med 11
+d180 14-7 ~ 27-9 (median g173 = 18-3)  lv 97-181  tower 121-257  gap(g-t) med 11
+d240 15-5 ~ 29-9 (median g204 = 21-4)  lv 105-195  tower 133-276  gap(g-t) med 10
+d365 18-10 ~ 31-9 (median g263 = 27-3)  lv 123-211  tower 169-296  gap(g-t) med 12
+longest stall: median 21.5 max 57 | new30 min from d90: median 1.5 min 0
+== C:/Users/user/AppData/Local/Temp/claude/D--git-solohero/7f2942db-2bc0-4a7e-a0ec-2c533c3fb2c1/scratchpad/lt/r110 (12 runs)
+  d1-30 longest stall median 2.0 max 3 | normal fail 16.7% | boss fails 100 deaths 7%
+  d31-90 longest stall median 6.0 max 8 | normal fail 25.9% | boss fails 559 deaths 100%
+  d91-180 longest stall median 10.0 max 15 | normal fail 34.3% | boss fails 565 deaths 100%
+  d181-365 longest stall median 21.5 max 57 | normal fail 35.9% | boss fails 1546 deaths 100%

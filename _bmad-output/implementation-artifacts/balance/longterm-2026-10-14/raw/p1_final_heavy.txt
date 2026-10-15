@@ -1,0 +1,28 @@
+===== final_heavy 11 runs
+heavy_berserker_s1     d7 11-3 L80 t94 | d30 20-7 L139 t182 | d60 23-9 L165 t213 | d90 24-9 L175 t227 | d120 25-9 L182 t237 | d180 27-9 L193 t253 | d240 28-9 L201 t263 | d365 29-9 L212 t276 | stall 76 | new30 min(d90+) 0 | new30@365 0
+heavy_berserker_s2     d7 10-8 L78 t86 | d30 20-8 L139 t184 | d60 23-9 L164 t211 | d90 25-9 L178 t235 | d120 26-9 L185 t243 | d180 27-9 L195 t257 | d240 28-9 L203 t268 | d365 29-9 L213 t279 | stall 107 | new30 min(d90+) 0 | new30@365 0
+heavy_cryo_s1          d7 11-9 L84 t93 | d30 19-9 L137 t176 | d60 23-9 L163 t211 | d90 24-9 L174 t224 | d120 25-9 L182 t236 | d180 27-9 L193 t251 | d240 28-9 L201 t261 | d365 29-9 L212 t273 | stall 80 | new30 min(d90+) 0 | new30@365 0
+heavy_cryo_s2          d7 11-5 L81 t88 | d30 19-9 L135 t171 | d60 22-9 L162 t207 | d90 23-9 L172 t219 | d120 26-9 L180 t240 | d180 27-9 L193 t256 | d240 28-9 L202 t266 | d365 29-9 L213 t278 | stall 92 | new30 min(d90+) 0 | new30@365 0
+heavy_knight_s1        d7 10-3 L74 t80 | d30 19-5 L133 t171 | d60 22-9 L161 t209 | d90 24-9 L172 t223 | d120 25-9 L179 t234 | d180 26-9 L190 t249 | d240 27-9 L198 t260 | d365 29-9 L209 t273 | stall 92 | new30 min(d90+) 0 | new30@365 0
+heavy_pyro_s1          d7 11-9 L83 t94 | d30 20-8 L140 t182 | d60 23-9 L165 t212 | d90 24-9 L175 t224 | d120 25-9 L181 t236 | d180 27-9 L192 t251 | d240 28-9 L200 t261 | d365 29-9 L211 t273 | stall 81 | new30 min(d90+) 0 | new30@365 0
+heavy_pyro_s2          d7 11-6 L81 t90 | d30 19-9 L138 t178 | d60 22-9 L163 t208 | d90 23-9 L173 t220 | d120 26-9 L182 t241 | d180 27-9 L194 t256 | d240 28-9 L202 t267 | d365 29-9 L212 t278 | stall 95 | new30 min(d90+) 0 | new30@365 0
+heavy_ranger_s1        d7 10-6 L77 t85 | d30 19-9 L136 t178 | d60 22-9 L161 t210 | d90 24-9 L171 t223 | d120 25-9 L178 t231 | d180 26-9 L189 t247 | d240 27-9 L197 t258 | d365 29-9 L208 t272 | stall 102 | new30 min(d90+) 0 | new30@365 1
+heavy_ranger_s2        d7 10-2 L76 t84 | d30 19-8 L133 t170 | d60 22-9 L159 t205 | d90 23-9 L168 t216 | d120 24-9 L175 t227 | d180 26-9 L185 t241 | d240 28-9 L196 t261 | d365 29-9 L209 t274 | stall 83 | new30 min(d90+) 0 | new30@365 0
+heavy_sniper_s1        d7 9-6 L72 t80 | d30 19-6 L133 t172 | d60 22-9 L160 t210 | d90 24-9 L170 t223 | d120 25-9 L177 t232 | d180 26-9 L188 t247 | d240 27-9 L196 t258 | d365 29-9 L206 t271 | stall 96 | new30 min(d90+) 0 | new30@365 2
+heavy_sniper_s2        d7 9-7 L73 t83 | d30 18-9 L130 t167 | d60 22-9 L157 t205 | d90 23-9 L167 t216 | d120 24-9 L174 t224 | d180 26-9 L184 t242 | d240 28-9 L194 t260 | d365 29-9 L208 t274 | stall 73 | new30 min(d90+) 0 | new30@365 0
+-- median over runs
+d7   9-6 ~ 11-9 (median g98 = 10-8)  lv 72-84  tower 80-94  gap(g-t) med 12
+d30  18-9 ~ 20-8 (median g189 = 19-9)  lv 130-140  tower 167-184  gap(g-t) med 14
+d60  22-9 ~ 23-9 (median g219 = 22-9)  lv 157-165  tower 205-213  gap(g-t) med 14
+d90  23-9 ~ 25-9 (median g239 = 24-9)  lv 167-178  tower 216-235  gap(g-t) med 14
+d120 24-9 ~ 26-9 (median g249 = 25-9)  lv 174-185  tower 224-243  gap(g-t) med 15
+d180 26-9 ~ 27-9 (median g269 = 27-9)  lv 184-195  tower 241-257  gap(g-t) med 13
+d240 27-9 ~ 28-9 (median g279 = 28-9)  lv 194-203  tower 258-268  gap(g-t) med 13
+d365 29-9 ~ 29-9 (median g289 = 29-9)  lv 206-213  tower 271-279  gap(g-t) med 15
+longest stall: median 92 max 107 | new30 min from d90: median 0 min 0
+== final_heavy (11 runs)
+  d1-30 longest stall median 2 max 4 | normal fail 18.3% | boss fails 3958 deaths 0%
+  d31-90 longest stall median 20 max 27 | normal fail 1.8% | boss fails 17664 deaths 0%
+  d91-180 longest stall median 38 max 42 | normal fail 0.0% | boss fails 24850 deaths 0%
+  d181-365 longest stall median 92 max 107 | normal fail 0.0% | boss fails 49549 deaths 0%
+final_heavy  longest(1-180) median 38.0 max 42 | runs over 14: 11/11 | [32, 34, 35, 38, 38, 38, 39, 39, 39, 40, 42]

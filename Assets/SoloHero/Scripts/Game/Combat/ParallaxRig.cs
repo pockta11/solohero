@@ -33,6 +33,7 @@ namespace SoloHero.Game.Combat
 
         private BalanceValues _balance = new BalanceValues();
         private ChapterTheme _shown;
+        private int _shownTier = -1;
         private float[] _tileWidths = new float[0];
         private float _groundWidth = 1f;
 
@@ -62,6 +63,9 @@ namespace SoloHero.Game.Combat
                 StageIndex.FromGlobal(runner.GlobalStage, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
                 ChapterTheme theme = ThemeFor(chapter);
                 if (theme != _shown) ApplyTheme(theme);
+                // D-153: a difficulty tier reuses the chapter art under its own colour.
+                int tier = DifficultyTier.OfChapter(_balance, chapter);
+                if (tier != _shownTier) ApplyTint(tier);
             }
 
             float cameraX = _camera.transform.position.x;
@@ -94,6 +98,18 @@ namespace SoloHero.Game.Combat
             Vector3 p = _ground.transform.position;
             p.y = FloorTop - size.y * _ground.transform.localScale.y;
             _ground.transform.position = p;
+        }
+
+        private void ApplyTint(int tier)
+        {
+            _shownTier = tier;
+            Color tint = TierLook.BackgroundTint(tier);
+            for (int i = 0; i < _layers.Length; i++)
+            {
+                if (_layers[i] != null) _layers[i].color = tint;
+            }
+
+            if (_ground != null) _ground.color = tint;
         }
 
         private ChapterTheme ThemeFor(int chapter)

@@ -1,0 +1,29 @@
+===== final_ads 12 runs
+ads_berserker_s1       d7 5-5 L42 t37 | d30 13-6 L89 t117 | d60 16-3 L111 t142 | d90 19-2 L128 t172 | d120 21-9 L145 t200 | d180 24-9 L164 t224 | d240 25-9 L174 t238 | d365 27-9 L188 t255 | stall 63 | new30 min(d90+) 0 | new30@365 0
+ads_berserker_s2       d7 5-4 L42 t36 | d30 12-9 L87 t108 | d60 15-5 L107 t135 | d90 18-6 L124 t165 | d120 21-9 L142 t193 | d180 24-9 L163 t223 | d240 25-9 L174 t240 | d365 27-9 L189 t258 | stall 75 | new30 min(d90+) 0 | new30@365 0
+ads_cryo_s1            d7 5-5 L43 t36 | d30 12-9 L91 t110 | d60 15-9 L110 t137 | d90 18-9 L126 t165 | d120 21-9 L142 t194 | d180 23-9 L162 t220 | d240 25-9 L173 t234 | d365 27-9 L187 t252 | stall 73 | new30 min(d90+) 0 | new30@365 1
+ads_cryo_s2            d7 5-8 L43 t38 | d30 12-9 L87 t103 | d60 15-9 L109 t135 | d90 18-9 L125 t164 | d120 21-9 L142 t191 | d180 24-9 L162 t222 | d240 25-9 L174 t239 | d365 27-9 L188 t257 | stall 63 | new30 min(d90+) 0 | new30@365 0
+ads_knight_s1          d7 5-3 L41 t35 | d30 12-5 L84 t104 | d60 15-5 L107 t134 | d90 17-9 L122 t159 | d120 21-1 L138 t191 | d180 23-9 L160 t219 | d240 25-9 L170 t233 | d365 27-9 L185 t251 | stall 80 | new30 min(d90+) 0 | new30@365 1
+ads_knight_s2          d7 5-2 L41 t34 | d30 12-6 L83 t103 | d60 14-9 L105 t127 | d90 17-9 L120 t154 | d120 20-9 L136 t183 | d180 23-9 L159 t220 | d240 25-9 L171 t237 | d365 27-9 L186 t256 | stall 54 | new30 min(d90+) 0 | new30@365 0
+ads_pyro_s1            d7 5-6 L43 t38 | d30 13-3 L91 t111 | d60 16-3 L112 t144 | d90 19-2 L128 t170 | d120 21-9 L145 t198 | d180 24-9 L163 t222 | d240 25-9 L173 t234 | d365 27-9 L187 t252 | stall 73 | new30 min(d90+) 0 | new30@365 1
+ads_pyro_s2            d7 5-7 L43 t38 | d30 12-7 L86 t103 | d60 15-5 L107 t133 | d90 18-8 L123 t162 | d120 20-9 L141 t189 | d180 24-8 L162 t223 | d240 25-9 L173 t239 | d365 27-9 L188 t257 | stall 57 | new30 min(d90+) 0 | new30@365 0
+ads_ranger_s1          d7 5-6 L44 t39 | d30 11-1 L79 t95 | d60 15-2 L105 t132 | d90 17-9 L121 t159 | d120 21-1 L138 t191 | d180 23-9 L159 t219 | d240 25-9 L170 t233 | d365 27-9 L184 t251 | stall 76 | new30 min(d90+) 0 | new30@365 2
+ads_ranger_s2          d7 5-7 L44 t39 | d30 11-2 L79 t95 | d60 14-8 L103 t128 | d90 17-9 L120 t155 | d120 20-9 L136 t185 | d180 22-9 L155 t209 | d240 25-9 L167 t234 | d365 27-9 L184 t254 | stall 52 | new30 min(d90+) 0 | new30@365 0
+ads_sniper_s1          d7 5-3 L43 t41 | d30 10-4 L75 t90 | d60 15-1 L103 t133 | d90 17-8 L120 t158 | d120 20-6 L135 t187 | d180 23-9 L158 t217 | d240 25-9 L169 t233 | d365 27-9 L183 t251 | stall 73 | new30 min(d90+) 0 | new30@365 1
+ads_sniper_s2          d7 5-5 L43 t41 | d30 10-6 L75 t92 | d60 14-5 L99 t128 | d90 17-4 L117 t156 | d120 20-6 L133 t182 | d180 22-9 L153 t209 | d240 25-9 L166 t233 | d365 27-9 L184 t254 | stall 58 | new30 min(d90+) 0 | new30@365 0
+-- median over runs
+d7   5-2 ~ 5-8 (median g45 = 5-5)  lv 41-44  tower 34-41  gap(g-t) med 8
+d30  10-4 ~ 13-6 (median g116 = 12-6)  lv 75-91  tower 90-117  gap(g-t) med 10
+d60  14-5 ~ 16-3 (median g145 = 15-5)  lv 99-112  tower 127-144  gap(g-t) med 10
+d90  17-4 ~ 19-2 (median g172 = 18-2)  lv 117-128  tower 154-172  gap(g-t) med 12
+d120 20-6 ~ 21-9 (median g201 = 21-1)  lv 133-145  tower 182-200  gap(g-t) med 12
+d180 22-9 ~ 24-9 (median g229 = 23-9)  lv 153-164  tower 209-224  gap(g-t) med 11
+d240 25-9 ~ 25-9 (median g249 = 25-9)  lv 166-174  tower 233-240  gap(g-t) med 15
+d365 27-9 ~ 27-9 (median g269 = 27-9)  lv 183-189  tower 251-258  gap(g-t) med 15
+longest stall: median 68.0 max 80 | new30 min from d90: median 0.0 min 0
+== final_ads (12 runs)
+  d1-30 longest stall median 1.0 max 4 | normal fail 16.0% | boss fails 459 deaths 0%
+  d31-90 longest stall median 6.0 max 11 | normal fail 18.8% | boss fails 1183 deaths 0%
+  d91-180 longest stall median 23.0 max 31 | normal fail 7.0% | boss fails 3288 deaths 0%
+  d181-365 longest stall median 68.0 max 80 | normal fail 0.3% | boss fails 7567 deaths 0%
+final_ads    longest(1-180) median 23.0 max 31 | runs over 14: 12/12 | [16, 17, 17, 22, 22, 22, 24, 24, 27, 31, 31, 31]

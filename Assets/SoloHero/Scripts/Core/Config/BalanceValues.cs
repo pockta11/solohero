@@ -55,7 +55,19 @@ namespace SoloHero.Core.Config
         // limit breaks, daily dungeons in the sim). ATK 1.22 let a boss's 0.1x attack kill a fast (ad) hero.
         public double ENEMY_HP_GROWTH = 1.21;
         public double ENEMY_ATK_BASE = 2.6;
-        public double ENEMY_ATK_GROWTH = 1.21;
+        // D-151: 1.21 -> 1.17. The hero's HP grows about x1.13 a stage (the owned effects raise ATK only), so at 1.21 the
+        // hero fell from 15 enemy hits of HP at 2-10 to under one by 7-10: from week two bosses killed the hero (D-139 wants
+        // time-outs) and a third of normal attempts ended in death.
+        public double ENEMY_ATK_GROWTH = 1.17;
+        // D-151 late curve: past ENEMY_GROWTH_LATE_START (stage 7-10) enemies grow by the _LATE rates instead. At 1.21 for
+        // ever a stage costs x1.117 more play than the last (x3 a chapter) while income grows x1.035, so a 30-minute player
+        // stalled for months at a chapter boss from month four on. The first month (chapters 1-7) keeps its curve. Attack
+        // grows slower than HP (the hero's HP grows about x1.07 a stage late), so bosses stay a wall of HP.
+        // D-167: HP 1.125 -> 1.145 once the P1 axes (third job, job talents, summon level 20, stone levels, the score
+        // dungeon, the codex) were in - at 1.125 a light player reached chapter 26 at six months (target 16-20).
+        public int ENEMY_GROWTH_LATE_START = 70;
+        public double ENEMY_HP_GROWTH_LATE = 1.145;
+        public double ENEMY_ATK_GROWTH_LATE = 1.07;
         public double ENEMY_DEF = 0;
         public double ENEMY_EXP_BASE = 3.75;
         public double ENEMY_EXP_GROWTH = 1.10;
@@ -109,6 +121,26 @@ namespace SoloHero.Core.Config
         // D-122: 1.04 -> 1.035 so gold alone climbs a little slower (day one nearly the same, later chapters slower).
         public double STAGE_GOLD_GROWTH = 1.035;
         public int CHAPTER_CLEAR_GEM = 60;
+
+        // D-153 (L-02 / L-03) difficulty tiers: every TIER_CHAPTERS chapters is one tier (normal, hard, hell, nightmare,
+        // abyss, abyss II, ...). Stats still follow g; a tier only names and colours its stages. The first clear of a tier's
+        // last boss opens the next tier and pays TIER_CLEAR_GEM gems and summon tickets.
+        public int TIER_CHAPTERS = 10;
+        public int TIER_CLEAR_GEM = 500;
+        public int TIER_CLEAR_GEAR_TICKETS = 10;
+        public int TIER_CLEAR_SKILL_TICKETS = 2;
+        public int TIER_CLEAR_PET_TICKETS = 2;
+
+        // D-154 (L-08) level rewards (genre "growth reward"): every LEVEL_REWARD_EVERY levels pays gems, gear tickets and
+        // breakthrough stones the moment the level is reached; every LEVEL_REWARD_BIG_EVERY levels adds more gems and
+        // LEVEL_REWARD_BIG_TICKETS skill and pet tickets each.
+        public int LEVEL_REWARD_EVERY = 10;
+        public int LEVEL_REWARD_GEM = 50;
+        public int LEVEL_REWARD_GEAR_TICKETS = 3;
+        public int LEVEL_REWARD_STONES = 10;
+        public int LEVEL_REWARD_BIG_EVERY = 50;
+        public int LEVEL_REWARD_BIG_GEM = 200;
+        public int LEVEL_REWARD_BIG_TICKETS = 3;
         public int OFFLINE_CAP = 21600;
         // D-110: 2000; D-145: 1800, so offline gold stays 20 % or more of all gold now that the daily dungeons pay too.
         public double OFFLINE_DIVISOR = 1800;
@@ -140,7 +172,17 @@ namespace SoloHero.Core.Config
         // D-115 summon level: each summon (gear, skill, pet) levels up with its own cumulative pulls - level L needs
         // STEP x (L - 1) x L / 2 pulls - and every level multiplies the good grades (gear and pets: Rare and up;
         // skills: Epic and up) by 1 + SUMMON_LV_RATE_GAIN x (L - 1); the lowest grade gives up the difference.
-        public int SUMMON_LV_MAX = 10;
+        // D-159 (L-09): 20 levels. Past SUMMON_LV_LATE_FROM each level takes SUMMON_LV_LATE_STEP_MULT x the pulls, the
+        // good grades keep that level's boost and only the top grades (gear and pets: Mythic, Ancient) rise, by
+        // SUMMON_LV_TOP_GAIN per level - the refund rule below still holds at level 20. Each of those levels pays
+        // SUMMON_LV_REWARD_* tickets of its own summon.
+        public int SUMMON_LV_MAX = 20;
+        public int SUMMON_LV_LATE_FROM = 10;
+        public int SUMMON_LV_LATE_STEP_MULT = 2;
+        public double SUMMON_LV_TOP_GAIN = 0.06;
+        public int SUMMON_LV_REWARD_GEAR = 100;
+        public int SUMMON_LV_REWARD_SKILL = 10;
+        public int SUMMON_LV_REWARD_PET = 30;
         // D-123: hundreds of pulls per level (gear 100, 300, 600, 1000, ...), MapleStory Idle style.
         public int SUMMON_LV_STEP_GEAR = 100;
         public int SUMMON_LV_STEP_SKILL = 20;
@@ -176,6 +218,14 @@ namespace SoloHero.Core.Config
         public double EQUIP_ENHANCE_GAIN = 0.1;
         public int EQUIP_MAX_LEVEL = 10;
 
+        // D-160 (L-09) stone enhancement: gear of EQUIP_STONE_MIN_GRADE (Epic, the grades promotion never touches) and up
+        // at EQUIP_MAX_LEVEL climbs on to EQUIP_STONE_MAX_LEVEL with break stones; the step to +L costs
+        // EQUIP_STONE_COST x (L - EQUIP_MAX_LEVEL). Duplicates still stop at EQUIP_MAX_LEVEL. D-167: cost 10 -> 30, so with
+        // the score dungeon's stones the levels spread over the year instead of landing in months two to four.
+        public int EQUIP_STONE_MAX_LEVEL = 20;
+        public int EQUIP_STONE_MIN_GRADE = 3;
+        public int EQUIP_STONE_COST = 30;
+
         // D-116 equipment promotion (genre "promotion"): an item at EQUIP_MAX_LEVEL goes back to +0 and gives the same slot's
         // next grade at +EQUIP_PROMOTE_ENHANCE (an owned copy gains that many levels, capped), up to EQUIP_PROMOTE_MAX_GRADE
         // (3 = Epic; Legendary and above only come from summons). Cost EQUIP_PROMOTE_COST x EQUIP_PROMOTE_COST_GROWTH^grade.
@@ -203,10 +253,13 @@ namespace SoloHero.Core.Config
 
         // D-127 recommended combat power (calibrated on the sim's first clears): REC_CP_BASE x REC_CP_GROWTH^(g - 1),
         // bosses x REC_CP_BOSS_MULT. Shown next to the hero's combat power, green once met. D-145: refit (median first
-        // clear) after the faster enemy growth: 150 x 1.15 -> 185 x 1.172.
-        public double REC_CP_BASE = 185;
-        public double REC_CP_GROWTH = 1.172;
-        public double REC_CP_BOSS_MULT = 1.1;
+        // clear) after the faster enemy growth: 150 x 1.15 -> 185 x 1.172. D-151: refit on 365-day runs in two pieces
+        // like the enemies: 135 x 1.177 up to ENEMY_GROWTH_LATE_START, then x REC_CP_GROWTH_LATE a stage, bosses x1.2
+        // (185 x 1.172 fitted the first week only). D-167: late 1.115 -> 1.127 with the steeper late curve.
+        public double REC_CP_BASE = 135;
+        public double REC_CP_GROWTH = 1.177;
+        public double REC_CP_GROWTH_LATE = 1.127;
+        public double REC_CP_BOSS_MULT = 1.2;
 
         // D-128 summon tickets and the daily shop: one ticket is one pull of its summon. Every day one free gear bundle
         // and one discounted bundle per summon (gems); the gold package moved here from the summon page.
@@ -234,6 +287,15 @@ namespace SoloHero.Core.Config
         public double TOWER_BOSS_HP_MULT = 2;
         public int TOWER_STONES = 1;
         public int TOWER_STONES_RARE = 5;
+
+        // D-162 (L-15) tower milestones: every TOWER_MILESTONE_EVERY floors pays TOWER_MILESTONE_GEM x (floor /
+        // TOWER_MILESTONE_EVERY) gems and the tickets and stones below on top of the floor's own reward.
+        public int TOWER_MILESTONE_EVERY = 50;
+        public double TOWER_MILESTONE_GEM = 500;
+        public int TOWER_MILESTONE_GEAR_TICKETS = 20;
+        public int TOWER_MILESTONE_SKILL_TICKETS = 5;
+        public int TOWER_MILESTONE_PET_TICKETS = 5;
+        public int TOWER_MILESTONE_STONES = 50;
         // Gear effects per grade, C U R E L M A (D-113 added U, M and A).
         public double SWORD_ATK_C = 1.10;
         public double SWORD_ATK_U = 1.18;
@@ -346,6 +408,18 @@ namespace SoloHero.Core.Config
         public double ATTENDANCE_GEM = 30;
         public double ATTENDANCE_GOLD_STAGES = 20;
         public double ATTENDANCE_DAY7_GEM = 150;
+        /// <summary>D-166: the 28-day board's last day (days 7, 14 and 21 pay ATTENDANCE_DAY7_GEM).</summary>
+        public double ATTENDANCE_DAY28_GEM = 300;
+
+        // D-163 (L-17) free season pass: PASS_SEASON_DAYS-day seasons from PASS_EPOCH_UTC (2026-10-12 00:00 UTC, a Monday)
+        // on the trusted clock; PASS_XP_PER_LEVEL XP a level; XP from claimed daily / weekly missions and one per
+        // PASS_KILLS_PER_XP kills. D-170: set the epoch to the launch week's Monday so the first public season is 1.
+        public long PASS_EPOCH_UTC = 1791763200;
+        public int PASS_SEASON_DAYS = 28;
+        public int PASS_XP_PER_LEVEL = 200;
+        public int PASS_XP_DAILY = 20;
+        public int PASS_XP_WEEKLY = 100;
+        public int PASS_KILLS_PER_XP = 50;
 
         /// <summary>D-100 daily dungeons: run length, entries per dungeon per local day, rewards, result pause.</summary>
         public float DUNGEON_TIME = 30f;
@@ -356,12 +430,26 @@ namespace SoloHero.Core.Config
 
         /// <summary>D-143: the daily dungeons open with the first boss, like the tower and the pet summon.</summary>
         public int DUNGEON_UNLOCK_STAGE = 10;
+
+        // D-165 (L-13) score dungeon (Soul Strike's training ground): SCORE_DUNGEON_TIME seconds against a harmless
+        // training boss - the farming stage's chapter boss with SCORE_HP_MULT x its HP - SCORE_DAILY_TICKETS times a day.
+        // The damage in that chapter boss's HP sets the tier: tier 1 from SCORE_TIER_BASE, one more each time it doubles
+        // (capped at SCORE_TIER_MAX). Tier k pays SCORE_STONES_BASE + SCORE_STONES_PER_TIER x (k - 1) stones, tier 0
+        // DUNGEON_STONES.
+        public float SCORE_DUNGEON_TIME = 30f;
+        public int SCORE_DAILY_TICKETS = 2;
+        public double SCORE_HP_MULT = 1000;
+        public double SCORE_TIER_BASE = 0.125;
+        public int SCORE_TIER_MAX = 20;
+        public int SCORE_STONES_BASE = 4;
+        public int SCORE_STONES_PER_TIER = 3;
         public float DUNGEON_RESULT_TIME = 2.5f;
 
         /// <summary>D-104 job advancement (replaces the D-101 promotion): hero level for the first and second job,
-        /// HP / ATK / DEF multiplier per advancement.</summary>
+        /// HP / ATK / DEF multiplier per advancement. D-157 (L-05): the third job at JOB_LV_3.</summary>
         public int JOB_LV_1 = 10;
         public int JOB_LV_2 = 30;
+        public int JOB_LV_3 = 60;
         public double JOB_STAT_MULT = 1.05;
 
         /// <summary>

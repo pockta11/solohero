@@ -41,6 +41,7 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private TapGuardButton _gemButton;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
         [SerializeField] private GachaRevealView _reveal;
         [Tooltip("D-128: spend up to ten tickets of the shown summon.")]
         [SerializeField] private TapGuardButton _ticketButton;
@@ -135,12 +136,26 @@ namespace SoloHero.Game.UI.Panels
                 if (g >= 0) opened = g;
             }
 
+            // D-159: the late levels paid tickets of this summon (SummonLevel.PayLevelRewards in the service).
+            int tickets = 0;
+            for (int level = before + 1; level <= after; level++) tickets += SummonLevel.RewardTickets(_balance, Kind, level);
+            // D-171: the new level rises over the reveal and its tickets fly to the summon tab.
+            if (_rewardFx != null)
+            {
+                var top = new Vector2(Screen.width * 0.5f, Screen.height * 0.84f);
+                _rewardFx.Label(Strings.Format("fx.summon_level", Strings.Get(ModeKeys[_mode]), after), top, new Color(1f, 0.85f, 0.4f, 1f));
+                if (tickets > 0) _rewardFx.Play(RewardKind.Ticket, tickets, top - new Vector2(0f, 90f), 1);
+            }
+
             if (_toast != null)
             {
                 string summon = Strings.Get(ModeKeys[_mode]);
-                _toast.Show(opened >= 0
-                    ? Strings.Format("gacha.level_up_open", summon, after, PanelServices.GradeName(LadderGrade(_mode, opened)))
-                    : Strings.Format("gacha.level_up", summon, after));
+                if (tickets > 0)
+                    _toast.Show(Strings.Format("gacha.level_up_reward", summon, after, Strings.Format(TicketRewardKeys[_mode], tickets)));
+                else
+                    _toast.Show(opened >= 0
+                        ? Strings.Format("gacha.level_up_open", summon, after, PanelServices.GradeName(LadderGrade(_mode, opened)))
+                        : Strings.Format("gacha.level_up", summon, after));
             }
 
             DrawStatic();
@@ -165,6 +180,9 @@ namespace SoloHero.Game.UI.Panels
         private static GearGrade LadderGrade(int mode, int index) => mode == ModeSkill ? ((Grade)index).ToGearGrade() : (GearGrade)index;
 
         private static readonly string[] ModeKeys = { "gacha.mode_gear", "gacha.mode_skill", "gacha.mode_pet" };
+
+        /// <summary>D-159: the ticket reward line of each page's summon.</summary>
+        private static readonly string[] TicketRewardKeys = { "reward.gear", "reward.skill", "reward.pet" };
 
         public void PullSingle()
         {
@@ -331,8 +349,8 @@ namespace SoloHero.Game.UI.Panels
             return cards;
         }
 
-        /// <summary>Pet sheets are 48 px frames with the creature in the lower middle; scale them up on the card.</summary>
-        private const float PetIconScale = 1.9f;
+        /// <summary>Ink-cel pet frames are trimmed to the creature (D-168); a little larger than the card's icon box.</summary>
+        private const float PetIconScale = 1.1f;
 
         private static string PetNote(PetPullItem item)
         {
@@ -479,11 +497,14 @@ namespace SoloHero.Game.UI.Panels
             }
             else
             {
-                // D-121: when the next level opens a grade, the line says which.
+                // D-121: when the next level opens a grade, the line says which; D-159: a late level names its tickets.
                 int left = SummonLevel.PullsFor(_balance, kind, level + 1) - SummonLevel.Pulls(_save, kind);
+                int reward = SummonLevel.RewardTickets(_balance, kind, level + 1);
                 _sb.Append(opening >= 0
                     ? Strings.Format("gacha.level_open", level, BigNumberFormat.Format(left), PanelServices.GradeName(LadderGrade(mode, opening)))
-                    : Strings.Format("gacha.level", level, BigNumberFormat.Format(left)));
+                    : reward > 0
+                        ? Strings.Format("gacha.level_reward", level, BigNumberFormat.Format(left), Strings.Format(TicketRewardKeys[mode], reward))
+                        : Strings.Format("gacha.level", level, BigNumberFormat.Format(left)));
             }
 
             _sb.Append('\n');

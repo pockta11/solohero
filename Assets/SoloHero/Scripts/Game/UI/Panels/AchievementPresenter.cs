@@ -1,6 +1,8 @@
 using SoloHero.Core.Common;
+using SoloHero.Core.Config;
 using SoloHero.Core.Progression;
 using SoloHero.Core.Save;
+using SoloHero.Core.Stage;
 using SoloHero.Game.Audio;
 using SoloHero.Game.UI.Common;
 using UnityEngine;
@@ -16,6 +18,12 @@ namespace SoloHero.Game.UI.Panels
     {
         [SerializeField] private GameObject _popup;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
+
+        /// <summary>D-171: seconds between two claims from this window (the reward animation's beat).</summary>
+        private const float ClaimSeconds = 0.35f;
+
+        private readonly ClaimGate _gate = new ClaimGate();
         [SerializeField] private Text[] _names = new Text[0];
         [SerializeField] private Text[] _progress = new Text[0];
         [SerializeField] private RectTransform[] _fills = new RectTransform[0];
@@ -55,26 +63,38 @@ namespace SoloHero.Game.UI.Panels
             if (_popup != null) _popup.SetActive(false);
         }
 
+        /// <summary>D-153: the best-stage track reads as stages ("Hard 3-7"), the rest as short numbers.</summary>
+        private static string Amount(AchievementKind kind, long value)
+        {
+            if (kind != AchievementKind.BestStage) return BigNumberFormat.Format(value);
+            BalanceValues balance = PanelServices.TryGet<BalanceValues>() ?? new BalanceValues();
+            return DifficultyTier.StageLabel(balance, value < 1 ? 1 : (int)value);
+        }
+
         public void Claim(int index)
         {
-            if (_service == null) return;
+            if (_service == null || !_gate.Pass(ClaimSeconds)) return;
             double gems = _service.Gems(index);
+            var before = new RewardSnapshot(_save);
             Result result = _service.TryClaim(index);
             if (!result.Ok) return;
-            Rewarded(gems);
+            Rewarded(gems, before);
         }
 
         public void ClaimAll()
         {
-            if (_service == null) return;
+            if (_service == null || !_gate.Pass(ClaimSeconds)) return;
+            var before = new RewardSnapshot(_save);
             double gems = _service.ClaimAll();
-            if (gems > 0d) Rewarded(gems);
+            if (gems > 0d) Rewarded(gems, before);
         }
 
-        private void Rewarded(double gems)
+        private void Rewarded(double gems, RewardSnapshot before)
         {
             PanelServices.TryGet<AudioService>()?.Play(SfxId.GradeEpic);
-            if (_toast != null) _toast.Show(Strings.Format("achieve.claimed", BigNumberFormat.Format(gems)));
+            // D-171: the gems fly to the top bar; without the layer the toast says it.
+            if (_rewardFx != null) _rewardFx.PlayGain(before, _save);
+            else if (_toast != null) _toast.Show(Strings.Format("achieve.claimed", BigNumberFormat.Format(gems)));
             Refresh();
         }
 
@@ -107,7 +127,7 @@ namespace SoloHero.Game.UI.Panels
                 long target = _service.Target(i);
                 if (_names[i] != null) _names[i].text = Strings.Format("achieve.tier", Strings.Get(def.NameKey), tier + 1);
                 if (_progress[i] != null)
-                    _progress[i].text = Strings.Format("achieve.progress", BigNumberFormat.Format(System.Math.Min(progress, target)), BigNumberFormat.Format(target));
+                    _progress[i].text = Strings.Format("achieve.progress", Amount(def.Kind, System.Math.Min(progress, target)), Amount(def.Kind, target));
                 if (_fills[i] != null)
                 {
                     float ratio = finished ? 1f : Mathf.Clamp01(target > 0 ? (float)progress / target : 0f);

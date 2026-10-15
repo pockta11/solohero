@@ -2,6 +2,7 @@ using SoloHero.Core.Common;
 using SoloHero.Core.Economy;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Save;
+using SoloHero.Game.Audio;
 using SoloHero.Game.UI.Common;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,6 +23,12 @@ namespace SoloHero.Game.UI.Panels
 
         [SerializeField] private GameObject _popup;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
+
+        /// <summary>D-171: seconds between two claims from this window (the reward animation's beat).</summary>
+        private const float ClaimSeconds = 0.35f;
+
+        private readonly ClaimGate _gate = new ClaimGate();
         [SerializeField] private Text _ticketsText;
         [SerializeField] private Text[] _names = new Text[0];
         [SerializeField] private Text[] _amounts = new Text[0];
@@ -59,10 +66,23 @@ namespace SoloHero.Game.UI.Panels
 
         public void Buy(int index)
         {
-            if (_shop == null || index < 0 || index >= ShopService.Items.Length) return;
+            if (_shop == null || index < 0 || index >= ShopService.Items.Length || !_gate.Pass(ClaimSeconds)) return;
             ShopItem item = ShopService.Items[index];
             double gold = item == ShopItem.GoldPack ? _shop.GoldPackAmount : 0d;
+            var before = new RewardSnapshot(_save);
             Result result = _shop.TryBuy(item);
+            if (result.Ok)
+            {
+                // D-171: the goods fly to their counter with a chime (the gem price was already paid).
+                PanelServices.TryGet<AudioService>()?.Play(SfxId.Gold);
+                if (_rewardFx != null && _save != null)
+                {
+                    if (_save.gold > before.Gold) _rewardFx.Play(RewardKind.Gold, _save.gold - before.Gold, _rewardFx.LastTap);
+                    int tickets = _save.gearTickets + _save.skillTickets + _save.petTickets - before.Tickets;
+                    if (tickets > 0) _rewardFx.Play(RewardKind.Ticket, tickets, _rewardFx.LastTap);
+                }
+            }
+
             if (_toast != null)
             {
                 if (!result.Ok) _toast.ShowFailure(result.Reason);

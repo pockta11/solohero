@@ -25,16 +25,21 @@ namespace SoloHero.Game.UI.Panels
     {
         private const int Cards = 3;
 
+        /// <summary>Canvas units per art pixel of the card portraits (the 384 x 288 well holds a 96 x 72 frame).</summary>
+        private const float PortraitScale = 4f;
+
         /// <summary>Mastery lines by TalentStat value; "" for stats no job uses.</summary>
         private static readonly string[] MasteryKeys =
         {
-            "job.stat.atk", "job.stat.crit", "job.stat.crit_damage", "job.stat.atkspd", "", "",
-            "job.stat.hp", "job.stat.def", "", "", "", "job.stat.skill_damage", "job.stat.cooldown", "", "job.stat.dot", "",
+            "job.stat.atk", "job.stat.crit", "job.stat.crit_damage", "job.stat.atkspd", "job.stat.boss", "",
+            "job.stat.hp", "job.stat.def", "job.stat.damage_taken", "", "", "job.stat.skill_damage", "job.stat.cooldown", "",
+            "job.stat.dot", "",
         };
 
         [SerializeField] private GameObject _popup;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
         [Tooltip("Job looks, index-aligned with JobCatalog.All.")]
         [SerializeField] private CharacterArt[] _arts = new CharacterArt[0];
         [SerializeField] private Text _current;
@@ -106,8 +111,12 @@ namespace SoloHero.Game.UI.Panels
             // The new job may make equipped skills unusable (or open its line): refill the slots with the best usable ones.
             PanelServices.TryGet<SkillService>()?.AutoEquip();
             _session?.RefreshLoadout();
-            _audio?.Play(SfxId.LevelUp);
-            _toast?.Show(Strings.Format("job.advanced", Strings.Get(job.NameKey)));
+            // D-171: CombatFx sees the new job and plays the ribbon, ring and fanfare; without it, the old chime.
+            if (_rewardFx == null)
+            {
+                _audio?.Play(SfxId.LevelUp);
+                _toast?.Show(Strings.Format("job.advanced", Strings.Get(job.NameKey)));
+            }
             Close();
         }
 
@@ -142,7 +151,7 @@ namespace SoloHero.Game.UI.Panels
                 JobDef job = _choices[i];
                 CharacterArt art = Art(job);
                 if (i < _portraits.Length && _portraits[i] != null)
-                    _portraits[i].sprite = art != null && art.idle.Length > 0 ? art.idle[0] : null;
+                    UiFlipbook.Fit(_portraits[i], art != null && art.idle.Length > 0 ? art.idle[0] : null, PortraitScale);
                 if (i < _names.Length && _names[i] != null) _names[i].text = Strings.Get(job.NameKey);
                 if (i < _mains.Length && _mains[i] != null) _mains[i].text = MainLine(job);
                 if (i < _descs.Length && _descs[i] != null) _descs[i].text = Strings.Get(job.DescKey);

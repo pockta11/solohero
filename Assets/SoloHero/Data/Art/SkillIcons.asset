@@ -64,6 +64,18 @@ MonoBehaviour:
   - hunters_mark
   - deadeye
   - phantom_volley
+  - sword_aura
+  - shockwave
+  - sword_dance
+  - ragnarok
+  - ice_shard
+  - fire_wall
+  - thunder_storm
+  - starfall
+  - power_shot
+  - explosive_arrow
+  - wind_arrows
+  - dragon_arrow
   - main_warrior
   - main_mage
   - main_archer
@@ -79,6 +91,18 @@ MonoBehaviour:
   - main_ranger
   - ult_death_shot
   - main_sniper
+  - ult_sanctuary
+  - main_paladin
+  - ult_warlord_wrath
+  - main_warlord
+  - ult_meteor_storm
+  - main_archpyro
+  - ult_frozen_thunder
+  - main_archcryo
+  - ult_arrow_storm
+  - main_bowmaster
+  - ult_true_shot
+  - main_marksman
   icons:
   - {fileID: 21300000, guid: a846e4b881c52614daa75122b9696d92, type: 3}
   - {fileID: 21300000, guid: dd305e8b925ad4042ab598cacbd411ef, type: 3}
@@ -131,6 +155,18 @@ MonoBehaviour:
   - {fileID: 21300000, guid: f1dadc266e501a1449f8c30a2215178e, type: 3}
   - {fileID: 21300000, guid: 6a3732c9abe44274d95b7204a8592a23, type: 3}
   - {fileID: 21300000, guid: 830dc4f95e0d9044e9fd8fd77331b8b4, type: 3}
+  - {fileID: 21300000, guid: 3de7dc7e74dc065438a747e49e951b9b, type: 3}
+  - {fileID: 21300000, guid: 53aaa2e73828a2346aaaca0ccb9a3827, type: 3}
+  - {fileID: 21300000, guid: d0f93a8e965831543bdb0816eb2a329f, type: 3}
+  - {fileID: 21300000, guid: b294076d4670d294997dd2c36b76a32a, type: 3}
+  - {fileID: 21300000, guid: 9963ee584dddb354c960434cafe9a18a, type: 3}
+  - {fileID: 21300000, guid: ba7e6760d7208784eb5bf2b1a3cadc4d, type: 3}
+  - {fileID: 21300000, guid: 8d5a2b4e1f9965d48a2c80d68bbbacd6, type: 3}
+  - {fileID: 21300000, guid: 0c4fcc2d8328e954a8dd4e786687ffb1, type: 3}
+  - {fileID: 21300000, guid: a404e6039ad024d4b83eab06b0fc7ce3, type: 3}
+  - {fileID: 21300000, guid: 107984311a72cc047b69954612217a3d, type: 3}
+  - {fileID: 21300000, guid: 25b7c8fd6fad1064a897513213158ed3, type: 3}
+  - {fileID: 21300000, guid: 084e1b565d92d0342aaa26ee0fff39a1, type: 3}
   - {fileID: 21300000, guid: 5b2f491810469bc45a4871d0c963bb47, type: 3}
   - {fileID: 21300000, guid: b73d4b6d0ac3cc64e8b76cbefb6407a0, type: 3}
   - {fileID: 21300000, guid: b8b757bd0e66b0444b82d6405da83b19, type: 3}
@@ -146,5 +182,17 @@ MonoBehaviour:
   - {fileID: 21300000, guid: d986dfcf086afb7439504eaa98114992, type: 3}
   - {fileID: 21300000, guid: 965841403b1ecac498c3ac5acdcef4de, type: 3}
   - {fileID: 21300000, guid: ac3c07f4dcbaa994aafd3115dbe92a9f, type: 3}
+  - {fileID: 21300000, guid: dbb29094155d4ee4984bd1a54267625a, type: 3}
+  - {fileID: 21300000, guid: 07cefefeb366c9f488de949e5ce6a75e, type: 3}
+  - {fileID: 21300000, guid: 90d52e54169bd4748bf310416c7212fa, type: 3}
+  - {fileID: 21300000, guid: 59aa6199f818a684191deb5c72ae8718, type: 3}
+  - {fileID: 21300000, guid: 3e943d6560e09a8479e0895786b11261, type: 3}
+  - {fileID: 21300000, guid: a1a3ec55127f04a418b1015f359a0c1b, type: 3}
+  - {fileID: 21300000, guid: eb338de7379245b489984fe5f48492b5, type: 3}
+  - {fileID: 21300000, guid: 349b2900146fc39419cac6b6ffb2fb8b, type: 3}
+  - {fileID: 21300000, guid: 18c5782db1d115048801162ff7c55f0c, type: 3}
+  - {fileID: 21300000, guid: 3ef30d5608aff0b41a5493d27bf042ab, type: 3}
+  - {fileID: 21300000, guid: 09ff06763bb15db4ca81e58cae4fa0f7, type: 3}
+  - {fileID: 21300000, guid: b6654b85f6bac384796c5e8b5dd6e3dc, type: 3}
   locked: {fileID: 21300000, guid: e5fe4efae4f39c24194536a4cd9f0efa, type: 3}
   empty: {fileID: 0}

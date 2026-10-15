@@ -51,24 +51,28 @@ namespace SoloHero.Tests.EditMode
             {
                 GearTableValues g = gear.AtLevel(level);
                 GearTableValues prev = gear.AtLevel(level - 1);
+                bool late = level > b.SUMMON_LV_LATE_FROM;
                 Assert.AreEqual(100d, g.RatesSum, 1e-9, "gear level " + level);
                 Assert.Less(g.Rates[0], prev.Rates[0]);
                 for (int i = 1; i < g.Rates.Length; i++)
                 {
                     // D-121 / D-123: a grade not open yet stays at 0, it appears at its level, then the boosted ones
-                    // (Rare and up) rise every level while Uncommon keeps its rate.
+                    // (Rare and up) rise every level while Uncommon keeps its rate. D-159: past the late level only
+                    // the top grades (Mythic, Ancient) still rise.
                     int open = gear.OpenLevel((GearGrade)i);
                     if (open > level) Assert.AreEqual(0d, g.Rates[i], 1e-12);
                     else if (open == level) Assert.Greater(g.Rates[i], 0d);
-                    else if (i >= SummonLevel.FirstBoostedGrade) Assert.Greater(g.Rates[i], prev.Rates[i]);
-                    else Assert.AreEqual(prev.Rates[i], g.Rates[i], 1e-12, "uncommon is not boosted");
+                    else if (late && i >= SummonLevel.FirstTopGrade) Assert.Greater(g.Rates[i], prev.Rates[i]);
+                    else if (!late && i >= SummonLevel.FirstBoostedGrade) Assert.Greater(g.Rates[i], prev.Rates[i]);
+                    else Assert.AreEqual(prev.Rates[i], g.Rates[i], 1e-12, "level " + level + " grade " + i);
                 }
 
                 GachaTableValues s = skill.AtLevel(level);
                 GachaTableValues sPrev = skill.AtLevel(level - 1);
                 Assert.AreEqual(100d, s.RatesSum, 1e-9, "skill level " + level);
                 Assert.AreEqual(level >= skill.OpenLevel(Grade.Rare) ? skill.RateR : 0d, s.RateR, 1e-12, "rare skills are not boosted");
-                if (level > skill.OpenLevel(Grade.Epic)) Assert.Greater(s.RateE, sPrev.RateE);
+                if (late) Assert.AreEqual(sPrev.RateE, s.RateE, 1e-12, "the skill ladder has no top grades");
+                else if (level > skill.OpenLevel(Grade.Epic)) Assert.Greater(s.RateE, sPrev.RateE);
             }
 
             Assert.AreEqual(100d, gear.AtLevel(1).RatesSum, 1e-9);
@@ -190,6 +194,49 @@ namespace SoloHero.Tests.EditMode
             for (int g = 0; g < GearGrades.Count; g++)
                 expected += table.Rates[g] / 100d * GachaCatalog.RefundOf(b, (GearGrade)g);
             Assert.Less(expected, b.GACHA_COST_TEN / 10d * 0.5d);
+        }
+
+        [Test]
+        public void PetAndSkillRefunds_AtTheTopLevel_StayUnderHalfTheTenPullPrice()
+        {
+            var b = new BalanceValues();
+            GearTableValues pets = GearTableValues.FromBalance(b).AtLevel(b.SUMMON_LV_MAX);
+            double[] petRefund = { b.PET_REFUND_C, b.PET_REFUND_U, b.PET_REFUND_R, b.PET_REFUND_E, b.PET_REFUND_L, b.PET_REFUND_M, b.PET_REFUND_A };
+            double pet = 0d;
+            for (int g = 0; g < GearGrades.Count; g++) pet += pets.Rates[g] / 100d * petRefund[g];
+            Assert.Less(pet, b.PET_SUMMON_COST_TEN / 10d * 0.5d);
+
+            GachaTableValues skills = GachaTableValues.FromBalance(b).AtLevel(b.SUMMON_LV_MAX);
+            double skill = skills.RateC / 100d * b.SKILL_REFUND_C + skills.RateR / 100d * b.SKILL_REFUND_R
+                + skills.RateE / 100d * b.SKILL_REFUND_E + skills.RateL / 100d * b.SKILL_REFUND_L;
+            Assert.Less(skill, b.SKILL_SUMMON_COST_TEN / 10d * 0.5d);
+        }
+
+        [Test]
+        public void LateLevels_TakeDoubleSteps_AndPayTicketsOnce()
+        {
+            // D-159: twenty levels; each step past level 10 takes twice the pulls, and each late level pays tickets.
+            var b = new BalanceValues();
+            Assert.AreEqual(20, b.SUMMON_LV_MAX);
+            int step = b.SUMMON_LV_STEP_GEAR;
+            int lv10 = SummonLevel.PullsFor(b, SummonKind.Gear, 10);
+            Assert.AreEqual(45 * step, lv10);
+            Assert.AreEqual(lv10 + 2 * step * 10, SummonLevel.PullsFor(b, SummonKind.Gear, 11));
+            Assert.AreEqual(335 * step, SummonLevel.PullsFor(b, SummonKind.Gear, 20));
+            Assert.AreEqual(0, SummonLevel.RewardTickets(b, SummonKind.Gear, 10));
+            Assert.AreEqual(b.SUMMON_LV_REWARD_GEAR, SummonLevel.RewardTickets(b, SummonKind.Gear, 11));
+            Assert.AreEqual(b.SUMMON_LV_REWARD_SKILL, SummonLevel.RewardTickets(b, SummonKind.Skill, 20));
+            Assert.AreEqual(0, SummonLevel.RewardTickets(b, SummonKind.Pet, 21));
+
+            var save = SaveDataV2.CreateNew();
+            save.totalPullCount = SummonLevel.PullsFor(b, SummonKind.Gear, 11) - 1;
+            save.gold = b.GACHA_COST_SINGLE * 2;
+            var service = new GachaService(b, GearTableValues.FromBalance(b), new ScriptedRandom(0.5, 0.5), GachaCatalog.Standard(b));
+            Assert.IsTrue(service.TryPull(save).Status.Ok);
+            Assert.AreEqual(11, SummonLevel.Of(b, save, SummonKind.Gear));
+            Assert.AreEqual(b.SUMMON_LV_REWARD_GEAR, save.gearTickets, "the pull that reaches level 11 pays its tickets");
+            Assert.IsTrue(service.TryPull(save).Status.Ok);
+            Assert.AreEqual(b.SUMMON_LV_REWARD_GEAR, save.gearTickets, "once");
         }
     }
 }

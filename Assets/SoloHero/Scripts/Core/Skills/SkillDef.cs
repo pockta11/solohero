@@ -18,6 +18,11 @@ namespace SoloHero.Core.Skills
         /// <summary>D-104 job line that may equip it; None = starter skill, usable by everyone.</summary>
         public JobLine Line { get; init; }
 
+        /// <summary>
+        /// D-157: the job tier the hero needs to summon or equip it (3 = third-job skills); 0 = any job of the line.
+        /// </summary>
+        public int JobTier { get; init; }
+
         /// <summary>Icon id in the SkillIconSet; defaults to the skill id (job ultimates borrow a catalog icon).</summary>
         public string Icon { get; init; }
 

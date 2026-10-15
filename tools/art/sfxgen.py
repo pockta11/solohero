@@ -1,4 +1,8 @@
-"""Synthesized skill SFX (D-078): fire, thunder, ice, heal, magic. 44.1 kHz mono 16-bit."""
+"""Synthesized SFX, 44.1 kHz mono 16-bit: skill fire, thunder, ice, heal, magic (D-078); reward collect and fanfare (D-171).
+
+    python tools/art/sfxgen.py Assets/SoloHero/Audio/Sfx                   -> every sound
+    python tools/art/sfxgen.py Assets/SoloHero/Audio/Sfx collect fanfare   -> only these (the others keep their bytes)
+"""
 import sys, os, wave
 import numpy as np
 
@@ -96,10 +100,49 @@ def magic():
     return sweep * 0.7 + sparkle
 
 
+def tone(freq, sec, decay, harmonics=(1.0, 0.35, 0.12)):
+    """A bell-like note: a few harmonics under an exponential decay."""
+    tt = t(sec)
+    x = sum(a * np.sin(2 * np.pi * freq * (k + 1) * tt) for k, a in enumerate(harmonics))
+    return x * env(len(tt), 0.004, decay)
+
+
+def place(buf, x, at):
+    i = int(SR * at)
+    buf[i:i + len(x)] += x[:max(0, len(buf) - i)]
+
+
+def collect():
+    """Reward icons landing in a counter: a bright two-note chime with a short sparkle."""
+    buf = np.zeros(len(t(0.45)))
+    place(buf, tone(1318.5, 0.3, 0.09), 0.0)
+    place(buf, tone(1975.5, 0.35, 0.12) * 0.9, 0.06)
+    sparkle = rng.standard_normal(len(buf)) * env(len(buf), 0.0, 0.03)
+    return buf + lowpass(sparkle, 0.6) * 0.15
+
+
+def fanfare():
+    """Job advance, chapter clear, set complete: a rising major arpeggio into a held chord."""
+    buf = np.zeros(len(t(1.25)))
+    notes = (523.25, 659.25, 783.99)
+    for i, f in enumerate(notes):
+        place(buf, tone(f, 0.25, 0.1, (1.0, 0.5, 0.25, 0.1)), i * 0.09)
+    chord = sum(tone(f * 2, 0.95, 0.38, (1.0, 0.45, 0.2, 0.08)) for f in notes)
+    place(buf, chord * 0.7, 0.3)
+    shimmer = np.zeros(len(buf))
+    for k in range(14):
+        place(shimmer, tone(rng.uniform(2600, 4200), 0.12, 0.03, (1.0,)) * 0.2, 0.3 + k * 0.045)
+    return buf + shimmer
+
+
+SOUNDS = {
+    'skill_fire': (fire, 0.8), 'skill_thunder': (thunder, 0.9), 'skill_ice': (ice, 0.7), 'skill_heal': (heal, 0.7),
+    'skill_magic': (magic, 0.7), 'collect': (collect, 0.6), 'fanfare': (fanfare, 0.75),
+}
+
 os.makedirs(OUT, exist_ok=True)
-save('skill_fire', fire())
-save('skill_thunder', thunder(), 0.9)
-save('skill_ice', ice(), 0.7)
-save('skill_heal', heal(), 0.7)
-save('skill_magic', magic(), 0.7)
-print('ok')
+wanted = sys.argv[2:] or list(SOUNDS)
+for name in wanted:
+    make, gain = SOUNDS[name]
+    save(name, make(), gain)
+print('ok', ', '.join(wanted))

@@ -2,6 +2,7 @@ using System;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Jobs;
 using SoloHero.Core.Save;
 
 namespace SoloHero.Core.Talents
@@ -11,6 +12,8 @@ namespace SoloHero.Core.Talents
     /// time; tier t of a branch opens after t x TALENT_TIER_STEP points spent in that branch. A reset returns every
     /// point for TALENT_RESET_GEM gems. Learning and resetting are player decisions and request a save.
     /// Ranks live in <see cref="SaveDataV2.talentIds"/> / <see cref="SaveDataV2.talentRanks"/> (index-aligned).
+    /// D-158 (L-07): the job talent page of the hero's line opens with the third job and its ranks cost
+    /// <see cref="TalentDef.Cost"/> points from the same pool.
     /// </summary>
     public sealed class TalentService
     {
@@ -38,10 +41,16 @@ namespace SoloHero.Core.Talents
             return levels > 0 ? levels * balance.TALENT_POINTS_PER_LEVEL : 0;
         }
 
+        /// <summary>Points in learned ranks (D-158: a job talent rank costs its <see cref="TalentDef.Cost"/>).</summary>
         public static int Spent(SaveDataV2 data)
         {
             int sum = 0;
-            for (int i = 0; i < data.talentRanks.Count; i++) sum += data.talentRanks[i];
+            for (int i = 0; i < data.talentRanks.Count; i++)
+            {
+                TalentDef def = i < data.talentIds.Count ? TalentCatalog.Find(data.talentIds[i]) : null;
+                sum += data.talentRanks[i] * (def != null ? def.Cost : 1);
+            }
+
             return sum;
         }
 
@@ -63,7 +72,7 @@ namespace SoloHero.Core.Talents
             for (int i = 0; i < data.talentIds.Count && i < data.talentRanks.Count; i++)
             {
                 TalentDef def = TalentCatalog.Find(data.talentIds[i]);
-                if (def != null && def.Branch == branch) sum += data.talentRanks[i];
+                if (def != null && !def.IsJobTalent && def.Branch == branch) sum += data.talentRanks[i];
             }
 
             return sum;
@@ -75,14 +84,35 @@ namespace SoloHero.Core.Talents
         public static bool IsTierOpen(BalanceValues balance, SaveDataV2 data, TalentDef def) =>
             BranchSpent(data, def.Branch) >= TierRequirement(balance, def.Tier);
 
-        public Result CanLearn(string id)
+        /// <summary>D-158: a job talent opens with the third job of its own line.</summary>
+        public static bool IsJobPageOpen(SaveDataV2 data, TalentDef def) =>
+            def.Line == JobService.LineOf(data) && JobService.TierOf(data) >= TalentCatalog.JobPageTier;
+
+        /// <summary>The node may take ranks now (tier opened in its branch, or its job page opened).</summary>
+        public static bool IsOpen(BalanceValues balance, SaveDataV2 data, TalentDef def) =>
+            def.IsJobTalent ? IsJobPageOpen(data, def) : IsTierOpen(balance, data, def);
+
+        public Result CanLearn(string id) => CanLearn(_balance, _data, id);
+
+        public static Result CanLearn(BalanceValues balance, SaveDataV2 data, string id)
         {
             TalentDef def = TalentCatalog.Find(id);
             if (def == null) return Result.Fail(FailReason.Locked);
-            if (Rank(_data, id) >= def.MaxRank) return Result.Fail(FailReason.MaxLevel);
-            if (!IsTierOpen(_balance, _data, def)) return Result.Fail(FailReason.Locked);
-            if (Available(_balance, _data) < 1) return Result.Fail(FailReason.NoTalentPoints);
+            if (Rank(data, id) >= def.MaxRank) return Result.Fail(FailReason.MaxLevel);
+            if (!IsOpen(balance, data, def)) return Result.Fail(def.IsJobTalent ? FailReason.JobLocked : FailReason.Locked);
+            if (Available(balance, data) < def.Cost) return Result.Fail(FailReason.NoTalentPoints);
             return Result.Success;
+        }
+
+        /// <summary>True when some node of the tree or of the hero's job page can take a rank now (the tab badge).</summary>
+        public static bool HasLearnable(BalanceValues balance, SaveDataV2 data)
+        {
+            if (Available(balance, data) < 1) return false;
+            foreach (TalentDef def in TalentCatalog.All)
+                if (CanLearn(balance, data, def.Id).Ok) return true;
+            foreach (TalentDef def in TalentCatalog.JobNodes(JobService.LineOf(data)))
+                if (CanLearn(balance, data, def.Id).Ok) return true;
+            return false;
         }
 
         public Result TryLearn(string id)
@@ -131,15 +161,19 @@ namespace SoloHero.Core.Talents
             return effects;
         }
 
-        /// <summary>Adds the learned talents to <paramref name="effects"/> (D-104: job mastery is added on top).</summary>
+        /// <summary>
+        /// Adds the learned talents to <paramref name="effects"/> (D-104: job mastery is added on top; D-158: job talents
+        /// count only for their own line).
+        /// </summary>
         public static void AddTo(TalentEffects effects, SaveDataV2 data)
         {
             if (effects == null) throw new ArgumentNullException(nameof(effects));
             if (data == null) throw new ArgumentNullException(nameof(data));
+            JobLine line = JobService.LineOf(data);
             for (int i = 0; i < data.talentIds.Count && i < data.talentRanks.Count; i++)
             {
                 TalentDef def = TalentCatalog.Find(data.talentIds[i]);
-                if (def == null) continue;
+                if (def == null || (def.IsJobTalent && def.Line != line)) continue;
                 int rank = Math.Min(data.talentRanks[i], def.MaxRank);
                 if (rank > 0) effects.Add(def.Stat, def.PerRank * rank);
             }

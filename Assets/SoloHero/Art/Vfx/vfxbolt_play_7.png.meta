@@ -34,7 +34,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 0
+    filterMode: 1
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -48,7 +48,7 @@ TextureImporter:
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 32
+  spritePixelsToUnits: 64
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
@@ -115,8 +115,8 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 40
-        height: 120
+        width: 80
+        height: 240
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -134,10 +134,10 @@ TextureImporter:
       name: vfxbolt_play_7_1
       rect:
         serializedVersion: 2
-        x: 40
+        x: 80
         y: 0
-        width: 40
-        height: 120
+        width: 80
+        height: 240
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -155,10 +155,10 @@ TextureImporter:
       name: vfxbolt_play_7_2
       rect:
         serializedVersion: 2
-        x: 80
+        x: 160
         y: 0
-        width: 40
-        height: 120
+        width: 80
+        height: 240
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -176,10 +176,10 @@ TextureImporter:
       name: vfxbolt_play_7_3
       rect:
         serializedVersion: 2
-        x: 120
+        x: 240
         y: 0
-        width: 40
-        height: 120
+        width: 80
+        height: 240
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -197,10 +197,10 @@ TextureImporter:
       name: vfxbolt_play_7_4
       rect:
         serializedVersion: 2
-        x: 160
+        x: 320
         y: 0
-        width: 40
-        height: 120
+        width: 80
+        height: 240
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -218,10 +218,10 @@ TextureImporter:
       name: vfxbolt_play_7_5
       rect:
         serializedVersion: 2
-        x: 200
+        x: 400
         y: 0
-        width: 40
-        height: 120
+        width: 80
+        height: 240
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -239,10 +239,10 @@ TextureImporter:
       name: vfxbolt_play_7_6
       rect:
         serializedVersion: 2
-        x: 240
+        x: 480
         y: 0
-        width: 40
-        height: 120
+        width: 80
+        height: 240
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}

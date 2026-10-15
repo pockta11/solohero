@@ -104,6 +104,14 @@ namespace SoloHero.Core.Stage
         /// <summary>D-143: breakthrough stones the current run paid (a dungeon at its end, the tower floor by floor).</summary>
         public int DungeonStones { get; private set; }
 
+        /// <summary>D-165: the score dungeon's damage to its training boss so far, and the tier the run ended on.</summary>
+        public double ScoreDamage { get; private set; }
+
+        public int ScoreTier { get; private set; }
+
+        /// <summary>D-165: the chapter boss HP the score is measured in (the training boss has SCORE_HP_MULT x that).</summary>
+        public double ScoreUnit { get; private set; }
+
         /// <summary>Raised once when a dungeon run ends (time up or hero down), with what it earned.</summary>
         public event Action<DungeonKind, double> DungeonEnded;
 
@@ -130,8 +138,22 @@ namespace SoloHero.Core.Stage
             _resultTimer = 0f;
             DungeonEarned = 0d;
             DungeonStones = 0;
+            ScoreDamage = 0d;
+            ScoreTier = 0;
+            ScoreUnit = 0d;
+            if (kind == DungeonKind.Score)
+            {
+                // D-165: the chapter boss of the farming stage, alone, after the boss intro.
+                StageIndex.FromGlobal(_g, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
+                _g = StageIndex.ToGlobal(chapter, _balance.STAGES_PER_CHAPTER, _balance.STAGES_PER_CHAPTER);
+                _isBoss = true;
+                _killTarget = 1;
+                _dungeonTimer = _balance.SCORE_DUNGEON_TIME;
+                _introTimer = _balance.BOSS_INTRO_TIME;
+            }
+
             _world.ClearAll();
-            _spawner.Reset(int.MaxValue, false);
+            _spawner.Reset(kind == DungeonKind.Score ? 1 : int.MaxValue, kind == DungeonKind.Score);
             // D-147: a dungeon is not a boss fight, so the skills keep their cooldowns.
             _skills.ClearPendingWaves();
             _pet.Reset();
@@ -164,6 +186,20 @@ namespace SoloHero.Core.Stage
             BeginFloor(floor);
             // No StageStarted: a tower run is not a stage attempt (telemetry counts those).
             SetState(StageState.Dungeon);
+            return true;
+        }
+
+        /// <summary>
+        /// D-170: the HUD's leave button ends a dungeon or tower run now, as if its time ran out. What the run paid so
+        /// far is kept (the tower pays floor by floor; a gold / EXP run pays kill by kill plus its stones; the score
+        /// dungeon scores the damage dealt so far), and the runner returns to the stage it left after the result.
+        /// </summary>
+        public bool LeaveRun()
+        {
+            if (!InDungeon || State != StageState.Dungeon) return false;
+            if (InTower) FinishTower();
+            else if (_dungeon == DungeonKind.Score) FinishScore();
+            else FinishDungeon();
             return true;
         }
 
@@ -320,6 +356,7 @@ namespace SoloHero.Core.Stage
                     break;
                 case StageState.Dungeon:
                     if (InTower) TickTower(dt);
+                    else if (_dungeon == DungeonKind.Score) TickScore(dt);
                     else TickDungeon(dt);
                     break;
                 case StageState.DungeonResult:
@@ -429,16 +466,78 @@ namespace SoloHero.Core.Stage
             bool down = _hero.Hp <= 0d || _hero.State == HeroState.Dead;
             if (down && _hero.State != HeroState.Dead) _hero.Kill();
             if (_dungeonTimer > 0f && !down) return;
+            FinishDungeon();
+        }
 
+        private void FinishDungeon()
+        {
             _dungeonTimer = 0f;
             _resultTimer = 0f;
             _world.ClearAll();
             // D-143: every finished run pays breakthrough stones, whatever it earned.
             DungeonStones = _balance.DUNGEON_STONES;
             _save.breakStones += DungeonStones;
+            // D-161: the run's kills become the sweep record when they beat it.
+            DungeonService.RecordRun(_save, _dungeon, _kills);
             SetState(StageState.DungeonResult);
             _saveRequester?.RequestSave();
             DungeonEnded?.Invoke(_dungeon, DungeonEarned);
+        }
+
+        /// <summary>
+        /// D-165: the training boss soaks damage for SCORE_DUNGEON_TIME seconds (or until the hero falls); the damage in
+        /// chapter-boss HP sets the tier and its stones.
+        /// </summary>
+        private void TickScore(float dt)
+        {
+            if (_introTimer > 0f)
+            {
+                _introTimer -= dt;
+                if (_introTimer <= 0f) SpawnOne(isBoss: true);
+                return;
+            }
+
+            _world.TickEnemies(dt);
+            _skills.Tick(dt, _hero, _world, true);
+            _pet.Tick(dt, _hero, _world);
+            _hero.SetSkillBuffs(_skills.BuffAtk, _skills.BuffAtkSpd, _skills.BuffCrit, _skills.BuffGuard);
+            _hero.Tick(dt, _world);
+
+            bool beaten = _world.ResolveDeaths() > 0;
+            ScoreDamage = beaten ? ScoreUnit * _balance.SCORE_HP_MULT : TrainingDamage();
+            DungeonEarned = ScoreDamage;
+
+            _dungeonTimer -= dt;
+            bool down = _hero.Hp <= 0d || _hero.State == HeroState.Dead;
+            if (down && _hero.State != HeroState.Dead) _hero.Kill();
+            if (_dungeonTimer > 0f && !down && !beaten) return;
+            FinishScore();
+        }
+
+        private void FinishScore()
+        {
+            _dungeonTimer = 0f;
+            _resultTimer = 0f;
+            _world.ClearAll();
+            ScoreTier = DungeonService.ScoreTier(_balance, ScoreUnit > 0d ? ScoreDamage / ScoreUnit : 0d);
+            DungeonStones = DungeonService.ScoreStones(_balance, ScoreTier);
+            _save.breakStones += DungeonStones;
+            DungeonService.RecordRun(_save, DungeonKind.Score, ScoreTier);
+            SetState(StageState.DungeonResult);
+            _saveRequester?.RequestSave();
+            DungeonEnded?.Invoke(_dungeon, DungeonEarned);
+        }
+
+        /// <summary>D-165: the HP the training boss has lost.</summary>
+        private double TrainingDamage()
+        {
+            for (int i = 0; i < _world.SlotCount; i++)
+            {
+                EnemyBrain enemy = _world.GetSlot(i);
+                if (enemy.IsActive && enemy.IsBoss) return Math.Max(0d, enemy.MaxHp - enemy.Hp);
+            }
+
+            return ScoreDamage;
         }
 
         /// <summary>D-130: one boss per floor; a win pays, heals and climbs, a loss ends the run.</summary>
@@ -477,8 +576,13 @@ namespace SoloHero.Core.Stage
             bool down = _hero.Hp <= 0d || _hero.State == HeroState.Dead;
             if (down && _hero.State != HeroState.Dead) _hero.Kill();
             if (_bossTimer > 0f && !down) return;
+            FinishTower();
+        }
 
+        private void FinishTower()
+        {
             _bossTimer = 0f;
+            _introTimer = 0f;
             _resultTimer = 0f;
             _world.ClearAll();
             SetState(StageState.DungeonResult);
@@ -556,6 +660,13 @@ namespace SoloHero.Core.Stage
                 // D-144: tower floors are a harder ladder than the chapter bosses.
                 if (InTower) hp *= _balance.TOWER_BOSS_HP_MULT;
                 atk *= _balance.BOSS_ATK_MULT;
+                if (_dungeon == DungeonKind.Score)
+                {
+                    // D-165: a harmless training boss that outlasts the timer; the score is in the chapter boss's HP.
+                    ScoreUnit = hp;
+                    hp *= _balance.SCORE_HP_MULT;
+                    atk = 0d;
+                }
                 interval = _balance.BOSS_ATK_INTERVAL;
                 speed = _balance.ENEMY_MOVE_SPEED * _balance.BOSS_SPEED_MULT;
             }

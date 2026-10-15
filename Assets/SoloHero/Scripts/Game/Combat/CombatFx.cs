@@ -2,6 +2,7 @@ using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Jobs;
+using SoloHero.Core.Progression;
 using SoloHero.Core.Save;
 using SoloHero.Core.Settings;
 using SoloHero.Core.Stage;
@@ -21,7 +22,9 @@ namespace SoloHero.Game.Combat
     /// information. D-096: hit-stop on crits and kills, a bigger sword wave on the basic skill.
     /// D-112: pixel shards burst from every hit (more and gold on crits) and a coloured spray from every kill.
     /// D-146: skills (casts, impacts, skill hits and their crits) moved to SkillFx; the job's main attack draws over a
-    /// faint additive glow.
+    /// faint additive glow. D-171: progress moments get their payoff here - LEVEL UP over the hero with the level's
+    /// rewards flying from it, and a ribbon + fanfare for a chapter's first clear, a new tier, a job advance and a
+    /// finished collection set, their gems and tickets flying to the counters (RewardFx).
     /// </summary>
     public sealed class CombatFx : MonoBehaviour
     {
@@ -39,6 +42,15 @@ namespace SoloHero.Game.Combat
         private static readonly Color CritTint = new Color(1f, 0.85f, 0.3f, 1f);
         private static readonly Color LevelTint = new Color(0.55f, 1f, 0.6f, 1f);
         private static readonly Color ComboTint = new Color(0.86f, 0.55f, 1f, 1f);
+        private static readonly Color TierOpenColor = new Color(1f, 0.42f, 0.3f, 1f);
+        private const float TierOpenSeconds = 2.4f;
+        private static readonly Color LevelUpText = new Color(0.6f, 1f, 0.55f, 1f);
+        private static readonly Color ChapterClearColor = new Color(1f, 0.8f, 0.28f, 1f);
+        private static readonly Color JobColor = new Color(1f, 0.86f, 0.4f, 1f);
+        private static readonly Color JobFlash = new Color(1f, 0.95f, 0.7f, 1f);
+        private static readonly Color SetColor = new Color(0.62f, 0.85f, 1f, 1f);
+        private const float JobRingScale = 3f;
+        private const float SetPollSeconds = 1f;
         private const float ComboFxGap = 0.2f;
         // Warm, saturated shards read on both the bright meadow and the dark dusk chapters (white vanished on snow).
         private const float ShardSize = 0.14f;
@@ -55,7 +67,11 @@ namespace SoloHero.Game.Combat
         [SerializeField] private CameraShake _shake;
         [SerializeField] private ChapterThemeSet _themes;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
         [SerializeField] private HitParticles _particles;
+
+        [Tooltip("D-153: the ribbon that announces a new difficulty tier (found in the scene when empty).")]
+        [SerializeField] private SkillCutIn _cutIn;
 
         private AudioService _audio;
         private SettingsService _settings;
@@ -66,6 +82,9 @@ namespace SoloHero.Game.Combat
         private double _shownGem = -1d;
         private int _musicChapter = -1;
         private bool _bossMusic;
+        private string _shownJob;
+        private int _shownSets = -1;
+        private float _setPoll;
 
         private bool LowEffect => _settings != null && _settings.LowEffect;
 
@@ -75,6 +94,7 @@ namespace SoloHero.Game.Combat
             _settings = Get<SettingsService>();
             _save = Get<SaveDataV2>();
             _balance = Get<BalanceValues>() ?? new BalanceValues();
+            if (_cutIn == null) _cutIn = FindObjectOfType<SkillCutIn>(true);
         }
 
         private void OnEnable()
@@ -107,6 +127,8 @@ namespace SoloHero.Game.Combat
             if (runner == null) return;
             UpdateMusic(runner);
             CheckLevelUp(runner);
+            CheckJob(runner);
+            CheckCollection();
             if (_save != null) _shownGem = _save.gem;
         }
 
@@ -229,7 +251,29 @@ namespace SoloHero.Game.Combat
             if (gained <= 0d) return;
             StageIndex.FromGlobal(g, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
             Play(SfxId.GradeEpic);
-            if (_toast != null) _toast.Show(Strings.Format("toast.chapter_clear", chapter, gained));
+            // D-153 (L-03): the last boss of a tier also opens the next tier, with its own gift.
+            bool tierBoss = DifficultyTier.IsLastBoss(_balance, g) && gained >= _balance.TIER_CLEAR_GEM;
+            // D-171: the first-clear gems (and a tier's tickets) fly from the field to their counters.
+            if (_rewardFx != null)
+            {
+                _rewardFx.Play(RewardKind.Gem, gained, RewardFx.BattleCenter);
+                if (tierBoss) _rewardFx.Play(RewardKind.Ticket, _balance.TIER_CLEAR_GEAR_TICKETS + _balance.TIER_CLEAR_SKILL_TICKETS, RewardFx.BattleCenter, 1);
+            }
+
+            if (tierBoss)
+            {
+                string tier = DifficultyTier.Name(DifficultyTier.Of(_balance, g + 1));
+                // The boss kill often fires the ultimate's band too: the ribbon waits for it and holds a little longer.
+                Ribbon(Strings.Format("tier.open", tier), TierOpenColor, TierOpenSeconds);
+                if (_toast != null)
+                    _toast.Show(Strings.Format("toast.tier_clear", tier, gained, _balance.TIER_CLEAR_GEAR_TICKETS, _balance.TIER_CLEAR_SKILL_TICKETS));
+                return;
+            }
+
+            string label = DifficultyTier.ChapterLabel(_balance, chapter);
+            Ribbon(Strings.Format("fx.chapter_clear", label), ChapterClearColor, TierOpenSeconds);
+            // The ribbon and the flying "+N" say it all; the toast is the fallback without the reward layer.
+            if (_rewardFx == null && _toast != null) _toast.Show(Strings.Format("toast.chapter_clear", label, gained));
         }
 
         private void OnStateChanged(StageState state)
@@ -264,11 +308,86 @@ namespace SoloHero.Game.Combat
             if (_save == null) return;
             if (_shownLevel < 0) _shownLevel = _save.heroLevel;
             if (_save.heroLevel <= _shownLevel) return;
+            int from = _shownLevel;
             _shownLevel = _save.heroLevel;
             Play(SfxId.LevelUp);
             if (_set != null) PlayVfx(_set.ring, (float)runner.Hero.X, 2.2f, LevelTint, 0.4f);
-            if (_toast != null) _toast.Show(Strings.Format("toast.level_up", _save.heroLevel));
+            Vector2 head = HeroScreen();
+            // D-171: LEVEL UP rises over the hero (the toast stays for the reward levels).
+            _rewardFx?.Label(Strings.Get("fx.level_up"), head, LevelUpText);
+
+            // D-154: a reward level shows what HeroLevelService paid for it.
+            int gems = 0, gear = 0, rare = 0, stones = 0;
+            for (int level = from + 1; level <= _shownLevel; level++)
+            {
+                LevelRewardPay pay = LevelReward.For(_balance, level);
+                gems += pay.Gems;
+                gear += pay.GearTickets;
+                rare += pay.SkillTickets;
+                stones += pay.Stones;
+            }
+
+            if (gems <= 0 && gear <= 0)
+            {
+                if (_rewardFx == null) _toast?.Show(Strings.Format("toast.level_up", _shownLevel));
+                return;
+            }
+
+            if (_rewardFx != null)
+            {
+                _rewardFx.Play(RewardKind.Gem, gems, head, 1);
+                _rewardFx.Play(RewardKind.Ticket, gear + rare, head, 2);
+                _rewardFx.Play(RewardKind.Stone, stones, head, 3);
+            }
+
+            if (_toast == null) return;
+            if (rare > 0) _toast.Show(Strings.Format("toast.level_reward_big", _shownLevel, gems, gear, rare, stones));
+            else _toast.Show(Strings.Format("toast.level_reward", _shownLevel, gems, gear, stones));
         }
+
+        /// <summary>D-171: a job advance (the save's job changes): a golden ring, the hero glows, ribbon and fanfare.</summary>
+        private void CheckJob(StageRunner runner)
+        {
+            if (_save == null) return;
+            string job = _save.jobId ?? "";
+            if (_shownJob == null)
+            {
+                _shownJob = job;
+                return;
+            }
+
+            if (job == _shownJob) return;
+            _shownJob = job;
+            JobDef def = JobCatalog.Find(job);
+            if (def == null || def.Tier < 1) return;
+            if (_view != null) _view.FlashHero(JobFlash, 0.9f);
+            if (_set != null) PlayVfx(_set.ring, (float)runner.Hero.X, JobRingScale, JobColor, 0.4f);
+            Ribbon(Strings.Format("fx.job_advance", Strings.Get(def.NameKey)), JobColor, TierOpenSeconds);
+        }
+
+        /// <summary>D-171: a collection set completes when its last piece is pulled; celebrate it once.</summary>
+        private void CheckCollection()
+        {
+            if (_save == null) return;
+            _setPoll -= Time.unscaledDeltaTime;
+            if (_setPoll > 0f) return;
+            _setPoll = SetPollSeconds;
+            int done = CollectionCatalog.CompleteCount(_save);
+            bool more = _shownSets >= 0 && done > _shownSets;
+            _shownSets = done;
+            if (!more) return;
+            Ribbon(Strings.Get("fx.set_complete"), SetColor, TierOpenSeconds);
+            _toast?.Show(Strings.Get("toast.set_complete"));
+        }
+
+        /// <summary>The big-moment ribbon with flash and fanfare; without the reward layer, the plain ribbon.</summary>
+        private void Ribbon(string text, Color color, float seconds)
+        {
+            if (_rewardFx != null) _rewardFx.Celebrate(text, color, seconds);
+            else if (_cutIn != null) _cutIn.PlayText(text, color, true, seconds);
+        }
+
+        private Vector2 HeroScreen() => _view != null ? RewardFx.ScreenOf(_view.HeroHead) : RewardFx.BattleCenter;
 
         private void PlayVfx(Sprite[] clip, float x, float scale, Color tint, float y = EffectY)
         {

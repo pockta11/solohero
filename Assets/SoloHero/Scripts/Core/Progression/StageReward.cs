@@ -2,6 +2,8 @@ using System;
 using SoloHero.Core;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
+using SoloHero.Core.Economy;
+using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
@@ -39,6 +41,8 @@ namespace SoloHero.Core.Progression
                 {
                     _data.gem += _balance.CHAPTER_CLEAR_GEM;
                     _data.chapterFirstClearFlags[index] = true;
+                    // D-153 (L-03): the last boss of a tier opens the next tier with a bigger gift.
+                    if (DifficultyTier.IsLastBoss(_balance, g)) GrantTierClear();
                 }
             }
 
@@ -47,6 +51,14 @@ namespace SoloHero.Core.Progression
 
             _save?.RequestSave();
             return Result.Success;
+        }
+
+        private void GrantTierClear()
+        {
+            _data.gem += _balance.TIER_CLEAR_GEM;
+            ShopService.AddTickets(_data, SummonKind.Gear, _balance.TIER_CLEAR_GEAR_TICKETS);
+            ShopService.AddTickets(_data, SummonKind.Skill, _balance.TIER_CLEAR_SKILL_TICKETS);
+            ShopService.AddTickets(_data, SummonKind.Pet, _balance.TIER_CLEAR_PET_TICKETS);
         }
 
         private void EnsureFlagSlot(int index)

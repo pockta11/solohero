@@ -120,11 +120,14 @@ namespace SoloHero.Core.Pets
         private PetPullItem PullOne(SaveDataV2 data)
         {
             // D-115: the summon level before this pull picks the rate table.
-            GearTableValues table = _table.AtLevel(SummonLevel.Of(_balance, data, SummonKind.Pet));
+            int level = SummonLevel.Of(_balance, data, SummonKind.Pet);
+            GearTableValues table = _table.AtLevel(level);
             // D-123: the pity starts counting once the summon level has opened its grade.
             bool pity = table.PityOpen;
             if (pity) data.petPityCount++;
             data.petPullCount++;
+            // D-159: a late summon level reached by this pull pays its tickets.
+            SummonLevel.PayLevelRewards(_balance, data, SummonKind.Pet, level, SummonLevel.Of(_balance, data, SummonKind.Pet));
 
             GearGrade grade;
             if (pity && data.petPityCount >= table.PityCeiling)

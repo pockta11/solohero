@@ -27,6 +27,9 @@ namespace SoloHero.Editor
             public FilterMode Filter;
             public bool MipMaps;
             public int MaxSize;
+
+            /// <summary>ASTC on Android (D-168 smooth VFX); the UI atlases stay uncompressed.</summary>
+            public bool Compressed;
         }
 
         private static readonly Spec[] Specs =
@@ -35,7 +38,7 @@ namespace SoloHero.Editor
             new Spec { Name = "UiHd", Folders = new[] { Ui + "/Hd", Ui + "/Hd/Icons" }, Filter = FilterMode.Trilinear, MipMaps = true, MaxSize = 2048 },
             new Spec { Name = "UiItems", Folders = new[] { Ui + "/Hd/Equipment", Ui + "/Hd/Skills" }, Filter = FilterMode.Trilinear, MipMaps = true, MaxSize = 2048 },
             new Spec { Name = "UiPixel", Folders = new[] { Ui, Ui + "/Icons" }, Filter = FilterMode.Point, MipMaps = false, MaxSize = 1024 },
-            new Spec { Name = "Vfx", Folders = new[] { "Assets/SoloHero/Art/Vfx" }, Filter = FilterMode.Point, MipMaps = false, MaxSize = 4096 },
+            new Spec { Name = "Vfx", Folders = new[] { "Assets/SoloHero/Art/Vfx" }, Filter = FilterMode.Bilinear, MipMaps = false, MaxSize = 4096, Compressed = true },
         };
 
         [MenuItem("Tools/Setup/Build Sprite Atlases")]
@@ -72,6 +75,11 @@ namespace SoloHero.Editor
             platform.maxTextureSize = spec.MaxSize;
             platform.textureCompression = TextureImporterCompression.Uncompressed;
             importer.SetPlatformSettings(platform);
+            TextureImporterPlatformSettings android = importer.GetPlatformSettings("Android");
+            android.overridden = spec.Compressed;
+            android.maxTextureSize = spec.MaxSize;
+            android.format = TextureImporterFormat.ASTC_6x6;
+            importer.SetPlatformSettings(android);
             importer.SaveAndReimport();
         }
 

@@ -47,6 +47,12 @@ namespace SoloHero.Editor
         private const int CoinCount = 24;
         private const int LayerSlots = 8;
         private const float ViewHeightPx = 240f;
+
+        /// <summary>D-168 round particle (smooth art: hit shards and skill motes are dots, not pixel squares).</summary>
+        private const string ParticleDot = ArtRoot + "/Particles/particle_dot.png";
+
+        /// <summary>World units to art pixels (the pixel-art PPU).</summary>
+        private const float ArtPixelsPerUnit = 32f;
         private const float NearestFollow = 0.3f;
         private const float FarthestFollow = 0.97f;
 
@@ -129,6 +135,14 @@ namespace SoloHero.Editor
             Debug.Log("[Art] characters reimported");
         }
 
+        /// <summary>Batch: the sound bank and the boot audio only (a new SfxId and its wav), without reimporting the art.</summary>
+        public static void BuildAudioBatch()
+        {
+            AssetDatabase.Refresh();
+            WireBootAudio(BuildSoundBank());
+            Debug.Log("[Art] sound bank rebuilt");
+        }
+
         public static void BuildBatch()
         {
             ReimportArt();
@@ -206,6 +220,8 @@ namespace SoloHero.Editor
             if (art.run.Length == 0) art.run = art.idle;
             art.hit = Clip(dir, entity, "hit", false);
             art.dead = Clip(dir, entity, "dead", false);
+            art.skill = Clip(dir, entity, "skill", false);
+            if (art.skill.Length == 0) art.skill = art.attack;
             art.pixelScale = pixelScale;
             art.fps = CharacterFps;
             art.headHeight = HeadHeight(art.idle.Length > 0 ? art.idle[0] : null);
@@ -276,7 +292,8 @@ namespace SoloHero.Editor
                     theme.follow[i] = Mathf.Lerp(FarthestFollow, NearestFollow, t);
                 }
 
-                float height = layers.Length > 0 ? layers[0].rect.height : ViewHeightPx;
+                // In art pixels (D-168 smooth layers hold 3 texels per art pixel at PPU 96).
+                float height = layers.Length > 0 ? layers[0].bounds.size.y * ArtPixelsPerUnit : ViewHeightPx;
                 theme.pixelScale = Mathf.Max(1, Mathf.CeilToInt(ViewHeightPx / height));
                 theme.sky = TopLeftColor(files.Length > 0 ? files[0] : null);
                 theme.enemies = Chapters[c].enemies.Select(e => looks[e]).ToArray();
@@ -736,7 +753,7 @@ namespace SoloHero.Editor
             return particles;
         }
 
-        /// <summary>D-112: an unlit sprite material over a plain white texture, so shards are crisp squares in their colour.</summary>
+        /// <summary>D-112: an unlit sprite material over a white texture; D-168 a round dot (Art/Particles) instead of squares.</summary>
         private static Material ShardMaterial()
         {
             const string path = ArtRoot + "/Materials/HitShard.mat";
@@ -748,7 +765,7 @@ namespace SoloHero.Editor
                 AssetDatabase.CreateAsset(material, path);
             }
 
-            Texture2D white = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtRoot + "/UI/ui_white.png");
+            Texture2D white = AssetDatabase.LoadAssetAtPath<Texture2D>(ParticleDot);
             if (white != null) material.mainTexture = white;
             EditorUtility.SetDirty(material);
             return material;
@@ -983,7 +1000,7 @@ namespace SoloHero.Editor
             ParticleSystemRenderer renderer = go.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             renderer.sortingOrder = 262;
-            renderer.sharedMaterial = AdditiveMaterial("SkillParticle", AssetDatabase.LoadAssetAtPath<Texture2D>(ArtRoot + "/UI/ui_white.png"));
+            renderer.sharedMaterial = AdditiveMaterial("SkillParticle", AssetDatabase.LoadAssetAtPath<Texture2D>(ParticleDot));
             SkillParticles particles = go.AddComponent<SkillParticles>();
             var so = new SerializedObject(particles);
             so.FindProperty("_system").objectReferenceValue = ps;

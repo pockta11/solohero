@@ -3,6 +3,7 @@ using SoloHero.Core.Daily;
 using SoloHero.Core.Growth;
 using SoloHero.Core.Save;
 using SoloHero.Core.Stage;
+using SoloHero.Game.Audio;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
 using UnityEngine;
@@ -25,6 +26,12 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private GameObject _popup;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
+
+        /// <summary>D-171: seconds between two claims from this window (the reward animation's beat).</summary>
+        private const float ClaimSeconds = 0.35f;
+
+        private readonly ClaimGate _gate = new ClaimGate();
         [SerializeField] private Text _attendTitle;
         [SerializeField] private Image[] _dayCells = new Image[DailyService.CycleDays];
         [SerializeField] private Image[] _dayIcons = new Image[DailyService.CycleDays];
@@ -40,6 +47,19 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Sprite _goldIcon;
         [SerializeField] private GameObject[] _badges = new GameObject[0];
 
+        [Header("D-166 monthly board: the shown week's day numbers, the week ends' gift and the total days")]
+        [SerializeField] private Text[] _dayLabels = new Text[DailyService.CycleDays];
+        [SerializeField] private Sprite _giftIcon;
+        [SerializeField] private Text _attendTotal;
+
+        [Header("D-155 weekly missions: tabs over the same six rows")]
+        [SerializeField] private Image _dailyTab;
+        [SerializeField] private Image _weeklyTab;
+        [SerializeField] private Text _missionNote;
+
+        private static readonly Color TabIdle = new Color(0.72f, 0.72f, 0.76f, 1f);
+        private const int ExtraSize = 22;
+
         private DailyService _daily;
         private UpgradeService _upgrade;
         private SaveDataV2 _save;
@@ -47,6 +67,9 @@ namespace SoloHero.Game.UI.Panels
         private int _lastKills;
         private int _lastPulls = -1;
         private int _lastAds = -1;
+        private int _lastDungeons = -1;
+        private bool _wasInTower;
+        private bool _weekly;
         private bool _dirty = true;
 
         public bool IsOpen => _popup != null && _popup.activeSelf;
@@ -85,9 +108,8 @@ namespace SoloHero.Game.UI.Panels
 
         public void ClaimAttendance()
         {
-            if (_daily == null || _save == null) return;
-            double gem = _save.gem;
-            double gold = _save.gold;
+            if (_daily == null || _save == null || !_gate.Pass(ClaimSeconds)) return;
+            var before = new RewardSnapshot(_save);
             Result result = _daily.TryClaimAttendance();
             if (!result.Ok)
             {
@@ -95,28 +117,43 @@ namespace SoloHero.Game.UI.Panels
                 return;
             }
 
-            ShowGain(_save.gem - gem, _save.gold - gold);
+            ShowGain(before);
+            // D-166: a total-days milestone gets its own line.
+            if (_daily.LastMilestone > 0) _toast?.Show(Strings.Format("daily.milestone", _daily.LastMilestone));
         }
 
         public void ClaimMission(int index)
         {
-            if (_daily == null || _save == null) return;
-            double gem = _save.gem;
-            Result result = _daily.TryClaimMission(index);
+            if (_daily == null || _save == null || !_gate.Pass(ClaimSeconds)) return;
+            var before = new RewardSnapshot(_save);
+            Result result = _weekly ? _daily.TryClaimWeekly(index) : _daily.TryClaimMission(index);
             if (!result.Ok)
             {
                 _toast?.ShowFailure(result.Reason);
                 return;
             }
 
-            ShowGain(_save.gem - gem, 0d);
+            ShowGain(before);
         }
 
-        private void ShowGain(double gem, double gold)
+        /// <summary>D-155: the mission rows list today's missions.</summary>
+        public void ShowDaily() => SetWeekly(false);
+
+        /// <summary>D-155: the mission rows list this week's missions.</summary>
+        public void ShowWeekly() => SetWeekly(true);
+
+        private void SetWeekly(bool weekly)
         {
-            if (_toast == null) return;
-            if (gem > 0d) _toast.Show(Strings.Format("daily.got_gem", BigNumberFormat.Format(gem)));
-            if (gold > 0d) _toast.Show(Strings.Format("daily.got_gold", BigNumberFormat.Format(gold)));
+            _weekly = weekly;
+            Refresh();
+        }
+
+        /// <summary>D-171: the claim's gold, gems, tickets and stones fly from the button to their counters.</summary>
+        private void ShowGain(RewardSnapshot before)
+        {
+            PanelServices.TryGet<AudioService>()?.Play(SfxId.GradeEpic);
+            if (_rewardFx != null) _rewardFx.PlayGain(before, _save);
+            else if (_toast != null) _toast.Show(Strings.Format("daily.got_gem", BigNumberFormat.Format(_save.gem - before.Gem)));
         }
 
         private void MarkDirty() => _dirty = true;
@@ -164,6 +201,10 @@ namespace SoloHero.Game.UI.Panels
                 int kills = _runner.Kills;
                 if (kills > _lastKills) _daily.Record(MissionKind.Kill, kills - _lastKills);
                 _lastKills = kills;
+                // D-155: a tower climb counts when it starts.
+                bool inTower = _runner.InTower;
+                if (inTower && !_wasInTower) _daily.Record(MissionKind.Tower, 1);
+                _wasInTower = inTower;
             }
 
             if (_save == null) return;
@@ -173,6 +214,10 @@ namespace SoloHero.Game.UI.Panels
             int ads = _save.adCountA1 + _save.adCountA2 + _save.adCountA3;
             if (_lastAds >= 0 && ads > _lastAds) _daily.Record(MissionKind.WatchAd, ads - _lastAds);
             _lastAds = ads;
+            // D-155: dungeon entries used today (a new day resets them, so only rises count).
+            int dungeons = _save.dungeonGoldUsed + _save.dungeonExpUsed + _save.dungeonScoreUsed;
+            if (_lastDungeons >= 0 && dungeons > _lastDungeons) _daily.Record(MissionKind.Dungeon, dungeons - _lastDungeons);
+            _lastDungeons = dungeons;
         }
 
         private void RefreshBadges()
@@ -185,37 +230,73 @@ namespace SoloHero.Game.UI.Panels
         private void Refresh()
         {
             if (_daily == null) return;
+            // D-166: the week of the 28-day board the next claim is in (days 1-7, 8-14, ...).
             int claimed = _daily.AttendanceClaimedInCycle;
             bool available = _daily.AttendanceAvailable;
-            if (_attendTitle != null) _attendTitle.text = Strings.Format("daily.attendance", _daily.AttendanceDay);
-            for (int d = 1; d <= DailyService.CycleDays; d++)
+            int start = _daily.AttendanceWeekStart;
+            if (_attendTitle != null)
+                _attendTitle.text = Strings.Format("daily.attendance_week", _daily.AttendanceDay, (start - 1) / DailyService.CycleDays + 1);
+            for (int i = 0; i < DailyService.CycleDays; i++)
             {
-                int i = d - 1;
+                int d = start + i;
                 double gem = _daily.AttendanceGems(d);
                 double gold = _daily.AttendanceGold(d);
-                if (i < _dayIcons.Length && _dayIcons[i] != null) _dayIcons[i].sprite = gem > 0d ? _gemIcon : _goldIcon;
-                if (i < _dayAmounts.Length && _dayAmounts[i] != null) _dayAmounts[i].text = BigNumberFormat.Format(gem > 0d ? gem : gold);
-                bool done = d <= claimed;
-                bool next = available && d == claimed + 1;
+                bool extra = AttendanceCatalog.WeekEndExtra(d) != null;
+                if (i < _dayLabels.Length && _dayLabels[i] != null) _dayLabels[i].text = d.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                if (i < _dayIcons.Length && _dayIcons[i] != null) _dayIcons[i].sprite = extra && _giftIcon != null ? _giftIcon : gem > 0d ? _gemIcon : _goldIcon;
+                if (i < _dayAmounts.Length && _dayAmounts[i] != null)
+                    _dayAmounts[i].text = BigNumberFormat.Format(gem > 0d ? gem : gold) + (extra ? "+" : "");
+                bool done = i < claimed;
+                bool next = available && i == claimed;
                 if (i < _dayChecks.Length && _dayChecks[i] != null) _dayChecks[i].SetActive(done);
                 if (i < _dayCells.Length && _dayCells[i] != null) _dayCells[i].color = next ? Today : done ? Dim : Color.white;
+            }
+
+            if (_attendTotal != null)
+            {
+                AttendanceMilestone nextMilestone = AttendanceCatalog.Next(_daily.AttendanceTotal);
+                _attendTotal.text = nextMilestone != null
+                    ? Strings.Format("daily.total_next", _daily.AttendanceTotal, nextMilestone.Days, nextMilestone.Reward.Gems)
+                    : Strings.Format("daily.total", _daily.AttendanceTotal);
             }
 
             if (_attendButton != null) _attendButton.interactable = available;
             if (_attendLabel != null) _attendLabel.text = Strings.Get(available ? "daily.attend_claim" : "daily.attend_done");
 
-            for (int i = 0; i < MissionCatalog.Count && i < _missionNames.Length; i++)
+            if (_dailyTab != null) _dailyTab.color = _weekly ? TabIdle : Color.white;
+            if (_weeklyTab != null) _weeklyTab.color = _weekly ? Color.white : TabIdle;
+            if (_missionNote != null) _missionNote.text = Strings.Get(_weekly ? "daily.weekly_note" : "daily.daily_note");
+            MissionDef[] catalog = _weekly ? WeeklyMissionCatalog.All : MissionCatalog.All;
+            for (int i = 0; i < _missionNames.Length; i++)
             {
-                MissionDef def = MissionCatalog.All[i];
+                bool used = i < catalog.Length;
+                if (_missionNames[i] != null && _missionNames[i].transform.parent != null)
+                    _missionNames[i].transform.parent.gameObject.SetActive(used);
+                if (!used) continue;
+
+                MissionDef def = catalog[i];
+                int progress = _weekly ? _daily.WeeklyProgress(i) : _daily.Progress(i);
                 if (_missionNames[i] != null)
-                    _missionNames[i].text = Strings.Format("daily.mission_row", Strings.Get(def.NameKey), _daily.Progress(i), def.Target);
+                    _missionNames[i].text = Strings.Format("daily.mission_row", Strings.Get(def.NameKey), BigNumberFormat.Format(progress), BigNumberFormat.Format(def.Target))
+                        + ExtraLine(def);
                 if (i < _missionRewards.Length && _missionRewards[i] != null) _missionRewards[i].text = BigNumberFormat.Format(def.Gems);
-                bool claimable = _daily.Claimable(i);
-                bool claimedMission = _daily.Claimed(i);
+                bool claimable = _weekly ? _daily.WeeklyClaimable(i) : _daily.Claimable(i);
+                bool claimedMission = _weekly ? _daily.WeeklyClaimed(i) : _daily.Claimed(i);
                 if (i < _missionButtons.Length && _missionButtons[i] != null) _missionButtons[i].interactable = claimable;
                 if (i < _missionLabels.Length && _missionLabels[i] != null)
                     _missionLabels[i].text = Strings.Get(claimedMission ? "daily.claimed" : claimable ? "daily.claim" : "daily.progress");
             }
+        }
+
+        /// <summary>
+        /// D-155: a small second line under the mission name for the tickets and stones a weekly mission adds to its gems
+        /// (the gem column next to the claim button is too narrow for it).
+        /// </summary>
+        private static string ExtraLine(MissionDef def)
+        {
+            string extra = def.Tickets > 0 ? Strings.Format("daily.extra_tickets", def.Tickets)
+                : def.Stones > 0 ? Strings.Format("daily.extra_stones", def.Stones) : "";
+            return extra.Length == 0 ? "" : "\n<size=" + ExtraSize + ">" + extra + "</size>";
         }
     }
 }

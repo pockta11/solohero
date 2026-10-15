@@ -12,6 +12,9 @@ namespace SoloHero.Core.Stage
         Exp = 2,
 
         /// <summary>D-130: the infinite tower - one boss per floor, climbing while the hero wins.</summary>
-        Tower = 3
+        Tower = 3,
+
+        /// <summary>D-165: the score dungeon - damage to a training boss in a set time, paid by tier.</summary>
+        Score = 4
     }
 }

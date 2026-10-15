@@ -59,3 +59,14 @@ Firebase Analytics로 GDD `Gameplay Metrics` 12개를 측정할 이벤트를 발
 |---|---|---|---|
 | `app_exception` | `kind`(Exception / Error / Assert), `message`(첫 줄 100자), `where`(첫 스택 프레임 100자) | C# 예외·`Log.Error`·Assert, 세션당 서로 다른 것 10개까지 (`ExceptionReporter`, D-135) | Play vitals에 잡히지 않는 C# 예외 집계. Firebase 콘솔에서 `message`·`where`를 맞춤 측정기준으로 등록해야 보고서에 보인다 |
 | `account_action` | `action`(issue / redeem / delete) | 설정 → 계정의 기기 이전 코드 발급·가져오기, 데이터 삭제 (D-134) | 계정 도구 사용량 |
+
+## 추가 이벤트 (2026-10-15, D-170 — 출시 후 1년 로드맵 §6)
+
+| 이벤트 | 파라미터 | 언제 | 용도 |
+|---|---|---|---|
+| `stage_stall` | `stage`(다음 개척 스테이지), `chapter`, `tier`, `boss`, `days` | 최고 스테이지가 하루 이상 그대로일 때 현지 날짜마다 한 번 (앱이 켜져 있을 때 10초마다 확인) | 정체 일수 분포 — 시뮬 3페르소나의 "최장 정체"와 비교, 막히는 장·보스 찾기 |
+| `axis_cap` | `axis`(`summon_gear`·`summon_skill`·`summon_pet`·`job_final`), `level`, `stage` | 상한 있는 성장 축이 끝에 닿을 때, 저장당 한 번 | 축 소진 시점(로드맵 §2.4) 실측 |
+| `tier_enter` | `tier`(1 = 하드), `stage` | 개척 스테이지가 새 난이도 단계에 들어설 때 | 단계 진입 시점 분포 |
+| 사용자 속성 `difficulty_tier` | — | `tier_enter`와 함께 | 단계별 코호트 |
+
+기록용 저장 필드 `telemetryFrontier`·`telemetryFrontierDate`·`telemetryStallDate`·`telemetryCaps`(추가만, 게임 진행은 읽지 않음). Firebase 콘솔에서 `days`·`tier`·`axis`를 맞춤 측정기준으로 등록해야 보고서에 보인다.

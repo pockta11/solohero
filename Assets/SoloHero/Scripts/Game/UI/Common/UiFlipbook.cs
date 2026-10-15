@@ -15,7 +15,10 @@ namespace SoloHero.Game.UI.Common
 
         [Tooltip("D-104: job looks index-aligned with JobCatalog.All, picked from the saved job; empty keeps _art.")]
         [SerializeField] private CharacterArt[] _jobs = new CharacterArt[0];
-        [Tooltip("Canvas units per sprite pixel; keep it an integer so the pixel grid stays even.")]
+        /// <summary>Sprite pixels per world unit of one art pixel (the pixel-art PPU).</summary>
+        private const float ArtPixelsPerUnit = 32f;
+
+        [Tooltip("Canvas units per art pixel (one 32 PPU sprite pixel).")]
         [SerializeField] private float _scale = 3f;
 
         private Image _image;
@@ -115,10 +118,20 @@ namespace SoloHero.Game.UI.Common
             Sprite sprite = _clip[index];
             if (_image == null) _image = GetComponent<Image>();
             if (_image.sprite == sprite || sprite == null) return;
-            _image.sprite = sprite;
-            var rect = (RectTransform)transform;
+            Fit(_image, sprite, _scale);
+        }
+
+        /// <summary>
+        /// Shows a character frame at <paramref name="scale"/> canvas units per art pixel with the rect pivot on the
+        /// sprite's foot pivot (D-168 sheets are trimmed per clip and hold 3 texels per art pixel, PPU 96 vs 32).
+        /// </summary>
+        public static void Fit(Image image, Sprite sprite, float scale)
+        {
+            image.sprite = sprite;
+            if (sprite == null) return;
+            var rect = (RectTransform)image.transform;
             Vector2 size = sprite.rect.size;
-            rect.sizeDelta = size * _scale;
+            rect.sizeDelta = size * (scale * ArtPixelsPerUnit / sprite.pixelsPerUnit);
             rect.pivot = new Vector2(sprite.pivot.x / size.x, sprite.pivot.y / size.y);
         }
     }

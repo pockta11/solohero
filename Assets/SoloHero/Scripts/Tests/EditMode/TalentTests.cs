@@ -3,6 +3,7 @@ using SoloHero.Core.Combat;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Jobs;
 using SoloHero.Core.Save;
 using SoloHero.Core.Skills;
 using SoloHero.Core.Stage;
@@ -166,7 +167,75 @@ namespace SoloHero.Tests.EditMode
                 Assert.That(def.Tier, Is.InRange(0, TalentCatalog.TierCount - 1), def.Id);
                 Assert.That(def.Column, Is.InRange(0, 1), def.Id);
                 Assert.Greater(def.PerRank, 0d, def.Id);
+                Assert.IsFalse(def.IsJobTalent, def.Id);
             }
+        }
+
+        [Test]
+        public void JobPage_FiveNodesPerLine_SixtyPoints_UniqueIds()
+        {
+            var ids = new System.Collections.Generic.HashSet<string>();
+            foreach (TalentDef def in TalentCatalog.All) Assert.IsTrue(ids.Add(def.Id), def.Id);
+            for (int line = 1; line <= 3; line++)
+            {
+                TalentDef[] page = TalentCatalog.JobNodes((JobLine)line);
+                Assert.AreEqual(TalentCatalog.JobNodesPerLine, page.Length);
+                int points = 0;
+                for (int i = 0; i < page.Length; i++)
+                {
+                    Assert.AreEqual(i, page[i].Tier, page[i].Id);
+                    Assert.AreEqual((JobLine)line, page[i].Line);
+                    Assert.Greater(page[i].PerRank, 0d, page[i].Id);
+                    Assert.IsTrue(ids.Add(page[i].Id), page[i].Id);
+                    Assert.AreSame(page[i], TalentCatalog.Find(page[i].Id));
+                    points += page[i].MaxRank * page[i].Cost;
+                }
+
+                Assert.AreEqual(60, points, "line " + line);
+            }
+
+            Assert.AreEqual(0, TalentCatalog.JobNodes(JobLine.None).Length);
+            Assert.AreEqual(78 + 60, TalentCatalog.FullPoints());
+        }
+
+        [Test]
+        public void JobPage_OpensWithTheThirdJob_OwnLineOnly_TwoPointsARank()
+        {
+            var b = new BalanceValues();
+            SaveDataV2 save = Save(b.JOB_LV_3);
+            save.jobId = "knight";
+            var talents = new TalentService(save, b);
+            Assert.AreEqual(FailReason.JobLocked, talents.TryLearn("w_blade_mastery").Reason, "second job: page closed");
+
+            save.jobId = "paladin";
+            Assert.AreEqual(FailReason.JobLocked, talents.TryLearn("m_wisdom").Reason, "another line's page");
+            int before = talents.AvailablePoints;
+            Assert.IsTrue(talents.TryLearn("w_blade_mastery").Ok);
+            Assert.AreEqual(before - 2, talents.AvailablePoints);
+            Assert.AreEqual(2, TalentService.Spent(save));
+            Assert.AreEqual(0, TalentService.BranchSpent(save, TalentBranch.Might), "job ranks open no tree tiers");
+            Assert.AreEqual(0.03, TalentService.Effects(save).AtkPct, 1e-9);
+
+            // One point left is not enough for a job rank, and the badge knows it once the tree is full.
+            save.heroLevel = 1 + TalentService.Spent(save) + 1;
+            Assert.AreEqual(1, talents.AvailablePoints);
+            Assert.AreEqual(FailReason.NoTalentPoints, talents.TryLearn("w_iron_body").Reason);
+            Assert.IsTrue(TalentService.HasLearnable(b, save), "the tree still takes one-point ranks");
+            foreach (TalentDef def in TalentCatalog.All)
+            {
+                int index = save.talentIds.IndexOf(def.Id);
+                if (index < 0) { save.talentIds.Add(def.Id); save.talentRanks.Add(def.MaxRank); }
+                else save.talentRanks[index] = def.MaxRank;
+            }
+
+            save.heroLevel = 1 + TalentService.Spent(save) + 1;
+            Assert.AreEqual(1, TalentService.Available(b, save));
+            Assert.IsFalse(TalentService.HasLearnable(b, save), "a lone point buys no job rank");
+
+            // A reset returns every point, job ranks included.
+            save.gem = b.TALENT_RESET_GEM;
+            Assert.IsTrue(talents.TryReset().Ok);
+            Assert.AreEqual(0, TalentService.Spent(save));
         }
     }
 }

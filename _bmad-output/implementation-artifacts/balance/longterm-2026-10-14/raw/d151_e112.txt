@@ -1,0 +1,22 @@
+===== C:/Users/user/AppData/Local/Temp/claude/D--git-solohero/7f2942db-2bc0-4a7e-a0ec-2c533c3fb2c1/scratchpad/lt/e112 6 runs
+light_berserker_s1     d7 4-7 L37 t30 | d30 8-7 L66 t73 | d60 13-9 L96 t117 | d90 14-10 L106 t129 | d120 17-2 L118 t156 | d180 21-9 L145 t198 | d240 24-9 L166 t223 | d365 26-9 L182 t242 | stall 73 | new30 min(d90+) 0 | new30@365 1
+light_cryo_s1          d7 4-9 L38 t28 | d30 8-10 L66 t70 | d60 12-9 L93 t103 | d90 14-9 L103 t121 | d120 16-9 L116 t144 | d180 21-9 L144 t193 | d240 24-9 L164 t220 | d365 26-9 L180 t240 | stall 77 | new30 min(d90+) 0 | new30@365 1
+light_knight_s1        d7 4-7 L36 t28 | d30 7-10 L62 t65 | d60 12-7 L90 t104 | d90 13-5 L99 t119 | d120 15-10 L111 t141 | d180 20-2 L135 t183 | d240 23-9 L159 t215 | d365 25-9 L178 t237 | stall 57 | new30 min(d90+) 0 | new30@365 0
+light_pyro_s1          d7 4-8 L38 t30 | d30 9-2 L68 t73 | d60 13-3 L95 t111 | d90 15-8 L109 t135 | d120 18-4 L122 t161 | d180 22-7 L149 t203 | d240 24-9 L167 t225 | d365 26-9 L181 t241 | stall 79 | new30 min(d90+) 0 | new30@365 1
+light_ranger_s1        d7 4-9 L38 t29 | d30 7-10 L65 t69 | d60 11-3 L84 t95 | d90 12-8 L93 t109 | d120 14-9 L105 t127 | d180 18-3 L123 t165 | d240 22-7 L147 t202 | d365 24-9 L171 t229 | stall 64 | new30 min(d90+) 0 | new30@365 0
+light_sniper_s1        d7 4-7 L38 t33 | d30 7-7 L63 t70 | d60 10-7 L79 t93 | d90 11-10 L89 t104 | d120 13-1 L96 t118 | d180 16-1 L111 t142 | d240 19-1 L129 t175 | d365 24-9 L166 t225 | stall 30 | new30 min(d90+) 0 | new30@365 3
+-- median over runs
+d7   4-7 ~ 4-9 (median g38 = 4-8)  lv 36-38  tower 28-33  gap(g-t) med 8
+d30  7-7 ~ 9-2 (median g74 = 8-4)  lv 62-68  tower 65-73  gap(g-t) med 4
+d60  10-7 ~ 13-9 (median g118 = 12-8)  lv 79-96  tower 93-117  gap(g-t) med 12
+d90  11-10 ~ 15-8 (median g132 = 14-2)  lv 89-109  tower 104-135  gap(g-t) med 10
+d120 13-1 ~ 18-4 (median g154 = 16-4)  lv 96-122  tower 118-161  gap(g-t) med 10
+d180 16-1 ~ 22-7 (median g200 = 20-10)  lv 111-149  tower 142-203  gap(g-t) med 10
+d240 19-1 ~ 24-9 (median g234 = 24-4)  lv 129-167  tower 175-225  gap(g-t) med 14
+d365 24-9 ~ 26-9 (median g254 = 26-4)  lv 166-182  tower 225-242  gap(g-t) med 16
+longest stall: median 68.5 max 79 | new30 min from d90: median 0.0 min 0
+== C:/Users/user/AppData/Local/Temp/claude/D--git-solohero/7f2942db-2bc0-4a7e-a0ec-2c533c3fb2c1/scratchpad/lt/e112 (6 runs)
+  d1-30 longest stall median 1.5 max 2 | normal fail 14.7% | boss fails 107 deaths 0%
+  d31-90 longest stall median 9.0 max 20 | normal fail 20.6% | boss fails 302 deaths 0%
+  d91-180 longest stall median 7.5 max 10 | normal fail 21.7% | boss fails 329 deaths 0%
+  d181-365 longest stall median 68.5 max 79 | normal fail 7.5% | boss fails 3913 deaths 0%

@@ -94,7 +94,9 @@ namespace SoloHero.Game.UI.Panels
         private void Refresh()
         {
             if (_save == null) return;
-            if (_chapterText != null) _chapterText.text = Strings.Format("stage.chapter", _chapter);
+            // D-153: "chapter 3" in the normal tier, "Hard chapter 3" past it.
+            if (_chapterText != null) _chapterText.text = DifficultyTier.ChapterLabel(_balance, _chapter);
+            int chapterInTier = DifficultyTier.ChapterInTier(_balance, _chapter);
             if (_prev != null) _prev.interactable = _chapter > 1;
             if (_next != null) _next.interactable = _chapter < MaxChapter();
             int current = _session != null && _session.Runner != null ? _session.Runner.GlobalStage : _save.farmingStage;
@@ -128,7 +130,7 @@ namespace SoloHero.Game.UI.Panels
 
                 if (i < _stageLabels.Length && _stageLabels[i] != null)
                 {
-                    _stageLabels[i].text = boss ? Strings.Get("stage.boss") : _chapter + "-" + (i + 1);
+                    _stageLabels[i].text = boss ? Strings.Get("stage.boss") : chapterInTier + "-" + (i + 1);
                     _stageLabels[i].color = unlocked ? Color.white : new Color(1f, 1f, 1f, 0.35f);
                 }
             }

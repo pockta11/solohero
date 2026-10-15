@@ -1,7 +1,8 @@
 """Google Play feature graphic (1024 x 500, no alpha) from the game's own art (launch plan P0-6).
 
 Meadow parallax layers and floor, the knight hero with a pet facing a goblin wave and the demon knight boss, the
-title logo and a tagline in the game font. Pixel art is scaled by whole numbers with nearest sampling.
+title logo and a tagline in the game font. The ink-cel sheets (D-168) carry 3 texels per art pixel, so sprites are
+scaled by <art scale> / 3 with Lanczos sampling.
 
     python tools/art/storegen.py            -> _bmad-output/implementation-artifacts/store/feature-graphic-1024x500.png
     python tools/art/storegen.py out.png    -> a preview elsewhere
@@ -18,6 +19,7 @@ OUT = os.path.join(ROOT, '_bmad-output', 'implementation-artifacts', 'store', 'f
 FONT = os.path.join(ART, 'Fonts', 'SoloHeroJua.ttf')
 W, H = 1024, 500
 GROUND = 430  # y of the characters' feet
+TEXELS = 3  # texels per art pixel in the HD character, map and floor sheets
 
 
 def frame(sheet, index, count):
@@ -33,7 +35,9 @@ def trim(img):
 
 
 def scaled(img, k):
-    return img.resize((img.width * k, img.height * k), Image.NEAREST)
+    """<img> at <k> times its art-pixel size."""
+    f = k / float(TEXELS)
+    return img.resize((max(1, round(img.width * f)), max(1, round(img.height * f))), Image.LANCZOS)
 
 
 def mirrored(img):
@@ -88,8 +92,8 @@ def main(out):
     boss = trim(frame('Bosses/demonknight_idle_12.png', 2, 12))
     goblin = trim(frame('Enemies/goblin_run_12.png', 3, 12))
     goblin_b = trim(frame('Enemies/goblin_run_12.png', 8, 12))
-    hero = trim(frame('Hero/knight2_idle_12.png', 0, 12))
-    pet = trim(frame('Pets/petdragon_idle_12.png', 0, 12))
+    hero = trim(frame('Hero/knight5_idle_12.png', 0, 12))
+    pet = trim(frame('Pets/petphoenix_idle_12.png', 0, 12))
 
     shadow(canvas, 905, GROUND, 190)
     place(canvas, scaled(boss, 3), 905, GROUND + 4)
@@ -106,7 +110,7 @@ def main(out):
 
     draw = ImageDraw.Draw(canvas)
     font = ImageFont.truetype(FONT, 40)
-    outlined_text(draw, (44, 46 + logo.height + 10), '손 놓아도 강해지는 픽셀 영웅', font, (255, 255, 255, 255), (40, 26, 60, 255), 3)
+    outlined_text(draw, (44, 46 + logo.height + 10), '손 놓아도 강해지는 나만의 영웅', font, (255, 255, 255, 255), (40, 26, 60, 255), 3)
 
     canvas.convert('RGB').save(out)
     print('feature graphic ->', out)

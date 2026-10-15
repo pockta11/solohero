@@ -47,7 +47,11 @@ namespace SoloHero.Core.Growth
         {
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             if (g < 1) g = 1;
-            double cp = balance.REC_CP_BASE * Math.Pow(balance.REC_CP_GROWTH, g - 1);
+            // D-151: two pieces like the enemy curve (Formulas.EnemyHp), continuous at the late start.
+            int start = balance.ENEMY_GROWTH_LATE_START;
+            double cp = start < 1 || g <= start
+                ? balance.REC_CP_BASE * Math.Pow(balance.REC_CP_GROWTH, g - 1)
+                : balance.REC_CP_BASE * Math.Pow(balance.REC_CP_GROWTH, start - 1) * Math.Pow(balance.REC_CP_GROWTH_LATE, g - start);
             if (boss) cp *= balance.REC_CP_BOSS_MULT;
             return Math.Floor(cp);
         }

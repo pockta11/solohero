@@ -41,12 +41,12 @@ namespace SoloHero.Tests.EditMode
         private static SkillDef Def(string id) => SkillCatalog.Find(id);
 
         [Test]
-        public void Catalog_ThreeStartersAndSixteenPerLine_WithUniqueIds()
+        public void Catalog_ThreeStartersAndTwentyPerLine_WithUniqueIds()
         {
-            // D-109: 3 starters + 3 lines x 16 (4 per grade).
-            Assert.AreEqual(51, SkillCatalog.Count);
-            Assert.AreEqual(15, SkillCatalog.OfGrade(SoloHero.Core.Gacha.Grade.Common).Length);
-            for (int g = 1; g < 4; g++) Assert.AreEqual(12, SkillCatalog.OfGrade((SoloHero.Core.Gacha.Grade)g).Length);
+            // D-109: 3 starters + 3 lines x 16 (4 per grade); D-157: + one third-job skill per line and grade.
+            Assert.AreEqual(63, SkillCatalog.Count);
+            Assert.AreEqual(18, SkillCatalog.OfGrade(SoloHero.Core.Gacha.Grade.Common).Length);
+            for (int g = 1; g < 4; g++) Assert.AreEqual(15, SkillCatalog.OfGrade((SoloHero.Core.Gacha.Grade)g).Length);
             for (int i = 0; i < SkillCatalog.All.Length; i++)
             {
                 Assert.AreEqual(i, SkillCatalog.IndexOf(SkillCatalog.All[i].Id), SkillCatalog.All[i].Id);

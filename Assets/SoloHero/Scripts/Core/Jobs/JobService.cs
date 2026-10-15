@@ -9,11 +9,13 @@ using SoloHero.Core.Talents;
 namespace SoloHero.Core.Jobs
 {
     /// <summary>
-    /// D-104 job advancement. Advancing is free, gated by hero level (JOB_LV_1 / JOB_LV_2), and permanent. The job
-    /// decides the main attack, the passive mastery (added to the talent effects), the ultimate (second jobs) and
-    /// which skills may be equipped. Each advancement also multiplies HP / ATK / DEF by JOB_STAT_MULT (StatAggregator).
+    /// D-104 job advancement. Advancing is free, gated by hero level (JOB_LV_1 / JOB_LV_2 / D-157 JOB_LV_3), and
+    /// permanent. The job decides the main attack, the passive mastery (added to the talent effects), the ultimate
+    /// (second and third jobs) and which skills may be equipped. Each advancement also multiplies HP / ATK / DEF by
+    /// JOB_STAT_MULT (StatAggregator).
     /// D-107: the beginner uses only the line-free starter skills and a job only its own line's; the first job hands
-    /// out its line's common skills so the slots are never empty right after advancing.
+    /// out its line's common skills so the slots are never empty right after advancing. D-157: third-job skills
+    /// (SkillDef.JobTier 3) need the third job, and the third job hands out its common one.
     /// </summary>
     public sealed class JobService
     {
@@ -38,13 +40,21 @@ namespace SoloHero.Core.Jobs
 
         public static JobLine LineOf(SaveDataV2 data) => data == null ? JobLine.None : JobCatalog.Find(data.jobId).Line;
 
-        /// <summary>Level needed for the next advancement; int.MaxValue once the second job is reached.</summary>
+        /// <summary>Level needed for the next advancement; int.MaxValue once the last job is reached.</summary>
         public int NextLevel => NextLevelFor(_balance, Tier);
 
-        public static int NextLevelFor(BalanceValues balance, int tier) =>
-            tier == 0 ? balance.JOB_LV_1 : tier == 1 ? balance.JOB_LV_2 : int.MaxValue;
+        public static int NextLevelFor(BalanceValues balance, int tier)
+        {
+            switch (tier)
+            {
+                case 0: return balance.JOB_LV_1;
+                case 1: return balance.JOB_LV_2;
+                case 2: return balance.JOB_LV_3;
+                default: return int.MaxValue;
+            }
+        }
 
-        public bool IsMax => Tier >= 2;
+        public bool IsMax => Tier >= JobCatalog.MaxTier;
 
         public bool CanAdvance => !IsMax && _data.heroLevel >= NextLevel;
 
@@ -73,17 +83,20 @@ namespace SoloHero.Core.Jobs
             JobDef next = JobCatalog.Find(jobId);
             if (next.Id != jobId || !IsChoice(next, Current)) return Result.Fail(FailReason.Locked);
             _data.jobId = next.Id;
-            if (next.Tier == 1) GrantLineCommons(_data, next.Line);
+            if (next.Tier == 1 || next.Tier == JobCatalog.MaxTier) GrantLineCommons(_data, next.Line, next.Tier);
             Advanced?.Invoke(next);
             _save?.RequestSave();
             return Result.Success;
         }
 
-        /// <summary>D-107: a skill is usable only by its own line; the line-free starters only by the beginner.</summary>
+        /// <summary>
+        /// D-107: a skill is usable only by its own line; the line-free starters only by the beginner. D-157: a
+        /// third-job skill also needs the third job.
+        /// </summary>
         public static bool CanUse(SaveDataV2 data, SkillDef def)
         {
             if (def == null) return false;
-            return def.Line == LineOf(data);
+            return def.Line == LineOf(data) && TierOf(data) >= def.JobTier;
         }
 
         /// <summary>
@@ -97,7 +110,7 @@ namespace SoloHero.Core.Jobs
             JobLine line = LineOf(data);
             if (line == JobLine.None) return false;
             int before = data.ownedSkills.Count;
-            GrantLineCommons(data, line);
+            GrantLineCommons(data, line, TierOf(data));
             bool changed = data.ownedSkills.Count != before;
             for (int s = 0; s < SkillService.SlotCount(balance); s++)
             {
@@ -110,23 +123,25 @@ namespace SoloHero.Core.Jobs
             return changed;
         }
 
-        /// <summary>D-107: the common-grade skills of a line, added to the book if missing (level 1).</summary>
-        public static void GrantLineCommons(SaveDataV2 data, JobLine line)
+        /// <summary>
+        /// D-107: the common-grade skills of a line that <paramref name="tier"/> may use (D-157), added to the book
+        /// if missing (level 1).
+        /// </summary>
+        public static void GrantLineCommons(SaveDataV2 data, JobLine line, int tier)
         {
             foreach (SkillDef def in SkillCatalog.All)
-                if (def.Line == line && def.Grade == Gacha.Grade.Common && !SkillBook.IsOwned(data, def.Id))
+                if (def.Line == line && def.Grade == Gacha.Grade.Common && def.JobTier <= tier && !SkillBook.IsOwned(data, def.Id))
                     SkillBook.AddOwned(data, def.Id);
         }
 
-        /// <summary>Talent effects plus the mastery of the job (and of its first job, for a second job).</summary>
+        /// <summary>Talent effects plus the mastery of the job and of every job it advanced from.</summary>
         public static TalentEffects Effects(SaveDataV2 data)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             var effects = new TalentEffects();
             TalentService.AddTo(effects, data);
-            JobDef job = JobCatalog.Find(data.jobId);
-            AddMastery(effects, job);
-            if (job.Tier == 2) AddMastery(effects, JobCatalog.Find(job.Parent));
+            for (JobDef job = JobCatalog.Find(data.jobId); job.Tier > 0; job = JobCatalog.Find(job.Parent))
+                AddMastery(effects, job);
             return effects;
         }
 

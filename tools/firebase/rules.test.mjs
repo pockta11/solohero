@@ -64,6 +64,16 @@ await check('expired code refused', assertFails(get(ref(bob, 'transfers/EXPRDEXP
 await check('new device uses the code up', assertSucceeds(remove(ref(bob, 'transfers/' + code))));
 await check('deleting a missing code refused', assertFails(remove(ref(bob, 'transfers/' + code))));
 
+// config/events (D-156): every client reads the event schedule, nobody writes it (the console only).
+await env.withSecurityRulesDisabled(async (ctx) => {
+  await set(ref(ctx.database(), 'config/events/launch_test'), { template: 'launch', start: 1, end: 2 });
+});
+await check('signed-in user reads the event schedule', assertSucceeds(get(ref(alice, 'config/events'))));
+await check('signed-out client reads the event schedule', assertSucceeds(get(ref(nobody, 'config/events'))));
+await check('user cannot write the event schedule', assertFails(set(ref(alice, 'config/events/x'), { template: 'launch', start: 1, end: 2 })));
+await check('user cannot replace the schedule', assertFails(set(ref(alice, 'config/events'), {})));
+await check('other config stays closed', assertFails(get(ref(alice, 'config'))));
+
 await env.cleanup();
 console.log('passed ' + passed + ', failed ' + failed);
 process.exit(failed === 0 ? 0 : 1);

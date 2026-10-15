@@ -112,7 +112,13 @@ namespace SoloHero.Core.Balance
     {
         public string Name;
         public int Seed;
+
+        /// <summary>The second job the player model took (the job path of the run).</summary>
+        public string Job;
         public readonly List<SimStageRow> Stages = new List<SimStageRow>();
+
+        /// <summary>D-151 (L-04): first day each capped growth axis was finished (<see cref="SimAxes"/>).</summary>
+        public readonly Dictionary<string, int> AxisCapDays = new Dictionary<string, int>();
         public readonly List<SimDayRow> Days = new List<SimDayRow>();
         public readonly List<SimOfflineClaim> OfflineClaims = new List<SimOfflineClaim>();
         public readonly SortedDictionary<int, SimClearStat> ClearStats = new SortedDictionary<int, SimClearStat>();

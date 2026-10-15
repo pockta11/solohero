@@ -58,7 +58,10 @@ namespace SoloHero.Core.Stage
                 JobService.TierOf(save));
         }
 
-        /// <summary>Talents and job mastery (D-087, D-104) plus the D-109 ring and earring, which share their channel.</summary>
+        /// <summary>
+        /// Talents and job mastery (D-087, D-104) plus the D-109 ring and earring, which share their channel, and the D-164
+        /// collection sets.
+        /// </summary>
         public static TalentEffects Effects(BalanceValues balance, SaveDataV2 save) =>
             Effects(balance, save, EquipmentBonus.Resolve(balance, save));
 
@@ -66,6 +69,7 @@ namespace SoloHero.Core.Stage
         {
             TalentEffects effects = JobService.Effects(save);
             bonus.AddTo(effects);
+            SoloHero.Core.Progression.CollectionCatalog.AddTo(effects, save);
             return effects;
         }
 

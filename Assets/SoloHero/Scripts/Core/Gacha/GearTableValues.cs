@@ -23,6 +23,10 @@ namespace SoloHero.Core.Gacha
         public double LevelRateGain;
         public int MaxLevel = 1;
 
+        /// <summary>D-159: the level after which only the top grades rise (SUMMON_LV_LATE_FROM), by TopRateGain a level.</summary>
+        public int LevelLateFrom;
+        public double TopRateGain;
+
         /// <summary>D-121: summon level from which each grade can drop (0 or 1 = from the start), index = grade.</summary>
         public readonly int[] OpenLevels = new int[GearGrades.Count];
 
@@ -48,7 +52,9 @@ namespace SoloHero.Core.Gacha
                 PityCeiling = balance.GEAR_PITY,
                 ResetOnPityGrade = balance.GACHA_PITY_RESET_ON_LEGENDARY,
                 LevelRateGain = balance.SUMMON_LV_RATE_GAIN,
-                MaxLevel = balance.SUMMON_LV_MAX
+                MaxLevel = balance.SUMMON_LV_MAX,
+                LevelLateFrom = balance.SUMMON_LV_LATE_FROM,
+                TopRateGain = balance.SUMMON_LV_TOP_GAIN
             };
             table.OpenLevels[(int)GearGrade.Uncommon] = balance.SUMMON_OPEN_U;
             table.OpenLevels[(int)GearGrade.Rare] = balance.SUMMON_OPEN_R;
@@ -85,7 +91,8 @@ namespace SoloHero.Core.Gacha
             GearTableValues table = _byLevel[level];
             if (table != null) return table;
             table = new GearTableValues { PityCeiling = PityCeiling, ResetOnPityGrade = ResetOnPityGrade, MaxLevel = MaxLevel };
-            SummonLevel.Boost(Rates, table.Rates, SummonLevel.RateMult(LevelRateGain, level), OpenLevels, level);
+            SummonLevel.Boost(Rates, table.Rates, SummonLevel.RateMult(LevelRateGain, level, LevelLateFrom), OpenLevels, level,
+                SummonLevel.TopMult(TopRateGain, level, LevelLateFrom));
             _byLevel[level] = table;
             return table;
         }

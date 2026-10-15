@@ -46,8 +46,9 @@ namespace SoloHero.Core.Equipment
             EquipmentLevels.Set(data, id, 0);
             if (data.ownedEquipment.Contains(target))
             {
+                // D-160: a copy already above the duplicate cap (stone levels) keeps its level.
                 int level = EquipmentLevels.Get(data, target);
-                EquipmentLevels.Set(data, target, Math.Min(balance.EQUIP_MAX_LEVEL, level + balance.EQUIP_PROMOTE_ENHANCE));
+                EquipmentLevels.Set(data, target, Math.Max(level, Math.Min(balance.EQUIP_MAX_LEVEL, level + balance.EQUIP_PROMOTE_ENHANCE)));
             }
             else
             {

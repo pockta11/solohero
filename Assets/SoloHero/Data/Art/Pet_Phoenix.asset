@@ -49,6 +49,15 @@ MonoBehaviour:
   - {fileID: 7455429815000410672, guid: 6a71a1f34d08daa44afcff41d185db5b, type: 3}
   hit: []
   dead: []
+  skill:
+  - {fileID: -3194873769917372049, guid: 6a71a1f34d08daa44afcff41d185db5b, type: 3}
+  - {fileID: 4667793965008216803, guid: 6a71a1f34d08daa44afcff41d185db5b, type: 3}
+  - {fileID: 7964138456937514316, guid: 6a71a1f34d08daa44afcff41d185db5b, type: 3}
+  - {fileID: 8719849992981739735, guid: 6a71a1f34d08daa44afcff41d185db5b, type: 3}
+  - {fileID: -5085946434146885015, guid: 6a71a1f34d08daa44afcff41d185db5b, type: 3}
+  - {fileID: -1498073327781829755, guid: 6a71a1f34d08daa44afcff41d185db5b, type: 3}
+  - {fileID: -4653522383220688523, guid: 6a71a1f34d08daa44afcff41d185db5b, type: 3}
+  - {fileID: 7455429815000410672, guid: 6a71a1f34d08daa44afcff41d185db5b, type: 3}
   fps: 20
   pixelScale: 1
   headHeight: 0.78125

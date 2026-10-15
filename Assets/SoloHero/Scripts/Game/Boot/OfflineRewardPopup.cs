@@ -102,9 +102,16 @@ namespace SoloHero.Game.Boot
                 return;
 
             var reward = new OfflineReward(_gold, showPopup: true, grantNow: false, resetQuitTime: false);
+            var before = new UI.Common.RewardSnapshot(save);
             Result result = new OfflineClaim(balance, requester).Apply(save, reward, now, adDoubled);
             if (!result.Ok)
                 return;
+
+            // D-171: the gold flies from the claim button to the top bar (the game scene's reward layer; this popup
+            // lives on from the boot scene, so it looks the layer up once per claim).
+            UI.Common.RewardFx fx = FindObjectOfType<UI.Common.RewardFx>();
+            if (fx != null)
+                fx.PlayGain(before, save);
 
             _claimed = true;
             UI.Common.GameAnalytics.Log(AnalyticsEvents.OfflineClaim,

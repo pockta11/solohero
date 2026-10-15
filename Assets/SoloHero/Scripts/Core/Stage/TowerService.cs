@@ -20,7 +20,10 @@ namespace SoloHero.Core.Stage
         /// <summary>D-143 breakthrough stones.</summary>
         public readonly int Stones;
 
-        public TowerReward(int floor, double gems, int gearTickets, int skillTickets, int petTickets, int stones = 0)
+        /// <summary>D-162: the floor is a milestone, and the totals above include its bonus.</summary>
+        public readonly bool Milestone;
+
+        public TowerReward(int floor, double gems, int gearTickets, int skillTickets, int petTickets, int stones = 0, bool milestone = false)
         {
             Floor = floor;
             Gems = gems;
@@ -28,6 +31,7 @@ namespace SoloHero.Core.Stage
             SkillTickets = skillTickets;
             PetTickets = petTickets;
             Stones = stones;
+            Milestone = milestone;
         }
     }
 
@@ -35,6 +39,7 @@ namespace SoloHero.Core.Stage
     /// D-130 infinite tower (genre: a second ladder beside the stages). Floor f is the boss of stage
     /// TOWER_G_OFFSET + f against the boss timer; each run starts on the first floor not yet cleared and climbs while
     /// the hero wins. Opens with the pet summon after the first boss. Unlimited tries - the power curve is the gate.
+    /// D-162 (L-15): every TOWER_MILESTONE_EVERY floors is a milestone with a bigger reward on top.
     /// </summary>
     public sealed class TowerService
     {
@@ -73,10 +78,27 @@ namespace SoloHero.Core.Stage
         {
             bool tickets = balance.TOWER_TICKET_EVERY > 0 && floor % balance.TOWER_TICKET_EVERY == 0;
             bool rare = balance.TOWER_RARE_EVERY > 0 && floor % balance.TOWER_RARE_EVERY == 0;
-            return new TowerReward(floor, Gems(balance, floor), tickets ? balance.TOWER_GEAR_TICKETS : 0,
-                rare ? balance.TOWER_SKILL_TICKETS : 0, rare ? balance.TOWER_PET_TICKETS : 0,
-                balance.TOWER_STONES + (rare ? balance.TOWER_STONES_RARE : 0));
+            bool milestone = IsMilestone(balance, floor);
+            return new TowerReward(floor,
+                Gems(balance, floor) + (milestone ? MilestoneGems(balance, floor) : 0d),
+                (tickets ? balance.TOWER_GEAR_TICKETS : 0) + (milestone ? balance.TOWER_MILESTONE_GEAR_TICKETS : 0),
+                (rare ? balance.TOWER_SKILL_TICKETS : 0) + (milestone ? balance.TOWER_MILESTONE_SKILL_TICKETS : 0),
+                (rare ? balance.TOWER_PET_TICKETS : 0) + (milestone ? balance.TOWER_MILESTONE_PET_TICKETS : 0),
+                balance.TOWER_STONES + (rare ? balance.TOWER_STONES_RARE : 0) + (milestone ? balance.TOWER_MILESTONE_STONES : 0),
+                milestone);
         }
+
+        /// <summary>D-162: every TOWER_MILESTONE_EVERY floors.</summary>
+        public static bool IsMilestone(BalanceValues balance, int floor) =>
+            balance.TOWER_MILESTONE_EVERY > 0 && floor > 0 && floor % balance.TOWER_MILESTONE_EVERY == 0;
+
+        /// <summary>D-162: the milestone's extra gems, growing with each milestone (500, 1000, 1500, ...).</summary>
+        public static double MilestoneGems(BalanceValues balance, int floor) =>
+            balance.TOWER_MILESTONE_EVERY > 0 ? balance.TOWER_MILESTONE_GEM * (floor / balance.TOWER_MILESTONE_EVERY) : 0d;
+
+        /// <summary>D-162: the first milestone floor above <paramref name="floor"/>.</summary>
+        public static int NextMilestone(BalanceValues balance, int floor) =>
+            balance.TOWER_MILESTONE_EVERY > 0 ? (Math.Max(0, floor) / balance.TOWER_MILESTONE_EVERY + 1) * balance.TOWER_MILESTONE_EVERY : 0;
 
         /// <summary>Records the cleared floor and pays it (gems and tickets). Called by the runner.</summary>
         public static TowerReward Grant(BalanceValues balance, SaveDataV2 data, int floor)

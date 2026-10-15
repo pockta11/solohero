@@ -1,0 +1,28 @@
+===== C:/Users/user/AppData/Local/Temp/claude/D--git-solohero/7f2942db-2bc0-4a7e-a0ec-2c533c3fb2c1/scratchpad/lt/r111 12 runs
+light_berserker_s1     d7 4-5 L37 t29 | d30 7-4 L62 t65 | d60 11-4 L82 t93 | d90 13-3 L96 t115 | d120 14-9 L104 t127 | d180 16-9 L115 t149 | d240 19-3 L126 t170 | d365 23-3 L153 t213 | stall 23 | new30 min(d90+) 3 | new30@365 4
+light_berserker_s2     d7 4-4 L37 t29 | d30 7-4 L61 t64 | d60 10-8 L79 t95 | d90 13-6 L94 t114 | d120 14-9 L103 t126 | d180 16-7 L114 t144 | d240 18-9 L125 t169 | d365 22-10 L150 t214 | stall 21 | new30 min(d90+) 3 | new30@365 9
+light_cryo_s1          d7 4-8 L38 t28 | d30 8-5 L65 t66 | d60 12-9 L95 t108 | d90 15-9 L111 t138 | d120 18-10 L128 t170 | d180 24-3 L158 t219 | d240 25-9 L173 t237 | d365 27-9 L188 t256 | stall 46 | new30 min(d90+) 0 | new30@365 0
+light_cryo_s2          d7 4-6 L38 t27 | d30 8-5 L65 t67 | d60 12-9 L91 t102 | d90 15-7 L106 t131 | d120 18-4 L123 t162 | d180 23-9 L154 t216 | d240 25-9 L172 t237 | d365 27-9 L189 t257 | stall 44 | new30 min(d90+) 0 | new30@365 0
+light_knight_s1        d7 4-3 L36 t27 | d30 7-3 L61 t64 | d60 11-7 L82 t96 | d90 12-9 L95 t111 | d120 14-2 L101 t121 | d180 15-9 L111 t137 | d240 18-3 L123 t164 | d365 22-10 L150 t210 | stall 22 | new30 min(d90+) 3 | new30@365 5
+light_knight_s2        d7 4-4 L36 t28 | d30 7-1 L60 t63 | d60 10-8 L80 t99 | d90 12-9 L92 t109 | d120 14-6 L100 t121 | d180 15-9 L111 t138 | d240 17-9 L119 t157 | d365 21-6 L143 t205 | stall 27 | new30 min(d90+) 1 | new30@365 6
+light_pyro_s1          d7 4-6 L38 t29 | d30 8-3 L65 t65 | d60 12-5 L91 t100 | d90 13-9 L100 t117 | d120 16-5 L112 t141 | d180 21-1 L138 t190 | d240 24-7 L160 t222 | d365 26-9 L179 t244 | stall 43 | new30 min(d90+) 0 | new30@365 2
+light_pyro_s2          d7 4-6 L38 t30 | d30 8-3 L65 t65 | d60 11-9 L88 t97 | d90 14-7 L101 t122 | d120 16-9 L115 t149 | d180 21-8 L141 t196 | d240 24-9 L162 t225 | d365 26-9 L180 t247 | stall 38 | new30 min(d90+) 0 | new30@365 0
+light_ranger_s1        d7 4-7 L38 t29 | d30 7-7 L64 t64 | d60 10-2 L79 t91 | d90 11-6 L87 t100 | d120 13-9 L96 t115 | d180 15-9 L109 t137 | d240 19-1 L125 t170 | d365 24-7 L159 t224 | stall 18 | new30 min(d90+) 6 | new30@365 8
+light_ranger_s2        d7 4-8 L39 t31 | d30 7-6 L64 t65 | d60 10-2 L78 t95 | d90 12-8 L91 t109 | d120 14-9 L101 t127 | d180 17-3 L117 t153 | d240 20-5 L133 t186 | d365 24-4 L158 t227 | stall 12 | new30 min(d90+) 4 | new30@365 9
+light_sniper_s1        d7 4-5 L37 t32 | d30 7-4 L62 t64 | d60 8-8 L72 t86 | d90 9-7 L79 t91 | d120 9-10 L84 t95 | d180 13-3 L92 t111 | d240 14-8 L101 t122 | d365 15-9 L110 t135 | stall 68 | new30 min(d90+) 0 | new30@365 3
+light_sniper_s2        d7 4-6 L38 t33 | d30 7-1 L61 t64 | d60 8-6 L72 t83 | d90 10-4 L80 t98 | d120 11-5 L86 t105 | d180 13-9 L98 t119 | d240 15-3 L104 t130 | d365 16-9 L114 t147 | stall 36 | new30 min(d90+) 0 | new30@365 5
+-- median over runs
+d7   4-3 ~ 4-8 (median g36 = 4-6)  lv 36-39  tower 27-33  gap(g-t) med 6
+d30  7-1 ~ 8-5 (median g65 = 7-5)  lv 60-65  tower 63-67  gap(g-t) med 0
+d60  8-6 ~ 12-9 (median g101 = 11-1)  lv 72-95  tower 83-108  gap(g-t) med 7
+d90  9-7 ~ 15-9 (median g121 = 13-1)  lv 79-111  tower 91-138  gap(g-t) med 10
+d120 9-10 ~ 18-10 (median g139 = 14-9)  lv 84-128  tower 95-170  gap(g-t) med 12
+d180 13-3 ~ 24-3 (median g158 = 16-8)  lv 92-158  tower 111-219  gap(g-t) med 12
+d240 14-8 ~ 25-9 (median g182 = 19-2)  lv 101-173  tower 122-237  gap(g-t) med 12
+d365 15-9 ~ 27-9 (median g228 = 23-8)  lv 110-189  tower 135-257  gap(g-t) med 12
+longest stall: median 31.5 max 68 | new30 min from d90: median 0.5 min 0
+== C:/Users/user/AppData/Local/Temp/claude/D--git-solohero/7f2942db-2bc0-4a7e-a0ec-2c533c3fb2c1/scratchpad/lt/r111 (12 runs)
+  d1-30 longest stall median 2.0 max 3 | normal fail 16.6% | boss fails 100 deaths 7%
+  d31-90 longest stall median 6.5 max 16 | normal fail 25.5% | boss fails 684 deaths 100%
+  d91-180 longest stall median 15.0 max 23 | normal fail 33.9% | boss fails 1051 deaths 100%
+  d181-365 longest stall median 29.5 max 68 | normal fail 35.8% | boss fails 2057 deaths 100%

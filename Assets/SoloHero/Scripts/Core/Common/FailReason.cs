@@ -36,6 +36,12 @@ namespace SoloHero.Core.Common
         LimitReached,
 
         /// <summary>D-143: not enough breakthrough stones for the limit break.</summary>
-        NotEnoughStones
+        NotEnoughStones,
+
+        /// <summary>D-156: not enough event tokens for the exchange item.</summary>
+        NotEnoughTokens,
+
+        /// <summary>D-156: no event is running (it ended while the popup was open).</summary>
+        EventEnded
     }
 }

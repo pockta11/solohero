@@ -55,7 +55,40 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(b.ATTENDANCE_GEM * 3 + b.ATTENDANCE_DAY7_GEM, save.gem);
             Assert.AreEqual(7, daily.AttendanceClaimedInCycle);
             clock.Local = clock.Local.AddDays(3);
-            Assert.AreEqual(1, daily.AttendanceDay, "a missed day does not reset; the cycle restarts after day 7");
+            // D-166: the board goes on to its second week; a missed day does not reset it.
+            Assert.AreEqual(8, daily.AttendanceDay, "a missed day does not reset; the board goes on to day 8");
+            Assert.AreEqual(8, daily.AttendanceWeekStart);
+            Assert.AreEqual(0, daily.AttendanceClaimedInCycle);
+        }
+
+        [Test]
+        public void MonthlyBoard_WeekEndsPayTickets_Day28Restarts_AndTotalsPayMilestones()
+        {
+            // D-166 (L-11): a 28-day board, tickets on days 14 / 21 / 28, milestones at 30, 60, ... days attended.
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            save.farmingStage = 5;
+            var clock = new FakeClock();
+            var daily = new DailyService(b, save, clock);
+            int gearTickets = 0;
+            for (int day = 1; day <= 30; day++)
+            {
+                Assert.AreEqual((day - 1) % DailyService.BoardDays + 1, daily.AttendanceDay, "day " + day);
+                Assert.IsTrue(daily.TryClaimAttendance().Ok);
+                Assert.AreEqual(day == 30 ? 30 : 0, daily.LastMilestone, "day " + day);
+                if (day == 14) gearTickets += 10;
+                if (day == 28) gearTickets += 20;
+                if (day == 30) gearTickets += AttendanceCatalog.At(30).Reward.GearTickets;
+                Assert.AreEqual(gearTickets, save.gearTickets, "day " + day);
+                clock.Local = clock.Local.AddDays(1);
+            }
+
+            Assert.AreEqual(b.ATTENDANCE_DAY28_GEM, daily.AttendanceGems(28));
+            Assert.AreEqual(b.ATTENDANCE_DAY7_GEM, daily.AttendanceGems(21));
+            Assert.AreEqual(0d, daily.AttendanceGold(14), "week ends pay gems, not gold");
+            Assert.AreEqual(3, daily.AttendanceDay, "the board restarts after day 28");
+            Assert.AreEqual(60, AttendanceCatalog.Next(30).Days);
+            Assert.IsNull(AttendanceCatalog.Next(365));
         }
 
         [Test]

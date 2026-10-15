@@ -34,7 +34,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 0
+    filterMode: 1
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -48,7 +48,7 @@ TextureImporter:
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 32
+  spritePixelsToUnits: 64
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
@@ -115,8 +115,8 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -134,10 +134,10 @@ TextureImporter:
       name: vfxcircle4_play_12_1
       rect:
         serializedVersion: 2
-        x: 136
+        x: 272
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -155,10 +155,10 @@ TextureImporter:
       name: vfxcircle4_play_12_2
       rect:
         serializedVersion: 2
-        x: 272
+        x: 544
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -176,10 +176,10 @@ TextureImporter:
       name: vfxcircle4_play_12_3
       rect:
         serializedVersion: 2
-        x: 408
+        x: 816
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -197,10 +197,10 @@ TextureImporter:
       name: vfxcircle4_play_12_4
       rect:
         serializedVersion: 2
-        x: 544
+        x: 1088
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -218,10 +218,10 @@ TextureImporter:
       name: vfxcircle4_play_12_5
       rect:
         serializedVersion: 2
-        x: 680
+        x: 1360
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -239,10 +239,10 @@ TextureImporter:
       name: vfxcircle4_play_12_6
       rect:
         serializedVersion: 2
-        x: 816
+        x: 1632
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -260,10 +260,10 @@ TextureImporter:
       name: vfxcircle4_play_12_7
       rect:
         serializedVersion: 2
-        x: 952
+        x: 1904
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -281,10 +281,10 @@ TextureImporter:
       name: vfxcircle4_play_12_8
       rect:
         serializedVersion: 2
-        x: 1088
+        x: 2176
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -302,10 +302,10 @@ TextureImporter:
       name: vfxcircle4_play_12_9
       rect:
         serializedVersion: 2
-        x: 1224
+        x: 2448
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -323,10 +323,10 @@ TextureImporter:
       name: vfxcircle4_play_12_10
       rect:
         serializedVersion: 2
-        x: 1360
+        x: 2720
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -344,10 +344,10 @@ TextureImporter:
       name: vfxcircle4_play_12_11
       rect:
         serializedVersion: 2
-        x: 1496
+        x: 2992
         y: 0
-        width: 136
-        height: 52
+        width: 272
+        height: 104
       alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}

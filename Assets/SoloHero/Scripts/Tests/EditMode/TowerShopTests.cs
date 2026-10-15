@@ -40,6 +40,18 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void RecommendedCp_PastLateStart_GrowsAtTheLateRate()
+        {
+            var b = new BalanceValues();
+            int start = b.ENEMY_GROWTH_LATE_START;
+            double atStart = CombatPower.Recommended(b, start - 1, false) * b.REC_CP_GROWTH;
+            Assert.AreEqual(atStart, CombatPower.Recommended(b, start, false), 2d);
+            double a = CombatPower.Recommended(b, start + 11, false);
+            double c = CombatPower.Recommended(b, start + 12, false);
+            Assert.AreEqual(b.REC_CP_GROWTH_LATE, c / a, 1e-6);
+        }
+
+        [Test]
         public void Shop_FreeBundleOncePerDay_DealsCostGemsAndGiveTickets()
         {
             var b = new BalanceValues();
@@ -168,6 +180,40 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void LeaveRun_EndsTheTowerOrADungeonNow_KeepingItsPay()
+        {
+            // D-170: the leave button ends the run as if its time ran out, then the runner goes back to its stage.
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            PetService.EnsureOwned(save);
+            var runner = new StageRunner(b, new SystemRandom(new Random(8)), new HeroStats(1e9, 1e7, 1e7, b.ATKSPD_BASE, 0d), save);
+            runner.Hero.AttackRequested += () => runner.Hero.OnHitFrame(runner.World);
+            runner.Resume(3, false);
+            Assert.IsFalse(runner.LeaveRun(), "nothing to leave on a stage");
+
+            Assert.IsTrue(runner.StartTower(1));
+            for (int i = 0; i < 200; i++) runner.Tick(0.05f);
+            int floors = save.towerFloor;
+            Assert.Greater(floors, 0);
+            int ended = 0;
+            runner.DungeonEnded += (kind, earned) => ended++;
+            Assert.IsTrue(runner.LeaveRun());
+            Assert.AreEqual(StageState.DungeonResult, runner.State);
+            Assert.AreEqual(1, ended);
+            Assert.IsFalse(runner.LeaveRun(), "the result screen is not left twice");
+            for (int i = 0; i < 200 && runner.InDungeon; i++) runner.Tick(0.05f);
+            Assert.IsFalse(runner.InDungeon);
+            Assert.AreEqual(3, runner.GlobalStage);
+            Assert.AreEqual(floors, save.towerFloor, "the floors climbed stay paid");
+
+            int stones = save.breakStones;
+            Assert.IsTrue(runner.StartDungeon(DungeonKind.Gold));
+            runner.Tick(0.05f);
+            Assert.IsTrue(runner.LeaveRun());
+            Assert.AreEqual(stones + b.DUNGEON_STONES, save.breakStones, "a left run still pays its stones");
+        }
+
+        [Test]
         public void Tower_LockedUntilTheFirstBoss()
         {
             var b = new BalanceValues();
@@ -175,6 +221,34 @@ namespace SoloHero.Tests.EditMode
             var runner = new StageRunner(b, new SystemRandom(new Random(7)), new HeroStats(100, 10, 10, b.ATKSPD_BASE, 0d), save);
             runner.Resume(1, false);
             Assert.AreEqual(FailReason.Locked, new TowerService(b, save).TryEnter(runner).Reason);
+        }
+
+        [Test]
+        public void TowerMilestone_EveryFiftyFloors_PaysAGrowingBonusOnce()
+        {
+            // D-162 (L-15): floors 50, 100, ... add TOWER_MILESTONE_GEM x k gems, tickets and stones to their own reward.
+            var b = new BalanceValues();
+            Assert.IsFalse(TowerService.IsMilestone(b, 49));
+            Assert.IsTrue(TowerService.IsMilestone(b, 50));
+            Assert.AreEqual(50, TowerService.NextMilestone(b, 0));
+            Assert.AreEqual(100, TowerService.NextMilestone(b, 50));
+            TowerReward plain = TowerService.Preview(b, 49);
+            TowerReward first = TowerService.Preview(b, 50);
+            TowerReward second = TowerService.Preview(b, 100);
+            Assert.IsFalse(plain.Milestone);
+            Assert.IsTrue(first.Milestone);
+            Assert.AreEqual(TowerService.Gems(b, 50) + b.TOWER_MILESTONE_GEM, first.Gems, 1e-9);
+            Assert.AreEqual(TowerService.Gems(b, 100) + 2 * b.TOWER_MILESTONE_GEM, second.Gems, 1e-9);
+            Assert.GreaterOrEqual(first.GearTickets, b.TOWER_MILESTONE_GEAR_TICKETS);
+            Assert.GreaterOrEqual(first.Stones, b.TOWER_MILESTONE_STONES);
+
+            var save = SaveDataV2.CreateNew();
+            save.towerFloor = 49;
+            double gem = save.gem;
+            TowerService.Grant(b, save, 50);
+            Assert.AreEqual(50, save.towerFloor);
+            Assert.AreEqual(gem + first.Gems, save.gem, 1e-9);
+            Assert.AreEqual(first.GearTickets, save.gearTickets);
         }
     }
 }

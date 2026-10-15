@@ -132,6 +132,7 @@ namespace SoloHero.Core.Balance
             AllocateTalents();
             Advance();
             BreakLimits();
+            EnhanceWithStones();
             PromoteCheap();
             if (PullToShare()) bought = true;
 
@@ -296,6 +297,16 @@ namespace SoloHero.Core.Balance
                     break;
                 }
 
+                // D-158: once the shared tree is full, the job page in row order.
+                TalentDef[] page = any ? Array.Empty<TalentDef>() : TalentCatalog.JobNodes(SoloHero.Core.Jobs.JobService.LineOf(_save));
+                for (int i = 0; i < page.Length; i++)
+                {
+                    if (!_talents.TryLearn(page[i].Id).Ok) continue;
+                    learned++;
+                    any = true;
+                    break;
+                }
+
                 if (!any) break;
             }
 
@@ -355,7 +366,10 @@ namespace SoloHero.Core.Balance
             return true;
         }
 
-        /// <summary>D-104: the player model advances as soon as it may, to the jobs named in the settings.</summary>
+        /// <summary>
+        /// D-104: the player model advances as soon as it may, to the jobs named in the settings; D-157: the third job
+        /// is the second job's only successor.
+        /// </summary>
         public string Job1 = "warrior";
         public string Job2 = "knight";
 
@@ -363,7 +377,15 @@ namespace SoloHero.Core.Balance
         {
             var jobs = new SoloHero.Core.Jobs.JobService(_save, _b);
             if (!jobs.CanAdvance) return;
-            if (jobs.TryAdvance(jobs.Tier == 0 ? Job1 : Job2).Ok) _skills.AutoEquip();
+            string next = jobs.Tier == 0 ? Job1 : jobs.Tier == 1 ? Job2 : null;
+            if (next == null)
+            {
+                SoloHero.Core.Jobs.JobDef[] choices = jobs.Choices();
+                if (choices.Length == 0) return;
+                next = choices[0].Id;
+            }
+
+            if (jobs.TryAdvance(next).Ok) _skills.AutoEquip();
         }
 
         private bool SummonSkill()
@@ -497,6 +519,40 @@ namespace SoloHero.Core.Balance
             {
                 var l = (UpgradeLane)lane;
                 while (_upgrades.State(l) == LaneState.NeedsBreak && _upgrades.TryBreak(l).Ok) Breaks++;
+            }
+        }
+
+        /// <summary>D-160 stone levels bought by the player model.</summary>
+        public int StoneLevels { get; private set; }
+
+        /// <summary>
+        /// D-160: the stones above the next limit breaks of the HP / ATK / DEF lanes go into stone levels: equipped items
+        /// first, highest grade first, then the rest of the collection.
+        /// </summary>
+        private void EnhanceWithStones()
+        {
+            int reserve = 0;
+            foreach (UpgradeLane lane in new[] { UpgradeLane.Hp, UpgradeLane.Atk, UpgradeLane.Def })
+                reserve += LaneRules.BreakCost(_b, LaneRules.Breaks(_save, lane));
+            for (int guard = 0; guard < 200; guard++)
+            {
+                string best = null;
+                int bestScore = -1;
+                for (int i = 0; i < _save.ownedEquipment.Count; i++)
+                {
+                    string id = _save.ownedEquipment[i];
+                    if (!StoneEnhance.CanEnhance(_b, _save, id)) continue;
+                    EquipmentBonus.TryParseAny(id, out EquipmentSlot slot, out GearGrade grade);
+                    int score = (int)grade + (EquippedSlots.Get(_save, slot) == id ? 100 : 0);
+                    if (score <= bestScore) continue;
+                    bestScore = score;
+                    best = id;
+                }
+
+                if (best == null) return;
+                if (_save.breakStones - StoneEnhance.Cost(_b, EquipmentLevels.Get(_save, best)) < reserve) return;
+                if (!StoneEnhance.TryEnhance(_b, _save, best).Ok) return;
+                StoneLevels++;
             }
         }
 
@@ -647,7 +703,7 @@ namespace SoloHero.Core.Balance
             for (int g = 0; g < SkillCatalog.GradeCount; g++)
             {
                 var grade = (Grade)g;
-                SkillDef[] pool = SkillCatalog.OfLine(line, grade);
+                SkillDef[] pool = SkillCatalog.OfLine(line, grade, SoloHero.Core.Jobs.JobService.TierOf(_save));
                 if (pool.Length == 0) continue;
                 double p = GradeProbability(skillTable, grade, pityNext) / pool.Length;
                 if (p <= 0d) continue;

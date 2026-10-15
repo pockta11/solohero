@@ -8,10 +8,21 @@ namespace SoloHero.Core
     public static class Formulas
     {
         public static double EnemyHp(BalanceValues c, int g) =>
-            c.ENEMY_HP_BASE * Math.Pow(c.ENEMY_HP_GROWTH, g - 1);
+            c.ENEMY_HP_BASE * EnemyGrowth(c, c.ENEMY_HP_GROWTH, c.ENEMY_HP_GROWTH_LATE, g);
 
         public static double EnemyAtk(BalanceValues c, int g) =>
-            c.ENEMY_ATK_BASE * Math.Pow(c.ENEMY_ATK_GROWTH, g - 1);
+            c.ENEMY_ATK_BASE * EnemyGrowth(c, c.ENEMY_ATK_GROWTH, c.ENEMY_ATK_GROWTH_LATE, g);
+
+        /// <summary>
+        /// D-151: growth^(g - 1) up to ENEMY_GROWTH_LATE_START, then the late rate for every stage past it (the curve stays
+        /// continuous at the start stage).
+        /// </summary>
+        private static double EnemyGrowth(BalanceValues c, double growth, double lateGrowth, int g)
+        {
+            int start = c.ENEMY_GROWTH_LATE_START;
+            if (start < 1 || g <= start) return Math.Pow(growth, g - 1);
+            return Math.Pow(growth, start - 1) * Math.Pow(lateGrowth, g - start);
+        }
 
         /// <summary>Boss HP multiplier at stage g: D-110 softens the chapter 1 boss.</summary>
         public static double BossHpMult(BalanceValues c, int g) =>

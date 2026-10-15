@@ -47,6 +47,7 @@ namespace SoloHero.Core.Balance
             private readonly SimReport _report;
             private readonly Dictionary<int, StageTrack> _tracks = new Dictionary<int, StageTrack>();
             private readonly HashSet<int> _clearedOnce = new HashSet<int>();
+            private readonly List<string> _capped = new List<string>();
 
             private SimDayRow _day;
             private int _sessionIndex;
@@ -80,7 +81,7 @@ namespace SoloHero.Core.Balance
                 _b = balance;
                 _s = settings;
                 _save = SaveDataV2.CreateNew();
-                _report = new SimReport { Name = settings.Name, Seed = settings.Seed };
+                _report = new SimReport { Name = settings.Name, Seed = settings.Seed, Job = settings.Job2 };
 
                 IRandom combatRng = new SystemRandom(new Random(settings.Seed));
                 IRandom gachaRng = new SystemRandom(new Random(unchecked(settings.Seed * 7919 + 17)));
@@ -159,7 +160,7 @@ namespace SoloHero.Core.Balance
                         _runs.Clear();
                         if (_s.UseDungeons && _dungeons.Unlocked)
                         {
-                            foreach (DungeonKind kind in new[] { DungeonKind.Gold, DungeonKind.Exp })
+                            foreach (DungeonKind kind in new[] { DungeonKind.Gold, DungeonKind.Exp, DungeonKind.Score })
                                 for (int n = _dungeons.Remaining(kind); n > 0; n--) _runs.Enqueue(kind);
                         }
 
@@ -193,6 +194,7 @@ namespace SoloHero.Core.Balance
                     _day.GoldEnd = _save.gold;
                     _day.GemEnd = _save.gem;
                     _report.Days.Add(_day);
+                    RecordAxisCaps(d);
                 }
 
                 _report.PullValueParity = Median(_spender.PullToUpgradeValue);
@@ -501,6 +503,16 @@ namespace SoloHero.Core.Balance
                     SpentTotal = _spender.SpentUpgrade + _spender.SpentGacha + _spender.SpentSkill + _spender.SpentPet,
                     Cp = CombatPower.Of(_b, CombatLoadout.ComputeStats(_b, _save), SoloHero.Core.Pets.PetService.EquippedRate(_b, _save))
                 };
+            }
+
+            private void RecordAxisCaps(int day)
+            {
+                _capped.Clear();
+                SimAxes.AddCapped(_b, _save, _capped);
+                for (int i = 0; i < _capped.Count; i++)
+                {
+                    if (!_report.AxisCapDays.ContainsKey(_capped[i])) _report.AxisCapDays.Add(_capped[i], day);
+                }
             }
 
             private int SkillLevelSum()

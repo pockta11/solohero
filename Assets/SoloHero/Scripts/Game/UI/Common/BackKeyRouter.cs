@@ -21,6 +21,11 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private TowerPresenter _tower;
         [SerializeField] private ShopPresenter _shop;
         [SerializeField] private JobPresenter _job;
+
+        [Tooltip("D-156: the event popup.")]
+        [SerializeField] private EventPresenter _events;
+        [SerializeField] private PassPresenter _pass;
+        [SerializeField] private CollectionPresenter _collection;
         [SerializeField] private PanelHost _panels;
         [SerializeField] private GameObject _quitConfirm;
 
@@ -68,6 +73,24 @@ namespace SoloHero.Game.UI.Common
             if (_daily != null && _daily.IsOpen)
             {
                 _daily.Close();
+                return;
+            }
+
+            if (_events != null && _events.IsOpen)
+            {
+                _events.Close();
+                return;
+            }
+
+            if (_pass != null && _pass.IsOpen)
+            {
+                _pass.Close();
+                return;
+            }
+
+            if (_collection != null && _collection.IsOpen)
+            {
+                _collection.Close();
                 return;
             }
 

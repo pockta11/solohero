@@ -39,7 +39,7 @@ namespace SoloHero.Game.UI.Common
             if (_timer > 0f) return;
             _timer = CheckInterval;
             Set(_heroBadge, (_jobs != null && _jobs.CanAdvance) || GrowthWaiting());
-            Set(_talentBadge, _save != null && _balance != null && TalentService.Available(_balance, _save) > 0);
+            Set(_talentBadge, _save != null && _balance != null && TalentService.HasLearnable(_balance, _save));
         }
 
         private bool GrowthWaiting()

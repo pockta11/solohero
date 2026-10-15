@@ -41,6 +41,10 @@ namespace SoloHero.Game.UI.Common
 
         private float _bandAge = -1f;
         private float _bannerAge = -1f;
+        private float _bannerSeconds = BannerSeconds;
+        private string _pendingText;
+        private Color _pendingColor;
+        private float _pendingSeconds = BannerSeconds;
         private float[] _lineX = new float[0];
         private bool _active;
 
@@ -78,14 +82,42 @@ namespace SoloHero.Game.UI.Common
         /// <summary>The name ribbon of a legendary skill.</summary>
         public void PlayBanner(SkillDef def, Color color)
         {
-            if (_banner == null || def == null || Playing) return;
-            if (_bannerName != null) _bannerName.text = Strings.Get(def.NameKey);
+            if (def == null) return;
+            PlayText(Strings.Get(def.NameKey), color);
+        }
+
+        /// <summary>
+        /// The same ribbon with any text. A legendary name is dropped while a band plays; <paramref name="wait"/> (D-153:
+        /// a difficulty tier opening, often on a boss kill that also fires the ultimate) keeps it for after the band, and
+        /// <paramref name="seconds"/> holds it longer. D-171: such a ribbon (a celebration) is not cut short by a skill
+        /// name, and a second celebration waits for the first.
+        /// </summary>
+        public void PlayText(string text, Color color, bool wait = false, float seconds = BannerSeconds)
+        {
+            if (_banner == null) return;
+            if (Playing || KeepShowing)
+            {
+                if (!wait) return;
+                _pendingText = text;
+                _pendingColor = color;
+                _pendingSeconds = seconds;
+                return;
+            }
+
+            if (_bannerName != null) _bannerName.text = text;
             if (_bannerAccent != null) _bannerAccent.color = color;
+            _bannerSeconds = Mathf.Max(0.5f, seconds);
             _bannerAge = 0f;
+            _bannerKeep = wait;
             _active = true;
             _banner.gameObject.SetActive(true);
             Apply();
         }
+
+        private bool _bannerKeep;
+
+        /// <summary>D-171: a celebration ribbon is on screen.</summary>
+        private bool KeepShowing => _bannerKeep && _bannerAge >= 0f;
 
         private void Update()
         {
@@ -100,7 +132,15 @@ namespace SoloHero.Game.UI.Common
             if (_bannerAge >= 0f)
             {
                 _bannerAge += dt;
-                if (_bannerAge >= BannerSeconds) _bannerAge = -1f;
+                if (_bannerAge >= _bannerSeconds) _bannerAge = -1f;
+            }
+
+            // D-153: a ribbon that waited for the band takes its turn.
+            if (_bandAge < 0f && !KeepShowing && _pendingText != null)
+            {
+                string text = _pendingText;
+                _pendingText = null;
+                PlayText(text, _pendingColor, true, _pendingSeconds);
             }
 
             for (int i = 0; i < _lines.Length; i++)
@@ -167,7 +207,7 @@ namespace SoloHero.Game.UI.Common
                         : _bannerAge < 0.2f ? Mathf.Lerp(1.08f, 1f, (_bannerAge - 0.12f) / 0.08f) : 1f;
                     _banner.localScale = new Vector3(pop, pop, 1f);
                     if (_bannerGroup != null)
-                        _bannerGroup.alpha = _bannerAge > BannerSeconds - 0.3f ? (BannerSeconds - _bannerAge) / 0.3f : 1f;
+                        _bannerGroup.alpha = _bannerAge > _bannerSeconds - 0.3f ? (_bannerSeconds - _bannerAge) / 0.3f : 1f;
                 }
             }
         }

@@ -36,7 +36,9 @@ namespace SoloHero.Core.Progression
 
     /// <summary>
     /// D-118 achievements (genre: tiered lifetime goals): ten tracks of growing targets, gems for every tier. The index
-    /// is saved (achievementTiers, the tiers claimed), so only append.
+    /// is saved (achievementTiers, the tiers claimed), so only append - tracks at the end, tiers at the end of a track.
+    /// D-154 (L-08) appended the year-long tiers: kills to 10M, bosses (tower floors count) to 600, best stage to the
+    /// last boss of abyss (500 = 5 tiers, D-153), level to 200, summons to 100k / 5k.
     /// </summary>
     public static class AchievementCatalog
     {
@@ -44,29 +46,41 @@ namespace SoloHero.Core.Progression
 
         public static readonly AchievementDef[] All =
         {
-            new AchievementDef { Id = "kills", Kind = AchievementKind.Kills, Targets = new long[] { 100, 1000, 5000, 20000, 100000, 500000 }, Gems = Six },
-            new AchievementDef { Id = "bosses", Kind = AchievementKind.BossKills, Targets = new long[] { 1, 5, 10, 20, 40, 80 }, Gems = Six },
+            new AchievementDef
+            {
+                Id = "kills", Kind = AchievementKind.Kills, Targets = new long[] { 100, 1000, 5000, 20000, 100000, 500000, 2000000, 10000000 },
+                Gems = new double[] { 20, 30, 50, 80, 120, 200, 300, 500 }
+            },
+            new AchievementDef
+            {
+                Id = "bosses", Kind = AchievementKind.BossKills, Targets = new long[] { 1, 5, 10, 20, 40, 80, 150, 250, 400, 600 },
+                Gems = new double[] { 20, 30, 50, 80, 120, 200, 250, 300, 400, 500 }
+            },
             new AchievementDef
             {
                 Id = "stage", Kind = AchievementKind.BestStage,
-                Targets = new long[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 },
-                Gems = new double[] { 30, 30, 50, 50, 80, 80, 120, 120, 200, 200 }
+                Targets = new long[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500 },
+                Gems = new double[] { 30, 30, 50, 50, 80, 80, 120, 120, 200, 200, 300, 400, 500, 600 }
             },
             new AchievementDef
             {
-                Id = "level", Kind = AchievementKind.HeroLevel, Targets = new long[] { 10, 20, 30, 40, 50, 60, 70 },
-                Gems = new double[] { 20, 30, 50, 80, 100, 150, 200 }
-            },
-            new AchievementDef { Id = "gear_pulls", Kind = AchievementKind.GearPulls, Targets = new long[] { 50, 200, 500, 1000, 2000, 5000 }, Gems = Six },
-            new AchievementDef
-            {
-                Id = "skill_pulls", Kind = AchievementKind.SkillPulls, Targets = new long[] { 10, 50, 150, 400, 1000 },
-                Gems = new double[] { 20, 30, 50, 80, 150 }
+                Id = "level", Kind = AchievementKind.HeroLevel, Targets = new long[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 200 },
+                Gems = new double[] { 20, 30, 50, 80, 100, 150, 200, 200, 250, 300, 350, 400, 500 }
             },
             new AchievementDef
             {
-                Id = "pet_pulls", Kind = AchievementKind.PetPulls, Targets = new long[] { 10, 50, 150, 400, 1000 },
-                Gems = new double[] { 20, 30, 50, 80, 150 }
+                Id = "gear_pulls", Kind = AchievementKind.GearPulls, Targets = new long[] { 50, 200, 500, 1000, 2000, 5000, 20000, 50000, 100000 },
+                Gems = new double[] { 20, 30, 50, 80, 120, 200, 300, 400, 500 }
+            },
+            new AchievementDef
+            {
+                Id = "skill_pulls", Kind = AchievementKind.SkillPulls, Targets = new long[] { 10, 50, 150, 400, 1000, 2000, 5000 },
+                Gems = new double[] { 20, 30, 50, 80, 150, 200, 300 }
+            },
+            new AchievementDef
+            {
+                Id = "pet_pulls", Kind = AchievementKind.PetPulls, Targets = new long[] { 10, 50, 150, 400, 1000, 2000, 5000 },
+                Gems = new double[] { 20, 30, 50, 80, 150, 200, 300 }
             },
             new AchievementDef { Id = "gear_owned", Kind = AchievementKind.GearOwned, Targets = new long[] { 10, 20, 30, 40, 50, 56 }, Gems = Six },
             new AchievementDef

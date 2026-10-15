@@ -13,6 +13,8 @@ namespace SoloHero.Core.Skills
     /// D-107: 15 more line skills, so every line has 12 (3 per grade); the starters are the beginner's alone.
     /// D-109: 12 more, so every line has 16 (4 per grade), with two new riders: marks (enemies hit take more damage)
     /// and the Haste buff (cooldowns run faster).
+    /// D-157 (L-05): 12 third-job skills (JobTier 3), one per grade per line, so every line has 20; a hero below the
+    /// third job neither summons nor equips them.
     /// New entries go at the end: the index order is the skill book's order and ids are saved.
     /// </summary>
     public static class SkillCatalog
@@ -335,10 +337,88 @@ namespace SoloHero.Core.Skills
                 DamageMult = 2.0, Waves = 9, WaveInterval = 0.1f, MarkPercent = 20, MarkSeconds = 5f, Vfx = "swords",
                 VfxAt = SkillVfxAt.Front, VfxScale = 1.4f, Tint = 0xC890FF, Sound = "whoosh"
             },
+
+            // D-157 third-job warrior
+            new SkillDef
+            {
+                Id = "sword_aura", Line = JobLine.Warrior, JobTier = 3, Grade = Grade.Common, Kind = SkillKind.Area, Cooldown = 8f,
+                Range = 3.5, DamageMult = 2.2, Waves = 2, WaveInterval = 0.2f, Vfx = "wave", VfxAt = SkillVfxAt.Front,
+                VfxScale = 1.2f, Tint = 0xFFE8A0, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "shockwave", Line = JobLine.Warrior, JobTier = 3, Grade = Grade.Rare, Kind = SkillKind.Area, Cooldown = 12f,
+                Range = 4.0, DamageMult = 2.4, Waves = 2, WaveInterval = 0.25f, StunSeconds = 0.6f, Vfx = "boom",
+                VfxAt = SkillVfxAt.EachTarget, VfxScale = 1.2f, Tint = 0xC8E0FF, Sound = "strike"
+            },
+            new SkillDef
+            {
+                Id = "sword_dance", Line = JobLine.Warrior, JobTier = 3, Grade = Grade.Epic, Kind = SkillKind.Area, Cooldown = 15f,
+                Range = 3.2, DamageMult = 1.6, Waves = 6, WaveInterval = 0.12f, Vfx = "slash", VfxAt = SkillVfxAt.Front,
+                VfxScale = 1.5f, Tint = 0xFFD080, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "ragnarok", Line = JobLine.Warrior, JobTier = 3, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 26f,
+                Range = 5.0, DamageMult = 6.0, Waves = 5, WaveInterval = 0.2f, MarkPercent = 25, MarkSeconds = 6f, Vfx = "judge",
+                VfxAt = SkillVfxAt.EachTarget, VfxScale = 0.9f, Tint = 0xFF7050, Sound = "thunder"
+            },
+
+            // D-157 third-job mage
+            new SkillDef
+            {
+                Id = "ice_shard", Line = JobLine.Mage, JobTier = 3, Grade = Grade.Common, Kind = SkillKind.Area, Cooldown = 9f,
+                Range = 4.0, DamageMult = 1.0, Waves = 3, WaveInterval = 0.15f, StunSeconds = 0.3f, Vfx = "ice",
+                VfxAt = SkillVfxAt.EachTarget, VfxScale = 0.8f, Sound = "ice"
+            },
+            new SkillDef
+            {
+                Id = "fire_wall", Line = JobLine.Mage, JobTier = 3, Grade = Grade.Rare, Kind = SkillKind.Area, Cooldown = 13f,
+                Range = 3.5, DamageMult = 1.4, Waves = 3, WaveInterval = 0.2f, DotPercent = 60, DotSeconds = 4f, Vfx = "fire",
+                VfxAt = SkillVfxAt.Front, VfxScale = 1.3f, Sound = "fire"
+            },
+            new SkillDef
+            {
+                Id = "thunder_storm", Line = JobLine.Mage, JobTier = 3, Grade = Grade.Epic, Kind = SkillKind.Area, Cooldown = 16f,
+                Range = 5.5, DamageMult = 2.0, Waves = 6, WaveInterval = 0.2f, StunSeconds = 0.3f, Vfx = "bolt",
+                VfxAt = SkillVfxAt.EachTarget, Tint = 0xFFF080, Sound = "thunder"
+            },
+            new SkillDef
+            {
+                Id = "starfall", Line = JobLine.Mage, JobTier = 3, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 26f,
+                Range = 6.5, DamageMult = 5.0, Waves = 6, WaveInterval = 0.2f, Vfx = "meteor", VfxAt = SkillVfxAt.Front,
+                VfxScale = 1.2f, Tint = 0xC8B0FF, Sound = "fire"
+            },
+
+            // D-157 third-job archer
+            new SkillDef
+            {
+                Id = "power_shot", Line = JobLine.Archer, JobTier = 3, Grade = Grade.Common, Kind = SkillKind.Strike, Cooldown = 7f,
+                Range = 5.5, DamageMult = 4.0, Vfx = "spear", Tint = 0xFFE0A0, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "explosive_arrow", Line = JobLine.Archer, JobTier = 3, Grade = Grade.Rare, Kind = SkillKind.Area, Cooldown = 12f,
+                Range = 5.0, DamageMult = 3.4, DotPercent = 30, DotSeconds = 3f, Vfx = "boom", VfxAt = SkillVfxAt.EachTarget,
+                VfxScale = 1.1f, Tint = 0xFFA050, Sound = "fire"
+            },
+            new SkillDef
+            {
+                Id = "wind_arrows", Line = JobLine.Archer, JobTier = 3, Grade = Grade.Epic, Kind = SkillKind.Area, Cooldown = 15f,
+                Range = 6.0, DamageMult = 1.4, Waves = 8, WaveInterval = 0.1f, Vfx = "tornado", VfxAt = SkillVfxAt.Front,
+                VfxScale = 1.2f, Tint = 0xA0FFD0, Sound = "whoosh"
+            },
+            new SkillDef
+            {
+                Id = "dragon_arrow", Line = JobLine.Archer, JobTier = 3, Grade = Grade.Legendary, Kind = SkillKind.Area, Cooldown = 24f,
+                Range = 8.0, DamageMult = 7.0, Waves = 4, WaveInterval = 0.2f, MarkPercent = 25, MarkSeconds = 6f, Vfx = "breath",
+                VfxAt = SkillVfxAt.Front, VfxScale = 1.3f, Tint = 0xFF8050, Sound = "fire"
+            },
         };
 
         private static readonly SkillDef[][] ByGrade = BuildByGrade();
         private static readonly SkillDef[][][] ByLine = BuildByLine();
+        private static readonly SkillDef[][][][] ByLineTier = BuildByLineTier();
 
         public static int Count => All.Length;
 
@@ -370,7 +450,7 @@ namespace SoloHero.Core.Skills
             return ByGrade[g];
         }
 
-        /// <summary>D-107: the skills of one job line and grade (the skill summon pool).</summary>
+        /// <summary>D-107: every skill of one job line and grade (D-157: third-job ones included).</summary>
         public static SkillDef[] OfLine(JobLine line, Grade grade)
         {
             int l = (int)line;
@@ -378,6 +458,36 @@ namespace SoloHero.Core.Skills
             if (l < 0 || l >= ByLine.Length) throw new ArgumentOutOfRangeException(nameof(line));
             if (g < 0 || g >= GradeCount) throw new ArgumentOutOfRangeException(nameof(grade));
             return ByLine[l][g];
+        }
+
+        /// <summary>D-157: the skill summon pool of a hero of <paramref name="jobTier"/> - the line's skills that tier may use.</summary>
+        public static SkillDef[] OfLine(JobLine line, Grade grade, int jobTier)
+        {
+            SkillDef[] all = OfLine(line, grade);
+            int t = jobTier < 0 ? 0 : jobTier > JobCatalog.MaxTier ? JobCatalog.MaxTier : jobTier;
+            return all.Length == 0 ? all : ByLineTier[(int)line][(int)grade][t];
+        }
+
+        private static SkillDef[][][][] BuildByLineTier()
+        {
+            var result = new SkillDef[ByLine.Length][][][];
+            for (int l = 0; l < result.Length; l++)
+            {
+                result[l] = new SkillDef[GradeCount][][];
+                for (int g = 0; g < GradeCount; g++)
+                {
+                    result[l][g] = new SkillDef[JobCatalog.MaxTier + 1][];
+                    for (int t = 0; t <= JobCatalog.MaxTier; t++)
+                    {
+                        var list = new System.Collections.Generic.List<SkillDef>();
+                        foreach (SkillDef def in ByLine[l][g])
+                            if (def.JobTier <= t) list.Add(def);
+                        result[l][g][t] = list.ToArray();
+                    }
+                }
+            }
+
+            return result;
         }
 
         private static SkillDef[][][] BuildByLine()

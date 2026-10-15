@@ -38,7 +38,20 @@ namespace SoloHero.Core.Analytics
         /// <summary>D-133: account tools in the settings (transfer code issued / redeemed, data deleted).</summary>
         public const string Account = "account_action";
 
+        /// <summary>
+        /// D-170 (roadmap section 6): the frontier has not moved for a day or more. Once per local day.
+        /// Params: stage (the next frontier stage), chapter, tier, boss, days (since the frontier last moved).
+        /// </summary>
+        public const string StageStall = "stage_stall";
+
+        /// <summary>D-170: a growth axis with an upper limit reached it (once per save). Params: axis, level, stage.</summary>
+        public const string AxisCap = "axis_cap";
+
+        /// <summary>D-170: the frontier entered a new difficulty tier (hard, hell, ...). Params: tier, stage.</summary>
+        public const string TierEnter = "tier_enter";
+
         public const string UserHighestChapter = "highest_chapter";
+        public const string UserDifficultyTier = "difficulty_tier";
 
         public const string PStage = "stage";
         public const string PChapter = "chapter";
@@ -61,5 +74,14 @@ namespace SoloHero.Core.Analytics
         public const string PMessage = "message";
         public const string PWhere = "where";
         public const string PAction = "action";
+        public const string PTier = "tier";
+        public const string PDays = "days";
+        public const string PAxis = "axis";
+
+        /// <summary>D-170: axis_cap values.</summary>
+        public const string AxisGearSummon = "summon_gear";
+        public const string AxisSkillSummon = "summon_skill";
+        public const string AxisPetSummon = "summon_pet";
+        public const string AxisFinalJob = "job_final";
     }
 }

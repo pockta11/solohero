@@ -74,5 +74,15 @@ namespace SoloHero.Core.Balance
         public static SimSettings NoAds(int seed) => new SimSettings { Name = "no-ads", Seed = seed, UseAds = false };
 
         public static SimSettings WithAds(int seed) => new SimSettings { Name = "ads", Seed = seed, UseAds = true };
+
+        /// <summary>
+        /// D-151 (L-04): a heavy player keeps the app open 3 hours a day (two 30-minute and two 60-minute sittings) and
+        /// watches every ad. The long-term run uses it to see how fast the content runs out.
+        /// </summary>
+        public static SimSettings Heavy(int seed) => new SimSettings
+        {
+            Name = "heavy", Seed = seed, UseAds = true,
+            DailySessions = new[] { new SimSession(7.5, 30.0), new SimSession(12.0, 30.0), new SimSession(18.0, 60.0), new SimSession(21.5, 60.0) }
+        };
     }
 }

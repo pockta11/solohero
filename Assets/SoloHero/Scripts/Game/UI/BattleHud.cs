@@ -364,7 +364,7 @@ namespace SoloHero.Game.UI
             {
                 _bossBarStage = runner.GlobalStage;
                 StageIndex.FromGlobal(runner.GlobalStage, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
-                _bossName.text = Strings.Get(BossNames.KeyFor(chapter));
+                _bossName.text = BossNames.NameFor(_balance, chapter);
             }
 
             float ratio = 1f;
@@ -401,10 +401,8 @@ namespace SoloHero.Game.UI
                 return;
             }
 
-            int perChapter = _balance.STAGES_PER_CHAPTER;
-            if (perChapter < 1) perChapter = 1;
-            StageIndex.FromGlobal(runner.GlobalStage, perChapter, out int chapter, out int stageNumber);
-            _stageText.text = chapter.ToString() + "-" + stageNumber.ToString();
+            // D-153: "3-7" in the normal tier, "Hard 3-7" past it.
+            _stageText.text = DifficultyTier.StageLabel(_balance, runner.GlobalStage);
         }
 
         private void RefreshKills(StageRunner runner)

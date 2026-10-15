@@ -4,31 +4,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**SoloHero** — 세로 화면 픽셀아트 2D 횡스크롤 **방치형 RPG** (1인 개발, Android 단독).
+**SoloHero** — 세로 화면 2D 횡스크롤 **방치형 RPG**(잉크 셀 그림체, D-168) (1인 개발, Android 단독).
 히어로가 오른쪽으로 자동 전진하며 적을 처치하고, 플레이어는 전투를 조작하지 않는다. 입력은 성장 결정(강화·가챠·스킬·파밍 스테이지·광고)뿐이다. 앱을 끈 시간이 골드가 되는 오프라인 축적(최대 6시간)과, 확률을 공시하는 100회 천장 장비 가챠가 두 축이다.
 
 **설계 기조: 장르 표준 모방.** 버섯커 키우기·세븐나이츠 키우기·Soul Strike의 관습을 따르고 고유 설계는 두지 않는다.
 
 - **Engine**: Unity **2022.3.62f3** — **Personal/Pro로 받을 수 있는 마지막 2022.3 패치** (63f1+는 Industry/Enterprise 전용 xLTS). Unity 6 아님, `Awaitable` 없음, C# 9
-- **Render**: URP 14.0.12, `Renderer2D`, Pixel Perfect (기준 270×480 정수 4배, PPU 32)
+- **Render**: URP 14.0.12, `Renderer2D`, Pixel Perfect (기준 270×480 정수 4배, 아트 1칸 = PPU 32 단위; D-168 잉크 셀 캐릭터는 PPU 96, 이펙트 PPU 64, 맵 PPU 96)
 - **Screen**: **Portrait 1080×1920** 고정
 - **Platform**: Android AAB, 타깃 API 36, minSdk 24
 - **Backend**: Firebase Auth(익명) / Realtime Database / Analytics
 - **Ads**: Google Mobile Ads Unity 11.5.0 (Android `play-services-ads` 25.4.0), 보상형만
 - **Async**: UniTask v2.5.11 · **Tween**: DOTween · **JSON**: Newtonsoft 3.2.1 · **UI**: uGUI + TMP
 
-## 현재 상태 (2026-10-08)
+## 현재 상태 (2026-10-15)
 
 **2D 리빌드 — E1~E8 구현 완료(대부분 review), E9 출시 준비·QA 진행 중.** 3D 쿼터뷰 구현은 2026-09-19에 전면 폐기했다. 1-09(빌드 파이프라인·API 36·16 KB, JDK 11 확정)와 1-03(정리·구조 이행) 완료. 레거시 격리 폴더는 2026-09-28 이식 완료로 삭제.
 
 | 문서 | 경로 | 역할 |
 |---|---|---|
 | **GDD** | `_bmad-output/planning-artifacts/gdds/gdd-solohero-2026-09-20/gdd.md` | 설계 단일 출처. `Number Balancing` 상수표가 모든 수치의 원본 |
-| Epics | 같은 폴더 `epics.md` | 9 에픽 / 132 스토리 |
-| Decision log | 같은 폴더 `decision-log.md` | D-001~D-132 |
+| Epics | 같은 폴더 `epics.md` | 10 에픽 / 144 스토리 (E10 = 출시 후 1년 로드맵) |
+| Decision log | 같은 폴더 `decision-log.md` | D-001~D-171 |
 | **Architecture** | `_bmad-output/planning-artifacts/architecture/arch-solohero-2026-09-20/game-architecture.md` | 결정 D1~D15, ADR 1~7, 구조, 패턴(코드 예시), 검증 |
 | **Project context** | `_bmad-output/project-context.md` | **코드를 만지기 전에 읽는 규칙 62개.** 아키텍처와 충돌 시 아키텍처가 우선 |
-| 출시 후 1년 계획 (제안) | `_bmad-output/planning-artifacts/roadmap/content-roadmap-2026-10-14.md` | 365일 시뮬 측정(현재 예상 플레이·축 소진), 후반 곡선 처방, 콘텐츠 로드맵 L-01~L-24. 채택하면 D 번호로 옮긴다 |
+| 출시 후 1년 계획 | `_bmad-output/planning-artifacts/roadmap/content-roadmap-2026-10-14.md` | 365일 시뮬 측정, 후반 곡선, 콘텐츠 로드맵 L-01~L-24. 맨 위 진행 기록에 채택된 항목(D 번호). P0(L-01·02·03·04·08·11·16) 완료 = D-151~D-156 |
 
 코드 작업은 `project-context.md` → 해당 절의 `game-architecture.md` 순으로 읽고 시작한다.
 
@@ -58,6 +58,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **2026-10-08 캐릭터 성장 축·성장 곡선 늦춤** (D-140~D-145): 공격 스탯은 안에서 하나, 표시는 계열별(전사 힘·공격력·검 / 마법사 지능·**주문력**·지팡이 / 궁수 민첩·공격력·활) — 문자열 값의 `{atk}`·`{main}`·`{weapon}`을 `Strings.UseTermSet`(`JobTerms.Apply`, 부팅·전직 때)이 바꾸고 `LocalizedText`는 `TermsChanged`로 다시 읽는다. 무기 칸 아이콘 지팡이·활 7종씩(`EquipmentIconSet.Get(slot, grade, WeaponKind)`). 레벨업 AP(`HeroAp`·`ApService`, 레벨당 3, 자동 2:1 = 이전 레벨 보너스, 직접 분배·젬 50 초기화, 저장 `apMain`·`apVit`·`apManual`). 능력치 6줄(`UpgradeLane.Crit`·`CritDmg`, Lv 15·25 개방)과 스킬·펫 타격의 치명타(`HitKind.SkillCrit`). 한계 돌파(`LaneRules`: 10레벨마다, k번째 돌파석 10k, 저장 `laneBreaks`·`breakStones`; 던전 한 판 2·탑 층 1·10층마다 +5; 던전은 1-10 이후). 탑 보스 체력 ×2(`TOWER_BOSS_HP_MULT`). 캐릭터 창은 `능력치 / 스탯` 두 페이지(2×3 줄 카드, 주황 `돌파` 버튼, 돌파석 수). 곡선: 적 성장 1.21(체력·공격), 오프라인 제수 1800, 권장 전투력 185 × 1.172 — 시뮬(일일 던전 포함) 무광고 1일 2-5~2-6 · 3일 3-2~3-6 · 7일 4-4~4-10 · 14일 5-5~6-6, 광고 7일 5-4~6-5
 - **2026-10-08 화려한 스킬 연출** (D-146, 보기만): 스킬 연출은 `Game/Combat/SkillFx`(`CombatFx`는 주공격·피격·처치만). 시전 = 영웅 발밑 등급 마법진(`vfxcircle1~4`: 일반 은빛 고리 → 전설 금빛 별, 궁극기 4) + 등급 색 입자 상승 + 영웅 번쩍임(`CombatWorldView.FlashHero`), 영웅 이상 빛기둥(`vfxpillar`, 정렬 6 = 캐릭터 뒤), 전설 이름 리본·직업 궁극기 컷인 띠(`UI/Common/SkillCutIn`, `GameUiBuilder.BuildSkillCutIn`, 데미지 숫자 위·팝업 아래). 효과 시트마다 가산 광채 `*glow` 시트(`python tools/art/vfxgen3.py` → `Art/Vfx`, ArtBuilder `SkillClips`에 이름이 있어야 `VfxClip.glow`로 연결), 셰이더 `SoloHero/SpriteAdditive`(Universal2D + UniversalForward 패스만 — 패스를 더 두면 두 번 그린다, 재질 `Art/Materials/VfxAdditive`·`SkillParticle`), `VfxPool.Play(…, sortingOrder, additive)`·용량 72. 착탄 = 광역 바닥 충격파(`vfxshock`)·영웅 이상 별빛(`vfxflash`)·속성 입자(`SkillLooks`가 클립 이름·색에서 10속성 판정, `SkillParticles` 정렬 262), 스킬 타격 = 속성 색 불꽃(`SkillAutoCaster.ActiveDef`). 등급별 클립 크기·광채·셰이크·히트스톱·흰빛 위주 화면 번쩍임(금빛 번쩍임은 붉은 챕터에서 탁해진다), 스킬바 슬롯 발동 번짐(`BattleHud`: 남은 쿨이 늘면 발동). 이펙트 축소 = 클립·이름·소리만. 스킬 데이터는 그대로
 - **2026-10-09 드로우콜·선명한 캐릭터** (D-149~D-150): 드로우콜 초과(E9-19)의 원인은 아틀라스 없는 UI(이미지 148개가 텍스처 67장)와 꺼진 동적 배칭(월드 스프라이트 하나에 하나)이었다. 아틀라스 4장(`Editor/SpriteAtlases.cs`, `Art/Atlases/UiHd·UiItems·UiPixel·Vfx.spriteatlasv2`, ArtBuilder가 재생성; UiPixel·Vfx는 Point) + URP 동적 배칭 켬 + 가산 셰이더를 URP 스프라이트 구조로 → 전투 평소 47, 구간 최고 66~70(이전 130~300). 개발 빌드 측정기 `Game/Diagnostics/DrawCallProbe.cs`(기기 `files/dc_probe.txt`; 묶음별 비용, 숫자 N이면 N 초과 프레임 기록, `spikes`면 그것만; 월드는 `forceRenderingOff`로 숨긴다 — 전투 화면이 렌더러를 매 프레임 다시 켠다). 캐릭터 49종 재렌더: 키 라이트 옆으로(-0.7, 0.55, 0.45)·그림자 경계 0.45(얼굴 0.28, 바위 0.1)와 OKLab 팔레트 벌리기(`tools/art/punch.py`, `pixelize.py`가 적용, `repalette.py`는 재렌더 없이 색만). `python tools/art/build3d.py` 전체는 도트 변환이 파이썬 직렬이라 약 15분. 장시간 세션에서 에뮬레이터 FPS가 점점 떨어지면(60 → 3) 콜드 재시작
+- **2026-10-14 출시 후 1년 로드맵 P0** (D-151~D-156, 로드맵 문서 진행 기록): 365일 시뮬(3페르소나 × 6경로 × 2시드)로 후반 곡선을 나눴다 — g > 70은 적 HP ×1.125·ATK ×1.07, 초반 ATK 1.21 → 1.17(영웅 체력이 적 공격을 못 따라가 2주차부터 보스가 영웅을 쓰러뜨리던 것), 권장 전투력 두 구간. 라이트 무광고 12회 중앙 1개월 8-2 · 3개월 14-4 · 6개월 20-1 · 1년 25-9, 7일 곡선 그대로(1일 2-6~2-7 · 7일 4-6~4-10), 보스 실패는 1년 내내 시간 초과. 검증 `Tools > Balance > Run Long-term Simulation (365 days)`(`LongTermChecks` V-L1~V-L4, `SimSettings.Heavy`). 난이도 단계(`DifficultyTier`: 10장마다 노멀·하드·헬·악몽·심연…, "하드 3-7" 표기, 단계 색 `TierLook`, 보스 접두, 단계 개방 보상·리본), 레벨 보상(10레벨마다)·업적 단계 연장, 주간 미션(일일 보상 창 탭, 월요일 0시), 이벤트 틀(`Core/Events`, 메뉴 "이벤트", 일정은 RTDB `config/events` 공개 읽기 — 개발 빌드는 기기 `files/event_test.txt`). Mono 테스트·Unity EditMode 모두 통과, 규칙 에뮬레이터 31/31, 에뮬레이터에서 단계 전환·이벤트·주간 탭 확인
+- **2026-10-14~15 로드맵 P1** (D-157~D-167): 3차 전직 Lv 60(2차마다 직선 계승 6종, 주공격·숙련·궁극기, 3차 전용 계열 스킬 12종 → 도감 63종, `SkillDef.JobTier`), 직업 특성 페이지(계열당 5노드 × 6랭크, 랭크당 2포인트, `TalentCatalog.Job`), 소환 단계 20(11단계부터 뽑기 수 2배·신화/고대만 상승·단계 보상 소환권), 돌파석 장비 강화 +11~+20(영웅 이상, `StoneEnhance`, 비용 30×(L−10)), 던전 소탕·점수 던전(허수아비 30초 피해 → 구간 → 돌파석, `DungeonKind.Score`), 탑 50층 마일스톤, 무료 시즌 패스 28일 30단계(`Core/Pass`, 메뉴 "패스"), 컬렉션 도감 18세트(`CollectionCatalog`, 메뉴 "도감"), 월간 출석 28일판·누적 출석. 곡선 재조정 D-167(후반 적 체력 1.145·후반 권장 전투력 1.127): 라이트 무광고 1개월 8-6 · 3개월 14-7 · 6개월 19-10 · 1년 24-9, 헤비 19-9 · 24-9 · 27-9 · 29-9. 원자료 `balance/longterm-2026-10-14/raw/p1_*`
+- **2026-10-15 잉크 셀 그림체** (D-168): 도트 → 매끈한 잉크 셀. 캐릭터 55종은 `python tools/art/build3d.py`(Blender ×6 → `hdize.py`, 3텍셀/칸, 클립마다 발 기준으로 잘라 4096 넘으면 줄바꿈 `_{n}r{rows}`; `--pixel`은 옛 경로, 전체 1.5~2시간), 머리 0.75배·다리 1.3배. 영웅·직업 `skill` 클립(스킬 시전마다 `CombatWorldView.PlayHeroSkill`). 이펙트는 `vfxhd.py`(도트 시트 → 매끈 ×2, 광채 1배), 맵은 `mapgen_hd.py`(bggen·floorgen 테마 그대로 ×3). 임포터 `SpriteImportPreset`이 폴더별 PPU·바이리니어·Android ASTC 6×6. UI 속 캐릭터 크기는 `UiFlipbook.Fit`. 전직 단계마다 갑옷·머리 장식이 늘어난다(D-169, `chibi3d.build_gear`, 초보자는 맨머리·목검, 영웅 몸 1.25배)
+- **2026-10-15 출시 준비 정리** (D-170): 스토어 스크린샷 8장·대표 이미지·소개문을 잉크 셀 빌드로 갱신(촬영은 1080×1920 `wm size` + 저장 시드, 비개발 x86_64 빌드 — 개발 빌드는 FPS가 찍힌다). 분석 `stage_stall`·`axis_cap`·`tier_enter`(로드맵 §6, `GameplayTelemetry` + 신뢰 시계). 던전·탑 `나가기`(`StageRunner.LeaveRun`). 펫 칸·카드 크기, 전투력 띠 가림 수정. 패스 기준일 2026-10-12. P1 화면 에뮬레이터 QA 완료
+- **2026-10-15 보상 연출** (D-171): `Game/UI/Common/RewardFx`(아이콘이 받은 자리에서 자기 칸으로 날아가고 칸이 튐, "+N", 입자; `RewardSnapshot` 전후 차이로 판단, `_rewardFx` 필드가 있는 씬 컴포넌트는 UI 빌더가 자동 연결)와 `ClaimGate`(가이드 퀘스트 0.6초, 그 밖 받기 0.35초). 큰 순간은 `RewardFx.Celebrate`(리본+번쩍임+`SfxId.Fanfare`) — 장 첫 클리어·단계 개방·전직·컬렉션 세트·탑 50층, `CombatFx`가 저장 변화를 보고 재생. 효과음 추가는 `sfxgen.py` + `SfxId` + `ArtBuilder.BuildAudioBatch`(아트 재임포트 없이 사운드 뱅크만)
 - 빌드는 `libFirebaseCppApp` 포함을 자동 검사하고, EDM4U가 pom을 `srcaar`로 바꾸면 빌드 전에 되돌린다
 - 빠른 검증: Unity 없이 Mono로 Core+테스트 컴파일 가능(`Editor/Data/MonoBleedingEdge` csc). 공식 검증은 Unity `-runTests -testPlatform EditMode`
 
@@ -112,7 +117,7 @@ Assets/SoloHero/            # 프로젝트 소유 전부. 벤더(Firebase·Googl
 E1-03(2026-09-22)에서 이동 완료. 3D 시절 스크립트는 `Scripts/Legacy/`에 격리했다가 2026-09-28 전부 이식·삭제했다(장비 SO 16종도 코드 카탈로그 `GachaCatalog`로 대체되어 삭제). Addressables·Input System·collab-proxy 패키지, `StreamingAssets/JSON`, `AddressableAssetsData`는 제거됨. `Assets/Resources/DOTweenSettings.asset`은 벤더 필수 예외.
 
 ### 게임 규칙 요약 (GDD 상수표가 원본)
-- 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(27배 HP, 30초, D-124·D-139). 킬 목표 16 고정(8마리 무리 × 2, D-109). 적은 걸어와 앞 3마리가 동시에 공격(D-110). 적 HP 기준 45·ATK 기준 2.6, 성장 HP·ATK 1.21 (D-123 → D-145), 보스 ATK ×0.1·HP ×27·1장 보스 HP ×14 (D-124 → D-139: 보스 실패는 시간 초과로만), 골드 `50×1.035^(g−1)` (D-122), 보스 격파 골드·EXP ×5 (D-053·D-059). 일반 스테이지 사망 → 자동 한 칸 아래 파밍(아래가 보스면 그 아래, D-148), `도전`으로 복귀 (D-058)
+- 스테이지: 전역 인덱스 `g = (챕터−1)×10 + 스테이지`, 챕터당 10, 10번째가 보스(27배 HP, 30초, D-124·D-139). 킬 목표 16 고정(8마리 무리 × 2, D-109). 적은 걸어와 앞 3마리가 동시에 공격(D-110). 적 HP 기준 45·ATK 기준 2.6, 성장 HP 1.21·ATK 1.17, g > 70은 HP ×1.125·ATK ×1.07 (D-145 → D-151 후반 곡선 분할: 영웅 체력이 적 공격을 따라가게), 보스 ATK ×0.1·HP ×27·1장 보스 HP ×14 (D-124 → D-139: 보스 실패는 시간 초과로만), 골드 `50×1.035^(g−1)` (D-122), 보스 격파 골드·EXP ×5 (D-053·D-059). 일반 스테이지 사망 → 자동 한 칸 아래 파밍(아래가 보스면 그 아래, D-148), `도전`으로 복귀 (D-058)
 - 강화 6줄 (D-142): HP·ATK·DEF **승산 ×1.16/레벨·상한 없음**, 공격속도 가산 +0.02·최대 100, 치명타 확률 +2%p·최대 25(Lv 15), 치명 피해 +10%p(Lv 25). 비용 `baseCost × 1.12^level` (base 300/450/450/600/300/300). **10레벨마다 한계 돌파**, k번째 돌파석 10k (D-143)
 - 레벨업 AP (D-141): 레벨당 3, 주 스탯 1 = 기본 ATK +0.25, 활력 1 = 기본 HP +5, 자동 2:1(= 레벨당 ATK +0.5·HP +5). 치명타는 주공격·스킬·펫 모두(도트 제외, D-142)
 - 방어: `DEF_REF = 3 × 적ATK`, `피격 = max(1, 적ATK × DEF_REF / (DEF_REF + DEF))`
@@ -145,10 +150,11 @@ Gradle Java 호환성 11. 16 KB 페이지 정렬: `pwsh tools/spike/Check16Kb.ps
 ## Next Steps
 
 1. **실기기 확인** — 광고 켠 릴리스 빌드 30분 무크래시(release-gate B-001), 기기 매트릭스(E9-12), 실기기 FPS (드로우콜·2시간 방치·16 KB는 에뮬레이터로 확인 완료)
-2. **콘솔 작업(개발자)** — RTDB 보안 규칙 적용(`tools/firebase/database.rules.json`, 이전 코드 경로 포함 — 적용 전에는 기기 이전이 실패한다), AdMob 계정 승인·스토어 연결·app-ads.txt·GDPR 메시지 게시, 개인정보처리방침 이름·이메일·시행일 입력과 공개 URL, Firebase Analytics 맞춤 측정기준(`app_exception`의 `message`·`where`)
-3. **출시 빌드** — `pwsh tools/release/NewUploadKey.ps1`로 업로드 키(오프라인 백업 2곳) → GitHub 시크릿 5개 → `Release AAB` 워크플로
-4. **Play Console** — 비공개 테스트(개인 계정이면 12명 × 14일) → 프로덕션
-5. 출시 후 분석 이벤트로 V-7(재도전 간격)·보스 첫 도전 실패율 판정, 필요하면 Crashlytics·Play Games 로그인·인앱 리뷰
+2. **콘솔 작업(개발자)** — RTDB 보안 규칙 적용(`tools/firebase/database.rules.json`, 이전 코드 경로와 D-156 `config/events` 공개 읽기 포함 — 적용 전에는 기기 이전이 실패하고 이벤트 일정을 못 읽는다), 이벤트를 열 때 콘솔에서 `config/events/{id}` = `{template, start, end}`(UTC 초) 추가, AdMob 계정 승인·스토어 연결·app-ads.txt·GDPR 메시지 게시, 개인정보처리방침 이름·이메일·시행일 입력과 공개 URL, Firebase Analytics 맞춤 측정기준(`app_exception`의 `message`·`where`, D-170의 `days`·`tier`·`axis`)
+3. **출시일 정하기(Q-L6)** — 정해지면 패스 시즌 기준일 `PASS_EPOCH_UTC`(`BalanceValues`·`BalanceConfig`)를 출시 주 월요일 0시 UTC로, 출시 기념 이벤트 일정을 콘솔 `config/events`에
+4. **출시 빌드** — `pwsh tools/release/NewUploadKey.ps1`로 업로드 키(오프라인 백업 2곳) → GitHub 시크릿 5개 → `Release AAB` 워크플로
+5. **Play Console** — 비공개 테스트(개인 계정이면 12명 × 14일) → 프로덕션
+6. 출시 후 분석 이벤트로 V-7(재도전 간격)·보스 첫 도전 실패율 판정, 필요하면 Crashlytics·Play Games 로그인·인앱 리뷰
 
 ## Development Milestones
 

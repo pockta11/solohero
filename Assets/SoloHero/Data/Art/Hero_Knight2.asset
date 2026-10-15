@@ -71,6 +71,19 @@ MonoBehaviour:
   - {fileID: -744740628034807377, guid: ed4f8d624c65aae4e9eff68a6fb3ba57, type: 3}
   - {fileID: 4123726045742779867, guid: ed4f8d624c65aae4e9eff68a6fb3ba57, type: 3}
   - {fileID: 2954494020834045629, guid: ed4f8d624c65aae4e9eff68a6fb3ba57, type: 3}
+  skill:
+  - {fileID: -1568573105381876899, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: 1655043943443585211, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: 1031760226080000605, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: -4705432200498380183, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: -7490794416175992030, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: -6530041066587139074, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: -3976381262168500201, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: -7652870301688471874, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: 6836742549605475938, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: -467634536764791908, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: -8207530435577225794, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
+  - {fileID: -4217741523389313823, guid: 6043ae00c2b96664a96e6751dc1f9df4, type: 3}
   fps: 20
   pixelScale: 1
-  headHeight: 1.375
+  headHeight: 1.3020834

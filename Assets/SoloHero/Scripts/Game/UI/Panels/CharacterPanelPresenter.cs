@@ -91,6 +91,7 @@ namespace SoloHero.Game.UI.Panels
 
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
 
         private UpgradeService _upgrade;
         private ApService _ap;
@@ -187,6 +188,9 @@ namespace SoloHero.Game.UI.Panels
             if (_toast != null)
                 _toast.Show(Strings.Format("toast.limit_broken", Strings.Get(LaneKeys[lane]), LaneRules.Cap(_balance, l, _upgrade.Breaks(l))));
             Celebrate(lane);
+            // D-171: a break is a milestone, not a step: sparkle and the epic chime over the upgrade chime.
+            _rewardFx?.Sparkle(BreakColor, Strings.Get("fx.limit_break"));
+            _audio?.Play(SfxId.GradeEpic);
             Refresh();
         }
 
@@ -206,6 +210,7 @@ namespace SoloHero.Game.UI.Panels
 
             if (_session != null) _session.RefreshLoadout();
             _audio?.Play(SfxId.Upgrade);
+            _rewardFx?.Sparkle(UpgradeColor);
             Refresh();
         }
 
@@ -423,11 +428,15 @@ namespace SoloHero.Game.UI.Panels
             if (index < _statTexts.Length && _statTexts[index] != null) _statTexts[index].text = value;
         }
 
-        /// <summary>E8-11: every successful purchase punches its tile and plays the upgrade chime.</summary>
+        private static readonly Color UpgradeColor = new Color(1f, 0.86f, 0.4f, 1f);
+        private static readonly Color BreakColor = new Color(1f, 0.6f, 0.25f, 1f);
+
+        /// <summary>E8-11: every successful purchase punches its tile and plays the upgrade chime; D-171 adds a sparkle.</summary>
         private void Celebrate(int row)
         {
             if (row >= 0 && row < _punches.Length && _punches[row] != null) _punches[row].Play(0.5f);
             if (_audio != null) _audio.Play(SfxId.Upgrade);
+            _rewardFx?.Sparkle(UpgradeColor);
         }
     }
 }

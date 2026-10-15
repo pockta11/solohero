@@ -40,8 +40,10 @@ namespace SoloHero.Game.Combat
         private const float SquashWide = 0.2f;
         private const float SquashShort = 0.16f;
         private const float HeroStretchSeconds = 0.12f;
+
+        /// <summary>The 12-frame skill clip plays a bit faster than the loops (about half a second).</summary>
+        private const float HeroSkillFpsMult = 1.2f;
         private static readonly Color NormalOutline = new Color(0.1f, 0.08f, 0.19f, 1f);
-        private static readonly Color BossOutline = new Color(0.42f, 0.04f, 0.12f, 1f);
         private static readonly Color HeroHurtFlash = new Color(1f, 0.32f, 0.3f, 1f);
 
         /// <summary>Bosses are drawn this far behind their Core position so the 2x body does not cover the hero (view only).</summary>
@@ -81,8 +83,12 @@ namespace SoloHero.Game.Combat
         [SerializeField] private float _hpBarHeight = 0.12f;
 
         private BalanceValues _balance;
+
+        /// <summary>D-153: the difficulty tier of the stage on screen (tints enemies, colours the boss outline).</summary>
+        private int _tier;
         private StageRunner _hooked;
         private bool _heroAttackPending;
+        private bool _heroSkillPending;
         private double _heroLastHp;
         private float _heroFlash;
         private float _heroCastFlash;
@@ -104,6 +110,12 @@ namespace SoloHero.Game.Combat
         /// D-146: the hero glows <paramref name="color"/> for <paramref name="seconds"/> as a skill is cast (a hit's red
         /// flash wins while both run).
         /// </summary>
+        /// <summary>D-168: the next hero frame starts the skill cast clip (basic attacks and hits wait for it).</summary>
+        public void PlayHeroSkill() => _heroSkillPending = true;
+
+        /// <summary>D-171: a point over the hero's head in world space (reward icons and LEVEL UP start there).</summary>
+        public Vector3 HeroHead => _heroRenderer != null ? _heroRenderer.bounds.center + new Vector3(0f, _heroRenderer.bounds.extents.y * 0.8f, 0f) : Vector3.zero;
+
         public void FlashHero(Color color, float seconds)
         {
             if (seconds <= 0f) return;
@@ -224,6 +236,7 @@ namespace SoloHero.Game.Combat
             _lastKills = runner.Kills;
 
             ChapterTheme theme = ThemeFor(runner.GlobalStage);
+            _tier = _balance != null ? DifficultyTier.Of(_balance, runner.GlobalStage) : 0;
             DrawHero(runner.Hero);
             FollowCamera((float)runner.Hero.X);
             for (int i = 0; i < EnemySlotVisualCount; i++)
@@ -353,13 +366,17 @@ namespace SoloHero.Game.Combat
                 {
                     book.Play(art.dead, art.fps, loop: false);
                 }
-                else if (_heroAttackPending)
+                else if (_heroSkillPending && art.skill.Length > 0)
+                {
+                    book.Play(art.skill, art.fps * HeroSkillFpsMult, loop: false, restart: true);
+                }
+                else if (_heroAttackPending && (book.Current != art.skill || book.Finished))
                 {
                     // Faster swings play the clip faster so it never lags behind the attack speed.
                     float fps = Mathf.Max(art.fps, art.attack.Length * (float)hero.Stats.AtkSpd);
                     book.Play(art.attack, fps, loop: false, restart: true);
                 }
-                else if (tookHit && (book.Current != art.attack || book.Finished))
+                else if (tookHit && (book.Current != art.attack && book.Current != art.skill || book.Finished))
                 {
                     book.Play(art.hit, art.fps, loop: false, restart: true);
                 }
@@ -370,6 +387,7 @@ namespace SoloHero.Game.Combat
             }
 
             _heroAttackPending = false;
+            _heroSkillPending = false;
             if (tookHit)
             {
                 _heroFlash = HitFlashSeconds;
@@ -423,7 +441,7 @@ namespace SoloHero.Game.Combat
                     slot.Art = ArtFor(enemy, theme);
                     slot.Push = 0f;
                     slot.Squash = 0f;
-                    _enemyFlashFx[index]?.SetOutline(enemy.IsBoss ? BossOutline : NormalOutline);
+                    _enemyFlashFx[index]?.SetOutline(enemy.IsBoss ? TierLook.BossOutlineColor(_tier) : NormalOutline);
                 }
 
                 CharacterArt art = slot.Art;
@@ -486,7 +504,7 @@ namespace SoloHero.Game.Combat
             }
 
             slot.Flash -= Time.deltaTime;
-            renderer.color = StatusTint(enemy);
+            renderer.color = StatusTint(enemy) * TierLook.EnemyTint(_tier);
             _enemyFlashFx[index]?.Set(slot.Flash / HitFlashSeconds);
         }
 

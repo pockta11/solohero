@@ -48,8 +48,8 @@ namespace SoloHero.Game.UI
             {
                 _shownStage = runner.GlobalStage;
                 StageIndex.FromGlobal(runner.GlobalStage, _balance.STAGES_PER_CHAPTER, out int chapter, out _);
-                if (_chapterText != null) _chapterText.text = Strings.Format("boss.banner", chapter);
-                if (_nameText != null) _nameText.text = Strings.Get(BossNames.KeyFor(chapter));
+                if (_chapterText != null) _chapterText.text = Strings.Format("boss.banner", DifficultyTier.ChapterLabel(_balance, chapter));
+                if (_nameText != null) _nameText.text = BossNames.NameFor(_balance, chapter);
                 if (_recText != null)
                     _recText.text = Strings.Format("boss.recommended", BigNumberFormat.Format(SoloHero.Core.Growth.CombatPower.Recommended(_balance, runner.GlobalStage)));
             }

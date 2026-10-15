@@ -222,7 +222,7 @@ MonoBehaviour:
     - {fileID: -6860322734662779620, guid: 255b322f045f10c4e9f21a1a09af5d88, type: 3}
     fps: 16
     ground: 1
-    halfHeight: 1.875
+    halfHeight: 1.8765259
     glow:
     - {fileID: -4653382151375787340, guid: 67a785a48b12d394291523c84069a67c, type: 3}
     - {fileID: -2185752911911076321, guid: 67a785a48b12d394291523c84069a67c, type: 3}
@@ -335,7 +335,7 @@ MonoBehaviour:
     - {fileID: -974457091090718614, guid: 26cb10c9b4b87fc419ae374b5ee78622, type: 3}
     fps: 14
     ground: 1
-    halfHeight: 0.9375
+    halfHeight: 0.9379883
     glow:
     - {fileID: -6512126710519212309, guid: c94cd8eb5e6fcbc48b9d4fb107611645, type: 3}
     - {fileID: -4852018262229053422, guid: c94cd8eb5e6fcbc48b9d4fb107611645, type: 3}

@@ -130,10 +130,46 @@ namespace SoloHero.Core.Save
         public List<int> missionProgress = new List<int>();
         public List<bool> missionClaimed = new List<bool>();
 
+        /// <summary>D-155 weekly missions, index-aligned with WeeklyMissionCatalog; reset when weeklyDate (the week's Monday) is past.</summary>
+        public string weeklyDate = "";
+        public List<int> weeklyProgress = new List<int>();
+        public List<bool> weeklyClaimed = new List<bool>();
+
+        /// <summary>
+        /// D-156 event progress, all for the event eventId (another running event resets it): attendance days claimed and
+        /// the last claim's local date, mission counters and claims and exchange purchases (index-aligned with the
+        /// template's tables), tokens, and whether the player opened it (analytics event_join once).
+        /// </summary>
+        public string eventId = "";
+        public int eventAttendCount;
+        public string eventAttendDate = "";
+        public List<long> eventMissionProgress = new List<long>();
+        public List<bool> eventMissionClaimed = new List<bool>();
+        public List<int> eventShopBought = new List<int>();
+        public int eventTokens;
+        public bool eventJoined;
+
         /// <summary>D-100 daily dungeon entries used today (gold / EXP); reset when dungeonDate is not today.</summary>
         public string dungeonDate = "";
         public int dungeonGoldUsed;
         public int dungeonExpUsed;
+
+        /// <summary>D-161: the most kills of one gold / EXP dungeon run; a sweep pays that many at today's rate.</summary>
+        public int dungeonGoldBest;
+        public int dungeonExpBest;
+
+        /// <summary>D-165 score dungeon: entries used today (reset with dungeonDate) and the best tier reached.</summary>
+        public int dungeonScoreUsed;
+        public int dungeonScoreBest;
+
+        /// <summary>
+        /// D-163 free season pass: the season these fields belong to, its XP, the levels claimed, and kills not yet
+        /// worth a whole XP.
+        /// </summary>
+        public int passSeason = -1;
+        public int passXp;
+        public int passClaimed;
+        public int passKillCarry;
 
         /// <summary>D-128 summon tickets (one pull each) and today's shop purchases, index-aligned with ShopItem.</summary>
         public int gearTickets;
@@ -164,6 +200,16 @@ namespace SoloHero.Core.Save
         public long totalKills;
         public int bossKills;
         public List<int> achievementTiers = new List<int>();
+
+        /// <summary>
+        /// D-170: analytics bookkeeping (GameplayTelemetry) - the frontier last seen and the local day it moved, the
+        /// last day a stall was reported, and the capped growth axes already reported (one bit each). Rides along with
+        /// the next save; nothing in play reads it.
+        /// </summary>
+        public int telemetryFrontier;
+        public string telemetryFrontierDate = "";
+        public string telemetryStallDate = "";
+        public int telemetryCaps;
 
         public int dataVersion = CurrentVersion;
 

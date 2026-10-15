@@ -188,6 +188,30 @@ skill.name.deadeye	데드아이
 skill.desc.deadeye	아주 먼 적 하나에게 {atk}의 {0}% 일격
 skill.name.phantom_volley	환영 일제사격
 skill.desc.phantom_volley	넓은 범위에 환영 화살 {0}% 피해 {1}회, {13}초 동안 받는 피해 +{12}%
+skill.name.sword_aura	검기 베기
+skill.desc.sword_aura	앞의 적 모두에게 검기 {0}% 피해 {1}회
+skill.name.shockwave	충격파
+skill.desc.shockwave	주변 적 모두에게 {0}% 피해 {1}회, {4}초 기절
+skill.name.sword_dance	검무
+skill.desc.sword_dance	앞의 적 모두를 {1}번 베어 {0}% 피해
+skill.name.ragnarok	라그나로크
+skill.desc.ragnarok	범위 안 모든 적에게 {0}% 피해 {1}회, {13}초 동안 받는 피해 +{12}%
+skill.name.ice_shard	얼음 파편
+skill.desc.ice_shard	범위 안 모든 적에게 {0}% 피해 {1}회, {4}초 빙결
+skill.name.fire_wall	화염벽
+skill.desc.fire_wall	앞의 적 모두에게 {0}% 피해 {1}회, {3}초 동안 초당 {2}% 화상
+skill.name.thunder_storm	뇌우
+skill.desc.thunder_storm	범위 안 모든 적에게 번개 {0}% 피해 {1}회, {4}초 기절
+skill.name.starfall	유성우
+skill.desc.starfall	넓은 범위에 유성 {0}% 피해 {1}회
+skill.name.power_shot	파워 샷
+skill.desc.power_shot	먼 적 하나에게 {atk}의 {0}% 피해
+skill.name.explosive_arrow	폭발 화살
+skill.desc.explosive_arrow	범위 안 모든 적에게 {0}% 피해, {3}초 동안 초당 {2}% 화상
+skill.name.wind_arrows	바람의 화살
+skill.desc.wind_arrows	넓은 범위에 바람 화살 {0}% 피해 {1}회
+skill.name.dragon_arrow	용의 화살
+skill.desc.dragon_arrow	넓은 범위에 용의 화살 {0}% 피해 {1}회, {13}초 동안 받는 피해 +{12}%
 
 # Grades and slots
 grade.common	일반
@@ -218,6 +242,9 @@ equip.promote_n	승급 {0}
 equip.promoted	장비 {0}개 승급! (골드 -{1})
 equip.promote_none	+10 장비만 다음 등급으로 승급할 수 있어요 (영웅까지)
 equip.best_already	이미 최고 등급을 장착했습니다
+equip.stone	돌파 강화
+equip.stone_none	+10이 된 영웅 등급 이상 장비를 장착하면 돌파석으로 +20까지 강화할 수 있어요
+equip.stone_done	{0} +{1}! 돌파석 -{2} (남은 {3})
 
 # Summon panel
 gacha.pity	전설까지 {0}회   ({1}/{2})
@@ -227,6 +254,8 @@ gacha.level_max	소환 Lv {0} (최대)
 gacha.level_up	{0} Lv {1} 달성! 좋은 등급이 더 잘 나와요
 gacha.level_open	소환 Lv {0}  ·  {1}회 더 뽑으면 {2} 등급 개방
 gacha.level_up_open	{0} Lv {1} 달성! {2} 등급이 열렸어요
+gacha.level_up_reward	{0} Lv {1} 달성! {2}
+gacha.level_reward	소환 Lv {0}  ·  {1}회 더 뽑으면 {2}
 gacha.rate_locked	{0} Lv{1} 개방
 gacha.rates_pity_gear	{0}회째는 전설 확정 · 전설 이상을 얻으면 초기화
 gacha.rates_pity_skill	{0}회째는 전설 확정 · 전설을 얻으면 초기화
@@ -269,8 +298,17 @@ gacha.skip	전체 건너뛰기
 gacha.tap_close	탭하여 닫기
 
 # level up (E8-11)
-toast.chapter_clear	{0}장 클리어! 젬 +{1}
+toast.chapter_clear	{0} 클리어! 젬 +{1}
+toast.set_complete	컬렉션 도감 세트 완성! 보너스가 바로 적용돼요
+fx.set_complete	도감 세트 완성!
+fx.job_advance	{0} 전직!
+fx.level_up	LEVEL UP!
+fx.chapter_clear	{0} 클리어!
+fx.summon_level	{0} Lv {1}!
+fx.limit_break	한계 돌파!
 toast.level_up	레벨 {0} 달성!
+toast.level_reward	레벨 {0} 달성 보상! 젬 +{1}, 장비 소환권 {2}, 돌파석 {3}
+toast.level_reward_big	레벨 {0} 달성 보상! 젬 +{1}, 장비 소환권 {2}, 스킬·펫 소환권 {3}, 돌파석 {4}
 
 # back key (E7-14)
 quit.title	게임을 종료할까요?
@@ -299,7 +337,7 @@ ad.speed_started	30분 동안 전투가 2배 빨라져요!
 toast.gold_pack	골드 {0} 획득!
 
 # boss intro (E7-11, D-082 boss looks)
-boss.banner	{0}장 보스
+boss.banner	{0} 보스
 boss.name.1	떠돌이 검귀
 boss.name.2	해골 주술사
 boss.name.3	숲의 추적자
@@ -311,6 +349,22 @@ boss.name.8	늪지 마녀
 boss.name.9	수정 골렘
 boss.name.10	마왕 기사
 boss.recommended	권장 전투력 {0}
+
+# Difficulty tiers (D-153): every 10 chapters is a tier; names past abyss get a numeral (심연 II)
+tier.name.0	노멀
+tier.name.1	하드
+tier.name.2	헬
+tier.name.3	악몽
+tier.name.4	심연
+tier.stage	{0} {1}-{2}
+tier.chapter	{0} {1}장
+tier.boss	{0} {1}
+tier.boss_prefix.1	성난
+tier.boss_prefix.2	타락한
+tier.boss_prefix.3	악몽의
+tier.boss_prefix.4	심연의
+tier.open	{0} 난이도 개방!
+toast.tier_clear	{0} 개방! 젬 +{1}, 장비 소환권 {2}, 스킬·펫 소환권 {3}
 toast.no_talent_points	특성 포인트가 부족합니다
 toast.talent_reset	특성을 초기화했습니다
 talent.points	특성 포인트 {0}
@@ -362,6 +416,42 @@ talent.name.mastery	숙련
 talent.desc.mastery	스킬 피해 +{0}%
 talent.name.overload	과부하
 talent.desc.overload	피해를 주는 스킬이 4번째로 발동할 때마다 피해 2배
+talent.tab_tree	공용 특성
+talent.tab_job	직업 특성
+talent.job_title	{0} 특성 · 랭크당 {1}포인트
+talent.job_locked	3차 전직(Lv {0}) 후 열립니다
+talent.job_none	전직하면 계열 특성이 보입니다
+talent.job_max	최대 {0}
+talent.name.w_blade_mastery	검술 숙련
+talent.desc.w_blade_mastery	{atk} +{0}%
+talent.name.w_iron_body	강철 육체
+talent.desc.w_iron_body	체력 +{0}%
+talent.name.w_valor	투지
+talent.desc.w_valor	치명 피해 +{0}%
+talent.name.w_crushing	분쇄
+talent.desc.w_crushing	보스에게 주는 피해 +{0}%
+talent.name.w_bulwark	철벽
+talent.desc.w_bulwark	받는 피해 -{0}%
+talent.name.m_arcane_power	마력 증폭
+talent.desc.m_arcane_power	스킬 피해 +{0}%
+talent.name.m_wisdom	지혜
+talent.desc.m_wisdom	{atk} +{0}%
+talent.name.m_elemental	원소 지배
+talent.desc.m_elemental	화상·중독 피해 +{0}%
+talent.name.m_spell_haste	영창 단축
+talent.desc.m_spell_haste	스킬 쿨타임 -{0}%
+talent.name.m_mana_shield	마나 실드
+talent.desc.m_mana_shield	체력 +{0}%
+talent.name.a_focus	집중 사격
+talent.desc.a_focus	{atk} +{0}%
+talent.name.a_sharp_eyes	샤프 아이즈
+talent.desc.a_sharp_eyes	치명타 확률 +{0}%
+talent.name.a_marksmanship	명사수
+talent.desc.a_marksmanship	치명 피해 +{0}%
+talent.name.a_quick_draw	속사 숙련
+talent.desc.a_quick_draw	공격속도 +{0}%
+talent.name.a_hunter	사냥꾼
+talent.desc.a_hunter	보스에게 주는 피해 +{0}%
 tab.talent	특성
 rail.settings	설정
 rail.stage	스테이지
@@ -382,12 +472,95 @@ daily.progress	진행 중
 daily.close	닫기
 daily.got_gem	젬 +{0}
 daily.got_gold	골드 +{0}
+daily.got_items	소환권 +{0}, 돌파석 +{1}
+daily.tab_daily	일일 미션
+daily.tab_weekly	주간 미션
+daily.daily_note	매일 0시 초기화
+daily.weekly_note	매주 월요일 0시 초기화
+daily.extra_tickets	+소환권 {0}
+daily.extra_stones	+돌파석 {0}
+daily.attendance_week	출석 {0}일차 · {1}주차
+daily.total	누적 출석 {0}일
+daily.total_next	누적 {0}일 · {1}일 보상 젬 {2}
+daily.milestone	누적 출석 {0}일 달성! 특별 보상을 받았어요
+daily.got_tickets	소환권 +{0}
+pass.title	시즌 패스
+pass.season	시즌 {0}
+pass.time_left	남은 시간 {0}일 {1}시간
+pass.level	패스 Lv {0}/{1}
+pass.xp	{0}/{1}
+pass.max	최고 단계 달성!
+pass.how_to	경험치: 일일 미션 +{0} · 주간 미션 +{1} · 처치 {2}마리당 +1
+pass.claim_all	모두 받기
+pass.got	패스 보상: {0}
+collection.title	컬렉션 도감
+collection.summary	완성 {0}/{1}세트\n{atk} +{2}% · 체력 +{3}% · 스킬 피해 +{4}%
+collection.tab_gear	장비
+collection.tab_pet	펫
+collection.tab_skill	스킬
+collection.set_gear	{0} 장비 {1}종
+collection.set_pet	{0} 펫 {1}종
+collection.set_skill	{0} 스킬 {1}종
+collection.progress	{0}/{1}
+collection.skill_locked	전직하면 열려요
+collection.bonus_atk	{atk} +{0}%
+collection.bonus_hp	체력 +{0}%
+collection.bonus_skill	스킬 피해 +{0}%
 mission.name.kill	적 처치
 mission.name.clear	스테이지 클리어
 mission.name.upgrade	능력치 강화
 mission.name.summon	소환
 mission.name.ad	광고 보기
 mission.name.all	모든 미션 완료
+mission.name.w_kill	적 처치
+mission.name.w_clear	스테이지 클리어
+mission.name.w_summon	소환
+mission.name.w_dungeon	일일 던전 입장
+mission.name.w_tower	무한의 탑 도전
+mission.name.w_all	주간 미션 모두 완료
+
+# Events (D-156): attendance, missions paying coins, coin exchange; the schedule comes from the server
+rail.event	이벤트
+rail.pass	패스
+rail.codex	도감
+event.title	이벤트
+event.none	진행 중인 이벤트가 없습니다\n다음 이벤트를 기다려 주세요
+event.time_days	남은 기간 {0}일 {1}시간
+event.time_hours	남은 기간 {0}시간 {1}분
+event.tab_attend	출석
+event.tab_missions	미션
+event.tab_shop	교환
+event.attend_claim	출석 보상 받기
+event.attend_done	오늘 출석 완료
+event.attend_all	출석을 모두 마쳤어요
+event.tokens	코인 {0}
+event.mission_row	{0}  {1}/{2}
+event.buy	교환
+event.sold_out	품절
+event.limit	{0}/{1}회
+event.got	획득! {0}
+event.name.launch	출시 기념 이벤트
+event.name.festival	축제 이벤트
+event.mission.kill	적 처치
+event.mission.clear	스테이지 클리어
+event.mission.summon	소환
+event.mission.dungeon	일일 던전 입장
+event.mission.tower	무한의 탑 도전
+event.mission.upgrade	능력치 강화
+event.mission.ad	광고 보기
+event.shop.gear10	장비 소환권 10장
+event.shop.skill3	스킬 소환권 3장
+event.shop.pet3	펫 소환권 3장
+event.shop.gem300	젬 300
+event.shop.stone50	돌파석 50
+event.shop.gold	골드 상자
+reward.gem	젬 {0}
+reward.gold	골드 {0}
+reward.gear	장비 소환권 {0}
+reward.skill	스킬 소환권 {0}
+reward.pet	펫 소환권 {0}
+reward.stone	돌파석 {0}
+reward.token	코인 {0}
 
 # Daily dungeons (D-100)
 rail.dungeon	던전
@@ -398,8 +571,23 @@ dungeon.gold_desc	30초 동안 몰려오는 적을 처치해 골드를 모읍니
 dungeon.exp_desc	30초 동안 몰려오는 적을 처치해 경험치를 모읍니다
 dungeon.tickets	{0}/{1}
 dungeon.per_kill	처치당 +{0}
+dungeon.per_kill_sweep	처치당 +{0}\n<size=26>소탕 +{1} (최고 {2}마리)</size>
+dungeon.per_kill_first	처치당 +{0}\n<size=26>한 번 입장하면 소탕이 열려요</size>
+dungeon.sweep	소탕
+dungeon.swept_gold	골드 던전 소탕: 골드 +{0} · 돌파석 +{1}
+dungeon.swept_exp	경험치 던전 소탕: 경험치 +{0} · 돌파석 +{1}
+dungeon.exp_gain	경험치 +{0}
+dungeon.score	점수 던전
+dungeon.score_desc	30초 동안 보스 허수아비에게 준 피해로 돌파석을 받습니다
+dungeon.score_stones	피해 구간이 오를 때마다 돌파석 +{0}
+dungeon.score_sweep	최고 {0}구간\n<size=26>소탕하면 돌파석 +{1}</size>
+dungeon.score_first	피해 구간만큼 보상\n<size=26>한 번 입장하면 소탕이 열려요</size>
+dungeon.score_earned	피해 {0}
+dungeon.result_score	점수 던전 완료: 피해 {0} · {1}구간 · 돌파석 +{2}
+dungeon.swept_score	점수 던전 소탕: {0}구간 · 돌파석 +{1}
 dungeon.enter	입장
 dungeon.close	닫기
+dungeon.leave	나가기
 dungeon.time	{0}초
 dungeon.over	종료!
 dungeon.earned	+{0}
@@ -428,6 +616,8 @@ job.stat.def	방어력 +{0}%
 job.stat.skill_damage	스킬 피해 +{0}%
 job.stat.cooldown	쿨타임 -{0}%
 job.stat.dot	지속 피해 +{0}%
+job.stat.boss	보스 피해 +{0}%
+job.stat.damage_taken	받는 피해 -{0}%
 job.line.warrior	전사
 job.line.mage	마법사
 job.line.archer	궁수
@@ -465,6 +655,24 @@ job.desc.ranger	빠른 연사로 여러 적을 맞힙니다. 궁극기: 애로�
 job.name.sniper	저격수
 job.main.sniper	저격
 job.desc.sniper	한 적에게 강력한 한 발. 궁극기: 데스 샷
+job.name.paladin	팔라딘
+job.main.paladin	디바인 차지
+job.desc.paladin	더 넓게 베고 더 단단히 버팁니다. 궁극기: 생츄어리
+job.name.warlord	워로드
+job.main.warlord	브레이브 슬래시
+job.desc.warlord	더 강한 일격과 치명타. 궁극기: 군주의 분노
+job.name.archpyro	화염 마도사
+job.main.archpyro	익스플로전
+job.desc.archpyro	더 많은 적을 더 뜨겁게 태웁니다. 궁극기: 메테오 스톰
+job.name.archcryo	빙뢰 마도사
+job.main.archcryo	콜드 빔
+job.desc.archcryo	더 많은 적을 더 오래 얼립니다. 궁극기: 빙뢰 폭풍
+job.name.bowmaster	보우마스터
+job.main.bowmaster	폭풍의 시
+job.desc.bowmaster	더 빠르고 넓은 연사. 궁극기: 애로우 스톰
+job.name.marksman	신궁
+job.main.marksman	스나이핑
+job.desc.marksman	보스를 노리는 강력한 한 발. 궁극기: 트루 샷
 skill.name.ult_guardian_cross	수호의 십자가
 skill.desc.ult_guardian_cross	주변 적 모두에게 {0}% 피해, {9}초 동안 보호막 {8}%
 skill.name.ult_blood_rage	피의 분노
@@ -477,6 +685,18 @@ skill.name.ult_arrow_rain	애로우 레인
 skill.desc.ult_arrow_rain	넓은 범위에 화살비 {0}% 피해 {1}회
 skill.name.ult_death_shot	데스 샷
 skill.desc.ult_death_shot	먼 적 하나에게 {atk}의 {0}% 일격
+skill.name.ult_sanctuary	생츄어리
+skill.desc.ult_sanctuary	주변 적 모두에게 {0}% 피해, 체력 {7}% 회복, {9}초 동안 보호막 {8}%
+skill.name.ult_warlord_wrath	군주의 분노
+skill.desc.ult_warlord_wrath	주변 적에게 {0}% 피해, {6}초 동안 {atk} +{5}%, 체력 {7}% 회복
+skill.name.ult_meteor_storm	메테오 스톰
+skill.desc.ult_meteor_storm	넓은 범위에 운석 {0}% 피해 {1}회, {3}초 동안 초당 {2}% 화상
+skill.name.ult_frozen_thunder	빙뢰 폭풍
+skill.desc.ult_frozen_thunder	넓은 범위에 얼음 번개 {0}% 피해 {1}회, {4}초 빙결
+skill.name.ult_arrow_storm	애로우 스톰
+skill.desc.ult_arrow_storm	넓은 범위에 화살 폭풍 {0}% 피해 {1}회, {13}초 동안 받는 피해 +{12}%
+skill.name.ult_true_shot	트루 샷
+skill.desc.ult_true_shot	아주 먼 적 하나에게 {atk}의 {0}% 일격, {13}초 동안 받는 피해 +{12}%
 
 # Pets (D-114, the D-102 companions)
 rail.pet	펫
@@ -496,8 +716,12 @@ tower.locked	{0} 보스를 쓰러뜨리면 열려요
 tower.enter	도전
 tower.busy	진행 중
 tower.cleared	{0}층 돌파! 젬 +{1}
+tower.cleared_milestone	{0}층 정복! 젬 +{1}
+tower.milestone_ribbon	{0}층 정복!
+tower.next_milestone	다음 목표 {0}층: 젬 {1}
 tower.result	무한의 탑 {0}개 층 돌파! 젬 +{1} · 돌파석 +{2}
 tower.result_none	무한의 탑 도전 실패 - 더 강해져서 다시 도전해요
+tower.result_left	무한의 탑에서 나왔어요
 tower.banner	무한의 탑 {0}층
 tower.earned	젬 +{0}
 tower.plate	탑 {0}층
@@ -595,8 +819,7 @@ guide.gear_owned	장비 {0}종 모으기
 guide.pet_pull	펫 소환 {0}회
 guide.progress	{0} / {1}
 guide.claim	보상 받기!
-guide.claimed_gem	퀘스트 완료! 젬 +{0}
-guide.claimed_gold	퀘스트 완료! 골드 +{0}
+guide.claimed	보상 획득!
 guide.keep_fighting	전투를 이어가면 달성돼요
 
 # D-134 account window (settings > 계정): account id, device transfer, privacy options (D-135), data deletion
@@ -663,6 +886,8 @@ char.limit_button	돌파
 char.stones	{0}
 toast.limit_reached	한계 돌파가 필요합니다 (돌파석)
 toast.not_enough_stones	돌파석이 부족합니다 - 던전과 무한의 탑에서 얻어요
+toast.not_enough_tokens	이벤트 코인이 부족합니다
+toast.event_ended	이벤트가 끝났습니다
 toast.limit_broken	{0} 한계 돌파! 이제 Lv {1}까지
 dungeon.stones	입장마다 돌파석 {0}개
 dungeon.locked	{0} 보스를 쓰러뜨리면 열려요

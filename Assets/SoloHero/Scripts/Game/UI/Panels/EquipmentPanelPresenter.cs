@@ -29,6 +29,9 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private TapGuardButton[] _swapButtons = new TapGuardButton[GachaCatalog.SlotCount];
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
+
+        private static readonly Color EnhanceColor = new Color(1f, 0.78f, 0.35f, 1f);
         [SerializeField] private Image[] _slotIcons = new Image[GachaCatalog.SlotCount];
         [SerializeField] private Image[] _slotFrames = new Image[GachaCatalog.SlotCount];
         [SerializeField] private EquipmentIconSet _icons;
@@ -43,6 +46,8 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text _ownedBonusText;
         [SerializeField] private TapGuardButton _promoteButton;
         [SerializeField] private Text _promoteLabel;
+        [Tooltip("D-160: one stone level on the equipped item that needs it most.")]
+        [SerializeField] private TapGuardButton _stoneButton;
 
         private EquipService _equip;
         private SaveDataV2 _save;
@@ -51,6 +56,7 @@ namespace SoloHero.Game.UI.Panels
         private readonly string[] _shownIds = new string[GachaCatalog.SlotCount];
         private int _shownPulls = -1;
         private double _shownGold = -1d;
+        private int _shownStones = -1;
         private string _shownJob;
 
         private void OnEnable()
@@ -65,7 +71,7 @@ namespace SoloHero.Game.UI.Panels
         private void LateUpdate()
         {
             if (_save == null) return;
-            if (_save.gold != _shownGold) DrawPromote();
+            if (_save.gold != _shownGold || _save.breakStones != _shownStones) DrawPromote();
             // D-140: the weapon icon follows the job line.
             if (_save.ownedEquipment.Count == _shownOwnedCount && _save.totalPullCount == _shownPulls && _save.jobId == _shownJob
                 && !EquippedChanged()) return;
@@ -128,6 +134,7 @@ namespace SoloHero.Game.UI.Panels
                 PanelServices.TryGet<SoloHero.Core.Growth.ISaveRequester>()?.RequestSave();
                 if (_session != null) _session.RefreshLoadout();
                 PanelServices.TryGet<AudioService>()?.Play(SfxId.Upgrade);
+                _rewardFx?.Sparkle(EnhanceColor);
                 if (_toast != null) _toast.Show(Strings.Format("equip.promoted", made, BigNumberFormat.Format(spent)));
             }
             else if (_toast != null)
@@ -143,10 +150,71 @@ namespace SoloHero.Game.UI.Panels
         {
             if (_save == null || _balance == null) return;
             _shownGold = _save.gold;
+            _shownStones = _save.breakStones;
             EquipPromotion.TotalCost(_balance, _save, out int count);
             if (_promoteLabel != null)
                 _promoteLabel.text = count > 0 ? Strings.Format("equip.promote_n", count) : Strings.Get("equip.promote");
             if (_promoteButton != null) _promoteButton.SetAvailable(true);
+            if (_stoneButton != null)
+            {
+                string target = StoneTarget();
+                _stoneButton.SetAvailable(target != null && _save.breakStones >= StoneEnhance.Cost(_balance, EquipmentLevels.Get(_save, target)));
+            }
+        }
+
+        /// <summary>
+        /// D-160: one stone level on the equipped item that takes stones and has the fewest levels (the higher grade on a
+        /// tie), so repeated taps raise the loadout evenly.
+        /// </summary>
+        public void StoneEnhanceNext()
+        {
+            if (_save == null || _balance == null) return;
+            string target = StoneTarget();
+            if (target == null)
+            {
+                if (_toast != null) _toast.Show(Strings.Get("equip.stone_none"));
+                return;
+            }
+
+            int cost = StoneEnhance.Cost(_balance, EquipmentLevels.Get(_save, target));
+            Result result = StoneEnhance.TryEnhance(_balance, _save, target);
+            if (!result.Ok)
+            {
+                if (_toast != null) _toast.ShowFailure(result.Reason);
+                return;
+            }
+
+            PanelServices.TryGet<ISaveRequester>()?.RequestSave();
+            if (_session != null) _session.RefreshLoadout();
+            PanelServices.TryGet<AudioService>()?.Play(SfxId.Upgrade);
+            _rewardFx?.Sparkle(EnhanceColor);
+            if (_toast != null && EquipmentBonus.TryParseAny(target, out EquipmentSlot slot, out _))
+            {
+                _toast.Show(Strings.Format("equip.stone_done", PanelServices.SlotName(slot), EquipmentLevels.Get(_save, target), cost,
+                    BigNumberFormat.Format(_save.breakStones)));
+            }
+
+            Refresh();
+        }
+
+        private string StoneTarget()
+        {
+            string best = null;
+            int bestLevel = int.MaxValue;
+            int bestGrade = -1;
+            for (int s = 0; s < GachaCatalog.SlotCount; s++)
+            {
+                string id = Equipped((EquipmentSlot)s);
+                if (!StoneEnhance.CanEnhance(_balance, _save, id)) continue;
+                int level = EquipmentLevels.Get(_save, id);
+                int grade = EquipmentBonus.GradeOrNone(id, (EquipmentSlot)s);
+                if (level > bestLevel || (level == bestLevel && grade <= bestGrade)) continue;
+                best = id;
+                bestLevel = level;
+                bestGrade = grade;
+            }
+
+            return best;
         }
 
         /// <summary>D-106: equips the highest owned grade in every slot.</summary>
@@ -170,6 +238,7 @@ namespace SoloHero.Game.UI.Panels
             {
                 if (_session != null) _session.RefreshLoadout();
                 PanelServices.TryGet<AudioService>()?.Play(SfxId.Upgrade);
+                _rewardFx?.Sparkle(EnhanceColor);
             }
             else if (_toast != null)
             {

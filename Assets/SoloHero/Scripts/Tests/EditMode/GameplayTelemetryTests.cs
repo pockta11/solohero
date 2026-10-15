@@ -146,6 +146,86 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual("2", rec.Named(AnalyticsEvents.TutorialStep).Single()[AnalyticsEvents.PStep]);
         }
 
+        private sealed class FakeClock : IClock
+        {
+            public System.DateTime Local = new System.DateTime(2026, 11, 2, 10, 0, 0);
+
+            public long UtcNowSeconds => 1_800_000_000L;
+
+            public System.DateTime LocalNow => Local;
+        }
+
+        [Test]
+        public void StageStall_OncePerDay_WhileTheFrontierDoesNotMove()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            save.highestStage = 30;
+            var rec = new Recorder();
+            var clock = new FakeClock();
+            var telemetry = new GameplayTelemetry(Runner(b, save, 1e9, 1d), save, b, rec, clock);
+
+            telemetry.Tick(11f);
+            Assert.IsEmpty(rec.Named(AnalyticsEvents.StageStall), "the day the frontier is first seen is day 0");
+
+            clock.Local = clock.Local.AddDays(2);
+            telemetry.Tick(11f);
+            telemetry.Tick(11f);
+            Dictionary<string, string> stall = rec.Named(AnalyticsEvents.StageStall).Single();
+            Assert.AreEqual("31", stall[AnalyticsEvents.PStage]);
+            Assert.AreEqual("4", stall[AnalyticsEvents.PChapter]);
+            Assert.AreEqual("2", stall[AnalyticsEvents.PDays]);
+            Assert.AreEqual("0", stall[AnalyticsEvents.PBoss]);
+
+            save.highestStage = 31;
+            clock.Local = clock.Local.AddDays(1);
+            telemetry.Tick(11f);
+            Assert.AreEqual(1, rec.Named(AnalyticsEvents.StageStall).Count(), "a moved frontier starts the count again");
+        }
+
+        [Test]
+        public void AxisCap_ReportedOncePerSave()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var rec = new Recorder();
+            var telemetry = new GameplayTelemetry(Runner(b, save, 1e9, 1d), save, b, rec);
+
+            telemetry.Tick(11f);
+            Assert.IsEmpty(rec.Named(AnalyticsEvents.AxisCap));
+
+            save.jobId = "paladin";
+            save.totalPullCount = int.MaxValue / 2;
+            telemetry.Tick(11f);
+            telemetry.Tick(11f);
+            var axes = rec.Named(AnalyticsEvents.AxisCap).Select(p => p[AnalyticsEvents.PAxis]).ToList();
+            CollectionAssert.AreEquivalent(new[] { AnalyticsEvents.AxisFinalJob, AnalyticsEvents.AxisGearSummon }, axes);
+
+            var again = new GameplayTelemetry(Runner(b, save, 1e9, 1d), save, b, rec);
+            again.Tick(11f);
+            Assert.AreEqual(2, rec.Named(AnalyticsEvents.AxisCap).Count(), "the save remembers what was reported");
+        }
+
+        [Test]
+        public void TierEnter_WhenTheFrontierCrossesIntoTheNextTier()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            int last = DifficultyTier.StagesPerTier(b);
+            save.highestStage = last;
+            var rec = new Recorder();
+            StageRunner runner = Runner(b, save, 1e9, 1d);
+            var telemetry = new GameplayTelemetry(runner, save, b, rec);
+
+            runner.Resume(last + 1, false);
+            telemetry.Tick(Dt);
+
+            Dictionary<string, string> tier = rec.Named(AnalyticsEvents.TierEnter).Single();
+            Assert.AreEqual("1", tier[AnalyticsEvents.PTier]);
+            Assert.AreEqual((last + 1).ToString(), tier[AnalyticsEvents.PStage]);
+            Assert.AreEqual("1", rec.Properties[AnalyticsEvents.UserDifficultyTier]);
+        }
+
         [Test]
         public void EventNames_FollowFirebaseRules()
         {

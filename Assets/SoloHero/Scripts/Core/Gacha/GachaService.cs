@@ -82,11 +82,14 @@ namespace SoloHero.Core.Gacha
         private GachaPullItem ExecuteOnePull(SaveDataV2 data)
         {
             // D-115: the summon level before this pull picks the rate table.
-            GearTableValues table = _table.AtLevel(SummonLevel.Of(_balance, data, SummonKind.Gear));
+            int level = SummonLevel.Of(_balance, data, SummonKind.Gear);
+            GearTableValues table = _table.AtLevel(level);
             // D-123: the pity starts counting once the summon level has opened its grade.
             bool pity = table.PityOpen;
             if (pity) data.pityCount++;
             data.totalPullCount++;
+            // D-159: a late summon level reached by this pull pays its tickets.
+            SummonLevel.PayLevelRewards(_balance, data, SummonKind.Gear, level, SummonLevel.Of(_balance, data, SummonKind.Gear));
 
             // GDD: pick slot first (uniform over the slots; D-109: 8), then grade from the rate table / pity.
             var slot = (EquipmentSlot)_rng.Next(GachaCatalog.SlotCount);

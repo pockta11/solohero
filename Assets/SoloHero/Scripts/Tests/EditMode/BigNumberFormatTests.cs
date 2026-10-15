@@ -24,6 +24,10 @@ namespace SoloHero.Tests.EditMode
         [TestCase(1e12, "1T")]
         [TestCase(1e15, "1aa")]
         [TestCase(3.21e18, "3.21ab")]
+        // D-151: the late curve reaches about 1e18 (heavy, a year) and grows without end through the difficulty tiers.
+        [TestCase(1e21, "1ac")]
+        [TestCase(4.56e24, "4.56ad")]
+        [TestCase(2.5e93, "2.5ba")]
         public void Format_ShortensWithThreeSignificantDigits(double value, string expected)
         {
             Assert.AreEqual(expected, BigNumberFormat.Format(value));

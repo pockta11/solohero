@@ -73,6 +73,7 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private GradeFrameSet _frames;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
 
         private SkillService _skills;
         private BalanceValues _balance;
@@ -154,6 +155,7 @@ namespace SoloHero.Game.UI.Panels
                 AnalyticsParam.Of(AnalyticsEvents.PLevel, _skills.Level(_selected)));
             if (_detailPunch != null) _detailPunch.Play(0.4f);
             Play(SfxId.Upgrade);
+            _rewardFx?.Sparkle(new Color(0.75f, 0.6f, 1f, 1f));
             Refresh();
         }
 

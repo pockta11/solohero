@@ -997,6 +997,281 @@ def i_phantom_volley():  # 환영 일제사격
     return L
 
 
+# D-157 third jobs: main attacks, ultimates and the twelve third-job skills ----------------------------------------------
+HOLYGOLD = (hexc('#FFFFFF'), hexc('#FFE890'), hexc('#D8960C'))
+EMBER = (hexc('#FFF4C0'), hexc('#FF8A3A'), hexc('#B02A12'))
+BLOODBLADE = (hexc('#FFE0E0'), hexc('#E05060'), hexc('#7A1020'))
+GALE = (hexc('#FFFFFF'), hexc('#D0FFF0'), hexc('#4AB894'))
+
+
+def star(L, cx, cy, r, ramp=HOLYGOLD, ow=4):
+    d = L.polygon(star_pts(cx, cy, r, r * 0.45, 5))
+    outline(L, d, ow)
+    fill(L, d, ramp)
+    return d
+
+
+def shard(L, cx, cy, ang, ln, w, ramp=ICE):
+    """Ice shard: a long diamond pointing along ang."""
+    pts = [(cx + math.cos(ang) * ln, cy + math.sin(ang) * ln),
+           (cx + math.cos(ang + math.pi / 2) * w, cy + math.sin(ang + math.pi / 2) * w),
+           (cx - math.cos(ang) * ln * 0.5, cy - math.sin(ang) * ln * 0.5),
+           (cx + math.cos(ang - math.pi / 2) * w, cy + math.sin(ang - math.pi / 2) * w)]
+    d = L.polygon(pts)
+    outline(L, d, 4)
+    fill(L, d, ramp)
+    return d
+
+
+def crown(L, cx, cy, w, ramp=GOLD):
+    pts = [(cx - w, cy + w * 0.55), (cx - w, cy - w * 0.35), (cx - w * 0.5, cy + w * 0.05), (cx, cy - w * 0.6),
+           (cx + w * 0.5, cy + w * 0.05), (cx + w, cy - w * 0.35), (cx + w, cy + w * 0.55)]
+    d = L.polygon(pts)
+    outline(L, d, 4)
+    fill(L, d, ramp)
+    for x in (cx - w * 0.5, cx + w * 0.5):
+        L.over(cov(L.circle(x, cy + w * 0.3, w * 0.13)), hexc('#E03040'))
+    return d
+
+
+def glow_at(L, cx, cy, r, color, power=1.3):
+    L.over(np.clip(1 - L.circle(cx, cy, 0) / r, 0, 1) ** power, color)
+
+
+def i_main_paladin():  # 디바인 차지
+    L = tile('holy')
+    L.over(cov(rrect_at(L.x, L.y, 44, 0, 84, 128, 16)), (255, 255, 230, 150))
+    soft = (hexc('#FFFFFF'), hexc('#FFF4D0'), hexc('#D8B060'))
+    wing(L, 40, 66, True, ramp=soft, scale=0.8)
+    wing(L, 88, 66, False, ramp=soft, scale=0.8)
+    d = shield_shape(L, 64, 28, 58, 74)
+    outline(L, d)
+    fill(L, d, (hexc('#FFFFFF'), hexc('#F4F0E0'), hexc('#B8A880')))
+    fill(L, cross_shape(L, 64, 60, 20, 11), GOLD)
+    sparkle(L, 102, 22, 10)
+    return L
+
+
+def i_main_warlord():  # 브레이브 슬래시
+    L = tile('blood')
+    slash(L, 46, 80, 58, 22, -1.6, 0.35, ramp=(hexc('#FFFFFF'), hexc('#FFD0A0'), hexc('#E04030')), ow=5)
+    sword(L, 26, 108, 104, 30, blade=BLOODBLADE, scale=0.9)
+    for (x, y) in ((100, 92), (28, 30)):
+        sparkle(L, x, y, 9, (255, 220, 160, 255))
+    return L
+
+
+def i_main_archpyro():  # 익스플로전
+    L = tile('fire')
+    glow_at(L, 64, 66, 58, (255, 240, 160, 200))
+    for k in range(8):
+        a = k * math.pi / 4 + 0.2
+        ray = seg(L, 64 + math.cos(a) * 26, 66 + math.sin(a) * 26, 64 + math.cos(a) * 54, 66 + math.sin(a) * 54, 5)
+        L.over(cov(ray - 3), INK[:3] + (200,))
+        L.over(cov(ray), hexc('#FFE070'))
+    orb(L, 64, 66, 24, FLAME)
+    flame(L, 64, 62, 14, ramp=(hexc('#FFFFFF'), hexc('#FFF0A0'), hexc('#FFB040')), ow=3)
+    return L
+
+
+def i_main_archcryo():  # 콜드 빔
+    L = tile('ice')
+    trail(L, 4, 118, 82, 44, 30, (220, 248, 255, 235))
+    L.over(cov(seg(L, 10, 112, 84, 42, 5)), (255, 255, 255, 230))
+    snowflake(L, 84, 42, 26)
+    sparkle(L, 28, 34, 9)
+    return L
+
+
+def i_main_bowmaster():  # 폭풍의 시
+    L = tile('wind')
+    for k, y in enumerate((30, 52, 74, 96)):
+        L.over(cov(rrect_at(L.x, L.y, 6, y - 2, 34, y + 2, 2)), (255, 255, 255, 160))
+        arrow(L, 14 + (k % 2) * 8, y + 4, 116 - (k % 2) * 6, y - 4, head=GOLD, w=3.4, hs=0.75)
+    return L
+
+
+def i_main_marksman():  # 스나이핑
+    L = tile('night')
+    crosshair(L, 72, 56, 34, ramp=GOLD)
+    arrow(L, 12, 112, 66, 62, head=GOLD, w=3.8, hs=0.85)
+    sparkle(L, 106, 22, 9)
+    return L
+
+
+def i_ult_sanctuary():
+    L = tile('holy')
+    glow_at(L, 64, 64, 64, (255, 255, 220, 170), 1.4)
+    ring_band(L, 64, 64, 46, 8, HOLYGOLD)
+    wing(L, 46, 70, True, scale=0.75)
+    wing(L, 82, 70, False, scale=0.75)
+    c = cross_shape(L, 64, 62, 30, 14)
+    outline(L, c)
+    fill(L, c, HOLYGOLD)
+    sparkle(L, 64, 62, 9)
+    return L
+
+
+def i_ult_warlord_wrath():
+    L = tile('blood')
+    glow_at(L, 64, 64, 64, (255, 50, 40, 160), 1.2)
+    sword(L, 22, 112, 100, 34, blade=BLOODBLADE, scale=0.85)
+    sword(L, 106, 112, 28, 34, blade=(hexc('#FFFFFF'), hexc('#FFD8A0'), hexc('#C08020')), scale=0.85)
+    crown(L, 64, 28, 22)
+    return L
+
+
+def burst(L, cx, cy, r, ramp=YELLOW, n=8, ow=4):
+    """Spiky explosion star."""
+    d = L.polygon(star_pts(cx, cy, r, r * 0.55, n, 0.2))
+    outline(L, d, ow)
+    fill(L, d, ramp, hi=False)
+    return d
+
+
+def i_ult_meteor_storm():
+    L = tile('fire')
+    for (x, y, r) in ((40, 42, 13), (94, 30, 10), (78, 84, 20)):
+        trail(L, x - r * 3.6, y - r * 3.6, x, y, r * 1.5, (255, 236, 150, 255))
+        orb(L, x, y, r, FLAME)
+        flame(L, x + r * 0.05, y - r * 0.05, r * 0.58, lean=0.3, ramp=(hexc('#FFFFFF'), hexc('#FFF0A0'), hexc('#FFB040')), ow=3)
+    for (x, y) in ((22, 108), (112, 108)):
+        flame(L, x, y, 11)
+    return L
+
+
+def i_ult_frozen_thunder():
+    L = tile('storm')
+    snowflake(L, 44, 72, 30)
+    bolt(L, [(86, 8), (62, 58), (78, 58), (56, 118), (102, 50), (84, 50), (102, 8)])
+    sparkle(L, 106, 98, 9)
+    return L
+
+
+def i_ult_arrow_storm():
+    L = tile('wind')
+    swirl(L, 64, 64, 56, 3, GALE, width=6, turns=0.9)
+    for (ax, ay, bx, by) in ((6, 40, 108, 18), (4, 70, 120, 56), (10, 100, 112, 94)):
+        arrow(L, ax, ay, bx, by, head=GOLD, w=4.0, hs=0.9)
+    sparkle(L, 104, 112, 9)
+    return L
+
+
+def i_ult_true_shot():
+    L = tile('night')
+    L.over(np.clip(1 - np.abs(seg(L, 0, 116, 128, 20, 0)) / 16, 0, 1), (255, 236, 170, 190))
+    glow_at(L, 100, 38, 34, (255, 240, 190, 230), 1.1)
+    burst(L, 100, 38, 20, ramp=(hexc('#FFFFFF'), hexc('#FFF4C0'), hexc('#F0B030')), n=8, ow=3)
+    arrow(L, 8, 108, 96, 42, shaft=GOLD, head=(hexc('#FFFFFF'), hexc('#FFF0B0'), hexc('#E0A020')), w=5.0, hs=1.2)
+    sparkle(L, 26, 30, 10)
+    return L
+
+
+def i_sword_aura():  # 검기 베기
+    L = tile('sky')
+    for k, r in enumerate((54, 40)):
+        slash(L, 36, 70, r, 16 - k * 4, -1.2, 1.2, ramp=(hexc('#FFFFFF'), hexc('#FFF0C0'), hexc('#E0B040')), ow=4)
+    sword(L, 16, 112, 56, 72, scale=0.6)
+    return L
+
+
+def i_shockwave():  # 충격파
+    L = tile('earth')
+    for k, r in enumerate((20, 36, 52)):
+        slash(L, 64, 104, r, 10 - k * 2, -math.pi + 0.25, -0.25, ramp=(hexc('#FFFFFF'), hexc('#FFE8B0'), hexc('#C08040')), ow=4)
+    for (x, y, r) in ((20, 110, 8), (108, 110, 9)):
+        rock(L, x, y, r)
+    return L
+
+
+def i_sword_dance():  # 검무
+    L = tile('steel')
+    for ang in (-0.75, 0.0, 0.75):
+        bx, by = 64 + math.cos(ang - math.pi / 2) * 72, 112 + math.sin(ang - math.pi / 2) * 72
+        sword(L, 64, 112, bx, by, scale=0.62)
+    slash(L, 64, 104, 60, 10, -2.6, -0.55, ramp=(hexc('#FFFFFF'), hexc('#FFE0A0'), hexc('#E0A030')), ow=3)
+    return L
+
+
+def i_ragnarok():  # 라그나로크
+    L = tile('blood')
+    glow_at(L, 64, 100, 62, (255, 150, 90, 190))
+    for sgn in (-1, 1):
+        pts = [(26, 10), (14, 44), (26, 44), (16, 74), (38, 34), (26, 34), (36, 10)]
+        bolt(L, [(64 + sgn * (x - 64), y) for (x, y) in pts], ow=4)
+    sword(L, 64, 14, 64, 110, blade=(hexc('#FFFFFF'), hexc('#FFD0A0'), hexc('#E06030')))
+    for (x, y, r) in ((30, 112, 8), (98, 112, 9)):
+        rock(L, x, y, r)
+    return L
+
+
+def i_ice_shard():  # 얼음 파편
+    L = tile('ice')
+    for (x, y, ln) in ((38, 84, 34), (70, 58, 44), (98, 98, 28)):
+        shard(L, x, y, -0.65, ln, 9)
+    sparkle(L, 24, 30, 9)
+    return L
+
+
+def i_fire_wall():  # 화염벽
+    L = tile('fire')
+    L.over(cov(rrect_at(L.x, L.y, 8, 98, 120, 118, 8)), (120, 30, 10, 160))
+    for k, x in enumerate((24, 50, 76, 102)):
+        flame(L, x, 98, 20 + (k % 2) * 7)
+    return L
+
+
+def i_thunder_storm():  # 뇌우
+    L = tile('storm')
+    cloud(L, 64, 32, 100)
+    bolt(L, [(44, 50), (30, 84), (42, 84), (32, 118), (60, 74), (48, 74), (58, 50)])
+    bolt(L, [(84, 50), (72, 80), (84, 80), (76, 110), (100, 72), (88, 72), (96, 50)])
+    return L
+
+
+def i_starfall():  # 유성우
+    L = tile('void')
+    for (x, y, r) in ((34, 46, 12), (88, 32, 9), (70, 88, 16), (106, 72, 8)):
+        trail(L, x - r * 3, y - r * 3.4, x, y, r * 0.9, (230, 200, 255, 210))
+        star(L, x, y, r, ramp=(hexc('#FFFFFF'), hexc('#FFF0A0'), hexc('#E0A020')))
+    return L
+
+
+def i_power_shot():  # 파워 샷
+    L = tile('sky')
+    for (y, ln) in ((54, 30), (72, 40), (90, 26)):
+        L.over(cov(rrect_at(L.x, L.y, 6, y - 2.5, 6 + ln, y + 2.5, 2.5)), (255, 255, 255, 170))
+    arrow(L, 14, 98, 104, 36, head=GOLD, w=6, hs=1.3)
+    sparkle(L, 108, 30, 13)
+    return L
+
+
+def i_explosive_arrow():  # 폭발 화살
+    L = tile('fire')
+    arrow(L, 10, 114, 70, 56, w=4, hs=0.9)
+    glow_at(L, 84, 42, 44, (255, 240, 160, 230), 1.1)
+    burst(L, 84, 42, 30, ramp=(hexc('#FFFFFF'), hexc('#FFE070'), hexc('#F08A20')), n=9)
+    burst(L, 84, 42, 15, ramp=(hexc('#FFFFFF'), hexc('#FFFFFF'), hexc('#FFE8A0')), n=7, ow=3)
+    return L
+
+
+def i_wind_arrows():  # 바람의 화살
+    L = tile('wind')
+    swirl(L, 64, 64, 50, 2, GALE, width=8, turns=0.8)
+    arrow(L, 10, 86, 112, 44, w=3.8, hs=0.9)
+    arrow(L, 16, 110, 118, 70, w=3.8, hs=0.9)
+    return L
+
+
+def i_dragon_arrow():  # 용의 화살
+    L = tile('blood')
+    trail(L, -10, 124, 72, 58, 30, (255, 160, 80, 220))
+    flame(L, 50, 80, 14, lean=0.6)
+    wing(L, 70, 66, False, ramp=(hexc('#FFD8C0'), hexc('#E86A4A'), hexc('#8A1A1A')), scale=0.7)
+    arrow(L, 16, 112, 112, 30, head=(hexc('#FFE0C0'), hexc('#FF7040'), hexc('#A02010')), w=4.4, hs=1.1)
+    return L
+
+
 ICONS = {
     'power_strike': i_power_strike, 'whirlwind': i_whirlwind, 'battle_cry': i_battle_cry,
     'quick_slash': i_quick_slash, 'iron_skin': i_iron_skin, 'first_aid': i_first_aid, 'fireball': i_fireball,
@@ -1017,6 +1292,15 @@ ICONS = {
     'rending_blade': i_rending_blade, 'armor_break': i_armor_break, 'valor': i_valor, 'titan_crush': i_titan_crush,
     'spark': i_spark, 'hex': i_hex, 'mana_surge': i_mana_surge, 'absolute_zero': i_absolute_zero,
     'rapid_shot': i_rapid_shot, 'hunters_mark': i_hunters_mark, 'deadeye': i_deadeye, 'phantom_volley': i_phantom_volley,
+    # D-157 third jobs
+    'main_paladin': i_main_paladin, 'main_warlord': i_main_warlord, 'main_archpyro': i_main_archpyro,
+    'main_archcryo': i_main_archcryo, 'main_bowmaster': i_main_bowmaster, 'main_marksman': i_main_marksman,
+    'ult_sanctuary': i_ult_sanctuary, 'ult_warlord_wrath': i_ult_warlord_wrath, 'ult_meteor_storm': i_ult_meteor_storm,
+    'ult_frozen_thunder': i_ult_frozen_thunder, 'ult_arrow_storm': i_ult_arrow_storm, 'ult_true_shot': i_ult_true_shot,
+    'sword_aura': i_sword_aura, 'shockwave': i_shockwave, 'sword_dance': i_sword_dance, 'ragnarok': i_ragnarok,
+    'ice_shard': i_ice_shard, 'fire_wall': i_fire_wall, 'thunder_storm': i_thunder_storm, 'starfall': i_starfall,
+    'power_shot': i_power_shot, 'explosive_arrow': i_explosive_arrow, 'wind_arrows': i_wind_arrows,
+    'dragon_arrow': i_dragon_arrow,
 }
 
 if __name__ == '__main__':

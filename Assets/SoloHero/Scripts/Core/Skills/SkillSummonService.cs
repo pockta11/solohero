@@ -109,11 +109,14 @@ namespace SoloHero.Core.Skills
         private SkillPullItem PullOne(SaveDataV2 data)
         {
             // D-115: the summon level before this pull picks the rate table.
-            GachaTableValues table = _table.AtLevel(SummonLevel.Of(_balance, data, SummonKind.Skill));
+            int level = SummonLevel.Of(_balance, data, SummonKind.Skill);
+            GachaTableValues table = _table.AtLevel(level);
             // D-123: the pity starts counting once the summon level has opened its grade.
             bool pity = table.PityOpen;
             if (pity) data.skillPityCount++;
             data.skillPullCount++;
+            // D-159: a late summon level reached by this pull pays its tickets.
+            SummonLevel.PayLevelRewards(_balance, data, SummonKind.Skill, level, SummonLevel.Of(_balance, data, SummonKind.Skill));
 
             Grade grade;
             if (pity && data.skillPityCount >= table.PityCeiling)
@@ -127,7 +130,8 @@ namespace SoloHero.Core.Skills
                 if (grade == Grade.Legendary && table.ResetOnLegendary) data.skillPityCount = 0;
             }
 
-            SkillDef[] pool = SkillCatalog.OfLine(JobService.LineOf(data), grade);
+            // D-157: third-job skills join the pool with the third job.
+            SkillDef[] pool = SkillCatalog.OfLine(JobService.LineOf(data), grade, JobService.TierOf(data));
             SkillDef def = pool[_rng.Next(pool.Length)];
             return Acquire(data, def);
         }

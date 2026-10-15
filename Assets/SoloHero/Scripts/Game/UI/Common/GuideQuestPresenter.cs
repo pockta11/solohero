@@ -14,11 +14,14 @@ namespace SoloHero.Game.UI.Common
     /// D-111 guide quest bar (genre main-quest strip): the current quest, its progress and reward. Done, it turns gold
     /// and pulses; a tap claims it and the next quest slides in. Not done, a tap takes the player where the quest is
     /// made (upgrades, summon, skills, talents, the job button) or says to keep fighting. Polls a few times a second;
-    /// text is rebuilt only when the quest or its progress changes.
+    /// text is rebuilt only when the quest or its progress changes. D-171: a claim plays the reward flying to its counter
+    /// and holds "reward received" for <see cref="HoldSeconds"/> before the next quest pops in; taps in between are
+    /// ignored, so a burst of taps claims one quest per beat instead of skipping through the chain unseen.
     /// </summary>
     public sealed class GuideQuestPresenter : MonoBehaviour
     {
         private const float PollSeconds = 0.2f;
+        private const float HoldSeconds = 0.6f;
 
         [SerializeField] private Text _title;
         [SerializeField] private Text _progress;
@@ -33,6 +36,8 @@ namespace SoloHero.Game.UI.Common
         [SerializeField] private PanelHost _panels;
         [SerializeField] private GachaPanelPresenter _gacha;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
+        [SerializeField] private UiPunch _rewardPunch;
 
         [Tooltip("Tabs: character, equipment, summon, skill, talent.")]
         [SerializeField] private int _characterTab;
@@ -48,6 +53,9 @@ namespace SoloHero.Game.UI.Common
         private int _shownFarm = -1;
         private bool _shownReady;
         private float _poll;
+        private float _holdUntil;
+        private bool _popNext;
+        private readonly ClaimGate _gate = new ClaimGate();
 
         private void OnEnable()
         {
@@ -61,6 +69,7 @@ namespace SoloHero.Game.UI.Common
         private void LateUpdate()
         {
             if (_service == null || _save == null) return;
+            if (Time.unscaledTime < _holdUntil) return;
             _poll -= Time.unscaledDeltaTime;
             if (_poll > 0f) return;
             _poll = PollSeconds;
@@ -74,21 +83,28 @@ namespace SoloHero.Game.UI.Common
             _shownReady = ready;
             _shownFarm = _save.farmingStage;
             Draw(_service.Current, progress, ready);
+            if (!_popNext) return;
+            _popNext = false;
+            if (_rewardPunch != null) _rewardPunch.Play(1.6f);
         }
 
         public void OnTap()
         {
             if (_service == null) return;
+            if (Time.unscaledTime < _holdUntil) return;
             if (_service.IsComplete)
             {
-                double gold = _service.RewardGold;
+                if (!_gate.Pass(HoldSeconds)) return;
                 double gems = _service.Current.Gems;
+                var before = new RewardSnapshot(_save);
                 if (!_service.TryClaim().Ok) return;
                 PanelServices.TryGet<AudioService>()?.Play(gems > 0d ? SfxId.GradeEpic : SfxId.Gold);
-                if (_toast != null)
-                    _toast.Show(gems > 0d
-                        ? Strings.Format("guide.claimed_gem", BigNumberFormat.Format(gems))
-                        : Strings.Format("guide.claimed_gold", BigNumberFormat.Format(gold)));
+                _rewardFx?.PlayGain(before, _save);
+                if (_pulse != null) _pulse.enabled = false;
+                if (_rewardPunch != null) _rewardPunch.Play(2f);
+                if (_progress != null) _progress.text = Strings.Get("guide.claimed");
+                _holdUntil = Time.unscaledTime + HoldSeconds;
+                _popNext = true;
                 _shownIndex = -1;
                 _poll = 0f;
                 return;
@@ -162,12 +178,7 @@ namespace SoloHero.Game.UI.Common
             return StageLabel(progress > def.Target ? def.Target : progress);
         }
 
-        private string StageLabel(int g)
-        {
-            int per = _balance != null ? _balance.STAGES_PER_CHAPTER : 10;
-            StageIndex.FromGlobal(g < 1 ? 1 : g, per, out int chapter, out int stage);
-            return chapter + "-" + stage;
-        }
+        private string StageLabel(int g) => DifficultyTier.StageLabel(_balance ?? new BalanceValues(), g < 1 ? 1 : g);
 
         private static string KeyOf(GuideKind kind)
         {

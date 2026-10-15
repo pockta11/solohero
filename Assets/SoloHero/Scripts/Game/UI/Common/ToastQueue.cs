@@ -56,6 +56,8 @@ namespace SoloHero.Game.UI.Common
                 case FailReason.NoApPoints: return "toast.no_ap";
                 case FailReason.LimitReached: return "toast.limit_reached";
                 case FailReason.NotEnoughStones: return "toast.not_enough_stones";
+                case FailReason.NotEnoughTokens: return "toast.not_enough_tokens";
+                case FailReason.EventEnded: return "toast.event_ended";
                 default: return null;
             }
         }

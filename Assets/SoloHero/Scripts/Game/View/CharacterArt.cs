@@ -11,6 +11,9 @@ namespace SoloHero.Game.View
         public Sprite[] attack = new Sprite[0];
         public Sprite[] hit = new Sprite[0];
         public Sprite[] dead = new Sprite[0];
+
+        /// <summary>D-168 skill cast motion (heroes and job looks); the art builder falls back to attack.</summary>
+        public Sprite[] skill = new Sprite[0];
         public float fps = 10f;
 
         /// <summary>Integer world scale so the pixel grid stays aligned with the Pixel Perfect Camera.</summary>

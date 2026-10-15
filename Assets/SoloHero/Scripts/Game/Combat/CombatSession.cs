@@ -85,8 +85,18 @@ namespace SoloHero.Game.Combat
                 analytics = new NullAnalytics();
             }
 
+            IClock clock = null;
+            try
+            {
+                clock = Services.Get<IClock>();
+            }
+            catch (Exception)
+            {
+                Log.Warn(LogTag.Combat, "no clock, stage stalls will not be reported");
+            }
+
             // Created before Resume so the first stage start is seen (E6-15).
-            _telemetry = new GameplayTelemetry(_runner, save, balance, analytics);
+            _telemetry = new GameplayTelemetry(_runner, save, balance, analytics, clock);
             _runner.Resume(save.farmingStage < 1 ? 1 : save.farmingStage, save.retreatMode);
             // Cold start marker (E1-10): tools/qa/Qa.ps1 waits for / times this line. Log.Info is compiled out of
             // release builds, so the marker goes straight to the Unity log.

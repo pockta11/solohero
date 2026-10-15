@@ -31,6 +31,39 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void EnemyGrowth_UpToLateStart_KeepsEarlyRate()
+        {
+            var c = new BalanceValues();
+            int start = c.ENEMY_GROWTH_LATE_START;
+            Assert.AreEqual(c.ENEMY_HP_BASE * Math.Pow(c.ENEMY_HP_GROWTH, start - 1), Formulas.EnemyHp(c, start), 1e-6);
+            Assert.AreEqual(c.ENEMY_ATK_BASE * Math.Pow(c.ENEMY_ATK_GROWTH, start - 1), Formulas.EnemyAtk(c, start), 1e-9);
+        }
+
+        [Test]
+        public void EnemyGrowth_PastLateStart_UsesLateRate()
+        {
+            var c = new BalanceValues();
+            int start = c.ENEMY_GROWTH_LATE_START;
+            Assert.AreEqual(c.ENEMY_HP_GROWTH_LATE, Formulas.EnemyHp(c, start + 1) / Formulas.EnemyHp(c, start), 1e-9);
+            Assert.AreEqual(c.ENEMY_ATK_GROWTH_LATE, Formulas.EnemyAtk(c, start + 1) / Formulas.EnemyAtk(c, start), 1e-9);
+            Assert.AreEqual(Math.Pow(c.ENEMY_HP_GROWTH_LATE, 50), Formulas.EnemyHp(c, start + 50) / Formulas.EnemyHp(c, start), 1e-6);
+        }
+
+        [Test]
+        public void EnemyGrowth_LateStartOff_IsOneCurve()
+        {
+            var c = new BalanceValues { ENEMY_GROWTH_LATE_START = 0 };
+            Assert.AreEqual(c.ENEMY_HP_BASE * Math.Pow(c.ENEMY_HP_GROWTH, 199), Formulas.EnemyHp(c, 200), 1e-6 * Formulas.EnemyHp(c, 200));
+        }
+
+        [Test]
+        public void EnemyHp_HundredsOfChaptersIn_StaysFinite()
+        {
+            var c = new BalanceValues();
+            Assert.IsFalse(double.IsInfinity(Formulas.EnemyHp(c, 3000) * c.BOSS_HP_MULT * c.TOWER_BOSS_HP_MULT));
+        }
+
+        [Test]
         public void StageGold_StageOne_EqualsBase()
         {
             var c = new BalanceValues();

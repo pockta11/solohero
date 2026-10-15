@@ -20,12 +20,15 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private GameObject _popup;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
         [SerializeField] private Text _floorText;
         [SerializeField] private Text _bossText;
         [SerializeField] private Text _recText;
         [SerializeField] private Text _powerText;
         [SerializeField] private Text _rewardText;
         [SerializeField] private Text _bestText;
+        [Tooltip("D-162: the next milestone floor and its bonus.")]
+        [SerializeField] private Text _milestoneText;
         [SerializeField] private TapGuardButton _enterButton;
         [SerializeField] private Text _enterLabel;
 
@@ -93,9 +96,20 @@ namespace SoloHero.Game.UI.Panels
 
         private void OnFloorCleared(TowerReward reward)
         {
+            // D-171: each floor's gems fly from the field; a milestone floor gets the ribbon and fanfare too.
+            if (_rewardFx != null)
+            {
+                _rewardFx.Play(RewardKind.Gem, reward.Gems, RewardFx.BattleCenter);
+                int ticketCount = reward.GearTickets + reward.SkillTickets + reward.PetTickets;
+                if (ticketCount > 0) _rewardFx.Play(RewardKind.Ticket, ticketCount, RewardFx.BattleCenter, 1);
+                if (reward.Stones > 0) _rewardFx.Play(RewardKind.Stone, reward.Stones, RewardFx.BattleCenter, 2);
+                if (reward.Milestone) _rewardFx.Celebrate(Strings.Format("tower.milestone_ribbon", reward.Floor), new Color(1f, 0.82f, 0.3f));
+            }
+
             if (_toast == null) return;
             string tickets = TicketText(reward);
-            _toast.Show(Strings.Format("tower.cleared", reward.Floor, BigNumberFormat.Format(reward.Gems)) + tickets);
+            _toast.Show(Strings.Format(reward.Milestone ? "tower.cleared_milestone" : "tower.cleared", reward.Floor,
+                BigNumberFormat.Format(reward.Gems)) + tickets);
         }
 
         private static string TicketText(TowerReward reward)
@@ -119,7 +133,7 @@ namespace SoloHero.Game.UI.Panels
             bool unlocked = _tower.Unlocked;
 
             if (_floorText != null) _floorText.text = Strings.Format("tower.floor", floor);
-            if (_bossText != null) _bossText.text = Strings.Get(BossNames.KeyFor(chapter));
+            if (_bossText != null) _bossText.text = BossNames.NameFor(_balance, chapter);
             if (_recText != null)
             {
                 _recText.text = Strings.Format("tower.recommended", BigNumberFormat.Format(rec));
@@ -137,6 +151,17 @@ namespace SoloHero.Game.UI.Panels
             {
                 StageIndex.FromGlobal(_balance.TOWER_UNLOCK_STAGE, _balance.STAGES_PER_CHAPTER, out int c, out int s);
                 _bestText.text = unlocked ? Strings.Format("tower.best", _save.towerFloor) : Strings.Format("tower.locked", c + "-" + s);
+            }
+
+            if (_milestoneText != null)
+            {
+                // D-162: the milestone ahead (the next floor's own line already shows a milestone that is next).
+                int next = TowerService.NextMilestone(_balance, _save.towerFloor);
+                TowerReward bonus = new TowerReward(next, TowerService.MilestoneGems(_balance, next), _balance.TOWER_MILESTONE_GEAR_TICKETS,
+                    _balance.TOWER_MILESTONE_SKILL_TICKETS, _balance.TOWER_MILESTONE_PET_TICKETS, _balance.TOWER_MILESTONE_STONES, true);
+                _milestoneText.text = next > 0
+                    ? Strings.Format("tower.next_milestone", next, BigNumberFormat.Format(bonus.Gems)) + TicketText(bonus)
+                    : "";
             }
 
             bool busy = _session != null && _session.Runner != null && _session.Runner.InDungeon;

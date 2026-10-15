@@ -87,6 +87,8 @@ namespace SoloHero.Game.Boot
             RegisterAds(balance, clock, requester);
             RegisterSettingsAndAudio();
             Services.Register<IAnalytics>(new AnalyticsService(auth.FirebaseReady));
+            // D-156: the event schedule (saved copy now, the server's when it answers).
+            EventScheduleLoader.Start(Services.Get<SoloHero.Core.Events.EventService>(), auth.FirebaseReady);
             ExceptionReporter.Flush();
             // D-134 account tools (settings > account): transfer codes and data deletion.
             Services.Register(new AccountService(report.UserId, _save, _data, new NewtonsoftSaveSerializer(), clock));
@@ -168,7 +170,17 @@ namespace SoloHero.Game.Boot
             Services.Register<IAdGateway>(ads != null ? ads : new NoAdGateway());
             Services.Register(new AdSlotPolicy(balance, _data, clock, requester));
             Services.Register(new GemShop(balance, requester));
-            Services.Register(new SoloHero.Core.Daily.DailyService(balance, _data, clock, requester));
+            var daily = new SoloHero.Core.Daily.DailyService(balance, _data, clock, requester);
+            Services.Register(daily);
+            // D-156: events count the same actions as the daily missions.
+            var events = new SoloHero.Core.Events.EventService(balance, _data, clock, requester);
+            daily.Recorded += events.Record;
+            Services.Register(events);
+            // D-163: the season pass earns XP from claimed missions and kills.
+            var pass = new SoloHero.Core.Pass.PassService(balance, _data, clock, requester);
+            daily.Recorded += pass.Record;
+            daily.MissionClaimed += pass.OnMissionClaimed;
+            Services.Register(pass);
             Services.Register(new SoloHero.Core.Stage.DungeonService(balance, _data, clock, requester));
             // D-128 daily shop, D-130 infinite tower.
             Services.Register(new ShopService(balance, _data, clock, requester));

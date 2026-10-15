@@ -15,6 +15,9 @@ namespace SoloHero.Core.Gacha
         public double LevelRateGain;
         public int MaxLevel = 1;
 
+        /// <summary>D-159: past this level the good grades keep its boost (the skill ladder has no top grades).</summary>
+        public int LevelLateFrom;
+
         /// <summary>D-121 / D-123: summon levels from which Rare, Epic and Legendary can drop (0 or 1 = from the start).</summary>
         public int OpenR;
         public int OpenE;
@@ -36,6 +39,7 @@ namespace SoloHero.Core.Gacha
                 ResetOnLegendary = balance.GACHA_PITY_RESET_ON_LEGENDARY,
                 LevelRateGain = balance.SUMMON_LV_RATE_GAIN,
                 MaxLevel = balance.SUMMON_LV_MAX,
+                LevelLateFrom = balance.SUMMON_LV_LATE_FROM,
                 OpenR = balance.SKILL_SUMMON_OPEN_R,
                 OpenE = balance.SKILL_SUMMON_OPEN_E,
                 OpenL = balance.SKILL_SUMMON_OPEN_L
@@ -76,7 +80,7 @@ namespace SoloHero.Core.Gacha
             GachaTableValues table = _byLevel[level];
             if (table != null) return table;
             var rates = new double[4];
-            SummonLevel.Boost(Rates, rates, SummonLevel.RateMult(LevelRateGain, level), OpenLevels, level);
+            SummonLevel.Boost(Rates, rates, SummonLevel.RateMult(LevelRateGain, level, LevelLateFrom), OpenLevels, level);
             table = new GachaTableValues
             {
                 RateC = rates[0], RateR = rates[1], RateE = rates[2], RateL = rates[3],

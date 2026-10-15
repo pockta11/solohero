@@ -118,6 +118,7 @@ namespace SoloHero.Game.Combat
             Color gradeColor = PanelServices.GradeColor(def.Grade);
             float heroX = (float)_hooked.Hero.X;
             Play(SoundOf(def));
+            if (_view != null) _view.PlayHeroSkill();
 
             if (!LowEffect)
             {

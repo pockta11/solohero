@@ -22,6 +22,7 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private GameObject _popup;
         [SerializeField] private CombatSession _session;
         [SerializeField] private ToastQueue _toast;
+        [SerializeField] private RewardFx _rewardFx;
         [SerializeField] private PanelHost _panels;
         [SerializeField] private GachaPanelPresenter _gacha;
         [SerializeField] private int _summonTab = 2;
@@ -114,6 +115,10 @@ namespace SoloHero.Game.UI.Panels
             }
 
             _session?.RefreshLoadout();
+            // D-171: the level up chimes and sparkles in the pet's grade colour.
+            PanelServices.TryGet<SoloHero.Game.Audio.AudioService>()?.Play(SoloHero.Game.Audio.SfxId.Upgrade);
+            if (_selected >= 0 && _selected < PetCatalog.Count)
+                _rewardFx?.Sparkle(PanelServices.GradeColor(PetCatalog.All[_selected].Grade), Strings.Get("fx.level_up"));
             Refresh();
         }
 

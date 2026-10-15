@@ -23,7 +23,8 @@ from mathutils import Euler, Vector
 
 ARGS = sys.argv[sys.argv.index("--") + 1:]
 OUT_ROOT, ENTITY = ARGS[0], ARGS[1]
-SCALE = 4
+# Render pixels per art pixel: 4 for pixelize.py, 6 for the HD sheets of hdize.py (SOLOHERO_RENDER_SCALE).
+SCALE = int(os.environ.get("SOLOHERO_RENDER_SCALE", "4"))
 # D-150: the key light swings further to the side (was charkit.LIGHT (-0.55, 0.62, 0.56)) and the shadow band starts
 # higher, so every form shows a clear lit and shadow side; faces keep a low threshold and stay mostly lit, rocks a
 # lower one so golems do not sink into shadow. Camera space: x right, y up, z toward the viewer.
@@ -44,7 +45,7 @@ def _env_floats(name, default):
 LIGHT = _env_floats("SOLOHERO_LIGHT", LIGHT)
 CEL = _env_floats("SOLOHERO_CEL", CEL)
 ROCK_CEL = _env_floats("SOLOHERO_ROCK_CEL", ROCK_CEL)
-SKIN_CEL = _env_floats("SOLOHERO_SKIN_CEL", (0.28, 0.9))
+SKIN_CEL = _env_floats("SOLOHERO_SKIN_CEL", (0.1, 0.82))
 
 # ---------------------------------------------------------------- palette (sRGB hex, darkest first)
 
@@ -179,11 +180,23 @@ HERO = dict(R=13.0, frame=(96, 72), foot_x=40, mirror=False, folder="Hero", name
             cape=True, eyes="cute", hair=True)
 # D-101 promotion looks: the same knight with tier colours (helm, plume, tunic, cape, shield, blade) and extras.
 TIERS = {
-    "knight1": dict(plume="plume_blue", cloth="tunic", cape_mat="cape_blue"),
-    "knight2": dict(helm="helm_gold", plume="plume_white", cloth="tunic_white", cape_mat="cape", shield_mat="gold"),
+    # D-168: each advancement adds armour (beginner cloth -> warrior leather -> knight / berserker plate -> paladin /
+    # warlord ornate plate), not only colours.
+    "knight1": dict(plume="plume_blue", cloth="tunic", cape=False, strap="leather", shield_mat="wood", shield_rim="steel"),
+    "knight2": dict(helm="helm_gold", plume="plume_white", cloth="tunic_white", cape_mat="cape", shield_mat="shield",
+                    plate="helm", plate_trim="gold", pauldron=("helm", 1.0), shield_r=1.1, cape_len=1.1),
     "knight3": dict(helm="helm_dark", plume="plume_purple", cloth="tunic_purple", cape_mat="cape_purple", blade="blade_crystal"),
-    "knight4": dict(helm="helm_gold", plume="plume", cloth="tunic_crimson", cape_mat="cape_gold", shield_mat="gold",
-                    blade="blade_crystal", wings=True),
+    "knight4": dict(helm="helm_dark", plume="plume", cloth="tunic_crimson", cape_mat="tunic_crimson", shield=False,
+                    blade_len=1.3, horns=("fur_white", 0.9), collar="fur_dark", pauldron=("helm_dark", 1.0),
+                    plate="leather", cape_len=0.9),
+    "knight5": dict(helm="helm_gold", plume="plume_white", cloth="tunic_white", cape_mat="cape_gold", shield_mat="steel",
+                    blade="blade_crystal", wings=True, plate="steel", plate_trim="gold", gem="crystal",
+                    pauldron=("gold", 1.3), pauldron_trim="steel", shield_r=1.25, halo="gold", cape_len=1.35,
+                    cape_trim="steel", blade_len=1.2, belt_gem="crystal"),
+    "knight6": dict(helm="helm_dark", plume="plume", cloth="black", cape_mat="tunic_crimson", shield=False,
+                    blade="blade_blood", blade_len=1.45, horns=("gold", 1.25), crown="gold", gem="red", plate="black",
+                    plate_trim="gold", pauldron=("black", 1.35), pauldron_trim="gold", spikes="gold", collar="fur_dark",
+                    cape_len=1.35, cape_trim="gold", belt_gem="red"),
 }
 
 LOOKS = {
@@ -192,8 +205,8 @@ LOOKS = {
     "goblinr": dict(R=10.0, skin="goblin_r", head="goblin", body="tunic", cloth="black", legs="leather", weapon="club", eyes="cute"),
     "skeleton": dict(R=10.0, skin="bone", head="skull", body="bones", cloth="bone", legs="bone", weapon="sword", eyes="socket", glow="glow_y"),
     "skeletonv": dict(R=10.0, skin="bone_v", head="skull", body="bones", cloth="bone_v", legs="bone_v", weapon="sword", eyes="socket", glow="glow_v"),
-    "mushroom": dict(R=8.5, eye_el=-20.0, skin="stem", head="mushroom", cap="cap_r", body="tunic", cloth="stem", legs="stem", weapon="none", eyes="cute"),
-    "mushroomb": dict(R=8.5, eye_el=-20.0, skin="stem", head="mushroom", cap="cap_b", body="tunic", cloth="stem", legs="stem", weapon="none", eyes="cute"),
+    "mushroom": dict(R=8.5, eye_el=-20.0, skin="stem", head="mushroom", head_scale=0.95, cap="cap_r", body="tunic", cloth="stem", legs="stem", weapon="none", eyes="cute"),
+    "mushroomb": dict(R=8.5, eye_el=-20.0, skin="stem", head="mushroom", head_scale=0.95, cap="cap_b", body="tunic", cloth="stem", legs="stem", weapon="none", eyes="cute"),
     "flyeye": dict(R=9.0, kind="flyeye", iris="iris_b", wing="wing"),
     "flyeyer": dict(R=9.0, kind="flyeye", iris="iris_r", wing="wing_r"),
     "ronin": dict(R=17.0, skin="skin", head="straw_hat", body="tunic", cloth="navy", legs="black", weapon="katana", eyes="cute", brows=True, boss=True),
@@ -213,24 +226,45 @@ LOOKS = {
     # D-131 enemy recolours for the new chapters.
     "goblins": dict(R=10.0, skin="goblin_s", head="goblin", body="tunic", cloth="sand", legs="leather", weapon="club", eyes="cute"),
     "skeletonr": dict(R=10.0, skin="bone_r", head="skull", body="bones", cloth="bone_r", legs="bone_r", weapon="sword", eyes="socket", glow="glow_o"),
-    "mushroomg": dict(R=8.5, eye_el=-20.0, skin="stem", head="mushroom", cap="cap_g", body="tunic", cloth="stem", legs="stem", weapon="none", eyes="cute"),
+    "mushroomg": dict(R=8.5, eye_el=-20.0, skin="stem", head="mushroom", head_scale=0.95, cap="cap_g", body="tunic", cloth="stem", legs="stem", weapon="none", eyes="cute"),
     "flyeyec": dict(R=9.0, kind="flyeye", iris="iris_c", wing="wing_c"),
 }
 for _name, _over in TIERS.items():
     LOOKS[_name] = dict(HERO, name=_name, **_over)
+LOOKS["knight"] = dict(HERO, head="hair", hair=True, cloth="tunic", legs="brown", boots="leather", shield=False,
+                       cape=False, blade="wood", blade_len=0.8)
 
 # D-104 job looks: hero-sized (frame, pivot and face as the knight), weapon-specific attack clips.
 JOB_LOOKS = {
+    # D-168: tier 1 plain, tier 2 adds a mantle / quiver / pauldrons and a cape, tier 3 a tall crowned hat or crest,
+    # gold trim, gems, long capes and floating crystals.
     "jobmage": dict(head="wizard", hat="tunic", body="robe", cloth="tunic", legs="tunic", weapon="staff", orb="orb_purple"),
     "jobpyro": dict(head="wizard", hat="red", body="robe", cloth="tunic_crimson", legs="red", weapon="staff", orb="orb_fire",
-                    cape_mat="cape_gold", cape=True),
+                    cape_mat="cape_gold", cape=True, hat_band="gold", gem="orb_fire", collar="cape_gold", hat_tall=1.1),
     "jobcryo": dict(head="wizard", hat="tunic_white", body="robe", cloth="cape_blue", legs="cape_blue", weapon="staff",
-                    orb="wisp", cape_mat="plume_white", cape=True),
+                    orb="wisp", cape_mat="plume_white", cape=True, hat_band="cape_blue", gem="crystal", collar="fur_white",
+                    hat_tall=1.1),
     "jobarcher": dict(head="hood", hood="green_cloth", body="tunic", cloth="green_cloth", legs="brown", weapon="bow"),
     "jobranger": dict(head="hood", hood="leather", body="tunic", cloth="green_cloth", legs="leather", weapon="bow",
-                      cape_mat="green_cloth", cape=True),
+                      cape_mat="green_cloth", cape=True, quiver="leather", scarf="red", pauldron=("leather", 0.8)),
     "jobsniper": dict(head="hood", hood="black", body="tunic", cloth="navy", legs="black", weapon="bow", cape_mat="black",
-                      cape=True),
+                      cape=True, quiver="black", quiver_trim="steel", scarf="navy", pauldron=("helm_dark", 0.8)),
+    "jobarchpyro": dict(head="wizard", hat="black", body="robe", cloth="tunic_crimson", legs="black", weapon="staff",
+                        orb="orb_fire", cape_mat="cape_gold", cape=True, staff_mat="gold", hat_band="gold", gem="orb_fire",
+                        crown="gold", hat_tall=1.3, collar="gold", pauldron=("gold", 0.85), cape_len=1.35,
+                        cape_trim="tunic_crimson", orbs=("orb_fire", "orb_fire"), belt_gem="orb_fire"),
+    "jobarchcryo": dict(head="wizard", hat="navy", body="robe", cloth="tunic_white", legs="navy", weapon="staff",
+                        orb="crystal", cape_mat="cape_blue", cape=True, staff_mat="steel", hat_band="steel", gem="crystal",
+                        crown="crystal", hat_tall=1.3, collar="fur_white", pauldron=("steel", 0.85), cape_len=1.35,
+                        cape_trim="fur_white", orbs=("crystal", "crystal"), belt_gem="crystal"),
+    "jobbowmaster": dict(head="hood", hood="green_cloth", body="tunic", cloth="tunic_white", legs="brown", weapon="bow",
+                         cape_mat="cape_gold", cape=True, bow_mat="gold", crest="plume_white", quiver="gold",
+                         quiver_trim="green_cloth", fletch="plume_white", scarf="green_cloth", pauldron=("gold", 1.0),
+                         plate="green_cloth", plate_trim="gold", gem="crystal", cape_len=1.35, cape_trim="green_cloth"),
+    "jobmarksman": dict(head="hood", hood="navy", body="tunic", cloth="black", legs="navy", weapon="bow",
+                        cape_mat="tunic_crimson", cape=True, bow_mat="steel", crest="tunic_crimson", quiver="steel",
+                        quiver_trim="gold", fletch="tunic_crimson", collar="black", pauldron=("steel", 1.0),
+                        pauldron_trim="gold", plate="navy", plate_trim="gold", gem="red", cape_len=1.35, cape_trim="gold"),
 }
 for _name, _over in JOB_LOOKS.items():
     _look = dict(HERO, name=_name, hair=True, shield=False, brows=False, cape=False)
@@ -277,6 +311,8 @@ scene.cycles.max_bounces = 0
 scene.cycles.pixel_filter_type = "BOX"
 scene.cycles.filter_width = 0.01
 scene.render.film_transparent = True
+# The data pass stores object ids and depth in 8-bit channels: dither noise would scatter them.
+scene.render.dither_intensity = 0.0
 scene.render.resolution_x = W * SCALE
 scene.render.resolution_y = H * SCALE
 scene.render.resolution_percentage = 100
@@ -531,7 +567,7 @@ class Face:
 
 
 class Eyes:
-    def __init__(self, face, kind, R, glow=None, low="eye_low", az=22.0, el=-10.0, w=0.19, h=0.3):
+    def __init__(self, face, kind, R, glow=None, low="eye_low", az=23.0, el=-10.0, w=0.215, h=0.34):
         self.face, self.kind, self.R = face, kind, R
         self.items = []
         color = {"cute": "eye", "socket": "eye", "glow": glow}[kind]
@@ -544,7 +580,7 @@ class Eyes:
             eye = face.decal(color, sgn * az, el, (0.06 * R, w * R, h * R))
             lowp = None
             if kind == "cute":
-                lowp = face.decal(low, sgn * az, el - h * 22.0, (0.05 * R, w * R * 0.75, h * R * 0.3), lift=0.03 * R)
+                lowp = face.decal(low, sgn * az, el - h * 20.0, (0.05 * R, w * R * 0.8, h * R * 0.45), lift=0.03 * R)
             hi, _ = face.at(sgn * az + 4.0, el + h * 26.0, lift=0.2 * R)
             self.items.append((eye, lowp, hi))
 
@@ -575,15 +611,24 @@ class Rig:
     pass
 
 
+# HD look: humanoid heads a little smaller than the D-090 chibi so arms and weapons read beside them (the body keeps
+# its size: k comes from the unscaled radius).
+HEAD_SCALE = float(os.environ.get("SOLOHERO_HEAD_SCALE", "0.75"))
+LEG_SCALE = float(os.environ.get("SOLOHERO_LEG_SCALE", "1.3"))
+# Heroes and job looks: a bigger body under the same head so the job armour reads (D-168).
+BODY_SCALE = float(os.environ.get("SOLOHERO_BODY_SCALE", "1.25"))
+
+
 def build_humanoid(look):
     R = look["R"]
-    k = look.get("k", R / 13.0)
+    k = look.get("k", R / 13.0) * look.get("body_scale", BODY_SCALE if look.get("folder") == "Hero" else 1.0)
+    R *= look.get("head_scale", HEAD_SCALE)
     rig = Rig()
     rig.k, rig.R = k, R
     root = empty("root", rot=(0, 0, rad(BODY_YAW)))
     rig.fall = empty("fall", root)
     rig.hip = empty("hip", rig.fall)
-    rig.hip_z = 6.0 * k
+    rig.hip_z = 6.0 * k * LEG_SCALE
     cloth, legs = look["cloth"], look["legs"]
     skin = look["skin"]
     bones = look["body"] == "bones"
@@ -600,7 +645,10 @@ def build_humanoid(look):
         cone(cloth, rig.hip, (0, 0, -rig.hip_z * 0.5 + 2.2 * k), 7.2 * k, 4.6 * k, rig.hip_z + 4.4 * k)
     if look.get("cape"):
         rig.cape = empty("cape", rig.hip, (-2.6 * k, 0, 8.4 * k))
-        ellip(look.get("cape_mat", "cape"), rig.cape, (-0.6 * k, 0, -4.6 * k), (1.0 * k, 4.6 * k, 5.6 * k))
+        cl = look.get("cape_len", 1.0)
+        ellip(look.get("cape_mat", "cape"), rig.cape, (-0.6 * k, 0, -4.6 * k * cl), (1.0 * k, 4.6 * k * (0.6 + 0.4 * cl), 5.6 * k * cl))
+        if look.get("cape_trim"):
+            ellip(look["cape_trim"], rig.cape, (-0.75 * k, 0, -4.6 * k * cl - 4.9 * k * cl), (1.05 * k, 3.6 * k, 0.9 * k))
 
     # Legs: thigh + shin from the hip, a boot kept level.
     rig.legs = {}
@@ -635,8 +683,8 @@ def build_humanoid(look):
     ellip(skin, rig.head, hc, head_r, line_id=head_id)
     face = Face(rig.head, hc, head_r, head_id)
     kind = look["head"]
-    if kind in ("helmet", "hood"):
-        shell = look.get("helm", "helm") if kind == "helmet" else look["hood"]
+    if kind in ("helmet", "hood", "hair"):
+        shell = look.get("helm", "helm") if kind == "helmet" else look.get("hair_mat", "hair") if kind == "hair" else look["hood"]
         ellip(shell, rig.head, (hc[0] - 0.06 * R, 0, hc[2] + 0.06 * R), (1.1 * R, 1.08 * R, 1.06 * R))
         fc = (hc[0] + 0.3 * R, 0, hc[2] - 0.12 * R)
         fr = (0.9 * R, 0.92 * R, 0.86 * R)
@@ -651,6 +699,30 @@ def build_humanoid(look):
                           (0.5 * R, 0.1 * R, 0.24 * R), (sgn * rad(-25), rad(-35), 0))
         if look.get("hair"):
             ellip("hair", rig.head, (fc[0] + 0.25 * R, 0, fc[2] + 0.5 * R), (0.32 * R, 0.55 * R, 0.16 * R), (0, rad(-25), 0), line_id=face_id)
+        if kind == "hair":
+            # Spiky tufts on the crown and the back (a plain adventurer's head).
+            for ax, ay, az, tilt in ((-0.25, 0.0, 1.0, -30), (-0.65, 0.25, 0.8, -60), (-0.65, -0.25, 0.8, -60), (0.15, 0.2, 1.0, -5)):
+                cone(look.get("hair_mat", "hair"), rig.head, (hc[0] + ax * R, ay * R, hc[2] + az * R), 0.3 * R, 0.0, 0.55 * R, (0, rad(tilt), 0))
+        if look.get("horns"):
+            hm, hs = look["horns"]
+            for sgn in (-1, 1):
+                horn = empty("horn", rig.head, (hc[0] - 0.05 * R, sgn * 0.8 * R, hc[2] + 0.55 * R), (sgn * rad(-38), rad(-10), 0))
+                cone(hm, horn, (0, 0, 0.45 * R * hs), 0.26 * R * hs, 0.02 * R, 0.95 * R * hs)
+        if look.get("crown"):
+            cm = look["crown"]
+            torus(cm, rig.head, (hc[0] - 0.06 * R, 0, hc[2] + 0.78 * R), 0.78 * R, 0.1 * R)
+            for i in range(5):
+                a = math.tau * i / 5 + 0.3
+                cone(cm, rig.head, (hc[0] - 0.06 * R + 0.7 * R * math.cos(a), 0.7 * R * math.sin(a), hc[2] + 0.98 * R),
+                     0.13 * R, 0.0, 0.42 * R)
+            ellip(look.get("gem", "red"), rig.head, (hc[0] + 0.7 * R, 0, hc[2] + 0.8 * R), (0.1 * R, 0.16 * R, 0.16 * R))
+        if look.get("halo"):
+            torus(look["halo"], rig.head, (hc[0] - 0.15 * R, 0, hc[2] + 1.55 * R), 0.62 * R, 0.08 * R, (0, rad(-12), 0))
+        if look.get("crest"):
+            # A feather crest on a hood or helmet.
+            for i, (dz, ang) in enumerate(((0.95, -35), (0.85, -55))):
+                ellip(look["crest"], rig.head, (hc[0] - 0.45 * R - 0.15 * i * R, 0.15 * R * (1 - 2 * i), hc[2] + dz * R),
+                      (0.8 * R, 0.16 * R, 0.3 * R), (0, rad(ang), 0))
         if kind == "hood":
             cone(shell, rig.head, (hc[0] - 0.75 * R, 0, hc[2] + 0.55 * R), 0.45 * R, 0.0, 0.9 * R, (0, rad(-60), 0))
     elif kind == "goblin":
@@ -673,8 +745,17 @@ def build_humanoid(look):
         brim_z = hc[2] + 0.7 * R
         cyl(look["hat"], rig.head, (hc[0] - 0.05 * R, 0, brim_z), 1.55 * R, 0.14 * R, (0, rad(-8), 0))
         tip = empty("hat_tip", rig.head, (hc[0] - 0.1 * R, 0, brim_z), (0, rad(-18), 0))
-        cone(look["hat"], tip, (0, 0, 0.85 * R), 0.95 * R, 0.08 * R, 1.7 * R)
-        ellip("gold", rig.head, (hc[0] + 0.85 * R, 0, brim_z + 0.3 * R), (0.12 * R, 0.2 * R, 0.2 * R))
+        tall = look.get("hat_tall", 1.0)
+        cone(look["hat"], tip, (0, 0, 0.85 * R * tall), 0.95 * R, 0.08 * R, 1.7 * R * tall)
+        if look.get("hat_band"):
+            torus(look["hat_band"], tip, (0, 0, 0.18 * R), 0.86 * R, 0.13 * R)
+            ellip(look.get("gem", "gold"), tip, (0.9 * R, 0, 0.22 * R), (0.12 * R, 0.24 * R, 0.24 * R))
+        else:
+            ellip("gold", rig.head, (hc[0] + 0.85 * R, 0, brim_z + 0.3 * R), (0.12 * R, 0.2 * R, 0.2 * R))
+        if look.get("crown"):
+            for i in range(4):
+                a = math.tau * i / 4 + 0.4
+                cone(look["crown"], tip, (0.62 * R * math.cos(a), 0.62 * R * math.sin(a), 0.5 * R), 0.12 * R, 0.0, 0.4 * R)
 
     rig.eyes = Eyes(face, look["eyes"], R, glow=look.get("glow"), el=look.get("eye_el", -10.0), w=0.17, h=0.27)
     face.decal("blush", -44, -24, (0.04 * R, 0.17 * R, 0.09 * R))
@@ -695,7 +776,8 @@ def build_humanoid(look):
             # D-108: a longer, broader blade and guard so the sword reads at game scale.
             cyl("leather", wp, (0, 0, 0), 0.85 * k, 3.4 * k, (0, rad(90), 0))
             box("gold", wp, (2.0 * k, 0, 0), (1.1 * k, 1.4 * k, 5.0 * k))
-            box(look.get("blade", "steel"), wp, (8.9 * k, 0, 0), (12.8 * k, 0.7 * k, 3.1 * k), taper=0.35)
+            bl = look.get("blade_len", 1.0)
+            box(look.get("blade", "steel"), wp, (2.5 * k + 6.4 * k * bl, 0, 0), (12.8 * k * bl, 0.7 * k, 3.1 * k * (0.85 + 0.15 * bl)), taper=0.35)
         elif w == "club":
             cone("wood", wp, (4.2 * k, 0, 0), 1.0 * k, 2.4 * k, 10.0 * k, (0, rad(90), 0))
         elif w == "katana":
@@ -703,13 +785,13 @@ def build_humanoid(look):
             cyl("gold", wp, (2.2 * k, 0, 0), 1.3 * k, 0.4 * k, (0, rad(90), 0))
             box("steel", wp, (9.4 * k, 0, 0.3 * k), (13.5 * k, 0.5 * k, 1.6 * k), (0, rad(-3), 0), taper=0.3)
         else:
-            cyl("wood", wp, (3.5 * k, 0, 0), 0.75 * k, 24.0 * k, (0, rad(90), 0))
+            cyl(look.get("staff_mat", "wood"), wp, (3.5 * k, 0, 0), 0.75 * k, 24.0 * k, (0, rad(90), 0))
             rig.orb = ellip(look["orb"], wp, (17.0 * k, 0, 0), (3.1 * k, 3.1 * k, 3.1 * k))
             torus("gold", wp, (14.8 * k, 0, 0), 1.5 * k, 0.45 * k, (0, rad(90), 0))
     if w == "bow":
         bow = empty("bow", hand_b)
         pts = [(1.0 * k + 3.8 * k * math.cos(rad(a)), 0, 10.5 * k * math.sin(rad(a))) for a in range(-90, 91, 10)]
-        tube("wood", bow, pts, 0.9 * k)
+        tube(look.get("bow_mat", "wood"), bow, pts, 0.9 * k)
         tube("white", bow, [(1.0 * k, 0, -10.5 * k), (1.0 * k, 0, 10.5 * k)], 0.22 * k)
         rig.arrow = empty("arrow", bow)
         tube("wood", rig.arrow, [(-10.0 * k, 0, 0), (5.0 * k, 0, 0)], 0.4 * k)
@@ -717,11 +799,56 @@ def build_humanoid(look):
         rig.bow = bow
     if look.get("shield"):
         sh = empty("shield", hand_b)
-        cyl(look.get("shield_mat", "shield"), sh, (0, -1.2 * k, 0), 4.6 * k, 1.0 * k, (rad(90), 0, 0))
-        torus("gold", sh, (0, -1.8 * k, 0), 4.6 * k, 0.55 * k, (rad(90), 0, 0))
-        ellip("gold", sh, (0, -2.0 * k, 0), (1.2 * k, 0.6 * k, 1.2 * k))
+        sr = look.get("shield_r", 1.0)
+        cyl(look.get("shield_mat", "shield"), sh, (0, -1.2 * k, 0), 4.6 * k * sr, 1.0 * k, (rad(90), 0, 0))
+        torus(look.get("shield_rim", "gold"), sh, (0, -1.8 * k, 0), 4.6 * k * sr, 0.55 * k, (rad(90), 0, 0))
+        ellip(look.get("gem", "gold") if sr > 1.0 else "gold", sh, (0, -2.0 * k, 0), (1.2 * k * sr, 0.6 * k, 1.2 * k * sr))
         rig.shield = sh
+    build_gear(rig, look, k)
     return rig
+
+
+def build_gear(rig, look, k):
+    """D-168 job tiers: armour pieces that make each advancement look like an upgrade, not a recolour."""
+    hip = rig.hip
+    if look.get("plate"):
+        # Breastplate over the tunic, with a trim at the neckline and the hem and a gem in the middle.
+        ellip(look["plate"], hip, (0.9 * k, 0, 5.2 * k), (5.0 * k, 5.3 * k, 3.8 * k))
+        if look.get("plate_trim"):
+            ellip(look["plate_trim"], hip, (1.2 * k, 0, 8.3 * k), (4.4 * k, 4.7 * k, 0.8 * k))
+            ellip(look["plate_trim"], hip, (1.6 * k, 0, 2.1 * k), (4.6 * k, 5.0 * k, 0.7 * k))
+        if look.get("gem"):
+            ellip(look["gem"], hip, (5.7 * k, 0, 5.6 * k), (0.8 * k, 1.3 * k, 1.3 * k))
+    if look.get("strap"):
+        # Leather chest strap (the first warrior tier): a diagonal band.
+        ellip(look["strap"], hip, (0.6 * k, 0, 5.2 * k), (5.6 * k, 5.2 * k, 0.9 * k), (rad(38), 0, 0))
+    if look.get("pauldron"):
+        pm, ps = look["pauldron"]
+        for y, x in ((-5.0 * k, 0.4 * k), (5.0 * k, -0.4 * k)):
+            ellip(pm, hip, (x, y * (1.0 + 0.06 * ps), 8.4 * k), (3.7 * k * ps, 3.3 * k * ps, 2.6 * k * ps))
+            if look.get("pauldron_trim"):
+                ellip(look["pauldron_trim"], hip, (x, y * (1.0 + 0.06 * ps), 6.3 * k + 0.1 * k * ps), (3.8 * k * ps, 3.4 * k * ps, 0.7 * k))
+            if look.get("spikes"):
+                for dx in (-1.2, 1.2):
+                    cone(look["spikes"], hip, (x + dx * k * ps, y * (1.0 + 0.06 * ps), 10.4 * k + 0.6 * k * ps), 0.8 * k * ps, 0.0, 3.0 * k * ps)
+    if look.get("collar"):
+        ellip(look["collar"], hip, (0.3 * k, 0, 8.5 * k), (5.6 * k, 6.4 * k, 1.9 * k))
+    if look.get("scarf"):
+        ellip(look["scarf"], hip, (0.5 * k, 0, 8.6 * k), (5.3 * k, 6.0 * k, 1.6 * k))
+        ellip(look["scarf"], hip, (-6.0 * k, -2.0 * k, 7.6 * k), (4.4 * k, 1.6 * k, 1.3 * k), (rad(-10), rad(18), rad(-15)))
+    if look.get("quiver"):
+        qm = look["quiver"]
+        q = empty("quiver", hip, (-6.4 * k, 2.0 * k, 5.8 * k), (0, rad(-32), 0))
+        cyl(qm, q, (0, 0, 3.0 * k), 2.0 * k, 10.0 * k)
+        torus(look.get("quiver_trim", "gold"), q, (0, 0, 7.6 * k), 2.05 * k, 0.5 * k)
+        for i, dy in enumerate((-0.9, 0.0, 0.9)):
+            cone(look.get("fletch", "red"), q, (0.3 * k * i, dy * k, 9.8 * k), 0.9 * k, 0.0, 2.6 * k)
+    if look.get("belt_gem"):
+        ellip(look["belt_gem"], hip, (5.4 * k, 0, 1.8 * k), (0.7 * k, 1.1 * k, 1.0 * k))
+    for i, om in enumerate(look.get("orbs", ())):
+        # Floating crystals behind the shoulders (archmages).
+        x, y, z = ((-5.0, 6.5, 14.0), (-1.5, -8.5, 11.0))[i % 2]
+        ellip(om, hip, (x * k, y * k, z * k), (1.9 * k, 1.9 * k, 2.7 * k))
 
 
 def set_seg(chain, a1, a2, keep_level=None):
@@ -1111,7 +1238,7 @@ STAND = dict(fa=(-55.0, -15.0), ba=(-115.0, -95.0), fl=(-82.0, -92.0), bl=(-98.0
 
 # Frames per clip (D-096): twice the old counts, played at 20 fps so clip lengths stay the same. Loops are generated
 # at this count; one-shot clips are keyframes resampled to it.
-FRAMES = {"idle": 12, "run": 12, "attack": 12, "hit": 6, "dead": 12}
+FRAMES = {"idle": 12, "run": 12, "attack": 12, "hit": 6, "dead": 12, "skill": 12}
 N = 12
 BLINK = (8, 9)
 
@@ -1198,7 +1325,40 @@ def hero_clips():
                          fa=(-30.0 - i * 10, 10.0 - i * 18), ba=(-140.0, -120.0), fl=(-72.0 + i * 8, -90.0 + i * 6),
                          bl=(-108.0 - i * 6, -92.0 - i * 9), weapon=60.0 - i * 20, eyes="closed",
                          mouth="open" if i < 3 else "smile", fall=f, flash=i == 0, cape=-min(i, 3)))
-    return {"idle": idle, "run": run, "attack": attack, "hit": hit, "dead": dead}
+    return {"idle": idle, "run": run, "attack": attack, "hit": hit, "dead": dead, "skill": skill_clip("sword", 40.0, hero=True)}
+
+
+def skill_clip(weapon, rest, hero=False):
+    """Skill cast (HD): a motion of its own so skills do not look like the basic attack. Arms stay in front of the big
+    head (raised overhead they hide behind it)."""
+    legs = dict(fl=(-70.0, -98.0), bl=(-110.0, -92.0))
+    if weapon in ("sword", "katana", "club"):
+        # Dash-in horizontal cut, then a rising slash with a hop.
+        keys = [pose(lean=-8, bx=-2, squash=2, fa=(-150.0, -160.0), ba=(-125.0, -110.0), weapon=-160.0, mouth="grit", **legs),
+                pose(lean=18, bx=5, fa=(-20.0, -5.0), ba=(-150.0, -140.0), weapon=-5.0, mouth="open", smear=(-150.0, 0.0), **legs),
+                pose(lean=16, bx=6, fa=(-25.0, -15.0), ba=(-150.0, -140.0), weapon=-10.0, mouth="open", **legs),
+                pose(lean=4, bx=6, by=2, fa=(20.0, 50.0), ba=(-140.0, -125.0), weapon=60.0, mouth="open", smear=(-10.0, 65.0),
+                     fl=(-60.0, -105.0), bl=(-120.0, -110.0)),
+                pose(lean=0, bx=5, by=3, fa=(25.0, 55.0), ba=(-135.0, -120.0), weapon=65.0, mouth="smile",
+                     fl=(-60.0, -105.0), bl=(-120.0, -110.0)),
+                pose(lean=6, bx=3, squash=1, fa=(-40.0, -20.0), weapon=20.0, **legs),
+                pose(lean=-2, weapon=rest, **STAND)]
+    elif weapon == "staff":
+        # Float up holding the staff out in front while the orb gathers light, then thrust it forward.
+        keys = [pose(lean=-6, fa=(-20.0, 15.0), weapon=70.0, glow=0.8, **legs),
+                pose(lean=-4, by=2, fa=(-5.0, 30.0), weapon=55.0, glow=1.8, mouth="open", fl=(-70.0, -110.0), bl=(-110.0, -115.0)),
+                pose(lean=-2, by=3, fa=(0.0, 35.0), weapon=50.0, glow=2.6, mouth="open", fl=(-70.0, -110.0), bl=(-110.0, -115.0)),
+                pose(lean=16, bx=4, by=1, fa=(-5.0, -10.0), weapon=10.0, glow=3.2, mouth="open", **legs),
+                pose(lean=12, bx=4, fa=(-10.0, -15.0), weapon=5.0, glow=1.8, **legs),
+                pose(lean=-2, weapon=rest, **STAND)]
+    else:
+        # Three quick shots (the basic attack is one slow draw).
+        bow = dict(ba=(-5.0, 2.0), fa=(-160.0, -170.0))
+        keys = [pose(lean=-6, draw=1.0, mouth="grit", **bow, **legs), pose(lean=4, bx=1, draw=0.0, mouth="open", **bow, **legs),
+                pose(lean=-4, draw=1.0, **bow, **legs), pose(lean=6, bx=2, draw=0.0, mouth="open", **bow, **legs),
+                pose(lean=-2, by=1, draw=1.0, mouth="grit", **bow, **legs), pose(lean=10, bx=3, draw=0.0, mouth="open", **bow, **legs),
+                pose(lean=-2, **STAND)]
+    return keys
 
 
 def cast_clips(look):
@@ -1232,7 +1392,8 @@ def cast_clips(look):
         return {"idle": idle, "run": run, "attack": attack, "hit": hit, "dead": dead}
 
     weapon = look["weapon"]
-    rest = {"club": 55.0, "sword": 40.0, "katana": 35.0, "staff": 80.0, "bow": 0.0, "none": 0.0}[weapon]
+    # D-168: the staff leans forward a little so the orb sits beside the (smaller) head, not over the face.
+    rest = {"club": 55.0, "sword": 40.0, "katana": 35.0, "staff": 64.0, "bow": 0.0, "none": 0.0}[weapon]
     idle = []
     for i in range(N):
         s = (math.sin(i / N * math.tau) + 1.0) / 2.0
@@ -1276,7 +1437,10 @@ def cast_clips(look):
                  weapon=-95.0, eyes="closed", fall=85.0),
             pose(lean=-8, bx=-6, by=-1, fa=(-105.0, -125.0), ba=(-150.0, -150.0), fl=(-75.0, -85.0), bl=(-100.0, -100.0),
                  weapon=-100.0, eyes="closed", fall=88.0)]
-    return {"idle": idle, "run": run, "attack": attack, "hit": hit, "dead": dead}
+    clips = {"idle": idle, "run": run, "attack": attack, "hit": hit, "dead": dead}
+    if look.get("job"):
+        clips["skill"] = skill_clip(weapon, rest)
+    return clips
 
 
 # ---------------------------------------------------------------- render
@@ -1333,6 +1497,12 @@ def main():
         rig, clips, poser = build_humanoid(LOOK), cast_clips(LOOK), pose_humanoid
     if kind != "pet":
         clips = finish_clips(clips)
+    # Quick looks: SOLOHERO_CLIPS=idle,skill renders only those clips, SOLOHERO_FRAMES=1 only their first frames.
+    only = [c for c in os.environ.get("SOLOHERO_CLIPS", "").split(",") if c]
+    if only:
+        clips = {c: v for c, v in clips.items() if c in only}
+    if os.environ.get("SOLOHERO_FRAMES"):
+        clips = {c: v[:int(os.environ["SOLOHERO_FRAMES"])] for c, v in clips.items()}
     out = os.path.join(OUT_ROOT, ENTITY)
     os.makedirs(out, exist_ok=True)
     meta = {"entity": ENTITY, "name": LOOK["name"], "folder": LOOK["folder"], "frame": [W, H], "scale": SCALE,

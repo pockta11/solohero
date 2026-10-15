@@ -8,6 +8,7 @@ Every file under `Assets/SoloHero/Audio/` is listed here. Retrieved 2026-09-27, 
 | `Bgm/bgm_ch4.ogg`, `bgm_ch5.ogg`, `bgm_boss.ogg` (Stage 1, Stage 2, Boss Fight) | Chiptune Adventures - https://opengameart.org/content/4-chiptunes-adventure | Juhani Junkala | CC0 1.0 | Not required |
 | `Sfx/sfx_*.wav` (18 files, renamed) | The Essential Retro Video Game Sound Effects Collection [512 sounds] - https://opengameart.org/content/512-sound-effects-8-bit-style | Juhani Junkala | CC0 1.0 | Not required |
 | `Sfx/sfx_skill_{fire,thunder,ice,heal,magic}.wav` | Synthesized for this project (`tools/art/sfxgen.py`, D-080) | SoloHero | Project-owned | - |
+| `Sfx/sfx_collect.wav`, `Sfx/sfx_fanfare.wav` | Synthesized for this project (`tools/art/sfxgen.py`, D-171) | SoloHero | Project-owned | - |
 
 Source file for each effect: hit = Weapons/Melee/sfx_wpn_sword1, crit = Impacts/sfx_sounds_impact10, hero_hurt = Simple Damage
 Sounds/sfx_damage_hit3, enemy_death = Explosions/Shortest/sfx_exp_shortest_soft2, boss_intro = Explosions/Long/sfx_exp_long1,
