@@ -42,7 +42,8 @@ namespace SoloHero.Tests.EditMode
         {
             Assert.IsNotNull(PickupCatalog.Find("pickup_pet_phoenix"));
             Assert.IsNull(PickupCatalog.Find("pickup_pet_slime"), "common pets have no banner");
-            Assert.IsNull(PickupCatalog.Find("pickup_pet_azure"), "the only Ancient pet has nothing to win over");
+            Assert.IsNotNull(PickupCatalog.Find("pickup_pet_azure"), "D-176: the star whale shares the Ancient grade");
+            Assert.IsNotNull(PickupCatalog.Find("pickup_pet_starwhale"));
             Assert.IsNull(PickupCatalog.Find("launch"));
             PickupBanner skill = PickupCatalog.Find("pickup_skill_1");
             Assert.IsNotNull(skill);

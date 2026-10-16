@@ -46,6 +46,9 @@ namespace SoloHero.Core.Save
         public int petPityCount;
         public int petPullCount;
 
+        /// <summary>D-177: pet awakening stars index-aligned with PetCatalog (missing = 0).</summary>
+        public List<int> petStars = new List<int>();
+
         public int upgradeHp;
         public int upgradeAtk;
         public int upgradeDef;

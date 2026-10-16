@@ -66,6 +66,18 @@ namespace SoloHero.Core
             }
         }
 
+        /// <summary>D-177: what <paramref name="stars"/> awakening stars multiply a pet's attack by.</summary>
+        public static double PetAwakenScale(BalanceValues c, int stars) =>
+            1d + c.PET_AWAKEN_ATK_GAIN / 100d * (stars < 0 ? 0 : stars);
+
+        /// <summary>D-177: what <paramref name="stars"/> awakening stars multiply a pet's owned effect by.</summary>
+        public static double PetAwakenOwnedMult(BalanceValues c, int stars) =>
+            1d + c.PET_AWAKEN_OWNED_GAIN / 100d * (stars < 0 ? 0 : stars);
+
+        /// <summary>D-177: awakening stones for the star after <paramref name="stars"/> of a pet of <paramref name="grade"/>.</summary>
+        public static int PetAwakenCost(BalanceValues c, GearGrade grade, int stars) =>
+            (int)Math.Round(c.PET_AWAKEN_COST_BASE * ((stars < 0 ? 0 : stars) + 1) * Math.Pow(c.PET_AWAKEN_GRADE_MULT, (int)grade));
+
         /// <summary>D-100 gold dungeon: gold per kill at stage g.</summary>
         public static double DungeonGoldPerKill(BalanceValues c, int g) =>
             Math.Floor(StageGold(c, g) * c.DUNGEON_GOLD_PER_KILL);

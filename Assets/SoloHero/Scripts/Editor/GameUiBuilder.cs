@@ -3057,26 +3057,28 @@ namespace SoloHero.Editor
             Text summary = InkText(TopBand("Summary", box, 506f, 48f, 36f, 36f), 30, TextAnchor.MiddleCenter, UiPalette.InkTitle);
             summary.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-            const float cellSize = 196f;
-            const float rowStep = 214f;
+            // D-176: twenty pets in five columns.
+            const int columns = 5;
+            const float cellSize = 172f;
+            const float rowStep = 190f;
             int count = SoloHero.Core.Pets.PetCatalog.Count;
-            RectTransform grid = TopBand("Grid", box, 562f, rowStep * ((count + 3) / 4), 36f, 36f);
+            RectTransform grid = TopBand("Grid", box, 562f, rowStep * ((count + columns - 1) / columns), 36f, 36f);
             var frames = new Image[count];
             var icons = new Image[count];
             var levels = new Text[count];
             var tags = new GameObject[count];
             for (int i = 0; i < count; i++)
             {
-                int col = i % 4;
-                int row = i / 4;
-                RectTransform cell = Box("Cell" + i, grid, new Vector2(0.125f + col * 0.25f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -row * rowStep), new Vector2(cellSize, cellSize));
+                int col = i % columns;
+                int row = i / columns;
+                RectTransform cell = Box("Cell" + i, grid, new Vector2((col + 0.5f) / columns, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -row * rowStep), new Vector2(cellSize, cellSize));
                 frames[i] = cell.gameObject.AddComponent<Image>();
                 UiSkin.Sliced(frames[i], UiSkin.SlotEmpty);
                 // Ink-cel pet frames are trimmed to the creature (D-168): fit them inside the cell above the level badge.
-                icons[i] = Plain(Box("Icon", cell, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 16f), new Vector2(172f, 150f)), null);
+                icons[i] = Plain(Box("Icon", cell, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 14f), new Vector2(150f, 130f)), null);
                 icons[i].preserveAspect = true;
                 icons[i].raycastTarget = false;
-                RectTransform badge = Box("Level", cell, new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(130f, 36f));
+                RectTransform badge = Box("Level", cell, new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(124f, 36f));
                 UiSkin.Sliced(Plain(badge, null), UiSkin.LevelBadge);
                 levels[i] = AddText(Inset("Label", badge, 2f, 2f, 2f, 0f), 23, TextAnchor.MiddleCenter);
                 levels[i].horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -3129,6 +3131,9 @@ namespace SoloHero.Editor
             so.FindProperty("_equipLabel").objectReferenceValue = equipLabel;
             so.FindProperty("_levelButton").objectReferenceValue = levelGuard;
             so.FindProperty("_levelLabel").objectReferenceValue = levelLabel;
+            so.FindProperty("_levelIcon").objectReferenceValue = level.transform.Find("Icon").GetComponent<Image>();
+            so.FindProperty("_goldIcon").objectReferenceValue = UiSkin.Icon("coin");
+            so.FindProperty("_awakenIcon").objectReferenceValue = UiSkin.Icon("awaken");
             so.ApplyModifiedPropertiesWithoutUndo();
             popup.gameObject.SetActive(false);
             return presenter;

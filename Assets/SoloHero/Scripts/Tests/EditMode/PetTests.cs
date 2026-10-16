@@ -52,10 +52,11 @@ namespace SoloHero.Tests.EditMode
             new PetSummonService(b, GearTableValues.FromBalance(b), rng);
 
         [Test]
-        public void Catalog_SixteenPets_FewerAtEachHigherGrade_KeepsTheD102Indices()
+        public void Catalog_TwentyPets_FewerAtEachHigherGrade_KeepsTheD102Indices()
         {
-            Assert.AreEqual(16, PetCatalog.Count);
-            int[] perGrade = { 3, 3, 3, 3, 2, 1, 1 };
+            Assert.AreEqual(20, PetCatalog.Count);
+            // D-176: one more at each of the top four grades.
+            int[] perGrade = { 3, 3, 3, 4, 3, 2, 2 };
             for (int g = 0; g < GearGrades.Count; g++)
                 Assert.AreEqual(perGrade[g], PetCatalog.OfGrade((GearGrade)g).Length, ((GearGrade)g).ToString());
 
@@ -247,6 +248,59 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(GearGrade.Common, item.Grade);
             Assert.IsFalse(item.AutoEquipped);
             Assert.AreEqual("owl", save.companionEquipped);
+        }
+
+        [Test]
+        public void Awaken_MaxLevelPet_CostsStones_RaisesAttackAndOwnedEffect()
+        {
+            var b = new BalanceValues();
+            SaveDataV2 save = Unlocked(b);
+            var pets = new PetService(save, b);
+            int slime = PetCatalog.IndexOf("slime");
+            save.awakenStones = 100000;
+            Assert.AreEqual(FailReason.NeedMaxLevel, pets.TryAwaken(slime).Reason);
+            Assert.AreEqual(FailReason.Locked, pets.TryAwaken(PetCatalog.IndexOf("dragon")).Reason);
+
+            while (save.companionLevels.Count <= slime) save.companionLevels.Add(1);
+            save.companionLevels[slime] = b.PET_MAX_LEVEL;
+            double scale0 = PetService.AttackScale(b, save, slime);
+            double owned0 = PetService.OwnedAtkBonus(b, save);
+            int cost = pets.AwakenCost(slime);
+            Assert.AreEqual(Formulas.PetAwakenCost(b, GearGrade.Common, 0), cost);
+            save.awakenStones = cost - 1;
+            Assert.AreEqual(FailReason.NotEnoughAwakenStones, pets.TryAwaken(slime).Reason);
+            save.awakenStones = cost;
+            Assert.IsTrue(pets.TryAwaken(slime).Ok);
+            Assert.AreEqual(0, save.awakenStones);
+            Assert.AreEqual(1, pets.Stars(slime));
+            Assert.AreEqual(scale0 * (1d + b.PET_AWAKEN_ATK_GAIN / 100d), PetService.AttackScale(b, save, slime), 1e-12);
+            Assert.AreEqual(owned0 * (1d + b.PET_AWAKEN_OWNED_GAIN / 100d), PetService.OwnedAtkBonus(b, save), 1e-12);
+
+            // Each star costs more than the last, and the count caps.
+            save.awakenStones = 1000000;
+            int previous = cost;
+            for (int s = 1; s < b.PET_AWAKEN_MAX_STARS; s++)
+            {
+                int next = pets.AwakenCost(slime);
+                Assert.Greater(next, previous);
+                previous = next;
+                Assert.IsTrue(pets.TryAwaken(slime).Ok);
+            }
+
+            Assert.AreEqual(b.PET_AWAKEN_MAX_STARS, pets.Stars(slime));
+            Assert.AreEqual(0, pets.AwakenCost(slime));
+            Assert.AreEqual(FailReason.MaxLevel, pets.TryAwaken(slime).Reason);
+        }
+
+        [Test]
+        public void Awaken_AncientPet_FiveStarsCostLessThanASeasonOfMaterialDungeons()
+        {
+            var b = new BalanceValues();
+            int total = 0;
+            for (int s = 0; s < b.PET_AWAKEN_MAX_STARS; s++) total += Formulas.PetAwakenCost(b, GearGrade.Ancient, s);
+            // Two material runs a day yield about 40 stones; the top pet's five stars stay under 90 days of that.
+            Assert.Less(total, 90 * 40);
+            Assert.Greater(total, Formulas.SkillAwakenCost(b, Grade.Legendary, 0) * 5, "the top pet costs more than a legendary skill's first stars");
         }
 
         [Test]

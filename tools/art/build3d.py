@@ -21,7 +21,7 @@ from pixelize import ART, Entity
 
 HD_RENDER_SCALE = "6"   # hdize halves it: 3 texels per art pixel (importer PPU 96)
 
-ENTITIES = ["knight", "knight1", "knight2", "knight4", "knight5", "knight6", "jobmage", "jobpyro", "jobcryo", "jobarcher", "jobranger", "jobsniper", "jobarchpyro", "jobarchcryo", "jobbowmaster", "jobmarksman", "petslime", "petwisp", "petowl", "petdragon", "petchick", "petbunny", "petfrog", "petbat", "petpiglet", "petfox", "petpenguin", "petcat", "petturtle", "petphoenix", "petgumiho", "petazure", "goblin", "goblinr", "skeleton", "skeletonv", "mushroom", "mushroomb", "flyeye", "flyeyer",
+ENTITIES = ["knight", "knight1", "knight2", "knight4", "knight5", "knight6", "jobmage", "jobpyro", "jobcryo", "jobarcher", "jobranger", "jobsniper", "jobarchpyro", "jobarchcryo", "jobbowmaster", "jobmarksman", "petslime", "petwisp", "petowl", "petdragon", "petchick", "petbunny", "petfrog", "petbat", "petpiglet", "petfox", "petpenguin", "petcat", "petturtle", "petphoenix", "petgumiho", "petazure", "petunicorn", "pettiger", "petqilin", "petstarwhale", "goblin", "goblinr", "skeleton", "skeletonv", "mushroom", "mushroomb", "flyeye", "flyeyer",
             "ronin", "necro", "ranger", "shadowmage", "firemage", "golem",
             "sandking", "lavagolem", "swampwitch", "crystalgolem", "demonknight", "goblins", "skeletonr", "mushroomg", "flyeyec"]
 

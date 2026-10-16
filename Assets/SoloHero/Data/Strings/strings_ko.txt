@@ -798,6 +798,14 @@ pet.name.turtle	바다거북
 pet.name.phoenix	불사조
 pet.name.gumiho	구미호
 pet.name.azure	청룡
+pet.name.unicorn	유니콘
+pet.name.tiger	백호
+pet.name.qilin	기린
+pet.name.starwhale	별고래
+pet.stars	★{0}
+pet.awaken_info	★{0}/{1} · 각성석 {2}
+pet.awaken_cost	각성 ★{0}  {1}
+pet.awaken_done	각성 완료
 
 # Equipment effects (D-103)
 equip.owned_line	{0}  보유 {1}종
@@ -929,7 +937,7 @@ raid.shop.skill5	스킬 소환권 5장
 raid.shop.pet5	펫 소환권 5장
 raid.shop.gem300	젬 300개
 toast.not_enough_awaken	각성석이 부족합니다 - 재료 던전에서 얻어요
-toast.need_max_level	최대 레벨(Lv 10)에서 각성할 수 있어요
+toast.need_max_level	최대 레벨에서 각성할 수 있어요
 fx.awaken	각성 ★{0}!
 skill.stars	★{0}
 skill.awaken_info	★{0}/{1} · 각성석 {2}

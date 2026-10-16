@@ -465,6 +465,15 @@ namespace SoloHero.Core.Config
         public double AWAKEN_GRADE_MULT = 2;
         public double AWAKEN_SKILL_GAIN = 20;
         public double AWAKEN_OWNED_GAIN = 10;
+        // D-177 pet awakening (genre): a max-level pet climbs to PET_AWAKEN_MAX_STARS stars for awakening stones (the skills'
+        // material). Star s+1 costs PET_AWAKEN_COST_BASE x (s+1) x PET_AWAKEN_GRADE_MULT^grade (seven grades, so a gentler
+        // multiplier than the skills' 2: an Ancient pet's five stars come to about 2,500 stones); each star adds
+        // PET_AWAKEN_ATK_GAIN % to the pet's attack and PET_AWAKEN_OWNED_GAIN % to its owned effect.
+        public int PET_AWAKEN_MAX_STARS = 5;
+        public double PET_AWAKEN_COST_BASE = 10;
+        public double PET_AWAKEN_GRADE_MULT = 1.6;
+        public double PET_AWAKEN_ATK_GAIN = 20;
+        public double PET_AWAKEN_OWNED_GAIN = 10;
         // D-175 (L-14) weekly raid: RAID_WEEKLY_TICKETS entries a week (Monday 0:00 local), open once stage RAID_UNLOCK_STAGE
         // is cleared. Level L (1..RAID_LEVELS; the next opens when L is beaten) fights the chapter boss of stage
         // RAID_BASE_STAGE + RAID_LEVEL_STEP x (L-1) with RAID_HP_MULT x its boss HP and RAID_ATK_MULT x that stage's enemy

@@ -38,10 +38,10 @@ namespace SoloHero.Core.Pets
     }
 
     /// <summary>
-    /// D-114 pets (the D-102 companions): sixteen creatures on the gear grade ladder, fewer at each higher grade -
-    /// three common, uncommon, rare and epic, two legendary, one mythic, one ancient. Levels and enhance levels are
-    /// saved index-aligned, so entries are only ever appended; the first four are the D-102 companions. Like
-    /// SkillCatalog this table is the content's single source.
+    /// D-114 pets (the D-102 companions): creatures on the gear grade ladder, fewer at each higher grade - three
+    /// common, uncommon and rare, four epic, three legendary, two mythic, two ancient (D-176 added one to each top
+    /// grade). Levels, enhance levels and awakening stars are saved index-aligned, so entries are only ever appended;
+    /// the first four are the D-102 companions. Like SkillCatalog this table is the content's single source.
     /// </summary>
     public static class PetCatalog
     {
@@ -65,6 +65,11 @@ namespace SoloHero.Core.Pets
             new PetDef { Id = "phoenix", Grade = GearGrade.Legendary, AttackMult = 5.0, Interval = 2.8f, DotPercent = 70, DotSeconds = 3f, Range = 4.5, Vfx = "phoenix" },
             new PetDef { Id = "gumiho", Grade = GearGrade.Mythic, AttackMult = 8.0, Interval = 2.6f, DotPercent = 100, DotSeconds = 3f, Range = 5.0, Vfx = "fire", Tint = 0x9AD8FF },
             new PetDef { Id = "azure", Grade = GearGrade.Ancient, AttackMult = 16.0, Interval = 2.8f, StunSeconds = 0.8f, Range = 6.0, Vfx = "bolt", Tint = 0x7FFFE8 },
+            // D-176 pets: one more at each of the top four grades, so every grade from Epic up can run a pickup.
+            new PetDef { Id = "unicorn", Grade = GearGrade.Epic, AttackMult = 3.0, Interval = 1.8f, Range = 4.0, Vfx = "holy", Tint = 0xFFB8F0 },
+            new PetDef { Id = "tiger", Grade = GearGrade.Legendary, AttackMult = 6.5, Interval = 2.6f, StunSeconds = 0.6f, Vfx = "slash", Tint = 0xBFE6FF },
+            new PetDef { Id = "qilin", Grade = GearGrade.Mythic, AttackMult = 8.5, Interval = 2.2f, DotPercent = 40, DotSeconds = 3f, Range = 4.5, Vfx = "holy", Tint = 0xFFE080 },
+            new PetDef { Id = "starwhale", Grade = GearGrade.Ancient, AttackMult = 12.5, Interval = 2.2f, Range = 6.0, Vfx = "wave", Tint = 0x9AB0FF },
         };
 
         private static readonly PetDef[][] ByGrade = BuildByGrade();

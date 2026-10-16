@@ -557,18 +557,23 @@ namespace SoloHero.Core.Balance
             }
         }
 
-        /// <summary>D-174 stars bought by the player model.</summary>
+        /// <summary>D-174 skill stars bought by the player model.</summary>
         public int AwakenStars { get; private set; }
 
+        /// <summary>D-177 pet stars bought by the player model.</summary>
+        public int PetStars { get; private set; }
+
         /// <summary>
-        /// D-174: awakening stones go to the cheapest next star, equipped skills first (genre: the loadout before the
-        /// collection).
+        /// D-174 / D-177: awakening stones go to the cheapest next star of a max-level skill or pet, the loadout
+        /// (equipped skills, the equipped pet) before the collection (genre).
         /// </summary>
         private void Awaken()
         {
-            for (int guard = 0; guard < 100; guard++)
+            int equippedPet = _pets.EquippedIndex;
+            for (int guard = 0; guard < 200; guard++)
             {
-                string best = null;
+                string bestSkill = null;
+                int bestPet = -1;
                 int bestCost = int.MaxValue;
                 for (int i = 0; i < _save.ownedSkills.Count; i++)
                 {
@@ -579,11 +584,35 @@ namespace SoloHero.Core.Balance
                     if (SkillBook.SlotOf(_save, id) < 0) cost *= 3;
                     if (cost >= bestCost) continue;
                     bestCost = cost;
-                    best = id;
+                    bestSkill = id;
                 }
 
-                if (best == null || !_skills.TryAwaken(best).Ok) return;
-                AwakenStars++;
+                for (int i = 0; i < PetCatalog.Count; i++)
+                {
+                    if (!_pets.IsOwned(i) || !_pets.IsMax(i)) continue;
+                    int cost = _pets.AwakenCost(i);
+                    if (cost <= 0) continue;
+                    if (i != equippedPet) cost *= 3;
+                    if (cost >= bestCost) continue;
+                    bestCost = cost;
+                    bestSkill = null;
+                    bestPet = i;
+                }
+
+                if (bestSkill != null)
+                {
+                    if (!_skills.TryAwaken(bestSkill).Ok) return;
+                    AwakenStars++;
+                }
+                else if (bestPet >= 0)
+                {
+                    if (!_pets.TryAwaken(bestPet).Ok) return;
+                    PetStars++;
+                }
+                else
+                {
+                    return;
+                }
             }
         }
 

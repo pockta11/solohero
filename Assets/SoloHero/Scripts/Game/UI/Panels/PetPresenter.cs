@@ -1,5 +1,6 @@
 using System.Globalization;
 using SoloHero.Core;
+using SoloHero.Core.Analytics;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Pets;
@@ -14,8 +15,9 @@ namespace SoloHero.Game.UI.Panels
 {
     /// <summary>
     /// D-114 pet popup (right rail; the D-102 companions): the selected pet on a pedestal with its grade, level, enhance,
-    /// attack and owned effect, equip and level-up buttons, then a 4 x 4 collection grid (unowned pets as silhouettes)
-    /// and a shortcut to the pet summon. Changes refresh the combat loadout.
+    /// attack and owned effect, equip and level-up buttons (D-177: at max level the button awakens the pet for stones),
+    /// then a 5 x 4 collection grid (unowned pets as silhouettes) and a shortcut to the pet summon. Changes refresh the
+    /// combat loadout.
     /// </summary>
     public sealed class PetPresenter : MonoBehaviour
     {
@@ -49,12 +51,16 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text _equipLabel;
         [SerializeField] private TapGuardButton _levelButton;
         [SerializeField] private Text _levelLabel;
+        [SerializeField] private Image _levelIcon;
+        [SerializeField] private Sprite _goldIcon;
+        [SerializeField] private Sprite _awakenIcon;
 
         private PetService _pets;
         private SaveDataV2 _save;
         private BalanceValues _balance;
         private double _shownGold = -1d;
         private int _shownOwned = -1;
+        private int _shownAwaken = -1;
         private int _selected = -1;
 
         public bool IsOpen => _popup != null && _popup.activeSelf;
@@ -107,6 +113,13 @@ namespace SoloHero.Game.UI.Panels
         public void LevelUp()
         {
             if (_pets == null) return;
+            // D-177: a max-level pet's button awakens it instead.
+            if (_pets.IsOwned(_selected) && _pets.IsMax(_selected))
+            {
+                Awaken();
+                return;
+            }
+
             Result result = _pets.TryLevelUp(_selected);
             if (!result.Ok)
             {
@@ -122,6 +135,26 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
+        /// <summary>D-177: one awakening star for stones (genre "pet awakening"): the epic chime and a bigger sparkle.</summary>
+        private void Awaken()
+        {
+            Result result = _pets.TryAwaken(_selected);
+            if (!result.Ok)
+            {
+                _toast?.ShowFailure(result.Reason);
+                return;
+            }
+
+            _session?.RefreshLoadout();
+            int stars = _pets.Stars(_selected);
+            GameAnalytics.Log(AnalyticsEvents.PetAwaken,
+                AnalyticsParam.Of(AnalyticsEvents.PPet, PetCatalog.All[_selected].Id),
+                AnalyticsParam.Of(AnalyticsEvents.PLevel, stars));
+            PanelServices.TryGet<SoloHero.Game.Audio.AudioService>()?.Play(SoloHero.Game.Audio.SfxId.GradeEpic);
+            _rewardFx?.Sparkle(PanelServices.GradeColor(PetCatalog.All[_selected].Grade), Strings.Format("fx.awaken", stars));
+            Refresh();
+        }
+
         /// <summary>The pet summon: closes the popup and opens the summon tab on its pet page.</summary>
         public void OpenSummon()
         {
@@ -134,7 +167,7 @@ namespace SoloHero.Game.UI.Panels
         {
             if (!IsOpen || _save == null) return;
             int owned = _save.petOwned != null ? _save.petOwned.Count : 0;
-            if (_save.gold != _shownGold || owned != _shownOwned) Refresh();
+            if (_save.gold != _shownGold || owned != _shownOwned || _save.awakenStones != _shownAwaken) Refresh();
         }
 
         private void Refresh()
@@ -142,6 +175,7 @@ namespace SoloHero.Game.UI.Panels
             if (_pets == null || _save == null || _balance == null) return;
             _shownGold = _save.gold;
             _shownOwned = _pets.OwnedCount;
+            _shownAwaken = _save.awakenStones;
             if (_selected < 0 || _selected >= PetCatalog.Count) _selected = 0;
             int equipped = _pets.EquippedIndex;
 
@@ -161,8 +195,10 @@ namespace SoloHero.Game.UI.Panels
                 if (i < _cellLevels.Length && _cellLevels[i] != null)
                 {
                     int enhance = _pets.Enhance(i);
+                    int stars = _pets.Stars(i);
+                    // D-177: an awakened pet shows its stars where the level was (it is at max level).
                     _cellLevels[i].text = owned
-                        ? Strings.Format("pet.cell", _pets.Level(i)) + (enhance > 0 ? " +" + enhance : "")
+                        ? (stars > 0 ? Strings.Format("pet.stars", stars) : Strings.Format("pet.cell", _pets.Level(i))) + (enhance > 0 ? " +" + enhance : "")
                         : "?";
                 }
 
@@ -194,6 +230,7 @@ namespace SoloHero.Game.UI.Panels
             bool owned = _pets.IsOwned(index);
             int level = _pets.Level(index);
             int enhance = _pets.Enhance(index);
+            int stars = _pets.Stars(index);
             if (_detailArt != null && index < _arts.Length) _detailArt.SetArt(_arts[index]);
             if (_detailArt != null) _detailArt.GetComponent<Image>().color = owned ? Color.white : UiPalette.Silhouette;
             if (_detailGradeChip != null) _detailGradeChip.color = PanelServices.GradeColor(def.Grade);
@@ -201,7 +238,9 @@ namespace SoloHero.Game.UI.Panels
             if (_detailName != null)
             {
                 string name = Strings.Get(def.NameKey);
-                _detailName.text = owned ? Strings.Format("pet.row", name, level) + (enhance > 0 ? "  +" + enhance : "") : name;
+                _detailName.text = owned
+                    ? Strings.Format("pet.row", name, level) + (stars > 0 ? " " + Strings.Format("pet.stars", stars) : "") + (enhance > 0 ? "  +" + enhance : "")
+                    : name;
                 _detailName.color = UiPalette.GradeInk(def.Grade);
             }
 
@@ -212,19 +251,34 @@ namespace SoloHero.Game.UI.Panels
                     def.Interval.ToString("0.#", CultureInfo.InvariantCulture));
                 string effect = def.DotPercent > 0d ? Strings.Get(def.Vfx == "poison" ? "pet.effect_poison" : "pet.effect_burn")
                     : def.StunSeconds > 0f ? Strings.Get("pet.effect_stun") : "";
-                double ownedPercent = PetService.OwnedAtkPercent(_balance, def.Grade, enhance, level);
+                double ownedPercent = PetService.OwnedAtkPercent(_balance, def.Grade, enhance, level, stars);
+                bool awakening = owned && _pets.IsMax(index);
                 _detailInfo.text = (effect.Length > 0 ? Strings.Format("pet.with_effect", attack, effect) : attack) + "\n"
                     + Strings.Format("pet.owned_effect", Percent(ownedPercent))
+                    + (awakening ? "\n" + Strings.Format("pet.awaken_info", stars, _balance.PET_AWAKEN_MAX_STARS, _save.awakenStones) : "")
                     + (owned ? "" : "\n" + Strings.Get("pet.unowned"));
             }
 
             if (_equipButton != null) _equipButton.SetAvailable(owned && index != equipped);
             if (_equipLabel != null) _equipLabel.text = Strings.Get(index == equipped ? "pet.equipped" : "pet.equip");
             bool max = owned && _pets.IsMax(index);
-            double cost = owned && !max ? _pets.LevelCost(index) : 0d;
-            if (_levelButton != null) _levelButton.SetAvailable(owned && !max && _save.gold >= cost);
-            if (_levelLabel != null)
-                _levelLabel.text = !owned ? Strings.Get("pet.level_up") : max ? Strings.Get("char.max") : BigNumberFormat.Format(cost);
+            if (max)
+            {
+                // D-177: the button turns into awakening (stones; done at PET_AWAKEN_MAX_STARS).
+                int awaken = _pets.AwakenCost(index);
+                bool done = awaken <= 0;
+                if (_levelLabel != null)
+                    _levelLabel.text = done ? Strings.Get("pet.awaken_done") : Strings.Format("pet.awaken_cost", stars + 1, awaken);
+                if (_levelIcon != null && _awakenIcon != null) _levelIcon.sprite = _awakenIcon;
+                if (_levelButton != null) _levelButton.SetAvailable(!done && _save.awakenStones >= awaken);
+            }
+            else
+            {
+                double cost = owned ? _pets.LevelCost(index) : 0d;
+                if (_levelIcon != null && _goldIcon != null) _levelIcon.sprite = _goldIcon;
+                if (_levelButton != null) _levelButton.SetAvailable(owned && _save.gold >= cost);
+                if (_levelLabel != null) _levelLabel.text = !owned ? Strings.Get("pet.level_up") : BigNumberFormat.Format(cost);
+            }
         }
 
         private static string Percent(double percent) =>

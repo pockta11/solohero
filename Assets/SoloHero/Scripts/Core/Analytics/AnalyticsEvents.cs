@@ -23,6 +23,9 @@ namespace SoloHero.Core.Analytics
         public const string SkillLevel = "skill_level";
         /// <summary>D-174: a skill awakening star (skill, level = the new stars).</summary>
         public const string SkillAwaken = "skill_awaken";
+
+        /// <summary>D-177: a pet awakening star (pet, level = stars).</summary>
+        public const string PetAwaken = "pet_awaken";
         public const string SkillSummon = "skill_summon";
 
         /// <summary>D-114 pet summon; same params as gacha_pull.</summary>
@@ -73,6 +76,9 @@ namespace SoloHero.Core.Analytics
         public const string PLane = "lane";
         public const string PSlot = "slot";
         public const string PSkill = "skill";
+
+        /// <summary>D-177: the pet id of a pet awakening.</summary>
+        public const string PPet = "pet";
         public const string PGold = "gold";
         public const string PDoubled = "doubled";
         public const string PMessage = "message";

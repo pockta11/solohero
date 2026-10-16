@@ -196,6 +196,7 @@ namespace SoloHero.Core.Balance
                     _day.Stones = _save.breakStones;
                     _day.AwakenStars = _spender.AwakenStars;
                     _day.AwakenStones = _save.awakenStones;
+                    _day.PetStars = _spender.PetStars;
                     _day.RaidCleared = _save.raidCleared;
                     _day.Breaks = _spender.Breaks;
                     _day.TicketPulls = _spender.TicketPulls - ticketPulls0;

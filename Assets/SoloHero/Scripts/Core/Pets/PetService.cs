@@ -9,9 +9,9 @@ using SoloHero.Core.Save;
 namespace SoloHero.Core.Pets
 {
     /// <summary>
-    /// D-114 pets (D-102 companions): the pets the save owns, the equipped one, gold levels and duplicate enhance
-    /// levels. Pets are obtained from the pet summon; equip and level-up change the combat loadout (the caller
-    /// refreshes it) and request a save.
+    /// D-114 pets (D-102 companions): the pets the save owns, the equipped one, gold levels, duplicate enhance
+    /// levels and D-177 awakening stars. Pets are obtained from the pet summon; equip, level-up and awakening change
+    /// the combat loadout (the caller refreshes it) and request a save.
     /// </summary>
     public sealed class PetService
     {
@@ -60,15 +60,60 @@ namespace SoloHero.Core.Pets
             data.petEnhance[index] = enhance;
         }
 
+        /// <summary>D-177: awakening stars of a pet.</summary>
+        public int Stars(int index) => Stars(_data, index);
+
+        public static int Stars(SaveDataV2 data, int index)
+        {
+            if (data == null || data.petStars == null || index < 0 || index >= data.petStars.Count) return 0;
+            return Math.Max(0, data.petStars[index]);
+        }
+
+        public static void SetStars(SaveDataV2 data, int index, int stars)
+        {
+            if (data.petStars == null) data.petStars = new List<int>();
+            while (data.petStars.Count <= index) data.petStars.Add(0);
+            data.petStars[index] = stars;
+        }
+
+        /// <summary>D-177: a pet was awakened (index, new stars).</summary>
+        public event Action<int, int> PetAwakened;
+
+        /// <summary>D-177: stones for the next star of the pet (0 when it cannot rise).</summary>
+        public int AwakenCost(int index)
+        {
+            if (index < 0 || index >= PetCatalog.Count) return 0;
+            int stars = Stars(index);
+            return stars >= _balance.PET_AWAKEN_MAX_STARS ? 0 : Formulas.PetAwakenCost(_balance, PetCatalog.All[index].Grade, stars);
+        }
+
+        /// <summary>D-177: a max-level pet climbs a star for awakening stones (genre "pet awakening").</summary>
+        public Result TryAwaken(int index)
+        {
+            if (!IsOwned(index)) return Result.Fail(FailReason.Locked);
+            if (!IsMax(index)) return Result.Fail(FailReason.NeedMaxLevel);
+            int stars = Stars(index);
+            if (stars >= _balance.PET_AWAKEN_MAX_STARS) return Result.Fail(FailReason.MaxLevel);
+            int cost = Formulas.PetAwakenCost(_balance, PetCatalog.All[index].Grade, stars);
+            if (_data.awakenStones < cost) return Result.Fail(FailReason.NotEnoughAwakenStones);
+            _data.awakenStones -= cost;
+            SetStars(_data, index, stars + 1);
+            PetAwakened?.Invoke(index, stars + 1);
+            Changed?.Invoke();
+            _save?.RequestSave();
+            return Result.Success;
+        }
+
         public int EquippedIndex => PetCatalog.IndexOf(_data.companionEquipped);
 
         public bool IsMax(int index) => Level(index) >= _balance.PET_MAX_LEVEL;
 
         public double LevelCost(int index) => Formulas.PetLevelCost(_balance, PetCatalog.All[index].Grade, Level(index));
 
-        /// <summary>Damage multiplier of a pet from its level and enhance (x its AttackMult per hit).</summary>
+        /// <summary>Damage multiplier of a pet from its level, enhance and awakening stars (x its AttackMult per hit).</summary>
         public static double AttackScale(BalanceValues balance, SaveDataV2 data, int index) =>
-            Formulas.PetLevelScale(balance, Level(data, index)) * Formulas.PetEnhanceMult(balance, Enhance(data, index));
+            Formulas.PetLevelScale(balance, Level(data, index)) * Formulas.PetEnhanceMult(balance, Enhance(data, index))
+            * Formulas.PetAwakenScale(balance, Stars(data, index));
 
         /// <summary>Damage per second of the equipped pet in hero ATK multiples (0 without one).</summary>
         public static double EquippedRate(BalanceValues balance, SaveDataV2 data)
@@ -101,8 +146,8 @@ namespace SoloHero.Core.Pets
             return Result.Success;
         }
 
-        /// <summary>One owned pet's owned effect in percent: PET_OWNED_ATK_{grade} x enhance x level.</summary>
-        public static double OwnedAtkPercent(BalanceValues balance, GearGrade grade, int enhance, int level)
+        /// <summary>One owned pet's owned effect in percent: PET_OWNED_ATK_{grade} x enhance x level x stars (D-177).</summary>
+        public static double OwnedAtkPercent(BalanceValues balance, GearGrade grade, int enhance, int level, int stars = 0)
         {
             double percent;
             switch (grade)
@@ -116,7 +161,8 @@ namespace SoloHero.Core.Pets
                 default: percent = balance.PET_OWNED_ATK_A; break;
             }
 
-            return percent * Formulas.PetEnhanceMult(balance, enhance) * Formulas.PetLevelOwnedMult(balance, level);
+            return percent * Formulas.PetEnhanceMult(balance, enhance) * Formulas.PetLevelOwnedMult(balance, level)
+                * Formulas.PetAwakenOwnedMult(balance, stars);
         }
 
         /// <summary>Owned effect of every owned pet as an ATK fraction (0.05 = +5%), equipped or not.</summary>
@@ -128,7 +174,7 @@ namespace SoloHero.Core.Pets
             for (int i = 0; i < PetCatalog.Count; i++)
             {
                 if (!data.petOwned.Contains(PetCatalog.All[i].Id)) continue;
-                sum += OwnedAtkPercent(balance, PetCatalog.All[i].Grade, Enhance(data, i), Level(data, i));
+                sum += OwnedAtkPercent(balance, PetCatalog.All[i].Grade, Enhance(data, i), Level(data, i), Stars(data, i));
             }
 
             return sum / 100d;

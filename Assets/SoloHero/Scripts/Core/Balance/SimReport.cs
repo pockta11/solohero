@@ -44,9 +44,10 @@ namespace SoloHero.Core.Balance
     {
         public int Day;
 
-        /// <summary>D-174: awakening stars bought so far and stones held at the end of the day.</summary>
+        /// <summary>D-174: skill awakening stars bought so far and stones held at the end of the day; D-177 pet stars.</summary>
         public int AwakenStars;
         public int AwakenStones;
+        public int PetStars;
 
         /// <summary>D-175: the highest raid level beaten.</summary>
         public int RaidCleared;

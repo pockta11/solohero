@@ -264,6 +264,11 @@ namespace SoloHero.Game.Config
         public double AWAKEN_GRADE_MULT = 2;
         public double AWAKEN_SKILL_GAIN = 20;
         public double AWAKEN_OWNED_GAIN = 10;
+        public int PET_AWAKEN_MAX_STARS = 5;
+        public double PET_AWAKEN_COST_BASE = 10;
+        public double PET_AWAKEN_GRADE_MULT = 1.6;
+        public double PET_AWAKEN_ATK_GAIN = 20;
+        public double PET_AWAKEN_OWNED_GAIN = 10;
         public int RAID_WEEKLY_TICKETS = 3;
         public int RAID_UNLOCK_STAGE = 40;
         public int RAID_LEVELS = 10;
@@ -669,6 +674,11 @@ namespace SoloHero.Game.Config
                 AWAKEN_GRADE_MULT = AWAKEN_GRADE_MULT,
                 AWAKEN_SKILL_GAIN = AWAKEN_SKILL_GAIN,
                 AWAKEN_OWNED_GAIN = AWAKEN_OWNED_GAIN,
+                PET_AWAKEN_MAX_STARS = PET_AWAKEN_MAX_STARS,
+                PET_AWAKEN_COST_BASE = PET_AWAKEN_COST_BASE,
+                PET_AWAKEN_GRADE_MULT = PET_AWAKEN_GRADE_MULT,
+                PET_AWAKEN_ATK_GAIN = PET_AWAKEN_ATK_GAIN,
+                PET_AWAKEN_OWNED_GAIN = PET_AWAKEN_OWNED_GAIN,
                 RAID_WEEKLY_TICKETS = RAID_WEEKLY_TICKETS,
                 RAID_UNLOCK_STAGE = RAID_UNLOCK_STAGE,
                 RAID_LEVELS = RAID_LEVELS,
