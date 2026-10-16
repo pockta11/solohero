@@ -93,5 +93,14 @@ namespace SoloHero.Core.Analytics
         public const string AxisSkillSummon = "summon_skill";
         public const string AxisPetSummon = "summon_pet";
         public const string AxisFinalJob = "job_final";
+
+        /// <summary>D-179: a job advancement (which job, which tier, at what level).</summary>
+        public const string JobAdvance = "job_advance";
+
+        /// <summary>D-181: a store purchase granted (product id, lifetime count).</summary>
+        public const string Purchase = "iap_purchase";
+
+        public const string PJob = "job";
+        public const string PProduct = "product";
     }
 }

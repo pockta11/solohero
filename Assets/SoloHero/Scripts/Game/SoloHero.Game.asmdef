@@ -3,7 +3,11 @@
     "rootNamespace": "SoloHero.Game",
     "references": [
         "SoloHero.Core",
-        "Unity.Notifications.Android"
+        "Unity.Notifications.Android",
+        "UnityEngine.Purchasing",
+        "Unity.Services.Core",
+        "UnityEngine.Purchasing.Stores",
+        "Purchasing.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -17,6 +21,11 @@
             "name": "com.unity.mobile.notifications",
             "expression": "2.0.0",
             "define": "SOLOHERO_NOTIFICATIONS"
+        },
+        {
+            "name": "com.unity.purchasing",
+            "expression": "4.0.0",
+            "define": "SOLOHERO_IAP"
         }
     ],
     "noEngineReferences": false

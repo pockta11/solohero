@@ -974,3 +974,38 @@ unlock.material	재료 던전
 unlock.raid	주간 레이드
 fx.system_open	{0} 개방!
 fx.system_sep	·
+# D-179 job preview + advance effect, D-181 store (VIP, gem and gold bundles)
+job.preview	미리보기
+job.preview_title	{0} 계열 미리보기
+job.preview_tier	{0}차
+job.preview_job_info	{0}차 전직 · Lv {1}
+job.preview_main	주공격 {0}
+job.preview_ult	궁극기 {0}
+job.preview_skills	계열 스킬 {0}종 · 전직 후 스킬 소환으로 모아요
+job.preview_hint	직업이나 스킬을 눌러 자세히 보세요
+job.preview_skill_info	{0} · 쿨타임 {1}초
+job.preview_skill_third	3차 전직(Lv {0}) 후 사용
+fx.job_tier	{0}차 전직!
+fx.job_tier_max	최종 전직!
+shop.section_iap	패키지
+shop.section_daily	오늘의 상점
+shop.item.vip	VIP 패키지 {0}일
+shop.vip_desc	2배속 상시 · 출석·미션 보상 2배 · 오프라인 12시간 · 광고 없이 보상
+shop.vip_active	VIP {0}일 남음 · 구매하면 연장
+shop.item.gem_small	젬 꾸러미 (소)
+shop.item.gem_medium	젬 꾸러미 (중)
+shop.item.gem_large	젬 꾸러미 (대)
+shop.item.gold_pack	골드 꾸러미
+shop.amount_gems	젬 ×{0}
+shop.amount_first_bonus	첫 구매 2배! 젬 ×{0}
+shop.store_unavailable	준비 중
+toast.store_unavailable	스토어에 연결할 수 없어요. 잠시 후 다시 시도해 주세요
+toast.purchase_ok	구매 완료!
+toast.purchase_cancel	구매를 취소했어요
+toast.purchase_fail	구매에 실패했어요. 잠시 후 다시 시도해 주세요
+toast.purchase_pending	결제를 확인하는 중이에요
+toast.vip_started	VIP {0}일 적용! 2배속과 보상 2배가 바로 시작돼요
+ad.speed_vip	VIP 2배속
+ad.vip_skip	VIP: 광고 없이 바로 받았어요
+hud.vip	VIP
+shop.price_won	₩{0}

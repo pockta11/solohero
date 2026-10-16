@@ -50,6 +50,8 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text[] _descs = new Text[Cards];
         [SerializeField] private TapGuardButton[] _picks = new TapGuardButton[Cards];
         [SerializeField] private Text[] _pickLabels = new Text[Cards];
+        [Tooltip("D-179: the line preview popup (second and third jobs, the line's skills) opened from a card.")]
+        [SerializeField] private JobPreviewPresenter _preview;
         [Header("D-108: the window shrinks to the cards shown (height = base + cards x step)")]
         [SerializeField] private RectTransform _window;
         [SerializeField] private float _windowBase;
@@ -84,9 +86,24 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
+        /// <summary>Closes the preview first when it is open (the back key walks the stack), else the popup.</summary>
         public void Close()
         {
+            if (_preview != null && _preview.IsOpen)
+            {
+                _preview.Close();
+                return;
+            }
+
             if (_popup != null) _popup.SetActive(false);
+        }
+
+        /// <summary>D-179: the line this card leads to - its later jobs and their skills - before committing.</summary>
+        public void Preview(int index)
+        {
+            if (_preview == null || index < 0 || index >= _choices.Length) return;
+            _audio?.Play(SfxId.PanelOpen);
+            _preview.Open(_choices[index]);
         }
 
         public void Pick(int index)
@@ -111,6 +128,10 @@ namespace SoloHero.Game.UI.Panels
             // The new job may make equipped skills unusable (or open its line): refill the slots with the best usable ones.
             PanelServices.TryGet<SkillService>()?.AutoEquip();
             _session?.RefreshLoadout();
+            GameAnalytics.Log(SoloHero.Core.Analytics.AnalyticsEvents.JobAdvance,
+                SoloHero.Core.Analytics.AnalyticsParam.Of(SoloHero.Core.Analytics.AnalyticsEvents.PJob, job.Id),
+                SoloHero.Core.Analytics.AnalyticsParam.Of(SoloHero.Core.Analytics.AnalyticsEvents.PTier, job.Tier),
+                SoloHero.Core.Analytics.AnalyticsParam.Of(SoloHero.Core.Analytics.AnalyticsEvents.PLevel, _save != null ? _save.heroLevel : 0));
             // D-171: CombatFx sees the new job and plays the ribbon, ring and fanfare; without it, the old chime.
             if (_rewardFx == null)
             {

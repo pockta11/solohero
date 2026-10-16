@@ -66,9 +66,12 @@ namespace SoloHero.Game.Infrastructure
             }
         }
 
+        /// <summary>A QA build without the ad SDK (BuildConfig.adsEnabled off): never shipped, so it may fake the store too.</summary>
+        public bool QaBuild => _build != null && !_build.adsEnabled;
+
         public void Show(Action<AdOutcome> onDone)
         {
-            if (Application.isEditor)
+            if (Application.isEditor || VipSkipsAds())
             {
                 onDone?.Invoke(AdOutcome.Rewarded);
                 return;
@@ -138,6 +141,20 @@ namespace SoloHero.Game.Infrastructure
             _ad.OnAdFullScreenContentClosed += () =>
                 MainThreadDispatcher.Post(() => Finish(_rewarded ? AdOutcome.Rewarded : AdOutcome.Closed));
             _ad.OnAdFullScreenContentFailed += _ => MainThreadDispatcher.Post(() => Finish(AdOutcome.Failed));
+        }
+
+        /// <summary>D-181: a VIP gets every rewarded-ad reward without watching (the daily counts still apply).</summary>
+        private static bool VipSkipsAds()
+        {
+            try
+            {
+                PurchaseService purchases = Services.Get<PurchaseService>();
+                return purchases != null && purchases.VipActive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private void Finish(AdOutcome outcome)

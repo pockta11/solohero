@@ -76,6 +76,8 @@ namespace SoloHero.Game.Combat
 
         [Tooltip("D-153: the ribbon that announces a new difficulty tier (found in the scene when empty).")]
         [SerializeField] private SkillCutIn _cutIn;
+        [Tooltip("D-179: the full-screen job advancement ceremony; without it, the plain ribbon.")]
+        [SerializeField] private JobAdvanceFx _advanceFx;
 
         private AudioService _audio;
         private SettingsService _settings;
@@ -386,12 +388,24 @@ namespace SoloHero.Game.Combat
             }
 
             if (job == _shownJob) return;
+            JobDef previous = JobCatalog.Find(_shownJob);
             _shownJob = job;
             JobDef def = JobCatalog.Find(job);
             if (def == null || def.Tier < 1) return;
             if (_view != null) _view.FlashHero(JobFlash, 0.9f);
-            if (_set != null) PlayVfx(_set.ring, (float)runner.Hero.X, JobRingScale, JobColor, 0.4f);
-            Ribbon(Strings.Format("fx.job_advance", Strings.Get(def.NameKey)), JobColor, TierOpenSeconds);
+            if (_set != null)
+            {
+                PlayVfx(_set.ring, (float)runner.Hero.X, JobRingScale, JobColor, 0.4f);
+                // D-179: a light pillar and the legendary circle under the hero as well.
+                VfxClip pillar = _set.Find("pillar");
+                if (pillar != null) PlayVfx(pillar.frames, (float)runner.Hero.X, 1.6f, JobColor, 0.9f);
+                VfxClip circle = _set.Find("circle4");
+                if (circle != null) PlayVfx(circle.frames, (float)runner.Hero.X, 1.4f, JobColor, 0.1f);
+            }
+
+            // D-179: the ceremony plays the ribbon itself when it ends.
+            if (_advanceFx != null) _advanceFx.Play(def, previous);
+            else Ribbon(Strings.Format("fx.job_advance", Strings.Get(def.NameKey)), JobColor, TierOpenSeconds);
         }
 
         /// <summary>D-171: a collection set completes when its last piece is pulled; celebrate it once.</summary>

@@ -160,7 +160,7 @@ namespace SoloHero.Game.Boot
         {
             OfflineRewardPopup popup = FindObjectOfType<OfflineRewardPopup>();
             if (popup != null)
-                popup.Show(offline.Gold, offline.CountedSeconds, _balanceValues != null ? _balanceValues.OFFLINE_CAP : 0);
+                popup.Show(offline.Gold, offline.CountedSeconds, _balanceValues != null ? VipPerks.OfflineCap(_balanceValues, _data, _clock.UtcNowSeconds) : 0);
         }
 
         private void RegisterAds(BalanceValues balance, IClock clock, ISaveRequester requester)
@@ -186,6 +186,9 @@ namespace SoloHero.Game.Boot
             Services.Register(new SoloHero.Core.Stage.TowerService(balance, _data, requester));
             // D-175: the weekly raid (entries and shop on the trusted clock's local week).
             Services.Register(new SoloHero.Core.Stage.RaidService(balance, _data, clock, requester));
+            // D-181 store: Google Play through Unity IAP in release builds, an instant fake while developing (the
+            // emulator has no Play Store), nothing when the purchasing package is absent.
+            Services.Register(new PurchaseService(balance, _data, clock, PurchaseGateways.Create(gameObject, ads != null && ads.QaBuild), requester));
         }
 
         private void RegisterSettingsAndAudio()

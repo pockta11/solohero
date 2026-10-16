@@ -124,6 +124,16 @@ namespace SoloHero.Core.Save
 
         public long goldBoosterEndUtc;
 
+        /// <summary>
+        /// D-181 store: when the VIP pack runs out (UTC seconds, 0 = never bought), the product ids whose first-purchase
+        /// bonus was paid, the last transaction ids granted (a replayed receipt grants nothing twice) and the lifetime
+        /// purchase count.
+        /// </summary>
+        public long vipUntilUtc;
+        public List<string> iapFirstBonusUsed = new List<string>();
+        public List<string> iapGrantedTokens = new List<string>();
+        public int iapCount;
+
         /// <summary>D-099 attendance: days claimed in total (the 7-day cycle is count % 7) and the last claim's local date.</summary>
         public int attendanceCount;
         public string attendanceDate = "";

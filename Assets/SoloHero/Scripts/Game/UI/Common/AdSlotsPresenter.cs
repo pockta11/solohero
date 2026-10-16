@@ -111,14 +111,16 @@ namespace SoloHero.Game.UI.Common
 
             long speedLeft = _policy.SpeedSecondsLeft;
             int speedUses = _policy.Remaining(AdSlot.BattleSpeed);
+            // D-181: a VIP runs at double speed all the time; the button just says so.
+            bool vip = _policy.VipSpeed;
             if (_speedLabel != null)
             {
-                _speedLabel.text = speedLeft > 0
-                    ? Strings.Format("ad.speed_active", speedLeft / 60, (speedLeft % 60).ToString("00"))
+                _speedLabel.text = vip ? Strings.Get("ad.speed_vip")
+                    : speedLeft > 0 ? Strings.Format("ad.speed_active", speedLeft / 60, (speedLeft % 60).ToString("00"))
                     : Strings.Format("ad.speed_button", speedUses);
             }
 
-            if (_speedButton != null) _speedButton.SetAvailable(!_busy && speedLeft == 0 && speedUses > 0);
+            if (_speedButton != null) _speedButton.SetAvailable(!_busy && !vip && speedLeft == 0 && speedUses > 0);
         }
     }
 }

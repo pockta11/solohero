@@ -61,6 +61,35 @@ namespace SoloHero.Tests.EditMode
         }
 
         [Test]
+        public void Chain_D180_Dense_EveryKindGrows_RewardsSmall_TotalsKept()
+        {
+            GuideQuestDef[] chain = GuideQuestCatalog.Chain;
+            Assert.GreaterOrEqual(chain.Length, 55, "the dense chain");
+            var last = new System.Collections.Generic.Dictionary<GuideKind, int>();
+            double gems = 0d, gold = 0d;
+            int firstBoss = -1;
+            for (int i = 0; i < chain.Length; i++)
+            {
+                GuideQuestDef q = chain[i];
+                Assert.Greater(q.Target, last.TryGetValue(q.Kind, out int prev) ? prev : 0, "step " + i + " " + q.Kind + " must grow");
+                last[q.Kind] = q.Target;
+                Assert.Greater(q.Gems + q.GoldStages, 0d, "step " + i + " pays nothing");
+                Assert.LessOrEqual(q.Gems, 80d, "step " + i + " pays too many gems at once");
+                gems += q.Gems;
+                gold += q.GoldStages;
+                if (q.Kind == GuideKind.ClearStage && q.Target == 10 && firstBoss < 0) firstBoss = i;
+            }
+
+            // The totals of the old 30-step chain (about 1,000 gems, about 110 stage clears of gold) and the pacing:
+            // the first boss within the first 15 steps, both job advancements in the chain.
+            Assert.That(gems, Is.InRange(900d, 1100d));
+            Assert.That(gold, Is.InRange(90d, 130d));
+            Assert.That(firstBoss, Is.InRange(10, 16));
+            Assert.AreEqual(2, last[GuideKind.JobTier]);
+            Assert.AreEqual(40, last[GuideKind.ClearStage]);
+        }
+
+        [Test]
         public void AfterTheChain_QuestsCycleWithGrowingTargets()
         {
             int start = GuideQuestCatalog.CycleStart;

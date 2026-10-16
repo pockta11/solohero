@@ -61,3 +61,6 @@ __pycache__/
 
 # tools/firebase rules test dependencies
 node_modules/
+
+# Unity Services Core writes an empty settings file (D-181 IAP); nothing to version
+ProjectSettings/Packages/com.unity.services.core/

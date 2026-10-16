@@ -103,8 +103,11 @@ namespace SoloHero.Core.Economy
             return left > max ? max : left;
         }
 
-        /// <summary>D-129: how many times faster the battle runs right now (1 without the booster).</summary>
-        public float BattleSpeedMultiplier => SpeedSecondsLeft > 0 ? Math.Max(1f, _balance.AD_SPEED_MULT) : 1f;
+        /// <summary>D-181: the VIP pack keeps the speed booster on without ads.</summary>
+        public bool VipSpeed => VipPerks.IsActive(_data, _clock.UtcNowSeconds);
+
+        /// <summary>D-129: how many times faster the battle runs right now (1 without the booster; D-181: always with VIP).</summary>
+        public float BattleSpeedMultiplier => SpeedSecondsLeft > 0 || VipSpeed ? Math.Max(1f, _balance.AD_SPEED_MULT) : 1f;
 
         /// <summary>Stage-clear gold multiplier right now (A-3 gold booster).</summary>
         public double StageGoldMultiplier => BoosterSecondsLeft > 0 ? _balance.AD_BOOSTER_GOLD_MULT : 1d;

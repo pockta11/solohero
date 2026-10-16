@@ -53,6 +53,8 @@ namespace SoloHero.Editor
         private const string BossIntroName = "BossIntro";
         private const string FlashName = "ScreenFlash";
         private const string CutInName = "SkillCutIn";
+        private const string JobPreviewName = "JobPreview";
+        private const string JobFxName = "JobAdvanceFx";
         private const string RewardFxName = "RewardFx";
         private const string SkillBarName = "SkillBar";
         private const string SkillAutoName = "SkillAuto";
@@ -403,7 +405,7 @@ namespace SoloHero.Editor
             UnwrapSafeArea(hud.transform);
             Transform old = hud.transform.Find(RootName);
             if (old != null) Object.DestroyImmediate(old.gameObject);
-            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, AccountPopupName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, RaidName, ShopName, EventName, PassName, CollectionName, JobName, BossIntroName, FlashName, CutInName, RewardFxName })
+            foreach (string name in new[] { DamageLayerName, RevealName, SettingsButtonName, SettingsPopupName, SettingsWindowName, AccountPopupName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, RaidName, ShopName, EventName, PassName, CollectionName, JobName, JobPreviewName, JobFxName, BossIntroName, FlashName, CutInName, RewardFxName })
             {
                 Transform stale = hud.transform.Find(name);
                 if (stale != null) Object.DestroyImmediate(stale.gameObject);
@@ -462,6 +464,9 @@ namespace SoloHero.Editor
             // Built early (the character panel and the rails need them); lift them over the damage numbers like the
             // other popups. The quit confirm (BuildBackKey) stays the very last layer.
             jobPopup.transform.SetAsLastSibling();
+            // D-179: the line preview opens over the job popup, so it follows it.
+            Transform jobPreview = hud.transform.Find(JobPreviewName);
+            if (jobPreview != null) jobPreview.SetAsLastSibling();
             settings.transform.SetAsLastSibling();
             Transform creditsLayer = hud.transform.Find(SettingsPopupName);
             if (creditsLayer != null) creditsLayer.SetAsLastSibling();
@@ -471,6 +476,8 @@ namespace SoloHero.Editor
             BuildBossIntro(hud.transform, session);
             ScreenFlash flash = BuildFlash(hud.transform);
             BuildSkillCutIn(hud.transform);
+            // D-179: the job advancement ceremony, over every popup (a later sibling), under the reward layer and toasts.
+            BuildJobAdvanceFx(hud.transform, flash);
             WrapSafeArea(hud.transform);
             // The boss banner sits right above the HUD controls and under numbers and popups.
             Transform bossIntro = hud.transform.Find(BossIntroName);
@@ -1707,8 +1714,9 @@ namespace SoloHero.Editor
             {
                 var so = new SerializedObject(fx);
                 so.FindProperty("_toast").objectReferenceValue = toast;
-                // D-153: the tier-opening ribbon.
+                // D-153: the tier-opening ribbon; D-179: the advancement ceremony.
                 so.FindProperty("_cutIn").objectReferenceValue = hud.GetComponentInChildren<SkillCutIn>(true);
+                so.FindProperty("_advanceFx").objectReferenceValue = hud.GetComponentInChildren<JobAdvanceFx>(true);
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
 
@@ -2224,7 +2232,7 @@ namespace SoloHero.Editor
         /// </summary>
         private static void WrapSafeArea(Transform hud)
         {
-            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, AccountPopupName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, RaidName, ShopName, EventName, PassName, CollectionName, JobName, BossIntroName, FlashName, CutInName };
+            var outside = new[] { DamageLayerName, RevealName, SettingsPopupName, SettingsWindowName, AccountPopupName, QuitPopupName, StageSelectName, DailyName, DungeonName, PetName, AchievementName, TowerName, RaidName, ShopName, EventName, PassName, CollectionName, JobName, JobPreviewName, JobFxName, BossIntroName, FlashName, CutInName };
             RectTransform safe = Rect(SafeAreaName, hud, 0f, 0f, 1f, 1f);
             safe.gameObject.AddComponent<SafeAreaFitter>();
             var move = new System.Collections.Generic.List<Transform>();
@@ -3042,12 +3050,22 @@ namespace SoloHero.Editor
                 pickRect.offsetMax = new Vector2(-24f, 112f);
                 picks[i] = pick.gameObject.AddComponent<TapGuardButton>();
                 UnityEventTools.AddIntPersistentListener(picks[i].OnTap, presenter.Pick, i);
+                // D-179: the line preview (later jobs and the line's skills) left of the pick.
+                Button preview = MakeButton("Preview", row, 1f, 0f, 1f, 0f, "", 30, out Text previewLabel, Tone.Blue);
+                var previewRect = (RectTransform)preview.transform;
+                previewRect.pivot = new Vector2(1f, 0f);
+                previewRect.offsetMin = new Vector2(-566f, 20f);
+                previewRect.offsetMax = new Vector2(-346f, 112f);
+                Localize(previewLabel, "job.preview");
+                UnityEventTools.AddIntPersistentListener(preview.onClick, presenter.Preview, i);
             }
 
+            JobPreviewPresenter previewPopup = BuildJobPreview(hud);
             var so = new SerializedObject(presenter);
             so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
             so.FindProperty("_session").objectReferenceValue = session;
             so.FindProperty("_toast").objectReferenceValue = toast;
+            so.FindProperty("_preview").objectReferenceValue = previewPopup;
             so.FindProperty("_current").objectReferenceValue = current;
             so.FindProperty("_window").objectReferenceValue = box;
             so.FindProperty("_windowBase").floatValue = 170f;
@@ -3063,6 +3081,236 @@ namespace SoloHero.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
             popup.gameObject.SetActive(false);
             return presenter;
+        }
+
+        /// <summary>
+        /// D-179 job line preview popup over the job popup: the branch a card leads to as a small tree (portrait, tier
+        /// chip, ultimate icon per job), the line's 20 skills in grade rows (third-job ones badged) and a detail band for
+        /// the tapped job or skill.
+        /// </summary>
+        private static JobPreviewPresenter BuildJobPreview(Transform hud)
+        {
+            RectTransform holder = Rect(JobPreviewName, hud, 0f, 0f, 1f, 1f);
+            holder.SetAsLastSibling();
+            JobPreviewPresenter presenter = holder.gameObject.AddComponent<JobPreviewPresenter>();
+            RectTransform box = PopupWindow(holder, new Vector2(1000f, 1560f), null, presenter.Close, out RectTransform popup);
+            Text title = InkText(TopBand("Title", box, 34f, 56f, 120f, 120f), 38, TextAnchor.MiddleCenter, UiPalette.InkTitle);
+            title.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Text hint = InkText(TopBand("Hint", box, 92f, 34f, 44f, 44f), 24, TextAnchor.MiddleCenter, UiPalette.InkMuted);
+            hint.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+            // The tree: five slots anchored at the band's top centre, placed by the presenter per branch size.
+            RectTransform tree = TopBand("Tree", box, 134f, 600f, 40f, 40f);
+            UiSkin.Sliced(tree.gameObject.AddComponent<Image>(), UiSkin.Inset);
+            tree.GetComponent<Image>().raycastTarget = false;
+            var slots = new RectTransform[JobPreviewPresenter.JobSlots];
+            var slotFrames = new Image[slots.Length];
+            var portraits = new Image[slots.Length];
+            var names = new Text[slots.Length];
+            var tiers = new Text[slots.Length];
+            var ults = new Image[slots.Length];
+            for (int i = 0; i < slots.Length; i++)
+            {
+                RectTransform slot = Box("Job" + i, tree, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(236f, 192f));
+                slots[i] = slot;
+                slotFrames[i] = slot.gameObject.AddComponent<Image>();
+                UiSkin.Sliced(slotFrames[i], UiSkin.Card);
+                Button tap = slot.gameObject.AddComponent<Button>();
+                tap.transition = Selectable.Transition.None;
+                slot.gameObject.AddComponent<PressScale>();
+                UnityEventTools.AddIntPersistentListener(tap.onClick, presenter.SelectJob, i);
+                Plain(Box("Pedestal", slot, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 34f), new Vector2(150f, 40f)), UiSkin.Hd("hd_pedestal"));
+                portraits[i] = Plain(Box("Portrait", slot, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 48f), new Vector2(96f, 72f)), null);
+                portraits[i].preserveAspect = false;
+                portraits[i].raycastTarget = false;
+                names[i] = InkText(BottomBand("Name", slot, 6f, 32f, 6f, 6f), 24, TextAnchor.MiddleCenter, UiPalette.InkTitle);
+                names[i].horizontalOverflow = HorizontalWrapMode.Overflow;
+                RectTransform chip = Box("Tier", slot, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -8f), new Vector2(64f, 30f));
+                UiSkin.Sliced(Plain(chip, null), UiSkin.LevelBadge);
+                tiers[i] = AddText(Inset("Text", chip, 0f, 2f, 0f, 0f), 20, TextAnchor.MiddleCenter);
+                tiers[i].verticalOverflow = VerticalWrapMode.Overflow;
+                UiSkin.ButtonText(tiers[i], Tone.Blue);
+                ults[i] = Plain(Box("Ult", slot, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-8f, -8f), new Vector2(54f, 54f)), null);
+                ults[i].raycastTarget = false;
+            }
+
+            Text skillsHeader = InkText(TopBand("SkillsHeader", box, 744f, 34f, 44f, 44f), 24, TextAnchor.MiddleLeft, UiPalette.InkMuted);
+            skillsHeader.horizontalOverflow = HorizontalWrapMode.Overflow;
+            RectTransform grid = TopBand("Grid", box, 784f, 580f, 40f, 40f);
+            const int cells = JobPreviewPresenter.Columns * JobPreviewPresenter.Rows;
+            const float cell = 136f;
+            const float stepX = 196f;
+            const float stepY = 146f;
+            var cellFrames = new Image[cells];
+            var cellIcons = new Image[cells];
+            var badges = new GameObject[cells];
+            var badgeTexts = new Text[cells];
+            for (int i = 0; i < cells; i++)
+            {
+                int col = i % JobPreviewPresenter.Columns;
+                int row = i / JobPreviewPresenter.Columns;
+                RectTransform c = Box("Cell" + i, grid, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(col * stepX, -row * stepY), new Vector2(cell, cell));
+                cellFrames[i] = c.gameObject.AddComponent<Image>();
+                UiSkin.Sliced(cellFrames[i], UiSkin.GradeFrame(SoloHero.Core.Gacha.Grade.Common));
+                Button tap = c.gameObject.AddComponent<Button>();
+                tap.transition = Selectable.Transition.None;
+                c.gameObject.AddComponent<PressScale>();
+                UnityEventTools.AddIntPersistentListener(tap.onClick, presenter.SelectSkill, i);
+                cellIcons[i] = Plain(Box("Icon", c, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(96f, 96f)), null);
+                cellIcons[i].raycastTarget = false;
+                RectTransform badge = Box("Badge", c, new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(64f, 28f));
+                UiSkin.Sliced(Plain(badge, null), UiSkin.LevelBadge);
+                badgeTexts[i] = AddText(Inset("Text", badge, 0f, 2f, 0f, 0f), 20, TextAnchor.MiddleCenter);
+                badgeTexts[i].verticalOverflow = VerticalWrapMode.Overflow;
+                UiSkin.ButtonText(badgeTexts[i], Tone.Purple);
+                badge.gameObject.SetActive(false);
+                badges[i] = badge.gameObject;
+            }
+
+            RectTransform detail = TopBand("Detail", box, 1376f, 150f, 40f, 40f);
+            UiSkin.Sliced(detail.gameObject.AddComponent<Image>(), UiSkin.Card);
+            detail.GetComponent<Image>().raycastTarget = false;
+            RectTransform frame = Box("Frame", detail, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(112f, 112f));
+            Image detailFrame = Plain(frame, UiSkin.GradeFrame(SoloHero.Core.Gacha.Grade.Common));
+            detailFrame.type = Image.Type.Sliced;
+            Image detailIcon = Plain(Box("Icon", frame, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(82f, 82f)), null);
+            Image detailPortrait = Plain(Box("Portrait", detail, new Vector2(0f, 0f), new Vector2(0.5f, 0f), new Vector2(70f, 22f), new Vector2(96f, 72f)), null);
+            detailPortrait.preserveAspect = false;
+            Text detailName = InkText(TopBand("Name", detail, 8f, 40f, 140f, 16f), 32, TextAnchor.MiddleLeft, UiPalette.InkTitle);
+            detailName.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Text detailInfo = InkText(TopBand("Info", detail, 48f, 44f, 140f, 16f), 21, TextAnchor.UpperLeft, UiPalette.InkBlue);
+            detailInfo.horizontalOverflow = HorizontalWrapMode.Wrap;
+            detailInfo.verticalOverflow = VerticalWrapMode.Overflow;
+            Text detailDesc = InkText(Inset("Desc", detail, 140f, 8f, 16f, 92f), 21, TextAnchor.UpperLeft, UiPalette.Ink);
+            detailDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            detailDesc.verticalOverflow = VerticalWrapMode.Overflow;
+
+            var so = new SerializedObject(presenter);
+            so.FindProperty("_popup").objectReferenceValue = popup.gameObject;
+            so.FindProperty("_title").objectReferenceValue = title;
+            so.FindProperty("_hint").objectReferenceValue = hint;
+            SetArray(so, "_arts", JobArts());
+            so.FindProperty("_icons").objectReferenceValue = AssetDatabase.LoadAssetAtPath<SkillIconSet>(SkillIconsPath);
+            so.FindProperty("_frames").objectReferenceValue = _gradeFrames;
+            SetArray(so, "_jobSlots", slots);
+            SetArray(so, "_jobFrames", slotFrames);
+            SetArray(so, "_jobPortraits", portraits);
+            SetArray(so, "_jobNames", names);
+            SetArray(so, "_jobTiers", tiers);
+            SetArray(so, "_jobUltIcons", ults);
+            so.FindProperty("_skillsHeader").objectReferenceValue = skillsHeader;
+            SetArray(so, "_cellFrames", cellFrames);
+            SetArray(so, "_cellIcons", cellIcons);
+            SetArray(so, "_cellBadges", badges);
+            SetArray(so, "_cellBadgeTexts", badgeTexts);
+            so.FindProperty("_detailFrame").objectReferenceValue = detailFrame;
+            so.FindProperty("_detailIcon").objectReferenceValue = detailIcon;
+            so.FindProperty("_detailPortrait").objectReferenceValue = detailPortrait;
+            so.FindProperty("_detailName").objectReferenceValue = detailName;
+            so.FindProperty("_detailInfo").objectReferenceValue = detailInfo;
+            so.FindProperty("_detailDesc").objectReferenceValue = detailDesc;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            popup.gameObject.SetActive(false);
+            return presenter;
+        }
+
+        /// <summary>
+        /// D-179 job advancement ceremony layer: a full-screen dim (a tap skips), a light pillar and a turning sunburst
+        /// behind the new job's animated look, the old look that bursts, sparks, and the tier title, job name and
+        /// main-attack / ultimate line. Built after the cut-in so it covers every popup; CombatFx starts it.
+        /// </summary>
+        private static void BuildJobAdvanceFx(Transform hud, ScreenFlash flash)
+        {
+            RectTransform holder = Rect(JobFxName, hud, 0f, 0f, 1f, 1f);
+            holder.SetAsLastSibling();
+            CanvasGroup group = holder.gameObject.AddComponent<CanvasGroup>();
+            JobAdvanceFx fx = holder.gameObject.AddComponent<JobAdvanceFx>();
+            Image dim = Plain(Rect("Dim", holder, 0f, 0f, 1f, 1f), UiSkin.White);
+            dim.preserveAspect = false;
+            dim.color = new Color(0.04f, 0.02f, 0.1f, 0.82f);
+            Button skip = dim.gameObject.AddComponent<Button>();
+            skip.transition = Selectable.Transition.None;
+            UnityEventTools.AddPersistentListener(skip.onClick, fx.Skip);
+
+            RectTransform center = Box("Center", holder, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(10f, 10f));
+            RectTransform pillar = Box("Pillar", center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 150f), new Vector2(560f, 2600f));
+            Image pillarImage = Plain(pillar, UiSkin.Hd("hd_glow"));
+            pillarImage.preserveAspect = false;
+            pillarImage.raycastTarget = false;
+            RectTransform rays = Box("Rays", center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 150f), new Vector2(10f, 10f));
+            var rayImages = new Image[8];
+            for (int i = 0; i < rayImages.Length; i++)
+            {
+                RectTransform ray = Box("Ray" + i, rays, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1800f, i % 2 == 0 ? 34f : 20f));
+                ray.localRotation = Quaternion.Euler(0f, 0f, i * 22.5f);
+                rayImages[i] = Plain(ray, UiSkin.White);
+                rayImages[i].preserveAspect = false;
+                rayImages[i].raycastTarget = false;
+            }
+
+            Image oldPortrait = Plain(Box("Old", center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0f), new Vector2(0f, -120f), new Vector2(96f, 72f)), null);
+            oldPortrait.preserveAspect = false;
+            oldPortrait.raycastTarget = false;
+            RectTransform portraitRect = Box("New", center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0f), new Vector2(0f, -120f), new Vector2(96f, 72f));
+            Image portrait = Plain(portraitRect, null);
+            portrait.preserveAspect = false;
+            portrait.raycastTarget = false;
+            PixelOutline(portrait, 8f);
+            UiFlipbook flipbook = portraitRect.gameObject.AddComponent<UiFlipbook>();
+            var bookSo = new SerializedObject(flipbook);
+            bookSo.FindProperty("_scale").floatValue = 8f;
+            bookSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var sparks = new Image[28];
+            Sprite dot = UiSkin.Hd("hd_glow");
+            for (int i = 0; i < sparks.Length; i++)
+            {
+                RectTransform p = Box("Spark" + i, center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 150f), new Vector2(24f, 24f));
+                sparks[i] = Plain(p, dot);
+                sparks[i].raycastTarget = false;
+                sparks[i].enabled = false;
+            }
+
+            RectTransform texts = Rect("Texts", center, 0f, 0f, 1f, 1f);
+            CanvasGroup textGroup = texts.gameObject.AddComponent<CanvasGroup>();
+            RectTransform titleRect = Box("Title", texts, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 540f), new Vector2(900f, 90f));
+            Text title = AddText(titleRect, 58, TextAnchor.MiddleCenter);
+            title.color = UiPalette.HudGold;
+            title.horizontalOverflow = HorizontalWrapMode.Overflow;
+            title.verticalOverflow = VerticalWrapMode.Overflow;
+            RectTransform nameRect = Box("Name", texts, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -230f), new Vector2(1000f, 130f));
+            Text name = AddText(nameRect, 96, TextAnchor.MiddleCenter);
+            name.horizontalOverflow = HorizontalWrapMode.Overflow;
+            name.verticalOverflow = VerticalWrapMode.Overflow;
+            Text sub = AddText(Box("Sub", texts, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -330f), new Vector2(1000f, 60f)), 32, TextAnchor.MiddleCenter);
+            sub.color = UiPalette.HudMuted;
+            sub.horizontalOverflow = HorizontalWrapMode.Overflow;
+            sub.verticalOverflow = VerticalWrapMode.Overflow;
+            foreach (Graphic g in texts.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
+
+            var so = new SerializedObject(fx);
+            so.FindProperty("_group").objectReferenceValue = group;
+            so.FindProperty("_dim").objectReferenceValue = dim;
+            so.FindProperty("_pillar").objectReferenceValue = pillar;
+            so.FindProperty("_pillarImage").objectReferenceValue = pillarImage;
+            so.FindProperty("_rays").objectReferenceValue = rays;
+            SetArray(so, "_rayImages", rayImages);
+            so.FindProperty("_oldPortrait").objectReferenceValue = oldPortrait;
+            so.FindProperty("_portraitRect").objectReferenceValue = portraitRect;
+            so.FindProperty("_portrait").objectReferenceValue = portrait;
+            so.FindProperty("_flipbook").objectReferenceValue = flipbook;
+            SetArray(so, "_sparks", sparks);
+            so.FindProperty("_titleRect").objectReferenceValue = titleRect;
+            so.FindProperty("_title").objectReferenceValue = title;
+            so.FindProperty("_nameRect").objectReferenceValue = nameRect;
+            so.FindProperty("_name").objectReferenceValue = name;
+            so.FindProperty("_sub").objectReferenceValue = sub;
+            so.FindProperty("_textGroup").objectReferenceValue = textGroup;
+            SetArray(so, "_jobArts", JobArts());
+            so.FindProperty("_cutIn").objectReferenceValue = hud.GetComponentInChildren<SkillCutIn>(true);
+            so.FindProperty("_flash").objectReferenceValue = flash;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            holder.gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -3469,11 +3717,37 @@ namespace SoloHero.Editor
             RectTransform holder = Rect(ShopName, hud, 0f, 0f, 1f, 1f);
             holder.SetAsLastSibling();
             ShopPresenter presenter = holder.gameObject.AddComponent<ShopPresenter>();
+            // D-181: the store rows (VIP, gem bundles, gold bundle) above the daily rows, each block under a section label.
+            int iapCount = SoloHero.Core.Economy.IapCatalog.Count;
             const int count = 5;
-            const float rowStep = 150f;
-            RectTransform box = PopupWindow(holder, new Vector2(1000f, 200f + count * rowStep + 40f), "shop.title", presenter.Close, out RectTransform popup);
+            const float rowStep = 132f;
+            const float sectionHeight = 40f;
+            float iapTop = 90f + sectionHeight + 6f;
+            float dailyTop = iapTop + iapCount * rowStep + 12f + sectionHeight + 6f;
+            RectTransform box = PopupWindow(holder, new Vector2(1000f, dailyTop + count * rowStep + 30f), "shop.title", presenter.Close, out RectTransform popup);
 
-            Text tickets = InkText(TopBand("Tickets", box, 96f, 56f, 40f, 40f), 30, TextAnchor.MiddleCenter, UiPalette.InkTitle);
+            Text iapSection = InkText(TopBand("SectionIap", box, 90f, sectionHeight, 44f, 44f), 28, TextAnchor.MiddleLeft, UiPalette.InkGold);
+            iapSection.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Localize(iapSection, "shop.section_iap");
+            string[] iapIcons = { "crown", "gem", "gem", "gem", "coin" };
+            Tone[] iapTones = { Tone.Gold, Tone.Blue, Tone.Purple, Tone.Red, Tone.Gold };
+            var iapNames = new Text[iapCount];
+            var iapAmounts = new Text[iapCount];
+            var iapButtons = new TapGuardButton[iapCount];
+            var iapLabels = new Text[iapCount];
+            for (int i = 0; i < iapCount; i++)
+            {
+                RectTransform row = ShopRow(box, "Iap" + i, iapTop + i * rowStep, rowStep, iapIcons[i], iapTones[i % iapTones.Length],
+                    out iapNames[i], out iapAmounts[i], out iapLabels[i], Tone.Orange);
+                iapButtons[i] = row.Find("Buy").gameObject.AddComponent<TapGuardButton>();
+                UnityEventTools.AddIntPersistentListener(iapButtons[i].OnTap, presenter.BuyIap, i);
+            }
+
+            RectTransform dailyBand = TopBand("SectionDaily", box, dailyTop - sectionHeight - 6f, sectionHeight, 44f, 44f);
+            Text dailySection = InkText(Rect("Label", dailyBand, 0f, 0f, 0.3f, 1f), 28, TextAnchor.MiddleLeft, UiPalette.InkGold);
+            dailySection.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Localize(dailySection, "shop.section_daily");
+            Text tickets = InkText(Rect("Tickets", dailyBand, 0.3f, 0f, 1f, 1f), 24, TextAnchor.MiddleRight, UiPalette.InkTitle);
             tickets.horizontalOverflow = HorizontalWrapMode.Overflow;
             string[] icons = { "gift", "ticket", "ticket", "ticket", "coin" };
             Tone[] tones = { Tone.Green, Tone.Blue, Tone.Purple, Tone.Gold, Tone.Gold };
@@ -3483,19 +3757,8 @@ namespace SoloHero.Editor
             var labels = new Text[count];
             for (int i = 0; i < count; i++)
             {
-                RectTransform row = TopBand("Row" + i, box, 164f + i * rowStep, rowStep - 12f, 34f, 34f);
-                UiSkin.Sliced(row.gameObject.AddComponent<Image>(), UiSkin.Card);
-                row.GetComponent<Image>().raycastTarget = false;
-                RectTransform tile = Box("Tile", row, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(16f, 0f), new Vector2(110f, 110f));
-                UiSkin.Sliced(Plain(tile, null), UiSkin.PlateSprite(tones[i]));
-                FixedIcon(tile, icons[i], new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), 80f);
-                names[i] = InkText(TopBand("Name", row, 14f, 52f, 146f, 260f), 32, TextAnchor.MiddleLeft, UiPalette.InkTitle);
-                names[i].horizontalOverflow = HorizontalWrapMode.Overflow;
-                amounts[i] = InkText(TopBand("Amount", row, 70f, 46f, 146f, 260f), 28, TextAnchor.MiddleLeft, UiPalette.Ink);
-                amounts[i].horizontalOverflow = HorizontalWrapMode.Overflow;
-                Button buy = MakeButton("Buy", row, 1f, 0.5f, 1f, 0.5f, "", 32, out labels[i], Tone.Green);
-                Place((RectTransform)buy.transform, new Vector2(1f, 0.5f), new Vector2(-16f, 0f), new Vector2(230f, 96f));
-                buttons[i] = buy.gameObject.AddComponent<TapGuardButton>();
+                RectTransform row = ShopRow(box, "Row" + i, dailyTop + i * rowStep, rowStep, icons[i], tones[i], out names[i], out amounts[i], out labels[i], Tone.Green);
+                buttons[i] = row.Find("Buy").gameObject.AddComponent<TapGuardButton>();
                 UnityEventTools.AddIntPersistentListener(buttons[i].OnTap, presenter.Buy, i);
             }
 
@@ -3507,9 +3770,33 @@ namespace SoloHero.Editor
             SetArray(so, "_amounts", amounts);
             SetArray(so, "_buttons", buttons);
             SetArray(so, "_buttonLabels", labels);
+            SetArray(so, "_iapNames", iapNames);
+            SetArray(so, "_iapAmounts", iapAmounts);
+            SetArray(so, "_iapButtons", iapButtons);
+            SetArray(so, "_iapLabels", iapLabels);
             so.ApplyModifiedPropertiesWithoutUndo();
             popup.gameObject.SetActive(false);
             return presenter;
+        }
+
+        /// <summary>One shop row: a toned tile with an icon, a name and an amount line, and a price button named "Buy".</summary>
+        private static RectTransform ShopRow(RectTransform box, string name, float top, float rowStep, string icon, Tone tone,
+            out Text nameText, out Text amountText, out Text buttonLabel, Tone buttonTone)
+        {
+            RectTransform row = TopBand(name, box, top, rowStep - 10f, 34f, 34f);
+            UiSkin.Sliced(row.gameObject.AddComponent<Image>(), UiSkin.Card);
+            row.GetComponent<Image>().raycastTarget = false;
+            RectTransform tile = Box("Tile", row, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(98f, 98f));
+            UiSkin.Sliced(Plain(tile, null), UiSkin.PlateSprite(tone));
+            FixedIcon(tile, icon, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), 72f);
+            nameText = InkText(TopBand("Name", row, 10f, 46f, 126f, 250f), 30, TextAnchor.MiddleLeft, UiPalette.InkTitle);
+            nameText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            amountText = InkText(TopBand("Amount", row, 58f, 54f, 126f, 250f), 22, TextAnchor.UpperLeft, UiPalette.Ink);
+            amountText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            amountText.verticalOverflow = VerticalWrapMode.Overflow;
+            Button buy = MakeButton("Buy", row, 1f, 0.5f, 1f, 0.5f, "", 28, out buttonLabel, buttonTone);
+            Place((RectTransform)buy.transform, new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(220f, 88f));
+            return row;
         }
 
         /// <summary>D-114: pet looks index-aligned with PetCatalog (ArtBuilder writes Data/Art/Pet_{Id}.asset).</summary>
@@ -4327,6 +4614,8 @@ namespace SoloHero.Editor
             UiSkin.Sliced(box.gameObject.AddComponent<Image>(), UiSkin.Window);
             box.gameObject.AddComponent<CanvasGroup>();
             box.gameObject.AddComponent<PopupIntro>();
+            // A tap on the window itself must not bubble up to the dim's close button (reported on the pass popup).
+            box.gameObject.AddComponent<TapBlocker>();
             if (titleKey != null) Ribbon(box, titleKey, Mathf.Min(560f, size.x - 220f));
             if (close != null)
             {

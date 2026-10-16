@@ -75,15 +75,25 @@ namespace SoloHero.Core.Daily
         public int AttendanceClaimedInCycle => Math.Max(0, Math.Min(CycleDays, ClaimedOnBoard - (AttendanceWeekStart - 1)));
 
         /// <summary>Gems of board day <paramref name="day"/> (1..28): odd days, and more on each week's last day.</summary>
+        /// <summary>D-181: the VIP pack multiplies attendance and daily mission rewards while it runs.</summary>
+        public double VipMultiplier => Economy.VipPerks.DailyMultiplier(_balance, _data, _clock.UtcNowSeconds);
+
         public double AttendanceGems(int day)
         {
-            if (day == BoardDays) return _balance.ATTENDANCE_DAY28_GEM;
-            if (day % CycleDays == 0) return _balance.ATTENDANCE_DAY7_GEM;
-            return day % 2 == 1 ? _balance.ATTENDANCE_GEM : 0d;
+            double gems = day == BoardDays ? _balance.ATTENDANCE_DAY28_GEM
+                : day % CycleDays == 0 ? _balance.ATTENDANCE_DAY7_GEM
+                : day % 2 == 1 ? _balance.ATTENDANCE_GEM : 0d;
+            return gems * VipMultiplier;
         }
 
         public double AttendanceGold(int day) =>
-            day % 2 == 0 && day % CycleDays != 0 ? Math.Floor(Formulas.StageGold(_balance, FarmStage) * _balance.ATTENDANCE_GOLD_STAGES) : 0d;
+            day % 2 == 0 && day % CycleDays != 0
+                ? Math.Floor(Formulas.StageGold(_balance, FarmStage) * _balance.ATTENDANCE_GOLD_STAGES * VipMultiplier)
+                : 0d;
+
+        /// <summary>Gems the daily mission at <paramref name="index"/> pays right now (VIP included).</summary>
+        public double MissionGems(int index) =>
+            index >= 0 && index < MissionCatalog.Count ? MissionCatalog.All[index].Gems * VipMultiplier : 0d;
 
         /// <summary>D-166: the total attended that the last claim reached as a milestone (0 when it reached none).</summary>
         public int LastMilestone { get; private set; }
@@ -163,8 +173,7 @@ namespace SoloHero.Core.Daily
             if (index < 0 || index >= MissionCatalog.Count) return Result.Fail(FailReason.Locked);
             if (Claimed(index)) return Result.Fail(FailReason.DailyLimit);
             if (!Complete(index)) return Result.Fail(FailReason.Locked);
-            MissionDef def = MissionCatalog.All[index];
-            _data.gem += def.Gems;
+            _data.gem += MissionGems(index);
             _data.missionClaimed[index] = true;
             BumpAll(MissionCatalog.All, _data.missionProgress, _data.missionClaimed);
             MissionClaimed?.Invoke(false);

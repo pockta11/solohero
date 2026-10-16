@@ -29,7 +29,11 @@ namespace SoloHero.Core.Economy
         /// wrong device clock); on the device clock alone (local mode) it is kept, so moving the clock back and forth
         /// cannot pay the same hours twice.
         /// </summary>
-        public static OfflineReward Compute(BalanceValues balance, int farmingStage, long lastQuitTimeUtc, long nowUtc, bool serverTime = true)
+        public static OfflineReward Compute(BalanceValues balance, int farmingStage, long lastQuitTimeUtc, long nowUtc, bool serverTime = true) =>
+            Compute(balance, farmingStage, lastQuitTimeUtc, nowUtc, serverTime, balance.OFFLINE_CAP);
+
+        /// <summary>The same with an explicit cap in seconds (D-181: the VIP pack raises it).</summary>
+        public static OfflineReward Compute(BalanceValues balance, int farmingStage, long lastQuitTimeUtc, long nowUtc, bool serverTime, int capSeconds)
         {
             if (lastQuitTimeUtc <= 0 || balance.OFFLINE_DIVISOR == 0d) return new OfflineReward(0d, false, false, false);
 
@@ -37,7 +41,8 @@ namespace SoloHero.Core.Economy
             if (elapsed < 0)
                 return new OfflineReward(0d, false, false, serverTime);
 
-            long counted = elapsed > balance.OFFLINE_CAP ? balance.OFFLINE_CAP : elapsed;
+            long cap = capSeconds > 0 ? capSeconds : balance.OFFLINE_CAP;
+            long counted = elapsed > cap ? cap : elapsed;
             int stage = farmingStage < 1 ? 1 : farmingStage;
             double gold = Formulas.StageGold(balance, stage) / balance.OFFLINE_DIVISOR * counted;
             bool showPopup = elapsed >= balance.OFFLINE_MIN_SECONDS;

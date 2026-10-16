@@ -158,6 +158,20 @@ namespace SoloHero.Core.Config
         public double PICKUP_SHARE = 70;
         public int GEM_GOLD_PACK_COST = 50;
         public double GEM_GOLD_PACK_STAGES = 100;
+        // D-181 store (IAP): gem bundles (the first purchase of each pays IAP_FIRST_BONUS_MULT times), a gold bundle sized
+        // like the gem gold pack (stage clears of the farming stage) and the VIP pack: VIP_DAYS of permanent battle speed
+        // (AD_SPEED_MULT, no ad), attendance / daily mission rewards x VIP_DAILY_MULT, an offline cap of VIP_OFFLINE_CAP
+        // seconds and rewarded ads granted without watching. IAP_GRANT_HISTORY transaction ids are kept so a replayed
+        // receipt never grants twice.
+        public int IAP_GEM_SMALL = 300;
+        public int IAP_GEM_MEDIUM = 1000;
+        public int IAP_GEM_LARGE = 3300;
+        public double IAP_FIRST_BONUS_MULT = 2;
+        public double IAP_GOLD_PACK_STAGES = 400;
+        public int VIP_DAYS = 30;
+        public double VIP_DAILY_MULT = 2;
+        public int VIP_OFFLINE_CAP = 43200;
+        public int IAP_GRANT_HISTORY = 20;
         public double GACHA_RATE_C = 55;
         public double GACHA_RATE_R = 33;
         public double GACHA_RATE_E = 10;

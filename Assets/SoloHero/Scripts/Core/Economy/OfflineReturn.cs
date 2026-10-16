@@ -20,7 +20,9 @@ namespace SoloHero.Core.Economy
             if (balance == null) throw new ArgumentNullException(nameof(balance));
             if (data == null) throw new ArgumentNullException(nameof(data));
 
-            OfflineReward offline = OfflineReward.Compute(balance, data.farmingStage, data.lastQuitTimeUtc, nowUtc, serverTime);
+            // D-181: the VIP pack raises the cap.
+            OfflineReward offline = OfflineReward.Compute(balance, data.farmingStage, data.lastQuitTimeUtc, nowUtc, serverTime,
+                VipPerks.OfflineCap(balance, data, nowUtc));
             if (offline.GrantNow)
             {
                 data.gold += offline.Gold;

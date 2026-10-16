@@ -279,7 +279,7 @@ namespace SoloHero.Game.UI.Panels
                 if (_missionNames[i] != null)
                     _missionNames[i].text = Strings.Format("daily.mission_row", Strings.Get(def.NameKey), BigNumberFormat.Format(progress), BigNumberFormat.Format(def.Target))
                         + ExtraLine(def);
-                if (i < _missionRewards.Length && _missionRewards[i] != null) _missionRewards[i].text = BigNumberFormat.Format(def.Gems);
+                if (i < _missionRewards.Length && _missionRewards[i] != null) _missionRewards[i].text = BigNumberFormat.Format(_daily.MissionGems(i));
                 bool claimable = _weekly ? _daily.WeeklyClaimable(i) : _daily.Claimable(i);
                 bool claimedMission = _weekly ? _daily.WeeklyClaimed(i) : _daily.Claimed(i);
                 if (i < _missionButtons.Length && _missionButtons[i] != null) _missionButtons[i].interactable = claimable;

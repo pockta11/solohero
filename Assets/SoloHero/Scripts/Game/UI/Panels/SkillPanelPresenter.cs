@@ -485,25 +485,8 @@ namespace SoloHero.Game.UI.Panels
         }
 
         /// <summary>Description arguments at <paramref name="level"/>; see the arg list in strings_ko.txt.</summary>
-        private object[] DescArgs(SkillDef def, int level, int stars = 0)
-        {
-            double scale = Formulas.SkillLevelScale(_balance, level) * Formulas.SkillAwakenScale(_balance, stars);
-            _descArgs[0] = Num(def.DamageMult * 100d * scale);
-            _descArgs[1] = def.Waves;
-            _descArgs[2] = Num(def.DotPercent * scale);
-            _descArgs[3] = Num(def.DotSeconds);
-            _descArgs[4] = Num(def.StunSeconds);
-            _descArgs[5] = Num(def.BuffAmount * scale);
-            _descArgs[6] = Num(def.BuffSeconds);
-            _descArgs[7] = Num(def.HealPercent * scale);
-            _descArgs[8] = Num(def.ShieldPercent * scale);
-            _descArgs[9] = Num(def.ShieldSeconds);
-            _descArgs[10] = Num(def.HpThreshold);
-            _descArgs[11] = Num(def.Cooldown);
-            _descArgs[12] = Num(def.MarkPercent * scale);
-            _descArgs[13] = Num(def.MarkSeconds);
-            return _descArgs;
-        }
+        private object[] DescArgs(SkillDef def, int level, int stars = 0) =>
+            SkillText.DescArgs(_balance, def, level, stars, _descArgs);
 
         private static string Num(double value) => value.ToString("0.#", CultureInfo.InvariantCulture);
 
