@@ -956,3 +956,21 @@ dungeon.stones	입장마다 돌파석 {0}개
 dungeon.locked	{0} 보스를 쓰러뜨리면 열려요
 tower.reward_stones	 · 돌파석 {0}개
 loading.tip.6	팁: 능력치가 10레벨마다 멈추면 돌파석으로 한계 돌파하세요
+hud.ultimate_locked	2차 전직
+hud.ultimate_need	Lv {0} 2차 전직 후 궁극기를 쓸 수 있어요
+skill.slot_opens	스킬 슬롯 {0} · Lv {1}에 열려요
+skill.line_hint	Lv {0} 전직 후 직업 스킬 {1}종 해금!
+skill.line_hint_sub	직업 스킬은 소환 탭의 스킬 소환으로 모아요
+skill.go_job	전직하기
+skill.tier_badge	{0}차
+skill.tier_need	{0}차 전직(Lv {1}) 후 사용
+gacha.skill_locked	Lv {0}에 전직하면 스킬 소환이 열려요
+pet.summon_locked	{0} 보스 처치 후 개방
+rail.locked	{0} 해금
+unlock.dungeon	던전
+unlock.tower	무한의 탑
+unlock.pet	펫 소환
+unlock.material	재료 던전
+unlock.raid	주간 레이드
+fx.system_open	{0} 개방!
+fx.system_sep	·

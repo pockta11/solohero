@@ -73,6 +73,12 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Text _equipLabel;
         [SerializeField] private UiPunch _detailPunch;
 
+        [Header("D-178: before the first job, a card under the starters says what opens the job skills")]
+        [SerializeField] private GameObject _lineHint;
+        [SerializeField] private Text _lineHintText;
+        [SerializeField] private Text _lineHintButton;
+        [SerializeField] private JobPresenter _jobPopup;
+
         [SerializeField] private SkillIconSet _icons;
         [SerializeField] private GradeFrameSet _frames;
         [SerializeField] private CombatSession _session;
@@ -234,6 +240,29 @@ namespace SoloHero.Game.UI.Panels
             Refresh();
         }
 
+        /// <summary>D-178: the hint card's shortcut to the job popup (it also shows the level the first job needs).</summary>
+        public void OpenJob()
+        {
+            Play(SfxId.Tap);
+            if (_jobPopup != null) _jobPopup.Open();
+        }
+
+        /// <summary>
+        /// D-107 / D-178: the grid shows the hero's own skills - the starters, then the whole line once a job is chosen,
+        /// with the skills of a later job tier drawn locked (they say which advancement opens them).
+        /// </summary>
+        private bool IsShown(SkillDef def) =>
+            JobService.CanUse(_save, def) || (def.Line != JobLine.None && def.Line == JobService.LineOf(_save));
+
+        /// <summary>How many skills a job line holds (every line has the same count).</summary>
+        private static int LineSkillCount()
+        {
+            int count = 0;
+            for (int i = 0; i < SkillCatalog.All.Length; i++)
+                if (SkillCatalog.All[i].Line == JobLine.Warrior) count++;
+            return count;
+        }
+
         private void OnLoadoutChanged() => Refresh();
 
         private void Equipped()
@@ -290,12 +319,12 @@ namespace SoloHero.Game.UI.Panels
             int owned = 0;
             int shown = 0;
             SkillDef selected = SkillCatalog.Find(_selected);
-            if (selected == null || !JobService.CanUse(_save, selected))
+            if (selected == null || !IsShown(selected))
             {
                 // The selection follows the job: start on the first skill of the hero's own list.
                 for (int i = 0; i < SkillCatalog.All.Length; i++)
                 {
-                    if (!JobService.CanUse(_save, SkillCatalog.All[i])) continue;
+                    if (!IsShown(SkillCatalog.All[i])) continue;
                     _selected = SkillCatalog.All[i].Id;
                     break;
                 }
@@ -304,12 +333,14 @@ namespace SoloHero.Game.UI.Panels
             for (int i = 0; i < SkillCatalog.All.Length && i < _cellFrames.Length; i++)
             {
                 SkillDef def = SkillCatalog.All[i];
-                bool visible = JobService.CanUse(_save, def);
+                bool visible = IsShown(def);
                 if (_cellFrames[i] != null && _cellFrames[i].gameObject.activeSelf != visible) _cellFrames[i].gameObject.SetActive(visible);
                 if (!visible) continue;
                 shown++;
                 int level = SkillBook.GetLevel(_save, def.Id);
                 bool has = level > 0;
+                // D-178: a skill of a later job tier is shown locked with the tier that opens it.
+                bool tierLocked = !JobService.CanUse(_save, def);
                 if (has) owned++;
                 SetFrame(_cellFrames[i], def, has);
                 if (i < _cellIcons.Length && _cellIcons[i] != null)
@@ -318,13 +349,15 @@ namespace SoloHero.Game.UI.Panels
                     _cellIcons[i].color = !has ? UnownedIcon : JobService.CanUse(_save, def) ? Color.white : OtherLineIcon;
                 }
 
-                Set(_cellBadges, i, has);
-                Set(_cellLocks, i, !has);
-                if (has && i < _cellLevels.Length && _cellLevels[i] != null)
+                Set(_cellBadges, i, has || tierLocked);
+                // The corner lock sits where the badge is: a tier-locked cell shows its "3rd job" badge instead.
+                Set(_cellLocks, i, !has && !tierLocked);
+                if (i < _cellLevels.Length && _cellLevels[i] != null)
                 {
                     // D-174: an awakened skill shows its stars instead of its (max) level.
-                    int stars = SkillBook.GetStars(_save, def.Id);
-                    _cellLevels[i].text = stars > 0 ? Strings.Format("skill.stars", stars) : Strings.Format("skill.lv", level);
+                    int stars = has ? SkillBook.GetStars(_save, def.Id) : 0;
+                    if (tierLocked) _cellLevels[i].text = Strings.Format("skill.tier_badge", def.JobTier);
+                    else if (has) _cellLevels[i].text = stars > 0 ? Strings.Format("skill.stars", stars) : Strings.Format("skill.lv", level);
                 }
 
                 int slot = has ? SkillBook.SlotOf(_save, def.Id) : -1;
@@ -351,6 +384,15 @@ namespace SoloHero.Game.UI.Panels
             }
 
             if (_ownedCount != null) _ownedCount.text = Strings.Format("skill.collection", owned, shown);
+
+            // D-178: the beginner's grid is three starters; the card under them says the first job opens the rest.
+            bool beginner = JobService.LineOf(_save) == JobLine.None;
+            if (_lineHint != null && _lineHint.activeSelf != beginner) _lineHint.SetActive(beginner);
+            if (!beginner) return;
+            int jobLevel = JobService.NextLevelFor(_balance, 0);
+            if (_lineHintText != null) _lineHintText.text = Strings.Format("skill.line_hint", jobLevel, LineSkillCount());
+            if (_lineHintButton != null)
+                _lineHintButton.text = _save.heroLevel >= jobLevel ? Strings.Get("skill.go_job") : Strings.Format("job.need_lv", jobLevel);
         }
 
         private void DrawDetail()
@@ -386,7 +428,11 @@ namespace SoloHero.Game.UI.Panels
                     _detailInfo.text += "  " + Strings.Format("skill.awaken_info", SkillBook.GetStars(_save, def.Id), _balance.AWAKEN_MAX_STARS, _save.awakenStones);
                 if (def.Line != JobLine.None)
                 {
-                    string line = Strings.Format("skill.line_only", Strings.Get(LineKeys[(int)def.Line]));
+                    // D-178: a skill of the hero's own line but a later job tier names the advancement that opens it.
+                    bool ownLine = def.Line == JobService.LineOf(_save);
+                    string line = ownLine && !JobService.CanUse(_save, def)
+                        ? Strings.Format("skill.tier_need", def.JobTier, JobService.NextLevelFor(_balance, def.JobTier - 1))
+                        : Strings.Format("skill.line_only", Strings.Get(LineKeys[(int)def.Line]));
                     _detailInfo.text += JobService.CanUse(_save, def) ? "  " + line : "  <color=#D8423E>" + line + "</color>";
                 }
             }

@@ -5,6 +5,7 @@ using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Pets;
 using SoloHero.Core.Save;
+using SoloHero.Core.Stage;
 using SoloHero.Game.Combat;
 using SoloHero.Game.UI.Common;
 using SoloHero.Game.View;
@@ -54,6 +55,8 @@ namespace SoloHero.Game.UI.Panels
         [SerializeField] private Image _levelIcon;
         [SerializeField] private Sprite _goldIcon;
         [SerializeField] private Sprite _awakenIcon;
+        [Tooltip("D-178: the summon shortcut's label; before the first boss it names the stage that opens the pet summon.")]
+        [SerializeField] private Text _summonLabel;
 
         private PetService _pets;
         private SaveDataV2 _save;
@@ -87,6 +90,12 @@ namespace SoloHero.Game.UI.Panels
         public void Close()
         {
             if (_popup != null) _popup.SetActive(false);
+        }
+
+        private string StageLabel(int global)
+        {
+            StageIndex.FromGlobal(global, _balance.STAGES_PER_CHAPTER, out int chapter, out int stage);
+            return chapter + "-" + stage;
         }
 
         public void Select(int index)
@@ -253,10 +262,21 @@ namespace SoloHero.Game.UI.Panels
                     : def.StunSeconds > 0f ? Strings.Get("pet.effect_stun") : "";
                 double ownedPercent = PetService.OwnedAtkPercent(_balance, def.Grade, enhance, level, stars);
                 bool awakening = owned && _pets.IsMax(index);
+                // D-178: before the first boss the unowned line names the stage that opens the pet summon.
+                string unowned = PetSummonService.IsUnlocked(_balance, _save)
+                    ? Strings.Get("pet.unowned")
+                    : Strings.Format("gacha.pet_locked", StageLabel(_balance.PET_UNLOCK_STAGE));
                 _detailInfo.text = (effect.Length > 0 ? Strings.Format("pet.with_effect", attack, effect) : attack) + "\n"
                     + Strings.Format("pet.owned_effect", Percent(ownedPercent))
                     + (awakening ? "\n" + Strings.Format("pet.awaken_info", stars, _balance.PET_AWAKEN_MAX_STARS, _save.awakenStones) : "")
-                    + (owned ? "" : "\n" + Strings.Get("pet.unowned"));
+                    + (owned ? "" : "\n" + unowned);
+            }
+
+            if (_summonLabel != null)
+            {
+                _summonLabel.text = PetSummonService.IsUnlocked(_balance, _save)
+                    ? Strings.Get("pet.summon")
+                    : Strings.Format("pet.summon_locked", StageLabel(_balance.PET_UNLOCK_STAGE));
             }
 
             if (_equipButton != null) _equipButton.SetAvailable(owned && index != equipped);

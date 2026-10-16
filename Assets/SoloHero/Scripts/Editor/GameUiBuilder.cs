@@ -4,6 +4,7 @@ using SoloHero.Game.Config;
 using SoloHero.Game.Infrastructure;
 using SoloHero.Game.Pooling;
 using SoloHero.Game.UI;
+using SoloHero.Core.Progression;
 using SoloHero.Core.Talents;
 using SoloHero.Game.UI.Common;
 using SoloHero.Game.UI.Panels;
@@ -428,7 +429,7 @@ namespace SoloHero.Editor
             GameObject character = BuildCharacter(panelArea, session, toast, jobPopup);
             GameObject equipment = BuildEquipment(panelArea, session, toast);
             GameObject gacha = BuildGacha(panelArea, session, toast);
-            GameObject skill = BuildSkill(panelArea, session, toast);
+            GameObject skill = BuildSkill(panelArea, session, toast, jobPopup);
             GameObject talent = BuildTalentPanel(panelArea, session, toast);
             SettingsPresenter settings = BuildSettings(hud.transform, toast);
 
@@ -438,6 +439,8 @@ namespace SoloHero.Editor
             {
                 var hudSo = new SerializedObject(hudView);
                 hudSo.FindProperty("_panels").objectReferenceValue = root.GetComponent<PanelHost>();
+                // D-178: a tapped locked slot says what opens it.
+                hudSo.FindProperty("_toast").objectReferenceValue = toast;
                 hudSo.ApplyModifiedPropertiesWithoutUndo();
             }
             BuildTutorial(root, session, toast, character, gacha.GetComponent<GachaPanelPresenter>());
@@ -831,7 +834,7 @@ namespace SoloHero.Editor
         /// (the rest scrolls), and a detail card: icon, grade chip, name, info and description, with level-up and
         /// equip stacked on the right.
         /// </summary>
-        private static GameObject BuildSkill(RectTransform area, CombatSession session, ToastQueue toast)
+        private static GameObject BuildSkill(RectTransform area, CombatSession session, ToastQueue toast, JobPresenter jobPopup)
         {
             RectTransform panel = Panel("SkillPanel", area);
             var presenter = panel.gameObject.AddComponent<SkillPanelPresenter>();
@@ -899,6 +902,25 @@ namespace SoloHero.Editor
                 tap.transition = Selectable.Transition.None;
                 UnityEventTools.AddIntPersistentListener(tap.onClick, presenter.SelectCell, i);
             }
+
+            // D-178: before the first job the grid holds only the three starters; a card under them says what opens the
+            // rest (friend feedback: "three skills and an empty window"), with a shortcut to the job popup.
+            RectTransform hint = TopBand("LineHint", well, 6f + 12f + SkillGridCell + 14f + 14f, 200f, 28f, 28f);
+            UiSkin.Sliced(hint.gameObject.AddComponent<Image>(), UiSkin.Card);
+            hint.GetComponent<Image>().raycastTarget = false;
+            FixedIcon(hint, "lock", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(26f, 0f), 64f);
+            Text hintText = InkText(Inset("Text", hint, 110f, 100f, 300f, 20f), 28, TextAnchor.MiddleLeft, UiPalette.InkTitle);
+            hintText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            hintText.verticalOverflow = VerticalWrapMode.Overflow;
+            Text hintSub = InkText(Inset("Sub", hint, 110f, 20f, 300f, 100f), 24, TextAnchor.MiddleLeft, UiPalette.InkMuted);
+            hintSub.horizontalOverflow = HorizontalWrapMode.Wrap;
+            hintSub.verticalOverflow = VerticalWrapMode.Overflow;
+            Localize(hintSub, "skill.line_hint_sub");
+            Button job = MakeButton("Job", hint, 1f, 0.5f, 1f, 0.5f, "", 30, out Text jobLabel, Tone.Orange);
+            Place((RectTransform)job.transform, new Vector2(1f, 0.5f), new Vector2(-22f, 0f), new Vector2(256f, 84f));
+            IconButton(job, jobLabel, "crown", 40f);
+            UnityEventTools.AddPersistentListener(job.onClick, presenter.OpenJob);
+            hint.gameObject.SetActive(false);
 
             RectTransform selection = Rect("Selection", content, 0f, 0f, 1f, 1f);
             selection.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
@@ -978,6 +1000,10 @@ namespace SoloHero.Editor
             so.FindProperty("_equipButton").objectReferenceValue = equipGuard;
             so.FindProperty("_equipLabel").objectReferenceValue = equipLabel;
             so.FindProperty("_detailPunch").objectReferenceValue = punch;
+            so.FindProperty("_lineHint").objectReferenceValue = hint.gameObject;
+            so.FindProperty("_lineHintText").objectReferenceValue = hintText;
+            so.FindProperty("_lineHintButton").objectReferenceValue = jobLabel;
+            so.FindProperty("_jobPopup").objectReferenceValue = jobPopup;
             so.FindProperty("_icons").objectReferenceValue = icons;
             so.FindProperty("_frames").objectReferenceValue = _gradeFrames;
             so.FindProperty("_session").objectReferenceValue = session;
@@ -1429,6 +1455,7 @@ namespace SoloHero.Editor
             string[] modeKeys = { "gacha.mode_gear", "gacha.mode_skill", "gacha.mode_pet" };
             string[] modeIcons = { "helm", "book", "paw" };
             var tabImages = new Image[modeKeys.Length];
+            var tabLocks = new GameObject[modeKeys.Length];
             RectTransform modes = TopBand("Modes", panel, 20f, 76f, PanelPad, PanelPad);
             for (int i = 0; i < modeKeys.Length; i++)
             {
@@ -1444,6 +1471,9 @@ namespace SoloHero.Editor
                 IconButton(tab, tabLabel, modeIcons[i], 48f);
                 Localize(tabLabel, modeKeys[i]);
                 UnityEventTools.AddIntPersistentListener(tab.onClick, presenter.SetMode, i);
+                // D-178: a small lock in the tab's corner while its page waits (skills: first job; pets: first boss).
+                tabLocks[i] = FixedIcon(tab.transform, "lock", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-6f, -4f), 34f).gameObject;
+                tabLocks[i].SetActive(false);
             }
 
             Text pity = InkText(TopBand("Pity", panel, 106f, 40f, PanelPad, PanelPad), 30, TextAnchor.MiddleCenter, UiPalette.InkTitle);
@@ -1537,6 +1567,7 @@ namespace SoloHero.Editor
             so.FindProperty("_session").objectReferenceValue = session;
             so.FindProperty("_toast").objectReferenceValue = toast;
             SetArray(so, "_tabImages", tabImages);
+            SetArray(so, "_tabLocks", tabLocks);
             so.FindProperty("_tabIdle").objectReferenceValue = UiSkin.PlateSprite(Tone.Gray);
             so.FindProperty("_tabActive").objectReferenceValue = UiSkin.PlateSprite(Tone.Gold);
             so.FindProperty("_equipmentIcons").objectReferenceValue = AssetDatabase.LoadAssetAtPath<EquipmentIconSet>(EquipmentIconsPath);
@@ -2626,6 +2657,42 @@ namespace SoloHero.Editor
                 if (i == 10) passBadges.Add(Badge(item, new Vector2(0.5f, 1f), new Vector2(34f, -8f)));
             }
 
+            // D-178: stage-gated items (dungeon, tower, pet, raid) wear a lock veil and name their opening stage until then.
+            int[] gatedItems = { 2, 3, 4, 8 };
+            SystemGate[] gates = { SystemGate.Dungeon, SystemGate.Tower, SystemGate.PetSummon, SystemGate.Raid };
+            var veils = new GameObject[gatedItems.Length];
+            var lockCaptions = new Text[gatedItems.Length];
+            var captions = new Text[gatedItems.Length];
+            var gateValues = new int[gatedItems.Length];
+            for (int i = 0; i < gatedItems.Length; i++)
+            {
+                Transform item = column.Find("Item" + gatedItems[i]);
+                RectTransform veil = Inset("Lock", item, 0f, 0f, 0f, 0f);
+                Image veilImage = Plain(veil, UiSkin.Veil);
+                veilImage.type = Image.Type.Sliced;
+                veilImage.color = new Color(0.12f, 0.1f, 0.2f, 0.62f);
+                veilImage.raycastTarget = false;
+                FixedIcon(veil, "lock", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), 52f);
+                lockCaptions[i] = AddText(BottomBand("Caption", veil, 4f, 30f, -16f, -16f), 22, TextAnchor.MiddleCenter);
+                lockCaptions[i].verticalOverflow = VerticalWrapMode.Overflow;
+                lockCaptions[i].color = UiPalette.HudMuted;
+                veil.SetAsLastSibling();
+                veil.gameObject.SetActive(false);
+                veils[i] = veil.gameObject;
+                captions[i] = item.Find("Caption").GetComponent<Text>();
+                gateValues[i] = (int)gates[i];
+            }
+
+            RailLocks railLocks = column.gameObject.AddComponent<RailLocks>();
+            var locksSo = new SerializedObject(railLocks);
+            SetArray(locksSo, "_veils", veils);
+            SetArray(locksSo, "_lockCaptions", lockCaptions);
+            SetArray(locksSo, "_captions", captions);
+            SerializedProperty gateProp = locksSo.FindProperty("_gates");
+            gateProp.arraySize = gateValues.Length;
+            for (int i = 0; i < gateValues.Length; i++) gateProp.GetArrayElementAtIndex(i).intValue = gateValues[i];
+            locksSo.ApplyModifiedPropertiesWithoutUndo();
+
             var passSo = new SerializedObject(pass);
             SetArray(passSo, "_badges", passBadges.ToArray());
             passSo.ApplyModifiedPropertiesWithoutUndo();
@@ -3104,7 +3171,8 @@ namespace SoloHero.Editor
             Button summon = MakeButton("Summon", box, 0.5f, 0f, 0.5f, 0f, "", 34, out Text summonLabel, Tone.Purple);
             Place((RectTransform)summon.transform, new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(440f, 100f));
             IconButton(summon, summonLabel, "paw", 46f);
-            Localize(summonLabel, "pet.summon");
+            // D-178: the presenter writes the label (the stage that opens the summon before the first boss).
+            summonLabel.text = "";
             UnityEventTools.AddPersistentListener(summon.onClick, presenter.OpenSummon);
 
             var so = new SerializedObject(presenter);
@@ -3134,6 +3202,7 @@ namespace SoloHero.Editor
             so.FindProperty("_levelIcon").objectReferenceValue = level.transform.Find("Icon").GetComponent<Image>();
             so.FindProperty("_goldIcon").objectReferenceValue = UiSkin.Icon("coin");
             so.FindProperty("_awakenIcon").objectReferenceValue = UiSkin.Icon("awaken");
+            so.FindProperty("_summonLabel").objectReferenceValue = summonLabel;
             so.ApplyModifiedPropertiesWithoutUndo();
             popup.gameObject.SetActive(false);
             return presenter;
@@ -4037,9 +4106,10 @@ namespace SoloHero.Editor
                 Vector2 inner;
                 if (ultimate)
                 {
+                    // D-178: where the basic-skill box stood (the main attack is no longer shown as a slot).
                     slot = Rect(UltimateSkillName, hud, 0f, PanelTop, 0f, PanelTop);
                     slot.pivot = new Vector2(0f, 0f);
-                    slot.anchoredPosition = new Vector2(150f, 18f + slotSize + 26f);
+                    slot.anchoredPosition = new Vector2(24f, 18f + slotSize + 26f);
                     slot.sizeDelta = new Vector2(104f, 104f);
                     inner = new Vector2(80f, 80f);
                 }
@@ -4085,6 +4155,8 @@ namespace SoloHero.Editor
                 castGlows[i].enabled = false;
 
                 locks[i] = MakeText("Lock", slot, 0f, 0.04f, 1f, 0.42f, "", 26, TextAnchor.MiddleCenter);
+                // D-178: the ultimate's lock says "second job", wider than its 104 slot.
+                if (ultimate) locks[i].horizontalOverflow = HorizontalWrapMode.Overflow;
                 RectTransform lockIcon = Rect("LockIcon", locks[i].transform, 0.3f, 1.05f, 0.7f, 2.1f);
                 Image lockImage = lockIcon.gameObject.AddComponent<Image>();
                 lockImage.sprite = lockSprite;
@@ -4098,7 +4170,7 @@ namespace SoloHero.Editor
                     UiSkin.ButtonText(ultTag, Tone.Orange);
                     ultTag.verticalOverflow = VerticalWrapMode.Overflow;
                     Localize(ultTag, "hud.ultimate");
-                    slot.gameObject.SetActive(false);
+                    // D-178: stays visible; BattleHud draws it locked until the job has an ultimate.
                 }
             }
 
@@ -4110,37 +4182,12 @@ namespace SoloHero.Editor
             autoRect.sizeDelta = new Vector2(196f, 84f);
             IconButton(auto, autoLabel, "auto", 44f);
 
-            // D-093 basic skill: always-on main attack, shown above the first slot with its swing timer.
-            RectTransform basic = Rect(BasicSkillName, hud, 0f, PanelTop, 0f, PanelTop);
-            SubCanvas(basic.gameObject, false);
-            basic.pivot = new Vector2(0f, 0f);
-            basic.anchoredPosition = new Vector2(24f, 18f + slotSize + 26f);
-            basic.sizeDelta = new Vector2(104f, 104f);
-            UiSkin.Sliced(Plain(basic, null), UiSkin.GradeFrame(SoloHero.Core.Gacha.Grade.Rare));
-            Image basicIcon = FixedIcon(basic, "basic", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, 64f);
-            Image basicCooldown = Box("Cooldown", basic, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(80f, 80f)).gameObject.AddComponent<Image>();
-            basicCooldown.sprite = UiSkin.Veil;
-            basicCooldown.color = new Color(0.05f, 0.03f, 0.12f, 0.6f);
-            basicCooldown.type = Image.Type.Filled;
-            basicCooldown.fillMethod = Image.FillMethod.Radial360;
-            basicCooldown.fillOrigin = (int)Image.Origin360.Top;
-            basicCooldown.fillClockwise = false;
-            basicCooldown.raycastTarget = false;
-            RectTransform basicChip = BottomBand("TagChip", basic, -22f, 34f, -26f, -26f);
-            UiSkin.Sliced(Plain(basicChip, null), UiSkin.PlateSprite(Tone.Blue));
-            Text basicTag = AddText(Inset("Tag", basicChip, 0f, 2f, 0f, 0f), 22, TextAnchor.MiddleCenter);
-            UiSkin.ButtonText(basicTag, Tone.Blue);
-            basicTag.verticalOverflow = VerticalWrapMode.Overflow;
-            basicTag.horizontalOverflow = HorizontalWrapMode.Overflow;
-            // D-104: BattleHud writes the job's main attack name here.
-            basicTag.text = "";
+            // D-093's basic-skill box (the job's main attack with its swing timer) is gone since D-178: the main attack
+            // always fires, so the bar shows only what the player chooses; the character panel still describes it.
             Localize(autoLabel, "hud.skill_auto");
             if (battleHud != null) UnityEventTools.AddPersistentListener(auto.onClick, battleHud.ToggleSkillAuto);
 
             if (so == null) return;
-            so.FindProperty("_basicCooldown").objectReferenceValue = basicCooldown;
-            so.FindProperty("_basicTag").objectReferenceValue = basicTag;
-            so.FindProperty("_basicIcon").objectReferenceValue = basicIcon;
             so.FindProperty("_autoImage").objectReferenceValue = auto.GetComponent<Image>();
             so.FindProperty("_autoLabel").objectReferenceValue = autoLabel;
             so.FindProperty("_autoOnSprite").objectReferenceValue = UiSkin.ButtonSprite(Tone.Green);

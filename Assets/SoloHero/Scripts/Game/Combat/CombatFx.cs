@@ -49,6 +49,10 @@ namespace SoloHero.Game.Combat
         private static readonly Color JobColor = new Color(1f, 0.86f, 0.4f, 1f);
         private static readonly Color JobFlash = new Color(1f, 0.95f, 0.7f, 1f);
         private static readonly Color SetColor = new Color(0.62f, 0.85f, 1f, 1f);
+        // D-178: "X opened!" after the chapter-clear ribbon, in the tier-open red so it reads as a new door.
+        private static readonly Color SystemOpenColor = new Color(0.55f, 0.9f, 1f, 1f);
+        private const float SystemOpenDelay = 0.6f;
+        private readonly SystemGate[] _openedGates = new SystemGate[SystemUnlocks.All.Length];
         private const float JobRingScale = 3f;
         private const float SetPollSeconds = 1f;
         private const float ComboFxGap = 0.2f;
@@ -264,6 +268,11 @@ namespace SoloHero.Game.Combat
                 if (tierBoss) _rewardFx.Play(RewardKind.Ticket, _balance.TIER_CLEAR_GEAR_TICKETS + _balance.TIER_CLEAR_SKILL_TICKETS, RewardFx.BattleCenter, 1);
             }
 
+            // D-178: the systems this first clear opens (dungeon, tower, pet summon ...) get their own ribbon after the
+            // chapter's, so the player learns the new door the moment it opens (the rail lock comes off at the same time).
+            int opened = !_hooked.InDungeon ? SystemUnlocks.OpenedBy(_balance, g, _openedGates) : 0;
+            if (opened > 0) StartCoroutine(SystemOpenRibbon(opened, TierOpenSeconds + SystemOpenDelay));
+
             if (tierBoss)
             {
                 string tier = DifficultyTier.Name(DifficultyTier.Of(_balance, g + 1));
@@ -278,6 +287,22 @@ namespace SoloHero.Game.Combat
             Ribbon(Strings.Format("fx.chapter_clear", label), ChapterClearColor, TierOpenSeconds);
             // The ribbon and the flying "+N" say it all; the toast is the fallback without the reward layer.
             if (_rewardFx == null && _toast != null) _toast.Show(Strings.Format("toast.chapter_clear", label, gained));
+        }
+
+        /// <summary>D-178: names the systems a first clear opened ("dungeon, tower, pet summon opened!") once the chapter ribbon is gone.</summary>
+        private System.Collections.IEnumerator SystemOpenRibbon(int count, float delay)
+        {
+            var names = new System.Text.StringBuilder();
+            for (int i = 0; i < count; i++)
+            {
+                if (i > 0) names.Append(' ').Append(Strings.Get("fx.system_sep")).Append(' ');
+                names.Append(Strings.Get(SystemUnlocks.NameKey(_openedGates[i])));
+            }
+
+            string text = Strings.Format("fx.system_open", names.ToString());
+            yield return new WaitForSecondsRealtime(delay);
+            Ribbon(text, SystemOpenColor, TierOpenSeconds);
+            if (_toast != null) _toast.Show(text);
         }
 
         private void OnStateChanged(StageState state)

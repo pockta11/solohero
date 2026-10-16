@@ -6,6 +6,7 @@ using SoloHero.Core.Config;
 using SoloHero.Core.Economy;
 using SoloHero.Core.Gacha;
 using SoloHero.Core.Growth;
+using SoloHero.Core.Jobs;
 using SoloHero.Core.Pets;
 using SoloHero.Core.Save;
 using SoloHero.Core.Skills;
@@ -53,6 +54,8 @@ namespace SoloHero.Game.UI.Panels
 
         [Header("Tabs (D-078)")]
         [SerializeField] private Image[] _tabImages = new Image[3];
+        [Tooltip("D-178: a lock on the tab of a page that is not open yet (skills before the first job, pets before the first boss).")]
+        [SerializeField] private GameObject[] _tabLocks = new GameObject[0];
         [SerializeField] private Sprite _tabIdle;
         [SerializeField] private Sprite _tabActive;
         [SerializeField] private EquipmentIconSet _equipmentIcons;
@@ -83,6 +86,7 @@ namespace SoloHero.Game.UI.Panels
         private double _shownGem = -1d;
         private int _mode = ModeGear;
         private int _shownHighest = -1;
+        private string _shownJob;
         private SoloHero.Core.Events.EventService _events;
         private float _pickupClock;
 
@@ -116,7 +120,7 @@ namespace SoloHero.Game.UI.Panels
             }
 
             if (_save.gold == _shownGold && _save.gem == _shownGem && _save.farmingStage == _shownFarmingStage
-                && _save.highestStage == _shownHighest) return;
+                && _save.highestStage == _shownHighest && _save.jobId == _shownJob) return;
             Refresh();
         }
 
@@ -453,10 +457,16 @@ namespace SoloHero.Game.UI.Panels
             _shownGold = _save.gold;
             _shownGem = _save.gem;
             _shownHighest = _save.highestStage;
+            _shownJob = _save.jobId;
             bool skill = _mode == ModeSkill;
             bool pet = _mode == ModePet;
-            // D-114: the pet page waits for the first boss.
-            bool locked = pet && !PetSummonService.IsUnlocked(_balance, _save);
+            // D-114: the pet page waits for the first boss; D-178: the skill page waits for the first job (the pull
+            // would fail with JobLocked), and each waiting page wears a lock on its tab.
+            bool petLocked = !PetSummonService.IsUnlocked(_balance, _save);
+            bool skillLocked = JobService.LineOf(_save) == JobLine.None;
+            bool locked = (pet && petLocked) || (skill && skillLocked);
+            SetLock(ModePet, petLocked);
+            SetLock(ModeSkill, skillLocked);
 
             int pity = skill ? _balance.GACHA_PITY : _balance.GEAR_PITY;
             int count = skill ? _save.skillPityCount : pet ? _save.petPityCount : _save.pityCount;
@@ -465,7 +475,9 @@ namespace SoloHero.Game.UI.Panels
             string top;
             if (locked)
             {
-                top = Strings.Format("gacha.pet_locked", StageLabel(_balance.PET_UNLOCK_STAGE));
+                top = pet
+                    ? Strings.Format("gacha.pet_locked", StageLabel(_balance.PET_UNLOCK_STAGE))
+                    : Strings.Format("gacha.skill_locked", JobService.NextLevelFor(_balance, 0));
                 ratio = 0f;
             }
             else if (PityOpen(_mode))
@@ -497,6 +509,11 @@ namespace SoloHero.Game.UI.Panels
                 _ticketLabel.text = Strings.Format("gacha.tickets", System.Math.Max(1, System.Math.Min(TicketBatch, tickets)), BigNumberFormat.Format(tickets));
             if (_ticketButton != null) _ticketButton.SetAvailable(!locked && tickets > 0);
             DrawAdButton(locked);
+        }
+
+        private void SetLock(int mode, bool locked)
+        {
+            if (mode < _tabLocks.Length && _tabLocks[mode] != null && _tabLocks[mode].activeSelf != locked) _tabLocks[mode].SetActive(locked);
         }
 
         /// <summary>

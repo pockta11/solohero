@@ -63,12 +63,8 @@ namespace SoloHero.Game.UI
         [SerializeField] private GameObject[] _skillReadyMarks = new GameObject[0];
         [Tooltip("D-108: faint plus shown in empty unlocked slots (tap opens the skill tab).")]
         [SerializeField] private Sprite _emptySlotIcon;
-        [Tooltip("D-093 basic skill: cooldown sweep over its icon (the attack-speed timer).")]
-        [SerializeField] private Image _basicCooldown;
-        [Tooltip("D-104: the basic skill's name, which is the job's main attack.")]
-        [SerializeField] private Text _basicTag;
-        [Tooltip("D-104: the basic skill's icon; jobs show their main attack icon, the beginner keeps the flash slash.")]
-        [SerializeField] private Image _basicIcon;
+        [Tooltip("D-178: says what a locked slot waits for when it is tapped.")]
+        [SerializeField] private ToastQueue _toast;
         [Tooltip("D-108: tapping an empty skill slot opens the skill tab of this host.")]
         [SerializeField] private PanelHost _panels;
         [SerializeField] private GameObject _bossBar;
@@ -110,7 +106,6 @@ namespace SoloHero.Game.UI
         private StageRunner _skillRunner;
         private SettingsService _settings;
         private int _shownAuto = -1;
-        private string _shownJob;
         private bool[] _shownReady = new bool[0];
 
         private void Awake()
@@ -267,6 +262,11 @@ namespace SoloHero.Game.UI
             {
                 bool locked = slot < _shownLocked.Length && _shownLocked[slot];
                 if (!locked && _panels != null) _panels.Toggle(SkillTabIndex);
+                // D-178: a locked slot says what opens it (the ultimate waits for the second job).
+                else if (locked && _toast != null && _balance != null)
+                    _toast.Show(slot == runner.Skills.UltimateSlot
+                        ? Strings.Format("hud.ultimate_need", _balance.JOB_LV_2)
+                        : Strings.Format("skill.slot_opens", slot + 1, SkillService.UnlockHeroLevel(_balance, slot)));
                 return;
             }
 
@@ -454,44 +454,6 @@ namespace SoloHero.Game.UI
             SetShown(_retreatPrompt != null ? _retreatPrompt.gameObject : null, false, ref _retreatPromptVisible);
         }
 
-        /// <summary>
-        /// D-078 skill bar: each slot shows its skill icon in a grade-coloured frame, a radial cooldown with seconds,
-        /// or a lock with the hero level that opens it. Texts and sprites change only when their value changes.
-        /// </summary>
-        private void RefreshBasic(StageRunner runner)
-        {
-            if (_basicTag != null && _save != null && _save.jobId != _shownJob)
-            {
-                _shownJob = _save.jobId;
-                SoloHero.Core.Jobs.JobDef job = SoloHero.Core.Jobs.JobCatalog.Find(_shownJob);
-                _basicTag.text = Strings.Get(job.MainKey);
-                ShowBasicIcon(job);
-            }
-
-            if (_basicCooldown == null) return;
-            float interval = runner.Hero.SwingInterval;
-            float fill = interval > 0f ? Mathf.Clamp01(runner.Hero.SwingCooldown / interval) : 0f;
-            if (Mathf.Abs(_basicCooldown.fillAmount - fill) > 0.01f) _basicCooldown.fillAmount = fill;
-        }
-
-        private Sprite _basicDefault;
-        private Vector2 _basicDefaultSize;
-
-        private void ShowBasicIcon(SoloHero.Core.Jobs.JobDef job)
-        {
-            if (_basicIcon == null) return;
-            if (_basicDefault == null)
-            {
-                _basicDefault = _basicIcon.sprite;
-                _basicDefaultSize = _basicIcon.rectTransform.sizeDelta;
-            }
-
-            Sprite icon = job.Main != null && _skillIconSet != null ? _skillIconSet.Get(SoloHero.Core.Jobs.JobCatalog.MainIconId(job)) : null;
-            _basicIcon.sprite = icon != null ? icon : _basicDefault;
-            // D-108: skill icons are smooth 128 px tiles shown at 80 units inside the 104 frame.
-            _basicIcon.rectTransform.sizeDelta = icon != null ? new Vector2(80f, 80f) : _basicDefaultSize;
-        }
-
         private void RefreshAuto(StageRunner runner)
         {
             bool auto = _settings == null || !_settings.SkillManual;
@@ -519,10 +481,14 @@ namespace SoloHero.Game.UI
             }
         }
 
+        /// <summary>
+        /// D-078 skill bar: each slot shows its skill icon in a grade-coloured frame, a radial cooldown with seconds,
+        /// or a lock with the hero level that opens it. Texts and sprites change only when their value changes.
+        /// D-178: the job's main attack is not a slot any more (it always fires; the character panel describes it).
+        /// </summary>
         private void RefreshSkills(StageRunner runner)
         {
             RefreshAuto(runner);
-            RefreshBasic(runner);
             int count = _skillIcons.Length;
             if (_shownDefs.Length != count || _skillRunner != runner)
             {
@@ -553,8 +519,11 @@ namespace SoloHero.Game.UI
             for (int i = 0; i < count; i++)
             {
                 SkillDef def = runner.Skills.DefAt(i);
-                // D-104: the ultimate slot is never level-locked; it shows only while the job has an ultimate.
-                bool locked = i != runner.Skills.UltimateSlot && _save != null && _balance != null && !SkillService.IsSlotUnlocked(_balance, i, _save.heroLevel);
+                // D-104: the ultimate slot is never level-locked; D-178: it stays visible and reads as locked until the
+                // job has an ultimate, so the player sees what the second job adds.
+                bool locked = i == runner.Skills.UltimateSlot
+                    ? def == null
+                    : _save != null && _balance != null && !SkillService.IsSlotUnlocked(_balance, i, _save.heroLevel);
                 if (def != _shownDefs[i] || locked != _shownLocked[i] || levelChanged)
                 {
                     // A newly equipped skill's cooldown is not a cast.
@@ -594,8 +563,9 @@ namespace SoloHero.Game.UI
             Image frame = i < _skillFrames.Length ? _skillFrames[i] : null;
             Text lockText = i < _skillLocks.Length ? _skillLocks[i] : null;
             Sprite sprite = def != null && _skillIconSet != null ? _skillIconSet.Get(def.IconId) : null;
-            if (_balance != null && i >= SkillService.SlotCount(_balance) && frame != null && frame.gameObject.activeSelf != (def != null))
-                frame.gameObject.SetActive(def != null);
+            bool ultimate = _balance != null && i >= SkillService.SlotCount(_balance);
+            // D-178: the ultimate slot stays on screen (locked until the second job) instead of appearing from nowhere.
+            if (ultimate && frame != null && !frame.gameObject.activeSelf) frame.gameObject.SetActive(true);
             if (icon != null)
             {
                 bool empty = def == null && !locked && _balance != null && i < SkillService.SlotCount(_balance) && _emptySlotIcon != null;
@@ -615,8 +585,8 @@ namespace SoloHero.Game.UI
             }
             if (lockText == null) return;
             lockText.gameObject.SetActive(locked);
-            if (locked && _balance != null && i < SkillService.SlotCount(_balance))
-                lockText.text = Strings.Format("skill.slot_locked", SkillService.UnlockHeroLevel(_balance, i));
+            if (locked && _balance != null)
+                lockText.text = ultimate ? Strings.Get("hud.ultimate_locked") : Strings.Format("skill.slot_locked", SkillService.UnlockHeroLevel(_balance, i));
         }
 
         private void RefreshRetreatPrompt(StageRunner runner)
