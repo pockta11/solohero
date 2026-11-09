@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using SoloHero.Core.Common;
+using SoloHero.Core.Security;
 
 namespace SoloHero.Core.Save
 {
@@ -31,6 +32,7 @@ namespace SoloHero.Core.Save
         private bool _running;
         private bool _hasPending;
         private bool _suspended;
+        private bool _uploadsBlocked;
         private string _pending;
         private Task _run = Task.CompletedTask;
 
@@ -72,6 +74,18 @@ namespace SoloHero.Core.Save
             CancelDebounce();
             StartRun();
             return _run;
+        }
+
+        /// <summary>
+        /// D-184: this session started from a local copy whose seal was missing or wrong while the server could not be
+        /// asked. It plays and saves on the device, but nothing is uploaded: the server's copy wins on the next start.
+        /// </summary>
+        public bool UploadsBlocked
+        {
+            get
+            {
+                lock (_gate) return _uploadsBlocked;
+            }
         }
 
         /// <summary>True while <see cref="Suspend"/> holds every write back.</summary>
@@ -138,7 +152,8 @@ namespace SoloHero.Core.Save
                 {
                     SaveDataV2 data = _serializer.FromV2Json(json) ?? SaveDataV2.CreateNew();
                     SaveDataV2 local = await TryLoadLocalV2Async();
-                    if (local != null && local.saveRevision > data.saveRevision)
+                    // D-184: only a copy this game sealed (and not one a cut-off session played on) beats the server.
+                    if (local != null && local.saveRevision > data.saveRevision && LocalSealed && !local.untrustedLocal)
                     {
                         // The app stopped before the last upload: the local backup is newer. Keep it and upload it
                         // (not awaited: a slow upload must not hold the loading screen).
@@ -147,6 +162,9 @@ namespace SoloHero.Core.Save
                         return local;
                     }
 
+                    if (local != null && local.saveRevision > data.saveRevision)
+                        Log.Warn(LogTag.Save, "local save newer than remote but not trusted (seal " + LocalTrust + "), the server copy wins");
+                    data.untrustedLocal = false;
                     await _localV2.SaveJsonAsync(_serializer.ToJson(data));
                     return data;
                 }
@@ -161,6 +179,12 @@ namespace SoloHero.Core.Save
                 return await LoadOfflineAsync();
             }
         }
+
+        /// <summary>D-184: the seal of the local copy last read (Sealed when the local store does not seal).</summary>
+        private LocalSaveTrust LocalTrust => _localV2 is ILocalSaveTrust trust ? trust.LastTrust : LocalSaveTrust.Sealed;
+
+        /// <summary>The local copy last read was written by this game (or there was none).</summary>
+        private bool LocalSealed => LocalTrust == LocalSaveTrust.Sealed || LocalTrust == LocalSaveTrust.Missing;
 
         /// <summary>The server copy, or a TimeoutException after <see cref="RemoteLoadTimeoutMs"/> (no network).</summary>
         private async Task<string> LoadRemoteAsync(ISaveStore store)
@@ -192,6 +216,7 @@ namespace SoloHero.Core.Save
 
         private async Task TryUploadAsync(SaveDataV2 data)
         {
+            if (UploadsBlocked) return;
             try
             {
                 await _remoteV2.SaveJsonAsync(_serializer.ToJson(data));
@@ -214,13 +239,30 @@ namespace SoloHero.Core.Save
             }
         }
 
+        /// <summary>
+        /// The device's copy without a server copy (no network, or the server holds none). D-184: a copy whose seal is
+        /// missing or wrong - or that an earlier such session played on - plays flagged
+        /// <see cref="SaveDataV2.untrustedLocal"/>: nothing is lost on the device, but nothing is uploaded either (an
+        /// empty server must not adopt an edited copy under a fresh account), and once the server answers with a copy,
+        /// that copy wins. Only a server copy clears the flag.
+        /// </summary>
         private async Task<SaveDataV2> LoadOfflineAsync()
         {
             string json = await _localV2.LoadJsonAsync();
             if (!string.IsNullOrEmpty(json))
             {
                 SaveDataV2 data = _serializer.FromV2Json(json);
-                if (data != null) return data;
+                if (data != null)
+                {
+                    if (!LocalSealed) data.untrustedLocal = true;
+                    if (data.untrustedLocal)
+                    {
+                        Log.Warn(LogTag.Save, "local save not trusted (seal " + LocalTrust + "): playing on the device without uploads");
+                        lock (_gate) _uploadsBlocked = true;
+                    }
+
+                    return data;
+                }
             }
 
             SaveDataV2 migrated = await TryMigrateAsync(_localV1, writeRemote: false);
@@ -338,7 +380,7 @@ namespace SoloHero.Core.Save
         private async Task PersistAsync(string json)
         {
             await _localV2.SaveJsonAsync(json);
-            if (_remoteV2 == null) return;
+            if (_remoteV2 == null || UploadsBlocked) return;
 
             try
             {

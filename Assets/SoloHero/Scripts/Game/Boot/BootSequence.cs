@@ -33,6 +33,7 @@ namespace SoloHero.Game.Boot
         private SaveDataV2 _data;
         private BalanceValues _balanceValues;
         private TrustedClock _clock;
+        private string _userId;
         private bool _offlinePopupPending;
 
         /// <summary>D-133: the player came back before the server's clock was known; paid when it is.</summary>
@@ -45,6 +46,8 @@ namespace SoloHero.Game.Boot
         {
             Log.Sink = new UnityLogSink();
             ExceptionReporter.Install();
+            // D-184: the first tamper sign of the session goes to analytics (raised on any thread).
+            SoloHero.Core.Security.TamperGuard.Detected += kind => MainThreadDispatcher.Post(() => ReportTamper(kind));
             if (_strings != null) Strings.Load(Strings.ParseTsv(_strings.text));
             DontDestroyOnLoad(gameObject);
             try
@@ -73,6 +76,7 @@ namespace SoloHero.Game.Boot
 
             _save = report.Save;
             _data = report.Data;
+            _userId = report.UserId;
             _offlinePopupPending = report.Offline.ShowPopup;
             _offlineDeferred = report.OfflineDeferred;
 
@@ -87,6 +91,12 @@ namespace SoloHero.Game.Boot
             RegisterAds(balance, clock, requester);
             RegisterSettingsAndAudio();
             Services.Register<IAnalytics>(new AnalyticsService(auth.FirebaseReady));
+            if (_pendingTamper != null)
+            {
+                string pending = _pendingTamper;
+                _pendingTamper = null;
+                ReportTamper(pending);
+            }
             // D-156: the event schedule (saved copy now, the server's when it answers).
             EventScheduleLoader.Start(Services.Get<SoloHero.Core.Events.EventService>(), auth.FirebaseReady);
             ExceptionReporter.Flush();
@@ -187,8 +197,13 @@ namespace SoloHero.Game.Boot
             // D-175: the weekly raid (entries and shop on the trusted clock's local week).
             Services.Register(new SoloHero.Core.Stage.RaidService(balance, _data, clock, requester));
             // D-181 store: Google Play through Unity IAP in release builds, an instant fake while developing (the
-            // emulator has no Play Store), nothing when the purchasing package is absent.
-            Services.Register(new PurchaseService(balance, _data, clock, PurchaseGateways.Create(gameObject, ads != null && ads.QaBuild), requester));
+            // emulator has no Play Store), nothing when the purchasing package is absent. D-183: every purchase is
+            // recorded once in the server's purchase ledger before it is paid.
+            bool qaBuild = ads != null && ads.QaBuild;
+            // D-184: no purchase is paid in a session whose saves would not reach the server copy (it would be replaced).
+            SaveService save = _save;
+            Services.Register(new PurchaseService(balance, _data, clock, PurchaseGateways.Create(gameObject, qaBuild), requester,
+                PurchaseGateways.CreateLedger(_userId, qaBuild), () => save != null && !save.UploadsBlocked && !save.IsSuspended));
         }
 
         private void RegisterSettingsAndAudio()
@@ -248,10 +263,34 @@ namespace SoloHero.Game.Boot
             _offlinePopupPending = false;
         }
 
+        private static string _pendingTamper;
+
+        /// <summary>D-184: one analytics line for the session's first tamper sign (memory edit or edited backup).</summary>
+        private static void ReportTamper(string kind)
+        {
+            Log.Warn(LogTag.Boot, "tamper sign: " + kind);
+            if (SoloHero.Game.UI.Panels.PanelServices.TryGet<IAnalytics>() == null)
+            {
+                // Seen while booting (an edited backup): sent once analytics is registered.
+                _pendingTamper = kind;
+                return;
+            }
+
+            try
+            {
+                SoloHero.Game.UI.Common.GameAnalytics.Log(AnalyticsEvents.TamperDetected, AnalyticsParam.Of(AnalyticsEvents.PKind, kind));
+            }
+            catch (System.Exception)
+            {
+                // Analytics may not be up yet; the sign is in the log.
+            }
+        }
+
         private SaveService CreateSave(string userId)
         {
             var serializer = new NewtonsoftSaveSerializer();
-            var localV2 = new LocalBackupStore(LocalBackupStore.V2Key);
+            // D-184: the device's backup is sealed; an edited one cannot beat or overwrite the server's copy.
+            var localV2 = new SealedSaveStore(new LocalBackupStore(LocalBackupStore.V2Key));
             var localV1 = new LocalBackupStore(LocalBackupStore.V1Key);
             if (userId == AuthService.LocalUserId)
                 return new SaveService(localV2, serializer, null, null, localV1);

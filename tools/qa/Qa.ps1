@@ -41,17 +41,44 @@ function Alive {
 }
 function Tap([int]$x, [int]$y) { Adb shell input tap $x $y | Out-Null }
 
+# D-184: the game seals its backup as "SH1:" + base64(HMAC-SHA256) + ":" + json (Core/Security/SaveSeal.cs). The key
+# below is the same two halves put together the same way - it must match SaveSeal exactly (Seal-Json '{}' gives
+# 'SH1:krEicwChXADTJVwPbgHCYG1qA2YYev9nYSl6d8JsUEA=:{}', the fixed vector of AntiTamperTests).
+function Get-SealKey {
+    $a = [byte[]](0x3E, 0x0B, 0xDD, 0x7D, 0x71, 0x1C, 0x26, 0xAF, 0xD3, 0xBC, 0xE5, 0x5A, 0xD1, 0x69, 0xFF, 0x15)
+    $b = [byte[]](0xFB, 0xF2, 0x3F, 0x5B, 0x3E, 0xA3, 0xEC, 0xCC, 0x08, 0x23, 0xD0, 0x93, 0x54, 0x52, 0xFC, 0x22)
+    $key = [byte[]]::new(32)
+    for ($i = 0; $i -lt 16; $i++) {
+        $key[$i] = [byte]($a[$i] -bxor ((0x5A + $i * 7) -band 0xFF))
+        $key[16 + $i] = [byte]($b[$i] -bxor ((0xA5 - $i * 11) -band 0xFF))
+    }
+    return $key
+}
+
+function Seal-Json([string]$json) {
+    $hmac = [System.Security.Cryptography.HMACSHA256]::new((Get-SealKey))
+    try { $mac = [Convert]::ToBase64String($hmac.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($json))) } finally { $hmac.Dispose() }
+    return "SH1:" + $mac + ":" + $json
+}
+
+function Unseal-Json([string]$stored) {
+    if ($stored.StartsWith('SH1:') -and $stored.Length -gt 49 -and $stored[48] -eq ':') { return $stored.Substring(49) }
+    return $stored
+}
+
 function Read-Save {
     $xml = (Adb shell "cat $prefs" 2>$null) -join "`n"
     $m = [regex]::Match($xml, '<string name="player_data_v2">(.*?)</string>', 'Singleline')
     if (-not $m.Success) { return $null }
-    return ([uri]::UnescapeDataString([System.Net.WebUtility]::HtmlDecode($m.Groups[1].Value)) | ConvertFrom-Json)
+    $stored = [uri]::UnescapeDataString([System.Net.WebUtility]::HtmlDecode($m.Groups[1].Value))
+    return (Unseal-Json $stored | ConvertFrom-Json)
 }
 
 # Rewrites the local save while the app is stopped. A higher saveRevision makes the local copy win over the
 # remote one on the next boot (SaveService.LoadAsync), which also uploads it.
 function Write-Save($save) {
-    $json = $save | ConvertTo-Json -Depth 5 -Compress
+    # Sealed like the game's own writes (an unsealed seed would read as untrusted and lose to the server copy).
+    $json = Seal-Json ($save | ConvertTo-Json -Depth 5 -Compress)
     $xml = (Adb shell "cat $prefs") -join "`n"
     $encoded = [System.Net.WebUtility]::HtmlEncode([uri]::EscapeDataString($json))
     $xml = [regex]::Replace($xml, '<string name="player_data_v2">.*?</string>', { param($x) "<string name=`"player_data_v2`">$encoded</string>" }, 'Singleline')

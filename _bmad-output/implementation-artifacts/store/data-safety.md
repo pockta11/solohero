@@ -1,6 +1,6 @@
-# Play Console 데이터 보안 양식 답변 (E9-14, 2026-10-08 갱신)
+# Play Console 데이터 보안 양식 답변 (E9-14, 2026-11-09 인앱 결제 기준 갱신)
 
-앱이 쓰는 SDK: Firebase Authentication(익명), Firebase Realtime Database, Firebase Analytics, Google Mobile Ads(AdMob) + User Messaging Platform(동의). 인앱 결제 없음. 새 네이티브 SDK는 없다(크래시 수집은 Analytics 이벤트로, D-135).
+앱이 쓰는 SDK: Firebase Authentication(익명), Firebase Realtime Database, Firebase Analytics, Google Mobile Ads(AdMob) + User Messaging Platform(동의), **Unity IAP 4.15.1(Google Play 결제 라이브러리 8.3.0, D-181·D-183)**. 결제 수단(카드 번호 등)은 Google Play가 처리하고 앱은 보지 않는다. 크래시 수집은 Analytics 이벤트로(D-135).
 
 ## 1. 데이터 수집 및 보안
 
@@ -20,7 +20,10 @@
 | 앱 활동 → 기타 작업 (게임 진행·설정 저장, 기기 이전 코드로 24시간 보관되는 진행 사본) | 예 | 아니요 | 아니요 | 앱 기능 |
 | 앱 정보 및 성능 → 비정상 종료 로그, 진단 (C# 예외 요약 `app_exception`, Analytics·AdMob 진단) | 예 | 아니요 | 아니요 | 분석 |
 | 위치 → 대략적인 위치 | 예 (AdMob이 IP로 추정) | 예 | 아니요 | 광고 또는 마케팅, 사기 방지 |
-| 개인 정보(이름·이메일·전화), 금융 정보, 사진, 연락처, 메시지 | **수집 안 함** | | | |
+| **금융 정보 → 구매 내역** (구매한 상품 id, 결제 토큰의 SHA-256 해시, 지급 여부, 시각, 익명 UID — `purchases/{해시}`; 진행 저장의 최근 결제 토큰 20개와 구매 횟수) | **예** | 아니요 | 아니요(구매할 때만) | 앱 기능(구매 지급), 사기 방지·보안(같은 영수증의 중복·도용 지급 차단) |
+| 개인 정보(이름·이메일·전화), 결제 정보(카드·계좌), 사진, 연락처, 메시지 | **수집 안 함** | | | |
+
+구매 기록은 **모든 데이터 삭제**를 해도 남는다: 익명 UID와 결제 토큰의 해시뿐이라 개인을 알아볼 수 없고, 같은 영수증으로 다시 지급받는 것을 막는 데 필요하다(개인정보처리방침에 적음).
 
 "공유"는 Google의 AdMob 문서 기준: 광고 SDK가 광고 ID·대략적 위치·기기 정보를 Google로 전송하는 것은 **공유**로 신고한다. Firebase Analytics·Realtime Database는 서비스 제공자 처리로 공유에 해당하지 않는다.
 

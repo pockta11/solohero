@@ -432,10 +432,10 @@ namespace SoloHero.Core.Config
         /// <summary>D-166: the 28-day board's last day (days 7, 14 and 21 pay ATTENDANCE_DAY7_GEM).</summary>
         public double ATTENDANCE_DAY28_GEM = 300;
 
-        // D-163 (L-17) free season pass: PASS_SEASON_DAYS-day seasons from PASS_EPOCH_UTC (2026-10-12 00:00 UTC, a Monday)
+        // D-163 (L-17) free season pass: PASS_SEASON_DAYS-day seasons from PASS_EPOCH_UTC (2026-12-07 00:00 UTC, a Monday)
         // on the trusted clock; PASS_XP_PER_LEVEL XP a level; XP from claimed daily / weekly missions and one per
         // PASS_KILLS_PER_XP kills. D-170: set the epoch to the launch week's Monday so the first public season is 1.
-        public long PASS_EPOCH_UTC = 1791763200;
+        public long PASS_EPOCH_UTC = 1796601600;
         public int PASS_SEASON_DAYS = 28;
         public int PASS_XP_PER_LEVEL = 200;
         public int PASS_XP_DAILY = 20;

@@ -6,6 +6,7 @@ using Firebase.Auth;
 using Firebase.Database;
 using SoloHero.Core.Common;
 using SoloHero.Core.Save;
+using SoloHero.Core.Security;
 using UnityEngine;
 
 namespace SoloHero.Game.Infrastructure
@@ -71,6 +72,13 @@ namespace SoloHero.Game.Infrastructure
         public async Task<(Result Result, string Code)> IssueTransferCodeAsync()
         {
             if (!IsOnline || _save == null || _data == null) return (Result.Fail(FailReason.NetworkUnavailable), null);
+            // D-184: a session started from an unsealed or edited backup cannot hand its progress to another device.
+            if (_data.untrustedLocal || _save.UploadsBlocked)
+            {
+                Log.Warn(LogTag.Save, "transfer refused: this session started from an untrusted local save");
+                return (Result.Fail(FailReason.NetworkUnavailable), null);
+            }
+
             try
             {
                 string previous = PlayerPrefs.GetString(IssuedCodeKey, "");
@@ -79,7 +87,8 @@ namespace SoloHero.Game.Infrastructure
                 var record = new Dictionary<string, object>
                 {
                     ["uid"] = _userId,
-                    ["save"] = _serializer.ToJson(_data),
+                    // D-184: sealed, so a copy written straight into the database (not by the game) is refused on import.
+                    ["save"] = SaveSeal.Seal(_serializer.ToJson(_data)),
                     ["createdAt"] = ServerValue.Timestamp
                 };
 
@@ -108,7 +117,13 @@ namespace SoloHero.Game.Infrastructure
             try
             {
                 DataSnapshot snapshot = await WithTimeout(Node(code).GetValueAsync());
-                string json = snapshot != null && snapshot.Exists ? snapshot.Child("save").Value as string : null;
+                string stored = snapshot != null && snapshot.Exists ? snapshot.Child("save").Value as string : null;
+                if (SaveSeal.Open(stored, out string json) != LocalSaveTrust.Sealed)
+                {
+                    if (!string.IsNullOrEmpty(stored)) TamperGuard.Report("transfer");
+                    return (Result.Fail(FailReason.CodeNotFound), null);
+                }
+
                 SaveDataV2 incoming = string.IsNullOrEmpty(json) ? null : _serializer.FromV2Json(json);
                 if (incoming == null) return (Result.Fail(FailReason.CodeNotFound), null);
                 return (Result.Success, incoming);

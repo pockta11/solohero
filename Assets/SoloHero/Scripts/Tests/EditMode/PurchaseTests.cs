@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using SoloHero.Core;
 using SoloHero.Core.Common;
@@ -31,33 +32,78 @@ namespace SoloHero.Tests.EditMode
             public void RequestSave() => Count++;
         }
 
-        /// <summary>A store that answers at once, or holds the callback until <see cref="Finish"/>.</summary>
+        /// <summary>
+        /// A store that answers at once, or holds the purchase until <see cref="Finish"/>. A successful purchase goes
+        /// through the delivery the service attached (D-183), as the real store's verified receipts do.
+        /// </summary>
         private sealed class ScriptedGateway : IPurchaseGateway
         {
             public bool IsReady { get; set; } = true;
             public PurchaseOutcome Outcome = PurchaseOutcome.Success;
             public string Token = "tx-1";
             public bool Hold;
-            private Action<PurchaseOutcome, string> _held;
+            public DeliveryResult? LastDelivery;
+            public PurchaseDelivery Deliver;
+            private Action<PurchaseOutcome> _held;
+            private IapProduct _heldProduct;
 
             public string PriceLabel(IapProduct product) => product == IapProduct.Vip ? "KRW 5,900" : null;
 
-            public void Buy(IapProduct product, Action<PurchaseOutcome, string> onDone)
+            public void Attach(PurchaseDelivery deliver) => Deliver = deliver;
+
+            public void Buy(IapProduct product, Action<PurchaseOutcome> onDone)
             {
-                if (Hold) _held = onDone;
-                else onDone(Outcome, Token);
+                if (Hold)
+                {
+                    _held = onDone;
+                    _heldProduct = product;
+                }
+                else Run(product, onDone);
             }
 
             public void Finish()
             {
-                Action<PurchaseOutcome, string> held = _held;
+                Action<PurchaseOutcome> held = _held;
                 _held = null;
-                held?.Invoke(Outcome, Token);
+                if (held != null) Run(_heldProduct, held);
+            }
+
+            private void Run(IapProduct product, Action<PurchaseOutcome> onDone)
+            {
+                if (Outcome != PurchaseOutcome.Success)
+                {
+                    onDone(Outcome);
+                    return;
+                }
+
+                // The local ledger answers at once, so the delivery has finished when Result is read.
+                DeliveryResult result = Deliver(product, Token).Result;
+                LastDelivery = result;
+                onDone(result == DeliveryResult.Granted || result == DeliveryResult.AlreadyGranted ? PurchaseOutcome.Success
+                    : result == DeliveryResult.RetryLater ? PurchaseOutcome.Pending : PurchaseOutcome.Failed);
             }
         }
 
-        private static PurchaseService Make(BalanceValues b, SaveDataV2 save, FixedClock clock, ScriptedGateway gateway, CountingRequester requester = null) =>
-            new PurchaseService(b, save, clock, gateway, requester);
+        private static PurchaseService Make(BalanceValues b, SaveDataV2 save, FixedClock clock, ScriptedGateway gateway, CountingRequester requester = null,
+            IPurchaseLedger ledger = null) =>
+            new PurchaseService(b, save, clock, gateway, requester, ledger);
+
+        /// <summary>A ledger whose claims wait until the test answers them (a slow network).</summary>
+        private sealed class HeldLedger : IPurchaseLedger
+        {
+            public readonly TaskCompletionSource<LedgerClaim> Claim = new TaskCompletionSource<LedgerClaim>();
+            public int Claims;
+
+            public bool Online => true;
+
+            public Task<LedgerClaim> ClaimAsync(string key, string productId)
+            {
+                Claims++;
+                return Claim.Task;
+            }
+
+            public Task MarkGrantedAsync(string key) => Task.CompletedTask;
+        }
 
         [Test]
         public void Catalog_FiveProducts_UniqueIdsAndStoreIds_WithNames()
@@ -230,6 +276,204 @@ namespace SoloHero.Tests.EditMode
             Assert.AreEqual(2, ended);
             Assert.AreEqual(0d, save.gem, 1e-9);
             Assert.AreEqual(0, save.iapCount);
+        }
+
+        // ---- D-183: verified purchase delivery (ledger, replay, restore, retry) ----
+
+        [Test]
+        public void Deliver_PaysOnce_RestoreOfTheSameToken_PaysNothing_AndTheLedgerIsMarked()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var ledger = new LocalPurchaseLedger();
+            var requester = new CountingRequester();
+            PurchaseService store = Make(b, save, new FixedClock(), new ScriptedGateway(), requester, ledger);
+            int grants = 0;
+            store.Purchased += g => grants++;
+
+            Assert.AreEqual(DeliveryResult.Granted, store.DeliverAsync(IapProduct.GemSmall, "gp-token-1").Result);
+            double after = save.gem;
+            Assert.AreEqual(b.IAP_GEM_SMALL * b.IAP_FIRST_BONUS_MULT, after, 1e-9);
+            Assert.IsTrue(ledger.IsGranted(PurchaseTokens.Key("gp-token-1")), "the ledger knows it was paid");
+            Assert.AreEqual(1, requester.Count, "the grant saved");
+
+            // The store reports the same purchase again (a crash before it was closed): nothing more is paid.
+            Assert.AreEqual(DeliveryResult.AlreadyGranted, store.DeliverAsync(IapProduct.GemSmall, "gp-token-1").Result);
+            Assert.AreEqual(after, save.gem, 1e-9);
+            Assert.AreEqual(1, grants);
+            Assert.AreEqual(1, save.iapCount);
+        }
+
+        [Test]
+        public void Deliver_ReceiptRecordedForAnotherAccount_IsRejected_AndPaysNothing()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var ledger = new LocalPurchaseLedger { Override = LedgerClaim.Taken };
+            var requester = new CountingRequester();
+            PurchaseService store = Make(b, save, new FixedClock(), new ScriptedGateway(), requester, ledger);
+            int grants = 0;
+            store.Purchased += g => grants++;
+
+            Assert.AreEqual(DeliveryResult.Rejected, store.DeliverAsync(IapProduct.GemLarge, "replayed").Result);
+            Assert.AreEqual(0d, save.gem, 1e-9);
+            Assert.AreEqual(0, grants);
+            Assert.AreEqual(0, save.iapCount);
+            Assert.AreEqual(0, requester.Count);
+            CollectionAssert.IsEmpty(save.iapGrantedTokens);
+        }
+
+        [Test]
+        public void Deliver_LedgerUnreachable_RetriesLater_ThenPaysWhenItAnswers()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var ledger = new LocalPurchaseLedger { Override = LedgerClaim.Unavailable };
+            PurchaseService store = Make(b, save, new FixedClock(), new ScriptedGateway(), null, ledger);
+
+            Assert.AreEqual(DeliveryResult.RetryLater, store.DeliverAsync(IapProduct.GoldPack, "slow").Result);
+            Assert.AreEqual(0d, save.gold, 1e-9, "nothing is paid before the purchase is recorded");
+
+            ledger.Override = null;
+            Assert.AreEqual(DeliveryResult.Granted, store.DeliverAsync(IapProduct.GoldPack, "slow").Result);
+            Assert.Greater(save.gold, 0d);
+        }
+
+        [Test]
+        public void Deliver_PaidBeforeOnThisAccount_LocalHistoryLost_PaysNothing_AndRemembersIt()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var ledger = new LocalPurchaseLedger { Override = LedgerClaim.MineGranted };
+            PurchaseService store = Make(b, save, new FixedClock(), new ScriptedGateway(), null, ledger);
+
+            Assert.AreEqual(DeliveryResult.AlreadyGranted, store.DeliverAsync(IapProduct.Vip, "old").Result);
+            Assert.AreEqual(0L, (long)save.vipUntilUtc);
+            CollectionAssert.Contains(save.iapGrantedTokens, "old");
+        }
+
+        [Test]
+        public void Deliver_ClaimedButNotPaid_ACrashBetween_PaysNow()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var ledger = new LocalPurchaseLedger { Override = LedgerClaim.Mine };
+            PurchaseService store = Make(b, save, new FixedClock(), new ScriptedGateway(), null, ledger);
+
+            Assert.AreEqual(DeliveryResult.Granted, store.DeliverAsync(IapProduct.GemMedium, "half-done").Result);
+            Assert.Greater(save.gem, 0d);
+        }
+
+        [Test]
+        public void Deliver_NoTokenOrUnknownProduct_IsRejected()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            PurchaseService store = Make(b, save, new FixedClock(), new ScriptedGateway());
+
+            Assert.AreEqual(DeliveryResult.Rejected, store.DeliverAsync(IapProduct.GemSmall, null).Result);
+            Assert.AreEqual(DeliveryResult.Rejected, store.DeliverAsync(IapProduct.GemSmall, "").Result);
+            Assert.AreEqual(DeliveryResult.Rejected, store.DeliverAsync((IapProduct)99, "x").Result);
+            Assert.AreEqual(0d, save.gem, 1e-9);
+        }
+
+        [Test]
+        public void Deliver_SameTokenTwiceAtOnce_SecondIsInProgress_PaidOnce()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var ledger = new HeldLedger();
+            PurchaseService store = Make(b, save, new FixedClock(), new ScriptedGateway(), null, ledger);
+
+            Task<DeliveryResult> first = store.DeliverAsync(IapProduct.GemSmall, "dup");
+            Assert.IsFalse(first.IsCompleted, "waiting for the ledger");
+            Assert.AreEqual(DeliveryResult.InProgress, store.DeliverAsync(IapProduct.GemSmall, "dup").Result);
+            ledger.Claim.SetResult(LedgerClaim.Fresh);
+            Assert.AreEqual(DeliveryResult.Granted, first.Result);
+            Assert.AreEqual(1, ledger.Claims);
+            Assert.AreEqual(b.IAP_GEM_SMALL * b.IAP_FIRST_BONUS_MULT, save.gem, 1e-9);
+            Assert.AreEqual(DeliveryResult.AlreadyGranted, store.DeliverAsync(IapProduct.GemSmall, "dup").Result);
+            Assert.AreEqual(1, ledger.Claims, "a token paid here never asks the ledger again");
+        }
+
+        [Test]
+        public void StoreReady_NeedsTheLedger_ShopClosedWithoutTheServer()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var ledger = new LocalPurchaseLedger { Online = false };
+            PurchaseService store = Make(b, save, new FixedClock(), new ScriptedGateway(), null, ledger);
+
+            Assert.IsFalse(store.StoreReady);
+            Assert.AreEqual(FailReason.StoreUnavailable, store.TryBuy(IapProduct.GemSmall).Reason);
+            Assert.AreEqual(0d, save.gem, 1e-9);
+        }
+
+        [Test]
+        public void TryBuy_LedgerUnreachable_EndsPending_AndPaysLater()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var gateway = new ScriptedGateway { Token = "late" };
+            var ledger = new LocalPurchaseLedger { Override = LedgerClaim.Unavailable };
+            PurchaseService store = Make(b, save, new FixedClock(), gateway, null, ledger);
+            PurchaseOutcome ended = PurchaseOutcome.Success;
+            store.PurchaseEnded += (p, o) => ended = o;
+
+            Assert.IsTrue(store.TryBuy(IapProduct.GemSmall).Ok);
+            Assert.AreEqual(PurchaseOutcome.Pending, ended, "the shop says the payment is being checked");
+            Assert.IsFalse(store.Busy);
+            Assert.AreEqual(0d, save.gem, 1e-9);
+
+            // The store retries the open purchase once the server answers.
+            ledger.Override = null;
+            Assert.AreEqual(DeliveryResult.Granted, gateway.Deliver(IapProduct.GemSmall, "late").Result);
+            Assert.Greater(save.gem, 0d);
+        }
+
+        [Test]
+        public void SavesNotKept_ShopClosed_AndADeliveryWaits_ThenPaysInATrustedSession()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            bool kept = false;
+            var ledger = new LocalPurchaseLedger();
+            PurchaseService store = new PurchaseService(b, save, new FixedClock(), new ScriptedGateway(), null, ledger, () => kept);
+
+            Assert.IsFalse(store.StoreReady, "a session whose saves the server copy replaces sells nothing");
+            Assert.AreEqual(FailReason.StoreUnavailable, store.TryBuy(IapProduct.GemSmall).Reason);
+            Assert.AreEqual(DeliveryResult.RetryLater, store.DeliverAsync(IapProduct.GemSmall, "restored").Result,
+                "a restored purchase stays open instead of being paid into a copy that will be thrown away");
+            Assert.AreEqual(0d, save.gem, 1e-9);
+            Assert.IsFalse(ledger.IsGranted(PurchaseTokens.Key("restored")));
+
+            kept = true;
+            Assert.IsTrue(store.StoreReady);
+            Assert.AreEqual(DeliveryResult.Granted, store.DeliverAsync(IapProduct.GemSmall, "restored").Result);
+            Assert.Greater(save.gem, 0d);
+        }
+
+        [Test]
+        public void Grant_SavesBeforeListeners_AListenerThatThrowsLosesNothing()
+        {
+            var b = new BalanceValues();
+            var save = SaveDataV2.CreateNew();
+            var requester = new CountingRequester();
+            PurchaseService store = Make(b, save, new FixedClock(), new ScriptedGateway(), requester);
+            store.Purchased += g => throw new InvalidOperationException("a broken listener");
+
+            Assert.AreEqual(DeliveryResult.Granted, store.DeliverAsync(IapProduct.GemSmall, "t-throw").Result);
+            Assert.AreEqual(1, requester.Count, "saved although the listener threw");
+            Assert.Greater(save.gem, 0d);
+        }
+
+        [Test]
+        public void PurchaseTokens_Key_IsStableHex64()
+        {
+            string key = PurchaseTokens.Key("abc");
+            Assert.AreEqual("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", key, "SHA-256 of the token");
+            Assert.AreEqual(64, PurchaseTokens.Key(new string('x', 500)).Length);
+            Assert.Throws<ArgumentException>(() => PurchaseTokens.Key(""));
         }
     }
 }

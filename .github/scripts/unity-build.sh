@@ -12,6 +12,9 @@
 # the seat before exiting.
 #
 # Required env: UNITY_EMAIL, UNITY_PASSWORD   Optional: SOLOHERO_DEV_BUILD=1, SOLOHERO_VERSION_CODE=<int>
+#   SOLOHERO_CI_TESTS=1     run the EditMode tests first (results in Builds/ci/editmode.xml; a failure fails the job)
+#   SOLOHERO_CI_REBUILD_UI=1 regenerate the Boot and Game scenes with GameUiBuilder.BuildBatch before the build
+#                            (ci/** branches: the workflow commits the regenerated scenes back to the branch)
 set -euo pipefail
 
 CLIENT=/opt/unity/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client
@@ -53,17 +56,52 @@ echo "== activating Personal license via Unity.Licensing.Client"
 "$CLIENT" --activate-all --include-personal --username "$UNITY_EMAIL" --password "$UNITY_PASSWORD"
 activated=1
 
+# One editor run in the background (so the trap can stop it); returns its exit code without tripping `set -e`.
+run_unity() {
+  unity-editor -batchmode -nographics -logFile /dev/stdout -projectPath "$PROJECT" -buildTarget Android "$@" &
+  editor_pid=$!
+  local rc=0
+  wait "$editor_pid" || rc=$?
+  editor_pid=""
+  return "$rc"
+}
+
+if [[ "${SOLOHERO_CI_TESTS:-}" == "1" ]]; then
+  echo "== EditMode tests"
+  mkdir -p "$PROJECT/Builds/ci"
+  results="$PROJECT/Builds/ci/editmode.xml"
+  test_rc=0
+  run_unity -runTests -testPlatform EditMode -testResults "$results" || test_rc=$?
+  if [[ -f "$results" ]]; then
+    summary=$(grep -o '<test-run [^>]*' "$results" | head -1 || true)
+    total=$(sed -n 's/.* total="\([0-9]*\)".*/\1/p' <<<"$summary")
+    passed=$(sed -n 's/.* passed="\([0-9]*\)".*/\1/p' <<<"$summary")
+    failed=$(sed -n 's/.* failed="\([0-9]*\)".*/\1/p' <<<"$summary")
+    echo "::notice title=EditMode tests::${passed:-?} passed, ${failed:-?} failed of ${total:-?}"
+    grep -o '<test-case [^>]*result="Failed"[^>]*' "$results" | sed -n 's/.* fullname="\([^"]*\)".*/\1/p' | head -30 |
+      while read -r name; do echo "::error title=EditMode test failed::$name"; done || true
+  else
+    echo "::error title=EditMode tests::no results file (exit $test_rc) - see the log"
+  fi
+  if [[ "$test_rc" != "0" ]]; then
+    echo "::error::EditMode tests exited with $test_rc"
+    exit "$test_rc"
+  fi
+fi
+
+if [[ "${SOLOHERO_CI_REBUILD_UI:-}" == "1" ]]; then
+  echo "== regenerating the UI scenes (GameUiBuilder.BuildBatch)"
+  ui_rc=0
+  run_unity -quit -executeMethod SoloHero.Editor.GameUiBuilder.BuildBatch || ui_rc=$?
+  if [[ "$ui_rc" != "0" ]]; then
+    echo "::error::GameUiBuilder.BuildBatch exited with $ui_rc"
+    exit "$ui_rc"
+  fi
+fi
+
 echo "== building (BuildAutomator.Build)"
-unity-editor \
-  -batchmode -nographics -quit \
-  -logFile /dev/stdout \
-  -projectPath "$PROJECT" \
-  -buildTarget Android \
-  -executeMethod BuildAutomator.Build &
-editor_pid=$!
-wait "$editor_pid"
-build_rc=$?
-editor_pid=""
+build_rc=0
+run_unity -quit -executeMethod BuildAutomator.Build || build_rc=$?
 if [[ "$build_rc" != "0" ]]; then
   echo "::error::unity-editor exited with $build_rc"
   exit "$build_rc"

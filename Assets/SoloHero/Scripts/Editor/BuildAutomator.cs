@@ -18,7 +18,8 @@ using UnityEngine;
 ///                                    upload needs a higher code). Without it the ProjectSettings value is used.
 ///   SOLOHERO_VERSION_NAME=<x.y.z> -> versionName for this build (the Release workflow input).
 ///   SOLOHERO_RELEASE=1            -> a Play upload: fails unless it is signed with an upload key, carries
-///                                    Assets/google-services.json and has ads, no development flag and no x86_64.
+///                                    Assets/google-services.json and the Google Play license key (PlayLicenseKey,
+///                                    tools/release/SetPlayLicenseKey.ps1) and has ads, no development flag and no x86_64.
 ///   SOLOHERO_NO_ADS=1             -> QA build without the ad SDK (BuildConfig.adsEnabled = false for this build only)
 ///   SOLOHERO_X86_64=1             -> also build x86_64 for this build only (native emulator runs; not for release).
 ///                                    EDM4U then rewrites mainTemplate.gradle / AndroidResolverDependencies.xml - revert both.
@@ -162,6 +163,9 @@ public static class BuildAutomator
                  || Environment.GetEnvironmentVariable("SOLOHERO_NO_ADS") == "1"
                  || Environment.GetEnvironmentVariable("SOLOHERO_X86_64") == "1")
             Fail("release build cannot be a development, no-ads or x86_64 build");
+        else if (!SoloHero.Game.Infrastructure.PlayLicenseKey.Present)
+            // D-183: without it every receipt fails the signature check and the shop stays closed.
+            Fail("release build needs the Google Play license key: pwsh tools/release/SetPlayLicenseKey.ps1 -Key <base64 from Play Console>");
         else
             Debug.Log("[Build] release requirements met");
     }

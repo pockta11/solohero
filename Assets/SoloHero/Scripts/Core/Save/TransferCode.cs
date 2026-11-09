@@ -84,6 +84,8 @@ namespace SoloHero.Core.Save
             incoming.saveRevision = Math.Max(incoming.saveRevision, revision) + 1L;
             incoming.lastQuitTimeUtc = nowUtc;
             incoming.notifyAsked = false;
+            // D-184: the copy came sealed from the server, so it is a trusted start on the new device.
+            incoming.untrustedLocal = false;
             return incoming;
         }
     }

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using SoloHero.Core.Common;
 using SoloHero.Core.Config;
 using SoloHero.Core.Growth;
@@ -26,11 +28,13 @@ namespace SoloHero.Core.Economy
     }
 
     /// <summary>
-    /// D-181 store: starts a purchase on the gateway and grants it once the store confirms. Grants are idempotent on the
-    /// store's transaction id (a replayed receipt or a restore after a crash pays nothing twice), the first purchase of
-    /// each gem bundle pays IAP_FIRST_BONUS_MULT times, the gold bundle pays IAP_GOLD_PACK_STAGES clears of the farming
-    /// stage and the VIP pack extends vipUntilUtc by VIP_DAYS. A grant is a save trigger (a purchase is a player decision
-    /// that changes currency).
+    /// D-181 store: starts a purchase on the gateway; D-183: every purchase the store verified (the one started here or
+    /// one it restores) comes back through <see cref="DeliverAsync"/>, which records it once in the purchase ledger
+    /// (one account per purchase token - a receipt replayed into another account pays nothing), pays it, saves, and
+    /// only then lets the store close it. A grant is idempotent on the store's purchase token (a restore after a crash
+    /// pays nothing twice), the first purchase of each gem bundle pays IAP_FIRST_BONUS_MULT times, the gold bundle pays
+    /// IAP_GOLD_PACK_STAGES clears of the farming stage and the VIP pack extends vipUntilUtc by VIP_DAYS. A grant is a
+    /// save trigger (a purchase is a player decision that changes currency); the local backup is written at once.
     /// </summary>
     public sealed class PurchaseService
     {
@@ -39,15 +43,42 @@ namespace SoloHero.Core.Economy
         private readonly IClock _clock;
         private readonly IPurchaseGateway _gateway;
         private readonly ISaveRequester _save;
+        private readonly IPurchaseLedger _ledger;
+        private readonly Func<bool> _savesKept;
+        private readonly HashSet<string> _delivering = new HashSet<string>();
         private bool _busy;
 
-        public PurchaseService(BalanceValues balance, SaveDataV2 data, IClock clock, IPurchaseGateway gateway, ISaveRequester save = null)
+        /// <param name="savesKept">
+        /// D-183: true while a grant would be kept - the save reaches the server copy (false in a session started from an
+        /// untrusted local backup, whose progress the server copy replaces later, or while the account tools hold saves).
+        /// Null = always.
+        /// </param>
+        public PurchaseService(BalanceValues balance, SaveDataV2 data, IClock clock, IPurchaseGateway gateway, ISaveRequester save = null,
+            IPurchaseLedger ledger = null, Func<bool> savesKept = null)
         {
             _balance = balance ?? throw new ArgumentNullException(nameof(balance));
             _data = data ?? throw new ArgumentNullException(nameof(data));
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _gateway = gateway ?? new NoPurchaseGateway();
             _save = save;
+            _ledger = ledger ?? new LocalPurchaseLedger();
+            _savesKept = savesKept;
+            _gateway.Attach(DeliverAsync);
+        }
+
+        private bool SavesKept
+        {
+            get
+            {
+                try
+                {
+                    return _savesKept == null || _savesKept();
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
         }
 
         /// <summary>Raised after a grant, with what it paid.</summary>
@@ -58,7 +89,8 @@ namespace SoloHero.Core.Economy
 
         public bool Busy => _busy;
 
-        public bool StoreReady => _gateway.IsReady;
+        /// <summary>The store answered, purchases can be recorded (signed in to the server) and a grant would be kept.</summary>
+        public bool StoreReady => _gateway.IsReady && _ledger.Online && SavesKept;
 
         public bool VipActive => VipPerks.IsActive(_data, _clock.UtcNowSeconds);
 
@@ -97,11 +129,11 @@ namespace SoloHero.Core.Economy
         {
             if (IapCatalog.Find(product) == null) return Result.Fail(FailReason.Locked);
             if (_busy) return Result.Fail(FailReason.Busy);
-            if (!_gateway.IsReady) return Result.Fail(FailReason.StoreUnavailable);
+            if (!StoreReady) return Result.Fail(FailReason.StoreUnavailable);
             _busy = true;
             try
             {
-                _gateway.Buy(product, (outcome, token) => OnStoreDone(product, outcome, token));
+                _gateway.Buy(product, outcome => OnStoreDone(product, outcome));
             }
             catch (Exception)
             {
@@ -112,16 +144,89 @@ namespace SoloHero.Core.Economy
             return Result.Success;
         }
 
-        private void OnStoreDone(IapProduct product, PurchaseOutcome outcome, string token)
+        /// <summary>The purchase flow ended; a delivered purchase already raised <see cref="Purchased"/>.</summary>
+        private void OnStoreDone(IapProduct product, PurchaseOutcome outcome)
         {
             _busy = false;
-            if (outcome == PurchaseOutcome.Success)
+            if (outcome != PurchaseOutcome.Success) PurchaseEnded?.Invoke(product, outcome);
+        }
+
+        /// <summary>
+        /// D-183: delivers one purchase the store verified. Pays it at most once per purchase token: the local history
+        /// first (a restore on this device), then the ledger (the same receipt reported by another account is
+        /// <see cref="DeliveryResult.Rejected"/>). The store closes the purchase only on Granted / AlreadyGranted, after
+        /// the grant was saved; without the ledger it stays open and comes back later (RetryLater).
+        /// </summary>
+        public async Task<DeliveryResult> DeliverAsync(IapProduct product, string token)
+        {
+            IapProductDef def = IapCatalog.Find(product);
+            if (def == null || string.IsNullOrEmpty(token)) return DeliveryResult.Rejected;
+            string key = PurchaseTokens.Key(token);
+            if (_data.iapGrantedTokens.Contains(token))
             {
-                Grant(product, token);
-                return;
+                await MarkGrantedQuietly(key);
+                return DeliveryResult.AlreadyGranted;
             }
 
-            PurchaseEnded?.Invoke(product, outcome);
+            // A grant this session could not keep (the server copy replaces it later): leave the purchase open.
+            if (!SavesKept) return DeliveryResult.RetryLater;
+            if (!_delivering.Add(token)) return DeliveryResult.InProgress;
+            try
+            {
+                LedgerClaim claim;
+                try
+                {
+                    claim = await _ledger.ClaimAsync(key, def.Id);
+                }
+                catch (Exception e)
+                {
+                    Log.Warn(LogTag.Boot, "purchase ledger unreachable: " + e.Message);
+                    claim = LedgerClaim.Unavailable;
+                }
+
+                switch (claim)
+                {
+                    case LedgerClaim.Unavailable:
+                        return DeliveryResult.RetryLater;
+                    case LedgerClaim.Taken:
+                        Log.Warn(LogTag.Boot, "purchase recorded for another account, not paid: " + def.Id);
+                        return DeliveryResult.Rejected;
+                    case LedgerClaim.MineGranted:
+                        // Paid before on this account (the local history lost it): remember it, pay nothing.
+                        RememberToken(token);
+                        _save?.RequestSave();
+                        return DeliveryResult.AlreadyGranted;
+                }
+
+                if (!Grant(product, token)) return DeliveryResult.AlreadyGranted;
+                await MarkGrantedQuietly(key);
+                return DeliveryResult.Granted;
+            }
+            finally
+            {
+                _delivering.Remove(token);
+            }
+        }
+
+        private async Task MarkGrantedQuietly(string key)
+        {
+            try
+            {
+                await _ledger.MarkGrantedAsync(key);
+            }
+            catch (Exception e)
+            {
+                // The record stays "claimed by this account"; the local history still stops a second payment here.
+                Log.Warn(LogTag.Boot, "purchase not marked granted: " + e.Message);
+            }
+        }
+
+        private void RememberToken(string token)
+        {
+            if (string.IsNullOrEmpty(token) || _data.iapGrantedTokens.Contains(token)) return;
+            _data.iapGrantedTokens.Add(token);
+            int keep = _balance.IAP_GRANT_HISTORY < 1 ? 1 : _balance.IAP_GRANT_HISTORY;
+            while (_data.iapGrantedTokens.Count > keep) _data.iapGrantedTokens.RemoveAt(0);
         }
 
         /// <summary>
@@ -135,9 +240,7 @@ namespace SoloHero.Core.Economy
             if (!string.IsNullOrEmpty(token))
             {
                 if (_data.iapGrantedTokens.Contains(token)) return false;
-                _data.iapGrantedTokens.Add(token);
-                int keep = _balance.IAP_GRANT_HISTORY < 1 ? 1 : _balance.IAP_GRANT_HISTORY;
-                while (_data.iapGrantedTokens.Count > keep) _data.iapGrantedTokens.RemoveAt(0);
+                RememberToken(token);
             }
 
             long now = _clock.UtcNowSeconds;
@@ -163,9 +266,18 @@ namespace SoloHero.Core.Economy
             }
 
             _data.iapCount++;
-            var grant = new PurchaseGrant(product, gems, gold, vipDays, firstBonus);
-            Purchased?.Invoke(grant);
+            // Saved before anyone hears of it: a listener that throws must not leave the grant unsaved.
             _save?.RequestSave();
+            var grant = new PurchaseGrant(product, gems, gold, vipDays, firstBonus);
+            try
+            {
+                Purchased?.Invoke(grant);
+            }
+            catch (Exception e)
+            {
+                Log.Warn(LogTag.Boot, "purchase listener failed: " + e.Message);
+            }
+
             return true;
         }
     }

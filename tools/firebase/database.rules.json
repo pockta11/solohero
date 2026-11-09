@@ -18,6 +18,28 @@
         }
       }
     },
+    "purchases": {
+      "$key": {
+        ".read": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)",
+        ".write": "auth != null && newData.exists() && newData.child('uid').val() === auth.uid && ((!data.exists() && newData.child('granted').val() === false) || (data.child('uid').val() === auth.uid && newData.child('product').val() === data.child('product').val() && newData.child('at').val() === data.child('at').val() && newData.child('granted').val() === true))",
+        ".validate": "$key.length === 64 && $key.matches(/^[0-9a-f]+$/) && newData.hasChildren(['uid', 'product', 'granted', 'at'])",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "product": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40"
+        },
+        "granted": {
+          ".validate": "newData.isBoolean()"
+        },
+        "at": {
+          ".validate": "newData.isNumber() && (newData.val() === now || newData.val() === data.val())"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "transfers": {
       "$code": {
         ".read": "auth != null && data.exists() && data.child('createdAt').val() > now - 86400000",

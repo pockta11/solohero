@@ -35,7 +35,8 @@ namespace SoloHero.Core.Economy
         /// <summary>Extends the pack by VIP_DAYS from its end, or from now once it ran out.</summary>
         public static void Extend(BalanceValues balance, SaveDataV2 data, long nowUtc)
         {
-            long from = data.vipUntilUtc > nowUtc ? data.vipUntilUtc : nowUtc;
+            long until = data.vipUntilUtc;
+            long from = until > nowUtc ? until : nowUtc;
             data.vipUntilUtc = from + balance.VIP_DAYS * DaySeconds;
         }
     }

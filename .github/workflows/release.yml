@@ -28,7 +28,7 @@ jobs:
   release:
     name: Signed release AAB
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
       - name: Checkout repository
@@ -92,6 +92,7 @@ jobs:
             -v "$GITHUB_WORKSPACE:/project" -w /project \
             -e UNITY_EMAIL -e UNITY_PASSWORD \
             -e SOLOHERO_RELEASE=1 \
+            -e SOLOHERO_CI_TESTS=1 \
             -e SOLOHERO_VERSION_NAME="${{ inputs.version_name }}" \
             -e SOLOHERO_VERSION_CODE="$((1000 + ${{ github.run_number }}))" \
             -e SOLOHERO_KEYSTORE_PATH=/project/.release/upload.keystore \

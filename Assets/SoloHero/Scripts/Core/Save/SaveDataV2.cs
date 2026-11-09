@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SoloHero.Core.Security;
 
 namespace SoloHero.Core.Save
 {
@@ -12,8 +13,9 @@ namespace SoloHero.Core.Save
         /// </summary>
         public long saveRevision;
 
-        public double gold;
-        public double gem;
+        /// <summary>D-184: currencies and paid-equivalent counters are masked in memory (SecureDouble / SecureInt / SecureLong); saves still hold plain numbers.</summary>
+        public SecureDouble gold;
+        public SecureDouble gem;
 
         public int highestStage = 1;
         public int farmingStage = 1;
@@ -43,7 +45,7 @@ namespace SoloHero.Core.Save
         /// </summary>
         public List<string> petOwned = new List<string>();
         public List<int> petEnhance = new List<int>();
-        public int petPityCount;
+        public SecureInt petPityCount;
         public int petPullCount;
 
         /// <summary>D-177: pet awakening stars index-aligned with PetCatalog (missing = 0).</summary>
@@ -63,7 +65,7 @@ namespace SoloHero.Core.Save
         /// them as broken up to its levels), and the breakthrough stones held.
         /// </summary>
         public List<int> laneBreaks = new List<int>();
-        public int breakStones;
+        public SecureInt breakStones;
 
         /// <summary>
         /// D-141 AP put into the main stat and vitality. apManual false = auto: new points are split at once
@@ -86,7 +88,7 @@ namespace SoloHero.Core.Save
         public List<string> ownedEquipment = new List<string>();
         public List<int> ownedEquipmentLevels = new List<int>();
 
-        public int pityCount;
+        public SecureInt pityCount;
         public int totalPullCount;
 
         /// <summary>Levels of the three fixed skills before D-078. Read once by SkillBook.EnsureStarters, then unused.</summary>
@@ -104,7 +106,7 @@ namespace SoloHero.Core.Save
         public List<string> talentIds = new List<string>();
         public List<int> talentRanks = new List<int>();
 
-        public int skillPityCount;
+        public SecureInt skillPityCount;
         public int skillPullCount;
 
         public long lastQuitTimeUtc;
@@ -129,7 +131,7 @@ namespace SoloHero.Core.Save
         /// bonus was paid, the last transaction ids granted (a replayed receipt grants nothing twice) and the lifetime
         /// purchase count.
         /// </summary>
-        public long vipUntilUtc;
+        public SecureLong vipUntilUtc;
         public List<string> iapFirstBonusUsed = new List<string>();
         public List<string> iapGrantedTokens = new List<string>();
         public int iapCount;
@@ -183,7 +185,7 @@ namespace SoloHero.Core.Save
         /// D-174 skill awakening: the awakening stones held and each owned skill's stars, index-aligned with ownedSkills
         /// (SkillBook.Align pads an older save with zeros).
         /// </summary>
-        public int awakenStones;
+        public SecureInt awakenStones;
         public List<int> ownedSkillStars = new List<int>();
 
         /// <summary>
@@ -194,7 +196,7 @@ namespace SoloHero.Core.Save
         public string raidWeek = "";
         public int raidUsed;
         public int raidCleared;
-        public int raidMedals;
+        public SecureInt raidMedals;
         public List<int> raidBest = new List<int>();
         public List<int> raidShopBought = new List<int>();
 
@@ -208,9 +210,9 @@ namespace SoloHero.Core.Save
         public int passKillCarry;
 
         /// <summary>D-128 summon tickets (one pull each) and today's shop purchases, index-aligned with ShopItem.</summary>
-        public int gearTickets;
-        public int skillTickets;
-        public int petTickets;
+        public SecureInt gearTickets;
+        public SecureInt skillTickets;
+        public SecureInt petTickets;
         public string shopDate = "";
         public List<bool> shopBought = new List<bool>();
 
@@ -246,6 +248,13 @@ namespace SoloHero.Core.Save
         public string telemetryFrontierDate = "";
         public string telemetryStallDate = "";
         public int telemetryCaps;
+
+        /// <summary>
+        /// D-184: this copy came from a local backup whose seal was missing or wrong (an edited file, or a backup from
+        /// before the seal) without a server copy to check it against. It plays on, but it is not uploaded, and once the
+        /// server answers with a copy, that copy wins over this one (which clears the flag).
+        /// </summary>
+        public bool untrustedLocal;
 
         public int dataVersion = CurrentVersion;
 

@@ -251,7 +251,7 @@ namespace SoloHero.Game.Config
         public double ATTENDANCE_GOLD_STAGES = 20;
         public double ATTENDANCE_DAY7_GEM = 150;
         public double ATTENDANCE_DAY28_GEM = 300;
-        public long PASS_EPOCH_UTC = 1791763200;
+        public long PASS_EPOCH_UTC = 1796601600;
         public int PASS_SEASON_DAYS = 28;
         public int PASS_XP_PER_LEVEL = 200;
         public int PASS_XP_DAILY = 20;

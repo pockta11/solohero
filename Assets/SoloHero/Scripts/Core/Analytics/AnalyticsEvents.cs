@@ -100,6 +100,17 @@ namespace SoloHero.Core.Analytics
         /// <summary>D-181: a store purchase granted (product id, lifetime count).</summary>
         public const string Purchase = "iap_purchase";
 
+        /// <summary>
+        /// D-183: a store purchase not paid (product id, reason: receipt_signature / receipt_state_N / rejected...) - a
+        /// fake billing app or a replayed receipt shows up here.
+        /// </summary>
+        public const string PurchaseCheck = "iap_check";
+
+        /// <summary>D-184: the first tamper sign of a session (kind: memory = an edited value in memory, save = an edited backup).</summary>
+        public const string TamperDetected = "tamper_detected";
+
+        public const string PReason = "reason";
+
         public const string PJob = "job";
         public const string PProduct = "product";
     }

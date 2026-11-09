@@ -638,7 +638,9 @@ namespace SoloHero.Game.UI.Panels
             _sb.Append('\n').Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(UiPalette.GradeInk(grade))).Append('>');
             if (locked)
             {
-                _sb.Append(Strings.Format("pickup.rates_locked", name, PanelServices.GradeName(grade)));
+                // D-183: the share is the real PICKUP_SHARE (the text said "half" since D-173 moved it to 70 %).
+                _sb.Append(Strings.Format("pickup.rates_locked", name, PanelServices.GradeName(grade),
+                    _balance.PICKUP_SHARE.ToString("0.##", CultureInfo.InvariantCulture)));
             }
             else
             {
@@ -708,9 +710,10 @@ namespace SoloHero.Game.UI.Panels
                 return;
             }
 
+            // D-183: four decimals, as the public probability page (0.005 % stays 0.005 %, a boosted 0.0086 % is not rounded to 0.009 %).
             percent = System.Math.Round(percent, 4);
             _sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(UiPalette.GradeInk(grade))).Append('>')
-                .Append(Strings.Format("gacha.rate_item", PanelServices.GradeName(grade), percent.ToString("0.###", CultureInfo.InvariantCulture)))
+                .Append(Strings.Format("gacha.rate_item", PanelServices.GradeName(grade), percent.ToString("0.####", CultureInfo.InvariantCulture)))
                 .Append("</color>");
         }
 

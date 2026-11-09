@@ -64,6 +64,35 @@ await check('expired code refused', assertFails(get(ref(bob, 'transfers/EXPRDEXP
 await check('new device uses the code up', assertSucceeds(remove(ref(bob, 'transfers/' + code))));
 await check('deleting a missing code refused', assertFails(remove(ref(bob, 'transfers/' + code))));
 
+// purchases/{sha256(token)} (D-183): created once by the buyer with granted false, flipped to true by the buyer only,
+// read by the buyer only - a receipt replayed into another account finds it taken.
+const k1 = 'a'.repeat(64);
+const k2 = 'b'.repeat(64);
+const claim = (uid, extra = {}) => ({ uid, product: 'gem_small', granted: false, at: serverTimestamp(), ...extra });
+await check('buyer records a purchase', assertSucceeds(set(ref(alice, 'purchases/' + k1), claim('alice'))));
+await check('buyer reads own record', assertSucceeds(get(ref(alice, 'purchases/' + k1))));
+await check('another account cannot take the same purchase', assertFails(set(ref(bob, 'purchases/' + k1), claim('bob'))));
+await check('another account cannot read it', assertFails(get(ref(bob, 'purchases/' + k1))));
+await check('buyer cannot record it twice', assertFails(set(ref(alice, 'purchases/' + k1), claim('alice'))));
+await check('buyer marks it granted', assertSucceeds(set(ref(alice, 'purchases/' + k1 + '/granted'), true)));
+await check('granted cannot go back to false', assertFails(set(ref(alice, 'purchases/' + k1 + '/granted'), false)));
+await check('another account cannot mark it', assertFails(set(ref(bob, 'purchases/' + k1 + '/granted'), true)));
+await check('product cannot be changed', assertFails(set(ref(alice, 'purchases/' + k1 + '/product'), 'gem_large')));
+await check('owner cannot be changed', assertFails(set(ref(alice, 'purchases/' + k1 + '/uid'), 'bob')));
+await check('a record cannot be deleted', assertFails(remove(ref(alice, 'purchases/' + k1))));
+await check('new record already granted refused', assertFails(set(ref(alice, 'purchases/' + k2), claim('alice', { granted: true }))));
+await check('record for someone else refused', assertFails(set(ref(alice, 'purchases/' + k2), claim('bob'))));
+await check('client time refused', assertFails(set(ref(alice, 'purchases/' + k2), claim('alice', { at: 12345 }))));
+await check('extra field refused', assertFails(set(ref(alice, 'purchases/' + k2), claim('alice', { gems: 999 }))));
+await check('key that is not a hash refused', assertFails(set(ref(alice, 'purchases/not-a-hash'), claim('alice'))));
+await check('upper-case hex refused', assertFails(set(ref(alice, 'purchases/' + 'A'.repeat(64)), claim('alice'))));
+await check('signed-out cannot record', assertFails(set(ref(nobody, 'purchases/' + k2), claim('alice'))));
+await check('records cannot be listed', assertFails(get(ref(alice, 'purchases'))));
+await check('a free key reads as empty (not a replay)', assertSucceeds(get(ref(bob, 'purchases/' + 'c'.repeat(64)))));
+await check('the all-zero probe key reads as empty', assertSucceeds(get(ref(alice, 'purchases/' + '0'.repeat(64)))));
+await check('signed-out cannot read even a free key', assertFails(get(ref(nobody, 'purchases/' + 'c'.repeat(64)))));
+await check('a taken key stays unreadable to others', assertFails(get(ref(bob, 'purchases/' + k1))));
+
 // config/events (D-156): every client reads the event schedule, nobody writes it (the console only).
 await env.withSecurityRulesDisabled(async (ctx) => {
   await set(ref(ctx.database(), 'config/events/launch_test'), { template: 'launch', start: 1, end: 2 });

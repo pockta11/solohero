@@ -2,7 +2,8 @@ name: Unity Android Build
 
 on:
   push:
-    branches: [ main ]
+    # ci/** = verification branches: tests, regenerated UI scenes committed back, AAB (no local Unity needed).
+    branches: [ main, 'ci/**' ]
     paths-ignore:
       - '**.md'
       - '_bmad-output/**'
@@ -24,7 +25,13 @@ jobs:
   build:
     name: Build Android AAB
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
+    permissions:
+      contents: write   # ci/** only: push the regenerated scenes back to the branch
+    env:
+      # EditMode tests on every build; the UI scenes are rebuilt only on ci/** branches.
+      SOLOHERO_CI_TESTS: '1'
+      SOLOHERO_CI_REBUILD_UI: ${{ startsWith(github.ref_name, 'ci/') && '1' || '' }}
 
     steps:
       # 1. Checkout (Firebase editor binaries are in LFS)
@@ -65,7 +72,7 @@ jobs:
           chmod +x .github/scripts/unity-build.sh
           docker run --rm --init \
             -v "$GITHUB_WORKSPACE:/project" -w /project \
-            -e UNITY_EMAIL -e UNITY_PASSWORD -e SOLOHERO_DEV_BUILD \
+            -e UNITY_EMAIL -e UNITY_PASSWORD -e SOLOHERO_DEV_BUILD -e SOLOHERO_CI_TESTS -e SOLOHERO_CI_REBUILD_UI \
             -e SOLOHERO_VERSION_CODE="${{ github.run_number }}" \
             "$UNITY_IMAGE" \
             bash /project/.github/scripts/unity-build.sh
@@ -75,7 +82,33 @@ jobs:
         if: always()
         run: sudo chown -R "$(id -u):$(id -g)" Library Builds 2>/dev/null || true
 
-      # 6. Keep the AAB for 7 days
+      # 6. Test results and (ci/**) the regenerated scenes, also when the build failed
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: editmode-results
+          path: Builds/ci/editmode.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Commit regenerated UI scenes
+        if: success() && env.SOLOHERO_CI_REBUILD_UI == '1'
+        run: |
+          # Unity ran as root in the container: give the files back before git touches them.
+          sudo chown -R "$(id -u):$(id -g)" Assets ProjectSettings Packages 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git status --short
+          git add Assets/SoloHero/Scenes
+          if git diff --cached --quiet; then
+            echo "scenes unchanged"
+          else
+            git commit -m "ci: regenerate UI scenes (GameUiBuilder.BuildBatch) [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      # 7. Keep the AAB for 7 days
       - name: Upload AAB
         uses: actions/upload-artifact@v7
         with:

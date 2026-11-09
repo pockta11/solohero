@@ -187,7 +187,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.purchasing": {
-      "version": "4.12.2",
+      "version": "4.15.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {

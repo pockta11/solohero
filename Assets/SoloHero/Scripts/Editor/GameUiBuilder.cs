@@ -3720,10 +3720,13 @@ namespace SoloHero.Editor
             // D-181: the store rows (VIP, gem bundles, gold bundle) above the daily rows, each block under a section label.
             int iapCount = SoloHero.Core.Economy.IapCatalog.Count;
             const int count = 5;
-            const float rowStep = 132f;
+            // D-183: rows 8 px shorter make room for the purchase notice without making the window taller (16:9 fit).
+            const float rowStep = 124f;
             const float sectionHeight = 40f;
+            const float noticeHeight = 84f;
             float iapTop = 90f + sectionHeight + 6f;
-            float dailyTop = iapTop + iapCount * rowStep + 12f + sectionHeight + 6f;
+            float noticeTop = iapTop + iapCount * rowStep - 2f;
+            float dailyTop = noticeTop + noticeHeight + 8f + sectionHeight + 6f;
             RectTransform box = PopupWindow(holder, new Vector2(1000f, dailyTop + count * rowStep + 30f), "shop.title", presenter.Close, out RectTransform popup);
 
             Text iapSection = InkText(TopBand("SectionIap", box, 90f, sectionHeight, 44f, 44f), 28, TextAnchor.MiddleLeft, UiPalette.InkGold);
@@ -3742,6 +3745,14 @@ namespace SoloHero.Editor
                 iapButtons[i] = row.Find("Buy").gameObject.AddComponent<TapGuardButton>();
                 UnityEventTools.AddIntPersistentListener(iapButtons[i].OnTap, presenter.BuyIap, i);
             }
+
+            // D-183: what a buyer must be told before paying (withdrawal of the purchase, minors, refunds, the rates).
+            Text notice = InkText(TopBand("IapNotice", box, noticeTop, noticeHeight, 50f, 50f), 18, TextAnchor.UpperLeft, UiPalette.Ink);
+            notice.horizontalOverflow = HorizontalWrapMode.Wrap;
+            notice.verticalOverflow = VerticalWrapMode.Overflow;
+            notice.lineSpacing = 0.95f;
+            notice.raycastTarget = false;
+            Localize(notice, "shop.iap_notice");
 
             RectTransform dailyBand = TopBand("SectionDaily", box, dailyTop - sectionHeight - 6f, sectionHeight, 44f, 44f);
             Text dailySection = InkText(Rect("Label", dailyBand, 0f, 0f, 0.3f, 1f), 28, TextAnchor.MiddleLeft, UiPalette.InkGold);
