@@ -15,7 +15,7 @@
 
 | 항목 | 기준 | 상태 (2026-10-08, 결제·변조 방지 줄은 2026-11-09) |
 |---|---|---|
-| EditMode 테스트 | 전부 통과 | ✅ 2026-11-09 Unity 내장 Roslyn 4.3.1 컴파일 + NUnit 실행 532/532 (D-183~D-186 포함). 🔶 Unity `-runTests`는 이 PC의 Unity 라이선스 활성화 후 다시 |
+| EditMode 테스트 | 전부 통과 | ✅ 2026-11-09 Unity 내장 Roslyn 4.3.1 컴파일 + NUnit 실행 532/532 (D-183~D-186 포함). ✅ **Unity `-runTests` 532/532** — CI 실행 42643146377(2026-11-09, `ci/iap-hardening`). 이제 모든 CI·릴리스 빌드가 테스트를 먼저 돌린다 |
 | 가챠 검증기 | 공시표 대비 1%p 이내 | ✅ |
 | 스모크 | 10/10 | ✅ (2026-09-28) |
 | 강제 종료 | 20회 유실 0 | ✅ 0/20 (2026-09-28) |
@@ -32,12 +32,12 @@
 | 서명·버전 | 업로드 키 서명, versionCode 단조 증가 | 🔶 C 완료(`Release AAB` 워크플로, `SOLOHERO_RELEASE` 검사, `tools/release/NewUploadKey.ps1`) / D: 키 생성·보관, GitHub 시크릿 등록 |
 | AdMob | 계정 승인 + 앱 스토어 연결 + app-ads.txt + GDPR 메시지 | 🔶 D — 승인 대기. GDPR 메시지가 없으면 EEA에는 광고가 나오지 않는다(D-135) |
 | RTDB 보안 규칙 | 본인 UID만 읽기/쓰기, 이전 코드 24시간, 결제 기록 1회·본인만 | 🔶 C 완료(규칙 + 에뮬레이터 검사 54/54, `tools/firebase` `npm test`; Windows에서 Java가 긴 TEMP 경로로 소켓을 못 열면 `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\짧은경로`) / D: 콘솔에 적용 — **적용 전에는 모든 결제가 지급되지 않고 3일 뒤 환불된다** |
-| **결제 라이브러리** | Play가 받는 버전(2026-11 현재 Billing 8 이상) | ✅ Unity IAP 4.15.1 = Billing 8.3.0 (D-183, 기한 2027-08-31). IAP 4 지원 종료 예고 → 출시 후 5.x |
+| **결제 라이브러리** | Play가 받는 버전(2026-11 현재 Billing 8 이상) | ✅ Unity IAP 4.15.1 = Billing 8.3.0 (D-183, 기한 2027-08-31), CI Android AAB 빌드 성공(Gradle 의존성 충돌 없음). IAP 4 지원 종료 예고 → 출시 후 5.x |
 | **영수증 검증** | Google 서명이 맞는 영수증만 지급 | ✅ C: `ReceiptCheck`(CrossPlatformValidator) — 4.15.1 검증 코드로 시험 키 8가지 통과 / D: Play Console 라이선스 공개 키를 `SetPlayLicenseKey.ps1`로 넣고 커밋(없으면 릴리스 빌드 실패) |
 | **결제 지급 순서** | 저장 뒤에만 결제 완료, 대기 결제 미지급, 재사용 영수증 미지급 | ✅ C: Pending → 검증 → 원장 → 지급·저장 → Confirm (`PurchaseTests` 19건; 업로드가 막힌 세션은 상점 닫힘·지급 보류, 결제 대기는 상점이 멈추지 않음) |
 | **실결제** | 라이선스 테스터로 5종 구매·지급·환불 | 🔶 D: 상품 5종 등록 후 내부 테스트 트랙에서. 확인할 것: 구매 → 지급 → 앱 재시작해도 한 번만, 비행기 모드 구매 → 복귀 시 지급, 다른 기기·계정에서 같은 영수증 미지급 |
 | **확률 공시** | 게임 안·스토어·웹 3곳(게임산업법) | 🔶 C: 게임 안 + `store/probability-ko.html`(실제 확률표로 생성·테스트) + 소개문 / D: 웹 페이지 게시·소개문 URL |
-| **구매 전 고지** | 청약철회·미성년자 취소·환불 문의 | ✅ C: 상점 `shop.iap_notice` — 🔶 씬 재생성(`Tools > Setup > Build Growth UI`) 필요, Unity 라이선스 활성화 후 |
+| **구매 전 고지** | 청약철회·미성년자 취소·환불 문의 | ✅ C: 상점 `shop.iap_notice` — CI가 씬 재생성(`GameUiBuilder.BuildBatch`, 커밋 d321813: 게임 오브젝트 +1 `IapNotice`, 참조 자산 동일). 🔶 화면에서 줄바꿈·겹침 눈 확인(에뮬레이터 또는 비공개 테스트) |
 | **변조 방지** | 메모리 수정·저장 파일 수정·이전 코드 위조가 진행에 남지 않음 | ✅ C: 보호 타입·저장 봉인·이전 사본 봉인 (`AntiTamperTests` 15건, D-184·D-186). 남은 경로는 D-184 (4) |
 
 ## 현재 열린 버그
